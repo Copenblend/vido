@@ -83,4 +83,9 @@ public partial class TitleBarView : UserControl
             }
         }
     }
+
+    private void OnExitClick(object sender, RoutedEventArgs e)
+    {
+        Application.Current.Shutdown();
+    }
 }
