@@ -3,6 +3,9 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shell;
+using Vido.Core.Windowing;
+using Vido.ViewModels;
+using Vido.Views.Services;
 
 namespace Vido.Views;
 
@@ -15,10 +18,13 @@ public partial class MainWindow : Window
     private const int MinWindowWidth = 800;
     private const int MinWindowHeight = 600;
 
+    private TitleBarViewModel? _titleBarViewModel;
+
     public MainWindow()
     {
         InitializeComponent();
         SetupWindowChrome();
+        SetupTitleBar();
     }
 
     private void SetupWindowChrome()
@@ -32,6 +38,28 @@ public partial class MainWindow : Window
             UseAeroCaptionButtons = false
         };
         WindowChrome.SetWindowChrome(this, chrome);
+    }
+
+    private void SetupTitleBar()
+    {
+        var windowService = new WindowService(this);
+        _titleBarViewModel = new TitleBarViewModel(windowService);
+        TitleBar.DataContext = _titleBarViewModel;
+
+        StateChanged += OnWindowStateChanged;
+    }
+
+    private void OnWindowStateChanged(object? sender, EventArgs e)
+    {
+        var appState = WindowState switch
+        {
+            WindowState.Maximized => AppWindowState.Maximized,
+            WindowState.Minimized => AppWindowState.Minimized,
+            _ => AppWindowState.Normal
+        };
+
+        _titleBarViewModel?.SyncWindowState(appState);
+        TitleBar.UpdateWindowState(appState == AppWindowState.Maximized);
     }
 
     protected override void OnSourceInitialized(EventArgs e)

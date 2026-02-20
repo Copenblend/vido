@@ -798,11 +798,23 @@ For a developer to create a Vido plugin:
    ```
    **Never** use single-line commit messages that just restate the ticket title. The commit message should tell a developer exactly what changed without reading the diff.
 
-9. **CHANGELOG.md maintenance**: After EVERY completed ticket, update the `CHANGELOG.md` file in the workspace root. The changelog uses the "Keep a Changelog" format with the following rules:
+9. **CHANGELOG.md maintenance**: After EVERY completed ticket, update the `CHANGELOG.md` file in the workspace root. The changelog uses the following format:
+   ```
+   ## [Unreleased]
+
+   ### vi-XXX
+   - change 1
+   - change 2
+   - change 3
+
+   ### vi-YYY
+   - change 1
+   - change 2
+   ```
+   Rules:
    - Group entries under an `## [Unreleased]` section at the top
-   - Use subsections: `### Added`, `### Changed`, `### Fixed`, `### Removed` (only include sections that apply)
-   - Each entry should be a concise but descriptive bullet point
-   - Include the ticket ID in parentheses at the end of each entry, e.g., `- Custom title bar with minimize/maximize/close controls (vi-002)`
+   - Each ticket gets its own `### vi-XXX` subsection header (using the ticket number)
+   - List each meaningful change as a bullet point under that ticket
    - When a release is cut (human action), the `[Unreleased]` section becomes a versioned section and a new empty `[Unreleased]` is added above
 
 ---
