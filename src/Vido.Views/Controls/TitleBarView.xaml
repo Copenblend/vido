@@ -47,9 +47,12 @@
                 <MenuItem Header="_Open File..." InputGestureText="Ctrl+O"
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
                 <MenuItem Header="Open _Folder..." InputGestureText="Ctrl+Shift+O"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                <MenuItem Header="_Close Folder"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnOpenFolderClick" />
+                <MenuItem x:Name="CloseFolderMenuItem" Header="_Close Folder"
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          IsEnabled="False"
+                          Click="OnCloseFolderClick" />
                 <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="_Recent Files" Style="{StaticResource SubmenuParentItemStyle}">
                     <MenuItem Header="No recent files" Style="{StaticResource DropdownMenuItemStyle}"

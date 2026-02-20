@@ -1,0 +1,149 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="../Themes/Brushes.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- Expand / Collapse toggle triangle (VS Code-style chevron) -->
+    <Style x:Key="TreeExpanderStyle" TargetType="ToggleButton">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="22" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border Background="Transparent" Width="16" Height="22">
+                        <Path x:Name="Arrow"
+                              Data="M 4,2 L 10,6 4,10"
+                              Stroke="{DynamicResource SecondaryForegroundBrush}"
+                              StrokeThickness="1.2"
+                              StrokeLineJoin="Round"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round"
+                              Fill="Transparent"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              RenderTransformOrigin="0.5,0.5">
+                            <Path.RenderTransform>
+                                <RotateTransform Angle="0" />
+                            </Path.RenderTransform>
+                        </Path>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Arrow" Property="RenderTransform">
+                                <Setter.Value>
+                                    <RotateTransform Angle="90" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== Icon geometries ===== -->
+
+    <!-- Video file icon path -->
+    <StreamGeometry x:Key="VideoFileGeometry">M 3,1 L 3,15 L 13,15 L 13,5 L 9,1 Z M 9,1 L 9,5 L 13,5</StreamGeometry>
+
+    <!-- Generic file icon path -->
+    <StreamGeometry x:Key="GenericFileGeometry">M 3,1 L 3,15 L 13,15 L 13,5 L 9,1 Z M 9,1 L 9,5 L 13,5</StreamGeometry>
+
+    <!-- Icon colors -->
+    <SolidColorBrush x:Key="VideoIconBrush" Color="#6997d5" />
+    <SolidColorBrush x:Key="GenericFileIconBrush" Color="#9d9d9d" />
+
+    <!-- Play triangle overlay for video files -->
+    <StreamGeometry x:Key="VideoPlayOverlay">M 6,6 L 6,12 L 11,9 Z</StreamGeometry>
+
+    <!-- ===== TreeView style ===== -->
+    <Style x:Key="FileExplorerTreeViewStyle" TargetType="TreeView">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
+        <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+    </Style>
+
+    <!-- ===== TreeViewItem style ===== -->
+    <Style x:Key="FileExplorerTreeViewItemStyle" TargetType="TreeViewItem">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryForegroundBrush}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="IsExpanded" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TreeViewItem">
+                    <StackPanel>
+                        <!-- Row: the clickable header area -->
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                MinHeight="22"
+                                Padding="0"
+                                SnapsToDevicePixels="True">
+                            <Grid Margin="{TemplateBinding Padding}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <ToggleButton x:Name="Expander"
+                                              Grid.Column="0"
+                                              Style="{StaticResource TreeExpanderStyle}"
+                                              IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
+                                              ClickMode="Press" />
+
+                                <ContentPresenter x:Name="PART_Header"
+                                                  Grid.Column="1"
+                                                  ContentSource="Header"
+                                                  HorizontalAlignment="Stretch"
+                                                  VerticalAlignment="Center" />
+                            </Grid>
+                        </Border>
+
+                        <!-- Children container (indented) -->
+                        <ItemsPresenter x:Name="ItemsHost" Margin="8,0,0,0" />
+                    </StackPanel>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsExpanded" Value="False">
+                            <Setter TargetName="ItemsHost" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="HasItems" Value="False">
+                            <Setter TargetName="Expander" Property="Visibility" Value="Hidden" />
+                        </Trigger>
+                        <Trigger SourceName="Bd" Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background"
+                                    Value="{DynamicResource HoverBackgroundBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background"
+                                    Value="{DynamicResource SelectionBackgroundBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== Folder name section header (shown above the tree) ===== -->
+    <Style x:Key="FolderSectionHeaderStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="Foreground" Value="{DynamicResource PrimaryForegroundBrush}" />
+        <Setter Property="Padding" Value="8,6,8,4" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+
+</ResourceDictionary>

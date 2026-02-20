@@ -4,6 +4,20 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-006
+- Created FileNode model in Vido.Core with lazy-loading dummy-child pattern, video extension detection, and ObservableCollection children
+- Created IFileSystemService interface and FileSystemService implementation — reads directory contents sorted (dirs first, then files), skips hidden items, handles access errors gracefully
+- Created FileExplorerViewModel with OpenFolder/CloseFolder commands, lazy ExpandNode, folder state persistence, and startup restore
+- Created TreeViewStyles.xaml — VS Code Dark Modern styled TreeView with expand/collapse chevron, hover/selection highlights, folder/video/generic file icon geometries
+- Created FileExplorerPanel.xaml — TreeView with HierarchicalDataTemplate showing folder (open/closed), video, and generic file icons; empty-state "Open Folder" button
+- Enabled "File > Open Folder" menu item with OpenFolderDialog and "File > Close Folder" with dynamic enable/disable
+- Updated SidebarView with ContentPresenter panel host for sidebar panel switching
+- Wired sidebar panel switching in MainWindow — Explorer panel shown when active, extensible for future panels
+- Last opened folder persisted in AppState and restored on startup
+- Registered IFileSystemService and FileExplorerViewModel in DI container
+- Added 41 new unit tests: FileNodeTests (10), FileSystemServiceTests (8), FileExplorerViewModelTests (12) — with Theory-based video extension coverage and temp directory isolation
+- Total test count: 99 (all passing)
+
 ### vi-005
 - Created IEventBus interface and EventBus implementation — thread-safe publish/subscribe with IDisposable subscriptions
 - Created ILogService interface and LogService implementation — thread-safe in-memory logging with Debug/Info/Warning/Error levels and EntryAdded event

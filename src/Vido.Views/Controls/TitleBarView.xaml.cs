@@ -12,9 +12,23 @@ namespace Vido.Views.Controls;
 /// </summary>
 public partial class TitleBarView : UserControl
 {
+    /// <summary>Raised when the user selects File > Open Folder and picks a valid path.</summary>
+    public event Action<string>? FolderOpened;
+
+    /// <summary>Raised when the user selects File > Close Folder.</summary>
+    public event Action? FolderClosed;
+
     public TitleBarView()
     {
         InitializeComponent();
+    }
+
+    /// <summary>
+    /// Updates the Close Folder menu item enabled state based on whether a folder is open.
+    /// </summary>
+    public void SetCloseFolderEnabled(bool enabled)
+    {
+        CloseFolderMenuItem.IsEnabled = enabled;
     }
 
     /// <summary>
@@ -82,6 +96,24 @@ public partial class TitleBarView : UserControl
                 vm.ToggleMaximizeCommand.Execute(null);
             }
         }
+    }
+
+    private void OnOpenFolderClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "Open Folder"
+        };
+
+        if (dialog.ShowDialog() == true && !string.IsNullOrEmpty(dialog.FolderName))
+        {
+            FolderOpened?.Invoke(dialog.FolderName);
+        }
+    }
+
+    private void OnCloseFolderClick(object sender, RoutedEventArgs e)
+    {
+        FolderClosed?.Invoke();
     }
 
     private void OnExitClick(object sender, RoutedEventArgs e)
