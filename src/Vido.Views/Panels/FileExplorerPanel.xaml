@@ -7,7 +7,75 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="../Themes/TreeViewStyles.xaml" />
+                <ResourceDictionary Source="../Themes/ContextMenuStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Context menu for video file nodes -->
+            <ContextMenu x:Key="VideoFileContextMenu"
+                         Style="{StaticResource DarkContextMenuStyle}">
+                <MenuItem Header="Play"
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          Click="OnPlayFileClick" />
+                <MenuItem Header="Hide from View"
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          Click="OnHideFileClick" />
+                <MenuItem Header="Reveal in File Explorer"
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          Click="OnRevealInExplorerClick" />
+            </ContextMenu>
+
+            <!-- Context menu for non-video file nodes -->
+            <ContextMenu x:Key="NonVideoFileContextMenu"
+                         Style="{StaticResource DarkContextMenuStyle}">
+                <MenuItem Header="Hide from View"
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          Click="OnHideFileClick" />
+                <MenuItem Header="Reveal in File Explorer"
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          Click="OnRevealInExplorerClick" />
+            </ContextMenu>
+
+            <!-- Context menu for folder nodes -->
+            <ContextMenu x:Key="FolderContextMenu"
+                         Style="{StaticResource DarkContextMenuStyle}">
+                <MenuItem Header="Hide from View"
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          Click="OnHideFileClick" />
+                <MenuItem Header="Reveal in File Explorer"
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          Click="OnRevealInExplorerClick" />
+            </ContextMenu>
+
+            <!-- Context menu for hidden file/folder nodes -->
+            <ContextMenu x:Key="HiddenNodeContextMenu"
+                         Style="{StaticResource DarkContextMenuStyle}">
+                <MenuItem Header="Unhide"
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          Click="OnUnhideFileClick" />
+                <MenuItem Header="Reveal in File Explorer"
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          Click="OnRevealInExplorerClick" />
+            </ContextMenu>
+
+            <!-- Context menu for tree background -->
+            <ContextMenu x:Key="TreeBackgroundContextMenu"
+                         Style="{StaticResource DarkContextMenuStyle}">
+                <MenuItem Header="Open Folder..."
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          Click="OnContextOpenFolderClick" />
+                <MenuItem x:Name="ContextCloseFolder"
+                          Header="Close Folder"
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          Click="OnContextCloseFolderClick" />
+                <MenuItem Header="Rescan Folder"
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          Click="OnContextRescanFolderClick" />
+                <MenuItem x:Name="ContextShowHiddenFiles"
+                          Header="Show Hidden Files"
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          IsCheckable="True"
+                          Click="OnToggleShowHiddenFilesClick" />
+            </ContextMenu>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -70,7 +138,9 @@
             <TreeView x:Name="FileTree"
                       ItemsSource="{Binding RootNodes}"
                       Style="{StaticResource FileExplorerTreeViewStyle}"
-                      TreeViewItem.Expanded="OnTreeViewItemExpanded">
+                      ContextMenu="{StaticResource TreeBackgroundContextMenu}"
+                      TreeViewItem.Expanded="OnTreeViewItemExpanded"
+                      TreeViewItem.Selected="OnTreeViewItemSelected">
                 <TreeView.ItemContainerStyle>
                     <Style TargetType="TreeViewItem"
                            BasedOn="{StaticResource FileExplorerTreeViewItemStyle}" />
@@ -78,7 +148,9 @@
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate DataType="{x:Type fs:FileNode}"
                                               ItemsSource="{Binding Children}">
-                        <StackPanel Orientation="Horizontal" Margin="2,0,8,0">
+                        <StackPanel x:Name="NodeRow"
+                                    Orientation="Horizontal" Margin="2,0,8,0"
+                                    MouseRightButtonUp="OnNodeRightClick">
                             <!-- Video file icon -->
                             <Canvas x:Name="VideoIcon"
                                     Width="16" Height="16"
@@ -110,7 +182,8 @@
                                   Visibility="Collapsed" />
 
                             <!-- File / folder name -->
-                            <TextBlock Text="{Binding Name}"
+                            <TextBlock x:Name="NodeName"
+                                       Text="{Binding Name}"
                                        Foreground="{DynamicResource PrimaryForegroundBrush}"
                                        FontFamily="Segoe UI"
                                        FontSize="13"
@@ -125,14 +198,29 @@
                                 <Setter TargetName="GenericFileIcon" Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
 
-                            <!-- Non-video, non-directory file — show generic icon -->
+                            <!-- Non-video, non-directory file — show generic icon + tooltip -->
                             <MultiDataTrigger>
                                 <MultiDataTrigger.Conditions>
                                     <Condition Binding="{Binding IsDirectory}" Value="False" />
                                     <Condition Binding="{Binding IsVideoFile}" Value="False" />
                                 </MultiDataTrigger.Conditions>
                                 <Setter TargetName="GenericFileIcon" Property="Visibility" Value="Visible" />
+                                <Setter TargetName="NodeName" Property="ToolTip">
+                                    <Setter.Value>
+                                        <TextBlock>
+                                            <Run Text="{Binding Name, Mode=OneWay}" />
+                                            <Run Text=" — Not a supported video format"
+                                                 Foreground="{DynamicResource SecondaryForegroundBrush}" />
+                                        </TextBlock>
+                                    </Setter.Value>
+                                </Setter>
                             </MultiDataTrigger>
+
+                            <!-- Hidden node — dim the entire row -->
+                            <DataTrigger Binding="{Binding IsHidden}" Value="True">
+                                <Setter TargetName="NodeRow" Property="Opacity" Value="0.4" />
+                                <Setter TargetName="NodeName" Property="FontStyle" Value="Italic" />
+                            </DataTrigger>
                         </HierarchicalDataTemplate.Triggers>
                     </HierarchicalDataTemplate>
                 </TreeView.ItemTemplate>

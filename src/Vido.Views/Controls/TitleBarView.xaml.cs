@@ -18,6 +18,9 @@ public partial class TitleBarView : UserControl
     /// <summary>Raised when the user selects File > Close Folder.</summary>
     public event Action? FolderClosed;
 
+    /// <summary>Raised when the user selects File > Rescan Folder.</summary>
+    public event Action? FolderRescanned;
+
     public TitleBarView()
     {
         InitializeComponent();
@@ -29,6 +32,7 @@ public partial class TitleBarView : UserControl
     public void SetCloseFolderEnabled(bool enabled)
     {
         CloseFolderMenuItem.IsEnabled = enabled;
+        RescanFolderMenuItem.IsEnabled = enabled;
     }
 
     /// <summary>
@@ -114,6 +118,11 @@ public partial class TitleBarView : UserControl
     private void OnCloseFolderClick(object sender, RoutedEventArgs e)
     {
         FolderClosed?.Invoke();
+    }
+
+    private void OnRescanFolderClick(object sender, RoutedEventArgs e)
+    {
+        FolderRescanned?.Invoke();
     }
 
     private void OnExitClick(object sender, RoutedEventArgs e)

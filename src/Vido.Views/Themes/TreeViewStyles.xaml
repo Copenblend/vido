@@ -60,6 +60,21 @@
     <!-- Play triangle overlay for video files -->
     <StreamGeometry x:Key="VideoPlayOverlay">M 6,6 L 6,12 L 11,9 Z</StreamGeometry>
 
+    <!-- ===== Thin scrollbar thumb ===== -->
+    <Style x:Key="ThinScrollBarThumb" TargetType="Thumb">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Thumb">
+                    <Border Background="{DynamicResource AccentBrush}"
+                            CornerRadius="1"
+                            Opacity="0.6" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <!-- ===== TreeView style ===== -->
     <Style x:Key="FileExplorerTreeViewStyle" TargetType="TreeView">
         <Setter Property="Background" Value="Transparent" />
@@ -69,6 +84,62 @@
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
         <Setter Property="VirtualizingPanel.IsVirtualizing" Value="True" />
         <Setter Property="VirtualizingPanel.VirtualizationMode" Value="Recycling" />
+        <Setter Property="VirtualizingPanel.ScrollUnit" Value="Pixel" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TreeView">
+                    <ScrollViewer Focusable="False"
+                                  CanContentScroll="False"
+                                  Padding="{TemplateBinding Padding}"
+                                  HorizontalScrollBarVisibility="{TemplateBinding ScrollViewer.HorizontalScrollBarVisibility}"
+                                  VerticalScrollBarVisibility="{TemplateBinding ScrollViewer.VerticalScrollBarVisibility}"
+                                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}">
+                        <ScrollViewer.Resources>
+                            <Style TargetType="ScrollBar">
+                                <Setter Property="OverridesDefaultStyle" Value="True" />
+                                <Setter Property="Width" Value="6" />
+                                <Setter Property="MinWidth" Value="6" />
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ScrollBar">
+                                            <Grid Background="Transparent" Margin="2,0,0,0">
+                                                <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                                    <Track.Thumb>
+                                                        <Thumb Style="{StaticResource ThinScrollBarThumb}" Width="2" />
+                                                    </Track.Thumb>
+                                                </Track>
+                                            </Grid>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                                <Style.Triggers>
+                                    <Trigger Property="Orientation" Value="Horizontal">
+                                        <Setter Property="Width" Value="Auto" />
+                                        <Setter Property="MinWidth" Value="0" />
+                                        <Setter Property="Height" Value="6" />
+                                        <Setter Property="MinHeight" Value="6" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ScrollBar">
+                                                    <Grid Background="Transparent" Margin="0,2,0,0">
+                                                        <Track x:Name="PART_Track" IsDirectionReversed="False">
+                                                            <Track.Thumb>
+                                                                <Thumb Style="{StaticResource ThinScrollBarThumb}" Height="2" />
+                                                            </Track.Thumb>
+                                                        </Track>
+                                                    </Grid>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ScrollViewer.Resources>
+                        <ItemsPresenter />
+                    </ScrollViewer>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ===== TreeViewItem style ===== -->

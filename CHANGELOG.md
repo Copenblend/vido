@@ -4,6 +4,31 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-007
+- Created ContextMenuStyles.xaml — VS Code Dark Modern themed context menus with rounded corners, drop shadow, hover highlights, keyboard shortcut hints, and separator styling
+- Created IContextMenuRegistry interface and ContextMenuRegistry implementation — thread-safe, ordered menu entry registry supporting File, Folder, and Background context targets (extensible by plugins)
+- Added context menus to File Explorer: video file menu (Play, Hide from View, Reveal in File Explorer), non-video file menu (Hide from View, Reveal in File Explorer), folder menu (Hide from View, Reveal in File Explorer), background menu (Open Folder, Close Folder, Rescan Folder, Show Hidden Files toggle)
+- Added RescanFolder command — re-reads directory from disk preserving expanded state; hidden files persist across rescans
+- Added HideFile command — hides file/folder from explorer view (persisted in AppState.HiddenFiles, not deleted from disk)
+- Added UnhideFile command — restores a hidden file/folder to normal visibility
+- Added ToggleShowHiddenFiles command — toggles visibility of hidden items; when shown, hidden items appear dimmed (40% opacity) and italic
+- Added IsHidden property to FileNode with INotifyPropertyChanged support — drives dimmed/italic styling via DataTrigger
+- Hidden files are non-playable — Play context menu respects IsHidden flag
+- Right-clicking a hidden node shows dedicated HiddenNodeContextMenu with "Unhide" and "Reveal in File Explorer"
+- Added checkmark column to ContextMenuStyles for IsCheckable/IsChecked menu items (✓ character)
+- Added RevealInExplorer command — opens Windows Explorer with item selected
+- Added SelectedNode tracking to FileExplorerViewModel
+- Hidden-file filtering handled entirely in ViewModel (ApplyHiddenFilter) — IFileSystemService uses simple signatures with no hidden-paths parameter
+- Added tooltips for non-video files: "filename — Not a supported video format"
+- Registered IContextMenuRegistry in DI container
+- Context menu highlights use AccentBrush (#007acc) matching top-level menu style
+- Removed all separators from context menus for consistent inter-item spacing; reduced top menu separator margin to 8,0
+- Added thin blue scrollbar to file explorer TreeView — 2px thumb width, AccentBrush color, transparent track, matching sidebar accent indicator style
+- Added smooth pixel-based scrolling to TreeView (VirtualizingPanel.ScrollUnit="Pixel")
+- Added "Rescan Folder" to File dropdown menu (enabled alongside Close Folder)
+- Added tests: ContextMenuRegistryTests (10), FileExplorerViewModelTests (30 — covering OpenFolder, CloseFolder, ExpandNode with hidden filter, RestoreLastFolder, RescanFolder preserving hidden state, HideFile, UnhideFile, ToggleShowHiddenFiles with tree refresh, ShowHiddenFiles filtering, SelectedNode), FileSystemServiceTests (8), FileNodeTests (+3 for IsHidden)
+- Total test count: 130 (all passing)
+
 ### vi-006
 - Created FileNode model in Vido.Core with lazy-loading dummy-child pattern, video extension detection, and ObservableCollection children
 - Created IFileSystemService interface and FileSystemService implementation — reads directory contents sorted (dirs first, then files), skips hidden items, handles access errors gracefully

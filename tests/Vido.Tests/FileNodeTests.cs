@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Vido.Core.FileSystem;
 using Xunit;
 
@@ -95,5 +96,36 @@ public sealed class FileNodeTests
     {
         var node = new FileNode(string.Empty, isDirectory: false);
         Assert.Equal(string.Empty, node.Name);
+    }
+
+    [Fact]
+    public void IsHidden_DefaultsFalse()
+    {
+        var node = new FileNode(@"C:\test.mp4", isDirectory: false);
+        Assert.False(node.IsHidden);
+    }
+
+    [Fact]
+    public void IsHidden_RaisesPropertyChanged()
+    {
+        var node = new FileNode(@"C:\test.mp4", isDirectory: false);
+        var raised = new List<string?>();
+        node.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        node.IsHidden = true;
+
+        Assert.Contains(nameof(FileNode.IsHidden), raised);
+    }
+
+    [Fact]
+    public void IsHidden_DoesNotRaisePropertyChanged_WhenValueUnchanged()
+    {
+        var node = new FileNode(@"C:\test.mp4", isDirectory: false);
+        var raised = new List<string?>();
+        node.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
+
+        node.IsHidden = false; // same as default
+
+        Assert.Empty(raised);
     }
 }

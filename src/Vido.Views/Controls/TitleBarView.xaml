@@ -53,6 +53,10 @@
                           Style="{StaticResource DropdownMenuItemStyle}"
                           IsEnabled="False"
                           Click="OnCloseFolderClick" />
+                <MenuItem x:Name="RescanFolderMenuItem" Header="_Rescan Folder"
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          IsEnabled="False"
+                          Click="OnRescanFolderClick" />
                 <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="_Recent Files" Style="{StaticResource SubmenuParentItemStyle}">
                     <MenuItem Header="No recent files" Style="{StaticResource DropdownMenuItemStyle}"
