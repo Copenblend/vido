@@ -108,6 +108,7 @@ public partial class MainWindow : Window
         // Wire title bar folder events
         TitleBar.FolderOpened += OnFolderOpened;
         TitleBar.FolderClosed += OnFolderClosed;
+        TitleBar.FolderRescanned += OnFolderRescanned;
 
         // Wire the "Open Folder" button inside the explorer panel
         _fileExplorerPanel.OpenFolderRequested += ShowOpenFolderDialog;
@@ -156,6 +157,11 @@ public partial class MainWindow : Window
     private void OnFolderClosed()
     {
         _fileExplorerViewModel.CloseFolder();
+    }
+
+    private void OnFolderRescanned()
+    {
+        _fileExplorerViewModel.RescanFolder();
     }
 
     private void OnPanelChanged(object sender, RoutedEventArgs e)

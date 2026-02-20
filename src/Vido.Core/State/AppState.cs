@@ -21,4 +21,11 @@ public sealed class AppState
 
     // --- Active Panel ---
     public string ActiveSidebarPanel { get; set; } = "Explorer";
+
+    // --- Hidden Files ---
+    /// <summary>
+    /// Full paths of files the user has "removed" from the explorer view.
+    /// These files are hidden (not deleted from disk) and persist across restarts.
+    /// </summary>
+    public List<string> HiddenFiles { get; set; } = [];
 }

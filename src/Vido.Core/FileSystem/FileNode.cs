@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 
 namespace Vido.Core.FileSystem;
 
@@ -8,8 +9,10 @@ namespace Vido.Core.FileSystem;
 /// for lazy-loading: a sentinel child is added so the TreeView shows
 /// an expander; real children are loaded on first expansion.
 /// </summary>
-public sealed class FileNode
+public sealed class FileNode : INotifyPropertyChanged
 {
+    private bool _isHidden;
+
     /// <summary>Full path to the file or directory.</summary>
     public string FullPath { get; }
 
@@ -21,6 +24,24 @@ public sealed class FileNode
 
     /// <summary>Whether this is a recognized video file.</summary>
     public bool IsVideoFile { get; }
+
+    /// <summary>
+    /// Whether this node is hidden from view by the user.
+    /// Hidden nodes appear dimmed when "Show Hidden Files" is enabled.
+    /// </summary>
+    public bool IsHidden
+    {
+        get => _isHidden;
+        set
+        {
+            if (_isHidden == value) return;
+            _isHidden = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsHidden)));
+        }
+    }
+
+    /// <inheritdoc />
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
     /// Child nodes. Observable so the TreeView updates when children are
