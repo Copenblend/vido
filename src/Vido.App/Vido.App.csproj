@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Vido.App</RootNamespace>
+    <AssemblyName>Vido</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Vido.Core\Vido.Core.csproj" />
+    <ProjectReference Include="..\Vido.Services\Vido.Services.csproj" />
+    <ProjectReference Include="..\Vido.ViewModels\Vido.ViewModels.csproj" />
+    <ProjectReference Include="..\Vido.Views\Vido.Views.csproj" />
+    <ProjectReference Include="..\Vido.PluginHost\Vido.PluginHost.csproj" />
+  </ItemGroup>
+
+</Project>

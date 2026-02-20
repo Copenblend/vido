@@ -767,9 +767,21 @@ For a developer to create a Vido plugin:
    - If a method/class is getting long, extract logically — but only if it improves readability
    - Code should read like a well-organized human wrote it
 
-5. **Build verification**: Every ticket must leave the solution in a compilable, runnable state. Run `dotnet build` after every ticket to verify.
+5. **Revision tracking & dead code elimination**: When a ticket requires multiple revisions or iterations:
+   - Keep a mental (or explicit) list of every file, class, method, property, and using directive that was added, renamed, moved, or deleted across ALL revisions
+   - After the final revision, do a FULL sweep of every file touched during the ticket to ensure:
+     - No orphaned methods, properties, or classes remain from earlier revisions
+     - No unused `using` directives exist
+     - No commented-out code from previous attempts remains
+     - No references to renamed/moved symbols survive (compile will catch most, but check string references, XAML bindings, and DI registrations too)
+     - No duplicate logic was introduced (e.g., a method was extracted but the original inline code was left behind)
+   - If a file was created in an earlier revision and is no longer needed, DELETE it entirely
+   - Run `dotnet build` after the sweep to ensure nothing was broken by cleanup
+   - This discipline applies to EVERY ticket, not just ones with obvious revisions — even a "clean" first pass can leave unnecessary code
 
-6. **Incremental visibility**: Every ticket must produce visible, testable functionality. After each ticket, a human should be able to launch the app and observe something new.
+6. **Build verification**: Every ticket must leave the solution in a compilable, runnable state. Run `dotnet build` after every ticket to verify.
+
+7. **Incremental visibility**: Every ticket must produce visible, testable functionality. After each ticket, a human should be able to launch the app and observe something new.
 
 ---
 
