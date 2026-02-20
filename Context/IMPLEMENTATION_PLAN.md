@@ -332,6 +332,8 @@ Foreground (Error):         #f44747
 Foreground (Warning):       #cca700
 Foreground (Success):       #89d185
 
+Accent:                     #007acc  (universal accent — status bar, activity bar indicator, menu selection highlight, focus rings, active tab indicators, all interactive accents)
+
 Border (Primary):           #2b2b2b
 Border (Focus):             #007fd4
 Border (Active Tab):        #1f1f1f (bottom border of active tab, matches editor bg)
@@ -904,7 +906,7 @@ For a developer to create a Vido plugin:
 **Tasks**:
 1. Create `ActivityBar.xaml` — vertical icon strip on far left (48px wide)
    - Three icons: Explorer (files), Extensions (puzzle piece), Settings (gear)
-   - Active icon has white left border indicator (2px)
+   - Active icon has blue left border indicator (2px)
    - Inactive icons are dimmed (#9d9d9d)
    - Click toggles active sidebar panel (or hides sidebar if clicking active icon again)
 2. Create `SidebarPanel.xaml` — container adjacent to activity bar

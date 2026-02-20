@@ -1,0 +1,31 @@
+<UserControl x:Class="Vido.Views.Controls.SidebarView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource SidebarBackgroundBrush}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="LayoutStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <DockPanel>
+        <!-- Sidebar header -->
+        <TextBlock DockPanel.Dock="Top"
+                   Text="{Binding HeaderText}"
+                   Style="{StaticResource SidebarHeaderStyle}" />
+
+        <!-- Panel content area — will be populated by later tickets -->
+        <Border>
+            <TextBlock Text="No content"
+                       Foreground="{DynamicResource DisabledForegroundBrush}"
+                       FontFamily="Segoe UI"
+                       FontSize="13"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Margin="0,40,0,0" />
+        </Border>
+    </DockPanel>
+</UserControl>
