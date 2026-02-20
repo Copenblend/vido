@@ -17,15 +17,7 @@
                    Text="{Binding HeaderText}"
                    Style="{StaticResource SidebarHeaderStyle}" />
 
-        <!-- Panel content area — will be populated by later tickets -->
-        <Border>
-            <TextBlock Text="No content"
-                       Foreground="{DynamicResource DisabledForegroundBrush}"
-                       FontFamily="Segoe UI"
-                       FontSize="13"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       Margin="0,40,0,0" />
-        </Border>
+        <!-- Panel content area — populated by MainWindow based on active panel -->
+        <ContentPresenter x:Name="PanelHost" />
     </DockPanel>
 </UserControl>

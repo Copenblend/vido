@@ -1,13 +1,16 @@
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Vido.Core.Events;
+using Vido.Core.FileSystem;
 using Vido.Core.Logging;
 using Vido.Core.Settings;
 using Vido.Core.State;
 using Vido.Services.Events;
+using Vido.Services.FileSystem;
 using Vido.Services.Logging;
 using Vido.Services.Settings;
 using Vido.Services.State;
+using Vido.ViewModels;
 using Vido.Views;
 
 namespace Vido.App;
@@ -61,6 +64,12 @@ public partial class App : Application
         services.AddSingleton<ILogService, LogService>();
         services.AddSingleton<ISettingsService, SettingsService>();
         services.AddSingleton<IStateService, StateService>();
+
+        // File system
+        services.AddSingleton<IFileSystemService, FileSystemService>();
+
+        // ViewModels
+        services.AddSingleton<FileExplorerViewModel>();
 
         // Windows
         services.AddSingleton<MainWindow>();

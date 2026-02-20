@@ -8,6 +8,7 @@ using Vido.Core.Settings;
 using Vido.Core.State;
 using Vido.Core.Windowing;
 using Vido.ViewModels;
+using Vido.Views.Panels;
 using Vido.Views.Services;
 
 namespace Vido.Views;
@@ -23,20 +24,27 @@ public partial class MainWindow : Window
 
     private readonly IStateService _stateService;
     private readonly ISettingsService _settingsService;
+    private readonly FileExplorerViewModel _fileExplorerViewModel;
 
     private TitleBarViewModel? _titleBarViewModel;
     private ActivityBarViewModel? _activityBarViewModel;
     private SidebarViewModel? _sidebarViewModel;
+    private FileExplorerPanel? _fileExplorerPanel;
 
-    public MainWindow(IStateService stateService, ISettingsService settingsService)
+    public MainWindow(
+        IStateService stateService,
+        ISettingsService settingsService,
+        FileExplorerViewModel fileExplorerViewModel)
     {
         _stateService = stateService;
         _settingsService = settingsService;
+        _fileExplorerViewModel = fileExplorerViewModel;
 
         InitializeComponent();
         SetupWindowChrome();
         SetupTitleBar();
         SetupLayout();
+        SetupFileExplorer();
         RestoreWindowState();
     }
 
@@ -90,6 +98,66 @@ public partial class MainWindow : Window
         ActivityBar.UpdateActiveStates();
     }
 
+    private void SetupFileExplorer()
+    {
+        _fileExplorerPanel = new FileExplorerPanel
+        {
+            DataContext = _fileExplorerViewModel
+        };
+
+        // Wire title bar folder events
+        TitleBar.FolderOpened += OnFolderOpened;
+        TitleBar.FolderClosed += OnFolderClosed;
+
+        // Wire the "Open Folder" button inside the explorer panel
+        _fileExplorerPanel.OpenFolderRequested += ShowOpenFolderDialog;
+
+        // Subscribe to VM changes to update Close Folder menu state
+        _fileExplorerViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(FileExplorerViewModel.HasFolderOpen))
+                TitleBar.SetCloseFolderEnabled(_fileExplorerViewModel.HasFolderOpen);
+        };
+
+        // Set the explorer panel as the initial sidebar content
+        Sidebar.SetPanelContent(_fileExplorerPanel);
+
+        // Restore last opened folder from state
+        _fileExplorerViewModel.RestoreLastFolder();
+        TitleBar.SetCloseFolderEnabled(_fileExplorerViewModel.HasFolderOpen);
+    }
+
+    private void ShowOpenFolderDialog()
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "Open Folder"
+        };
+
+        if (dialog.ShowDialog(this) == true && !string.IsNullOrEmpty(dialog.FolderName))
+        {
+            OnFolderOpened(dialog.FolderName);
+        }
+    }
+
+    private void OnFolderOpened(string path)
+    {
+        _fileExplorerViewModel.OpenFolder(path);
+
+        // Ensure sidebar is visible and Explorer panel is active
+        if (_activityBarViewModel is not null)
+        {
+            _activityBarViewModel.ActivePanel = SidebarPanelKind.Explorer;
+            _activityBarViewModel.IsSidebarVisible = true;
+            OnPanelChanged(this, new RoutedEventArgs());
+        }
+    }
+
+    private void OnFolderClosed()
+    {
+        _fileExplorerViewModel.CloseFolder();
+    }
+
     private void OnPanelChanged(object sender, RoutedEventArgs e)
     {
         if (_activityBarViewModel is null || _sidebarViewModel is null)
@@ -104,6 +172,18 @@ public partial class MainWindow : Window
             SidebarColumn.MinWidth = 170;
             SidebarColumn.MaxWidth = 600;
             _sidebarViewModel.SetPanel(_activityBarViewModel.ActivePanel);
+
+            // Switch panel content based on active panel
+            switch (_activityBarViewModel.ActivePanel)
+            {
+                case SidebarPanelKind.Explorer:
+                    Sidebar.SetPanelContent(_fileExplorerPanel);
+                    break;
+                default:
+                    // Future panels (Extensions, Settings) will be added here
+                    Sidebar.SetPanelContent(null);
+                    break;
+            }
         }
         else
         {
