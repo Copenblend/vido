@@ -4,6 +4,29 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-005
+- Created IEventBus interface and EventBus implementation — thread-safe publish/subscribe with IDisposable subscriptions
+- Created ILogService interface and LogService implementation — thread-safe in-memory logging with Debug/Info/Warning/Error levels and EntryAdded event
+- Created AppSettings model with sensible defaults for volume, playback, UI layout, file explorer, and general preferences
+- Created ISettingsService interface and SettingsService implementation — JSON persistence to %APPDATA%/Vido/settings.json with 500ms debounced saves
+- Created AppState model for window geometry, last session info, and active sidebar panel
+- Created IStateService interface and StateService implementation — JSON persistence to %APPDATA%/Vido/state.json with SemaphoreSlim concurrency protection
+- Registered all services as singletons in DI container (App.xaml.cs)
+- Settings and state are loaded asynchronously before MainWindow shows; saved on exit
+- MainWindow restores window position, size, and maximized state from persisted AppState on startup
+- MainWindow saves window geometry (using RestoreBounds when maximized) on close
+- Added AllowNamedFloatingPointLiterals to StateService JSON options for NaN default support
+- Added 28 unit tests: EventBusTests (8), LogServiceTests (9), SettingsServiceTests (6), StateServiceTests (5) — all passing
+
+### vi-005 Polish
+- Fixed GridSplitter divider between sidebar and editor: swapped Z-order so 1px line renders on top of transparent hit area
+- Fixed settings gear icon center circle vertical alignment (Canvas.Top 8.8 → 7.8) to match gear path center
+- Rounded all icon corners: Explorer rectangles (RadiusX/Y=1.5), Extensions path (StrokeLineJoin=Round), Extensions rectangle (RadiusX/Y=1), explorer lines (round line caps), window control icons (minimize/close round caps, maximize RadiusX/Y=1.5), submenu arrows (round joins and caps)
+- Fixed menu targeting: stretched Menu to fill full 30px title bar height for larger click targets
+- Fixed menu dropdown immediately closing: reduced popup top margin (8→2) and added VerticalOffset=-2 to eliminate dead zone between button and dropdown
+- Fixed maximized window extending off-screen: added MonitorFromWindow/GetMonitorInfo to WM_GETMINMAXINFO handler to constrain ptMaxPosition and ptMaxSize to the monitor's working area
+- Window border (1px) now hidden when maximized (no visible frame at screen edges)
+
 ### vi-001
 - Created solution structure with 7 projects: Core, Services, ViewModels, Views, PluginHost, App, Tests
 - Frameless WPF MainWindow with VS Code Dark Modern background (#1f1f1f)

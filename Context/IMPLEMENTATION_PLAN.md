@@ -822,6 +822,8 @@ For a developer to create a Vido plugin:
    - List each meaningful change as a bullet point under that ticket
    - When a release is cut (human action), the `[Unreleased]` section becomes a versioned section and a new empty `[Unreleased]` is added above
 
+10. **Post-ticket dead code cleanup**: After implementing every ticket, the developer AI MUST perform a dedicated code cleanup pass. This means searching for dead code that was added as part of that ticket only — methods, properties, classes, using directives, XAML elements, resource entries, or DI registrations that may have become unnecessary over the course of developing that ticket. The goal is to ensure the solution stays very clean and contains no vestigial code from mid-ticket iterations. This cleanup is mandatory even if the ticket was implemented in a single pass — review all new code with fresh eyes before marking the ticket complete.
+
 ---
 
 ### vi-001: Solution Scaffold & Empty Window
