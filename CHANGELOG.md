@@ -44,3 +44,29 @@ All notable changes to the Vido project will be documented in this file.
 - Dropdown and submenu item highlights now have 4px corner radius with 4px horizontal inset, matching VS Code style
 - Menu items without handlers are visible but disabled
 - Exit menu item is functional (shuts down the application)
+
+### vi-004
+- Implemented VS Code-style core layout: Title Bar → Activity Bar | Sidebar | Editor Area → Status Bar
+- Created ActivityBarView (48px vertical icon strip) with Explorer, Extensions, and Settings icons
+- Active activity bar icon shows white left border indicator (2px) and white icon; inactive icons are dimmed (#9d9d9d)
+- Clicking active icon toggles sidebar visibility; clicking different icon switches panel and shows sidebar
+- Created SidebarView (300px default, resizable 170–600px via GridSplitter) with panel header text
+- Sidebar header updates to match selected panel: EXPLORER, EXTENSIONS, SETTINGS
+- Created StatusBarView (22px, #181818 background) — empty placeholder for later tickets
+- Editor area shows "Open a video file to begin" placeholder text centered in remaining space
+- Created LayoutStyles.xaml with ActivityBarButtonStyle, SidebarHeaderStyle, and VerticalSplitterStyle
+- Created SidebarPanelKind enum in Vido.Core.Layout for panel identification
+- Created ActivityBarViewModel with SelectPanel command handling toggle-on-self and switch-on-different logic
+- Created SidebarViewModel with SetPanel method that updates header text
+- Added 17 unit tests: 14 for ActivityBarViewModel, 3 for SidebarViewModel (all passing)
+- Changed status bar background to VS Code blue (#007acc)
+- Changed activity bar active indicator from white to VS Code blue (#007acc) — new AccentColor/AccentBrush design token
+- Activity bar hover highlight now only covers the icon area (rounded 4px inset) instead of the full button, so the left indicator is never obscured
+- Added 1px divider between title bar and content area
+- Changed title bar background to #181818 to match sidebar/activity bar chrome color
+- Increased sidebar GridSplitter transparent hit area from 5px to 11px for easier resize grabbing
+- Consolidated all accent colors into single AccentColor (#007acc) / AccentBrush — used for status bar, activity bar indicator, and menu dropdown selection highlights
+- Menu dropdown and submenu item hover highlights now use AccentBrush (#007acc) instead of SelectionBackgroundBrush
+- Added Accent color (#007acc) to implementation plan design system as the universal accent token
+- Redesigned all activity bar icons as thin-line stroke-based paths matching VS Code Codicon style: Explorer (stacked document pages with content lines), Extensions (puzzle-piece L-shape with detached block), Settings (gear outline with center circle)
+- Activity bar hover no longer shows background highlight; instead inactive icons brighten from grey (#9d9d9d) to white (#ffffff) on hover, matching VS Code behavior

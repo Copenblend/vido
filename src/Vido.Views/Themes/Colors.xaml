@@ -8,8 +8,8 @@
     <Color x:Key="EditorBackgroundColor">#1f1f1f</Color>
     <Color x:Key="SidebarBackgroundColor">#181818</Color>
     <Color x:Key="ActivityBarBackgroundColor">#181818</Color>
-    <Color x:Key="TitleBarBackgroundColor">#1f1f1f</Color>
-    <Color x:Key="StatusBarBackgroundColor">#181818</Color>
+    <Color x:Key="TitleBarBackgroundColor">#181818</Color>
+    <Color x:Key="StatusBarBackgroundColor">#007acc</Color>  <!-- Uses AccentColor value -->
     <Color x:Key="PanelBackgroundColor">#1f1f1f</Color>
     <Color x:Key="InputBackgroundColor">#313131</Color>
     <Color x:Key="DropdownBackgroundColor">#313131</Color>
@@ -37,6 +37,9 @@
     <Color x:Key="ErrorForegroundColor">#f44747</Color>
     <Color x:Key="WarningForegroundColor">#cca700</Color>
     <Color x:Key="SuccessForegroundColor">#89d185</Color>
+
+    <!-- Accent -->
+    <Color x:Key="AccentColor">#007acc</Color>
 
     <!-- Borders -->
     <Color x:Key="PrimaryBorderColor">#2b2b2b</Color>

@@ -1,0 +1,136 @@
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Shapes;
+using Vido.Core.Layout;
+using Vido.ViewModels;
+
+namespace Vido.Views.Controls;
+
+/// <summary>
+/// Activity bar — vertical icon strip on the far left.
+/// Manages active/inactive icon states and hover brightening behavior.
+/// </summary>
+public partial class ActivityBarView : UserControl
+{
+    public ActivityBarView()
+    {
+        InitializeComponent();
+    }
+
+    /// <summary>
+    /// Updates all icon visual states to reflect which panel is active.
+    /// Called after the ViewModel processes a panel selection.
+    /// </summary>
+    public void UpdateActiveStates()
+    {
+        if (DataContext is not ActivityBarViewModel vm)
+            return;
+
+        SetButtonActive(ExplorerButton, vm.IsPanelActive(SidebarPanelKind.Explorer) && vm.IsSidebarVisible);
+        SetButtonActive(ExtensionsButton, vm.IsPanelActive(SidebarPanelKind.Extensions) && vm.IsSidebarVisible);
+        SetButtonActive(SettingsButton, vm.IsPanelActive(SidebarPanelKind.Settings) && vm.IsSidebarVisible);
+    }
+
+    private void OnExplorerClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is ActivityBarViewModel vm)
+        {
+            vm.SelectPanelCommand.Execute(SidebarPanelKind.Explorer);
+            UpdateActiveStates();
+            RaisePanelChanged();
+        }
+    }
+
+    private void OnExtensionsClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is ActivityBarViewModel vm)
+        {
+            vm.SelectPanelCommand.Execute(SidebarPanelKind.Extensions);
+            UpdateActiveStates();
+            RaisePanelChanged();
+        }
+    }
+
+    private void OnSettingsClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is ActivityBarViewModel vm)
+        {
+            vm.SelectPanelCommand.Execute(SidebarPanelKind.Settings);
+            UpdateActiveStates();
+            RaisePanelChanged();
+        }
+    }
+
+    /// <summary>
+    /// Routed event raised when the active panel or sidebar visibility changes.
+    /// The parent <see cref="MainWindow"/> listens to this to update layout.
+    /// </summary>
+    public static readonly RoutedEvent PanelChangedEvent =
+        EventManager.RegisterRoutedEvent(
+            nameof(PanelChanged),
+            RoutingStrategy.Bubble,
+            typeof(RoutedEventHandler),
+            typeof(ActivityBarView));
+
+    public event RoutedEventHandler PanelChanged
+    {
+        add => AddHandler(PanelChangedEvent, value);
+        remove => RemoveHandler(PanelChangedEvent, value);
+    }
+
+    private void RaisePanelChanged()
+    {
+        RaiseEvent(new RoutedEventArgs(PanelChangedEvent));
+    }
+
+    private void SetButtonActive(Button button, bool isActive)
+    {
+        button.Tag = isActive ? "Active" : null;
+        SetIconColor(button, isActive);
+
+        // Wire hover events for non-active icons to "light up" on hover
+        button.MouseEnter -= OnIconMouseEnter;
+        button.MouseLeave -= OnIconMouseLeave;
+        if (!isActive)
+        {
+            button.MouseEnter += OnIconMouseEnter;
+            button.MouseLeave += OnIconMouseLeave;
+        }
+    }
+
+    private void OnIconMouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (sender is Button button)
+            SetIconColor(button, bright: true);
+    }
+
+    private void OnIconMouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+    {
+        if (sender is Button button)
+            SetIconColor(button, bright: false);
+    }
+
+    /// <summary>
+    /// Sets all stroke elements inside a button's Canvas to the
+    /// active (white) or inactive (grey) icon brush.
+    /// Only updates Stroke — Fill is left unchanged to preserve
+    /// any background-colored occlusion fills.
+    /// </summary>
+    private static void SetIconColor(Button button, bool bright)
+    {
+        var brushKey = bright ? "ActiveIconBrush" : "InactiveIconBrush";
+        var brush = (Brush)button.FindResource(brushKey);
+
+        if (button.Content is Canvas canvas)
+        {
+            foreach (var child in canvas.Children)
+            {
+                if (child is Shape shape && shape.Stroke != null)
+                {
+                    shape.Stroke = brush;
+                }
+            }
+        }
+    }
+}

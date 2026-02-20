@@ -38,6 +38,9 @@
     <SolidColorBrush x:Key="WarningForegroundBrush" Color="{StaticResource WarningForegroundColor}" />
     <SolidColorBrush x:Key="SuccessForegroundBrush" Color="{StaticResource SuccessForegroundColor}" />
 
+    <!-- Accent Brushes -->
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+
     <!-- Border Brushes -->
     <SolidColorBrush x:Key="PrimaryBorderBrush" Color="{StaticResource PrimaryBorderColor}" />
     <SolidColorBrush x:Key="FocusBorderBrush" Color="{StaticResource FocusBorderColor}" />

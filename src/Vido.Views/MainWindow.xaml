@@ -13,6 +13,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/Brushes.xaml" />
+                <ResourceDictionary Source="Controls/LayoutStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
@@ -20,23 +21,63 @@
     <Border BorderBrush="{DynamicResource PrimaryBorderBrush}" BorderThickness="1">
         <Grid>
             <Grid.RowDefinitions>
+                <!-- Title bar -->
                 <RowDefinition Height="30" />
+                <!-- Content area (activity bar + sidebar + editor) -->
                 <RowDefinition Height="*" />
+                <!-- Status bar -->
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <!-- Title Bar -->
             <controls:TitleBarView x:Name="TitleBar" Grid.Row="0" />
 
-            <!-- Main Content Area (placeholder for subsequent tickets) -->
+            <!-- Divider between title bar and content -->
+            <Border Grid.Row="0"
+                    VerticalAlignment="Bottom"
+                    Height="1"
+                    Background="{DynamicResource PrimaryBorderBrush}" />
+
+            <!-- Main Content Area -->
             <Grid Grid.Row="1">
-                <TextBlock Text="Vido"
-                           Foreground="#555555"
-                           FontSize="48"
-                           FontWeight="Light"
-                           FontFamily="Segoe UI"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center" />
+                <Grid.ColumnDefinitions>
+                    <!-- Activity bar -->
+                    <ColumnDefinition Width="Auto" />
+                    <!-- Sidebar -->
+                    <ColumnDefinition x:Name="SidebarColumn" Width="300" MinWidth="170" MaxWidth="600" />
+                    <!-- Splitter -->
+                    <ColumnDefinition Width="Auto" />
+                    <!-- Editor area -->
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Activity Bar -->
+                <controls:ActivityBarView x:Name="ActivityBar"
+                                          Grid.Column="0"
+                                          PanelChanged="OnPanelChanged" />
+
+                <!-- Sidebar -->
+                <controls:SidebarView x:Name="Sidebar"
+                                      Grid.Column="1" />
+
+                <!-- Splitter between sidebar and editor -->
+                <GridSplitter Grid.Column="2"
+                              Style="{StaticResource VerticalSplitterStyle}" />
+
+                <!-- Editor Area -->
+                <Grid Grid.Column="3"
+                      Background="{DynamicResource EditorBackgroundBrush}">
+                    <TextBlock Text="Open a video file to begin"
+                               Foreground="{DynamicResource DisabledForegroundBrush}"
+                               FontSize="16"
+                               FontFamily="Segoe UI"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                </Grid>
             </Grid>
+
+            <!-- Status Bar -->
+            <controls:StatusBarView Grid.Row="2" />
         </Grid>
     </Border>
 </Window>

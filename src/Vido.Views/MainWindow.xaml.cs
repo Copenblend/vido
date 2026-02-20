@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shell;
+using Vido.Core.Layout;
 using Vido.Core.Windowing;
 using Vido.ViewModels;
 using Vido.Views.Services;
@@ -19,12 +20,15 @@ public partial class MainWindow : Window
     private const int MinWindowHeight = 600;
 
     private TitleBarViewModel? _titleBarViewModel;
+    private ActivityBarViewModel? _activityBarViewModel;
+    private SidebarViewModel? _sidebarViewModel;
 
     public MainWindow()
     {
         InitializeComponent();
         SetupWindowChrome();
         SetupTitleBar();
+        SetupLayout();
     }
 
     private void SetupWindowChrome()
@@ -60,6 +64,41 @@ public partial class MainWindow : Window
 
         _titleBarViewModel?.SyncWindowState(appState);
         TitleBar.UpdateWindowState(appState == AppWindowState.Maximized);
+    }
+
+    private void SetupLayout()
+    {
+        _activityBarViewModel = new ActivityBarViewModel();
+        _sidebarViewModel = new SidebarViewModel();
+
+        ActivityBar.DataContext = _activityBarViewModel;
+        Sidebar.DataContext = _sidebarViewModel;
+
+        // Initialize visual states
+        ActivityBar.UpdateActiveStates();
+    }
+
+    private void OnPanelChanged(object sender, RoutedEventArgs e)
+    {
+        if (_activityBarViewModel is null || _sidebarViewModel is null)
+            return;
+
+        // Update sidebar visibility
+        if (_activityBarViewModel.IsSidebarVisible)
+        {
+            Sidebar.Visibility = Visibility.Visible;
+            SidebarColumn.Width = new GridLength(300);
+            SidebarColumn.MinWidth = 170;
+            SidebarColumn.MaxWidth = 600;
+            _sidebarViewModel.SetPanel(_activityBarViewModel.ActivePanel);
+        }
+        else
+        {
+            Sidebar.Visibility = Visibility.Collapsed;
+            SidebarColumn.Width = new GridLength(0);
+            SidebarColumn.MinWidth = 0;
+            SidebarColumn.MaxWidth = 0;
+        }
     }
 
     protected override void OnSourceInitialized(EventArgs e)
