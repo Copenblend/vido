@@ -137,6 +137,7 @@
                 <Path Data="M 0,4.5 L 10,4.5"
                       Stroke="{DynamicResource PrimaryForegroundBrush}"
                       StrokeThickness="1"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                       Width="10" Height="10"
                       Stretch="None" />
             </Button>
@@ -149,6 +150,7 @@
                 <!-- Maximize icon (single rectangle) -->
                 <Grid x:Name="MaximizeIcon">
                     <Rectangle Width="9" Height="9"
+                               RadiusX="1.5" RadiusY="1.5"
                                Stroke="{DynamicResource PrimaryForegroundBrush}"
                                StrokeThickness="1"
                                Fill="Transparent" />
@@ -163,6 +165,7 @@
                 <Path Data="M 0,0 L 10,10 M 10,0 L 0,10"
                       Stroke="{DynamicResource PrimaryForegroundBrush}"
                       StrokeThickness="1"
+                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                       Width="10" Height="10"
                       Stretch="None" />
             </Button>

@@ -61,14 +61,15 @@
             <Setter.Value>
                 <ControlTemplate TargetType="GridSplitter">
                     <Grid>
-                        <!-- Visible 1px line -->
-                        <Border Background="{DynamicResource PrimaryBorderBrush}"
-                                Width="1"
-                                HorizontalAlignment="Center" />
                         <!-- Wider transparent hit area for easier grabbing -->
                         <Border Background="Transparent"
                                 Width="11"
                                 HorizontalAlignment="Center" />
+                        <!-- Visible 1px divider line (rendered on top) -->
+                        <Border Background="{DynamicResource PrimaryBorderBrush}"
+                                Width="1"
+                                HorizontalAlignment="Center"
+                                IsHitTestVisible="False" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>

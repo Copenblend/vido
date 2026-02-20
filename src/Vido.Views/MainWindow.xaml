@@ -18,7 +18,7 @@
         </ResourceDictionary>
     </Window.Resources>
 
-    <Border BorderBrush="{DynamicResource PrimaryBorderBrush}" BorderThickness="1">
+    <Border x:Name="WindowBorder" BorderBrush="{DynamicResource PrimaryBorderBrush}" BorderThickness="1">
         <Grid>
             <Grid.RowDefinitions>
                 <!-- Title bar -->
@@ -56,12 +56,18 @@
                                           Grid.Column="0"
                                           PanelChanged="OnPanelChanged" />
 
+                <!-- Divider between activity bar and sidebar -->
+                <Border x:Name="ActivityBarDivider" Grid.Column="0"
+                        HorizontalAlignment="Right"
+                        Width="1"
+                        Background="{DynamicResource PrimaryBorderBrush}" />
+
                 <!-- Sidebar -->
                 <controls:SidebarView x:Name="Sidebar"
                                       Grid.Column="1" />
 
                 <!-- Splitter between sidebar and editor -->
-                <GridSplitter Grid.Column="2"
+                <GridSplitter x:Name="SidebarSplitter" Grid.Column="2"
                               Style="{StaticResource VerticalSplitterStyle}" />
 
                 <!-- Editor Area -->

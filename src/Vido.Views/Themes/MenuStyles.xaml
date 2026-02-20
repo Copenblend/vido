@@ -15,7 +15,7 @@
         <Setter Property="Foreground" Value="{DynamicResource PrimaryForegroundBrush}" />
         <Setter Property="FontFamily" Value="Segoe UI" />
         <Setter Property="FontSize" Value="13" />
-        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
         <Setter Property="IsMainMenu" Value="True" />
     </Style>
 
@@ -43,13 +43,14 @@
                                AllowsTransparency="True"
                                Focusable="False"
                                PopupAnimation="None"
-                               HorizontalOffset="-1">
+                               HorizontalOffset="-1"
+                               VerticalOffset="-2">
                             <Border Background="{DynamicResource ContextMenuBackgroundBrush}"
                                     BorderBrush="{DynamicResource PrimaryBorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="{StaticResource MenuPopupCornerRadius}"
                                     Padding="0,4"
-                                    Margin="8"
+                                    Margin="8,2,8,8"
                                     SnapsToDevicePixels="True">
                                 <Border.Effect>
                                     <DropShadowEffect Color="Black" Opacity="0.4"
@@ -174,6 +175,8 @@
                                       Data="M 0,0 L 4,3.5 L 0,7"
                                       Stroke="{DynamicResource SecondaryForegroundBrush}"
                                       StrokeThickness="1"
+                                      StrokeLineJoin="Round"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                       VerticalAlignment="Center"
                                       Margin="24,0,0,0" />
                             </Grid>

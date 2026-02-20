@@ -23,20 +23,25 @@
                 <Canvas Width="24" Height="24">
                     <!-- Back page -->
                     <Rectangle Canvas.Left="6" Canvas.Top="2" Width="14" Height="18"
+                               RadiusX="1.5" RadiusY="1.5"
                                Stroke="{DynamicResource ActiveIconBrush}"
                                StrokeThickness="1.2" Fill="Transparent" />
                     <!-- Front page -->
                     <Rectangle Canvas.Left="4" Canvas.Top="4" Width="14" Height="18"
+                               RadiusX="1.5" RadiusY="1.5"
                                Stroke="{DynamicResource ActiveIconBrush}"
                                StrokeThickness="1.2"
                                Fill="{DynamicResource ActivityBarBackgroundBrush}" />
                     <!-- Lines on front page -->
                     <Line Canvas.Left="7" Canvas.Top="9" X2="8" Y2="0"
-                          Stroke="{DynamicResource ActiveIconBrush}" StrokeThickness="1" />
+                          Stroke="{DynamicResource ActiveIconBrush}" StrokeThickness="1"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                     <Line Canvas.Left="7" Canvas.Top="12" X2="8" Y2="0"
-                          Stroke="{DynamicResource ActiveIconBrush}" StrokeThickness="1" />
+                          Stroke="{DynamicResource ActiveIconBrush}" StrokeThickness="1"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                     <Line Canvas.Left="7" Canvas.Top="15" X2="5" Y2="0"
-                          Stroke="{DynamicResource ActiveIconBrush}" StrokeThickness="1" />
+                          Stroke="{DynamicResource ActiveIconBrush}" StrokeThickness="1"
+                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
                 </Canvas>
             </Button>
 
@@ -49,9 +54,11 @@
                     <!-- Main body (L-shape + top-right block) -->
                     <Path Data="M 5,4 L 11,4 L 11,7 L 14,7 L 14,13 L 17,13 L 17,19 L 11,19 L 11,16 L 8,16 L 8,19 L 2,19 L 2,13 L 5,13 L 5,10 L 2,10 L 2,4 Z"
                           Stroke="{DynamicResource InactiveIconBrush}"
-                          StrokeThickness="1.2" Fill="Transparent" />
+                          StrokeThickness="1.2" Fill="Transparent"
+                          StrokeLineJoin="Round" />
                     <!-- Detached top piece -->
                     <Rectangle Canvas.Left="14" Canvas.Top="4" Width="6" Height="6"
+                               RadiusX="1" RadiusY="1"
                                Stroke="{DynamicResource InactiveIconBrush}"
                                StrokeThickness="1.2" Fill="Transparent" />
                 </Canvas>
@@ -70,7 +77,7 @@
                           Stroke="{DynamicResource InactiveIconBrush}"
                           StrokeThickness="1.2" Fill="Transparent"
                           StrokeLineJoin="Round" />
-                    <Ellipse Canvas.Left="9.2" Canvas.Top="8.8" Width="7" Height="7"
+                    <Ellipse Canvas.Left="9.2" Canvas.Top="7.8" Width="7" Height="7"
                              Stroke="{DynamicResource InactiveIconBrush}"
                              StrokeThickness="1.2" Fill="Transparent" />
                 </Canvas>
