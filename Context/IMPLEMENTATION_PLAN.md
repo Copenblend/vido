@@ -752,7 +752,8 @@ For a developer to create a Vido plugin:
 
 1. **After EVERY ticket**, output:
    - **Changelog**: Bullet list of what was added/changed/removed
-   - **Git commit message**: In conventional commit format, e.g., `feat(vi-001): scaffold solution structure and build pipeline`
+   - **Git commit message**: In conventional commit format (see Rule 8 below for detail requirements)
+   - **Update `CHANGELOG.md`** in the workspace root (see Rule 9 below)
 
 2. **After EVERY ticket**, create a markdown test plan at `Context/TEST_PLANS/vi-XXX_test_plan.md` containing:
    - **Manual Tests**: Step-by-step instructions a human can follow to verify the ticket's functionality
@@ -782,6 +783,27 @@ For a developer to create a Vido plugin:
 6. **Build verification**: Every ticket must leave the solution in a compilable, runnable state. Run `dotnet build` after every ticket to verify.
 
 7. **Incremental visibility**: Every ticket must produce visible, testable functionality. After each ticket, a human should be able to launch the app and observe something new.
+
+8. **Detailed git commit messages**: Every commit message must use conventional commit format with a **descriptive body**. The subject line follows `type(scope): short summary`. The body must list every meaningful change, grouped logically. Example:
+   ```
+   feat(vi-002): implement custom title bar with window controls
+
+   - Add TitleBarView UserControl with app icon, title text, and window control buttons
+   - Implement minimize, maximize/restore, and close button functionality
+   - Add double-click title bar to toggle maximize/restore
+   - Create TitleBarViewModel with window state tracking
+   - Register TitleBarView in DI container and integrate into MainWindow layout
+   - Add VS Code Dark Modern hover/active states for window control buttons
+   - Add unit tests for TitleBarViewModel window state logic
+   ```
+   **Never** use single-line commit messages that just restate the ticket title. The commit message should tell a developer exactly what changed without reading the diff.
+
+9. **CHANGELOG.md maintenance**: After EVERY completed ticket, update the `CHANGELOG.md` file in the workspace root. The changelog uses the "Keep a Changelog" format with the following rules:
+   - Group entries under an `## [Unreleased]` section at the top
+   - Use subsections: `### Added`, `### Changed`, `### Fixed`, `### Removed` (only include sections that apply)
+   - Each entry should be a concise but descriptive bullet point
+   - Include the ticket ID in parentheses at the end of each entry, e.g., `- Custom title bar with minimize/maximize/close controls (vi-002)`
+   - When a release is cut (human action), the `[Unreleased]` section becomes a versioned section and a new empty `[Unreleased]` is added above
 
 ---
 

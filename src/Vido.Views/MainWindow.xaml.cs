@@ -1,5 +1,5 @@
+using System.Runtime.InteropServices;
 using System.Windows;
-using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shell;
@@ -28,7 +28,7 @@ public partial class MainWindow : Window
             CaptionHeight = 30,
             ResizeBorderThickness = new Thickness(6),
             CornerRadius = new CornerRadius(0),
-            GlassFrameThickness = new Thickness(0),
+            GlassFrameThickness = new Thickness(-1),
             UseAeroCaptionButtons = false
         };
         WindowChrome.SetWindowChrome(this, chrome);
@@ -37,18 +37,49 @@ public partial class MainWindow : Window
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
-        EnforceMinimumSize();
+
+        var hwnd = new WindowInteropHelper(this).Handle;
+        var source = HwndSource.FromHwnd(hwnd);
+        source?.AddHook(WndProc);
+
+        ApplyDarkDwmSurface(hwnd);
     }
 
-    private void EnforceMinimumSize()
+    /// <summary>
+    /// Configures the DWM composition surface to use dark colors.
+    /// GlassFrameThickness=-1 extends the DWM surface over the entire client area,
+    /// eliminating flicker during resize. These DWM attributes ensure that surface
+    /// is dark instead of the default white, so fast resizing doesn't reveal
+    /// bright edges before WPF can render.
+    /// </summary>
+    private static void ApplyDarkDwmSurface(IntPtr hwnd)
     {
-        var source = HwndSource.FromHwnd(new WindowInteropHelper(this).Handle);
-        source?.AddHook(WndProc);
+        // Enable immersive dark mode — makes DWM use dark surface (Win10 1809+)
+        const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
+        var darkMode = 1;
+        DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkMode, sizeof(int));
+
+        // Set caption color to our exact dark background (Win11 22000+, ignored on older)
+        const int DWMWA_CAPTION_COLOR = 35;
+        var captionColor = 0x001F1F1F; // COLORREF: 0x00BBGGRR — matches #1f1f1f
+        DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref captionColor, sizeof(int));
+
+        // Set class background brush as fallback for any Win32 background painting
+        const int GclpHbrBackground = -10;
+        var darkBrush = CreateSolidBrush(0x001F1F1F);
+        SetClassLongPtr(hwnd, GclpHbrBackground, darkBrush);
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
     {
         const int WM_GETMINMAXINFO = 0x0024;
+        const int WM_ERASEBKGND = 0x0014;
+
+        if (msg == WM_ERASEBKGND)
+        {
+            handled = true;
+            return new IntPtr(1);
+        }
 
         if (msg == WM_GETMINMAXINFO)
         {
@@ -56,26 +87,35 @@ public partial class MainWindow : Window
             var minWidth = (int)(MinWindowWidth * dpi.DpiScaleX);
             var minHeight = (int)(MinWindowHeight * dpi.DpiScaleY);
 
-            var mmi = System.Runtime.InteropServices.Marshal.PtrToStructure<MINMAXINFO>(lParam);
+            var mmi = Marshal.PtrToStructure<MINMAXINFO>(lParam);
             mmi.ptMinTrackSize.X = minWidth;
             mmi.ptMinTrackSize.Y = minHeight;
-            System.Runtime.InteropServices.Marshal.StructureToPtr(mmi, lParam, true);
+            Marshal.StructureToPtr(mmi, lParam, true);
             handled = true;
         }
 
         return IntPtr.Zero;
     }
 
-    #region Native Interop Types
+    #region Native Interop
 
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    [DllImport("dwmapi.dll", PreserveSig = true)]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+
+    [DllImport("gdi32.dll")]
+    private static extern IntPtr CreateSolidBrush(uint color);
+
+    [DllImport("user32.dll", EntryPoint = "SetClassLongPtr")]
+    private static extern IntPtr SetClassLongPtr(IntPtr hwnd, int index, IntPtr newLong);
+
+    [StructLayout(LayoutKind.Sequential)]
     private struct POINT
     {
         public int X;
         public int Y;
     }
 
-    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential)]
     private struct MINMAXINFO
     {
         public POINT ptReserved;
