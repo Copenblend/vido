@@ -1,0 +1,47 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Colors.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- Background Brushes -->
+    <SolidColorBrush x:Key="EditorBackgroundBrush" Color="{StaticResource EditorBackgroundColor}" />
+    <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="{StaticResource SidebarBackgroundColor}" />
+    <SolidColorBrush x:Key="ActivityBarBackgroundBrush" Color="{StaticResource ActivityBarBackgroundColor}" />
+    <SolidColorBrush x:Key="TitleBarBackgroundBrush" Color="{StaticResource TitleBarBackgroundColor}" />
+    <SolidColorBrush x:Key="StatusBarBackgroundBrush" Color="{StaticResource StatusBarBackgroundColor}" />
+    <SolidColorBrush x:Key="PanelBackgroundBrush" Color="{StaticResource PanelBackgroundColor}" />
+    <SolidColorBrush x:Key="InputBackgroundBrush" Color="{StaticResource InputBackgroundColor}" />
+    <SolidColorBrush x:Key="DropdownBackgroundBrush" Color="{StaticResource DropdownBackgroundColor}" />
+    <SolidColorBrush x:Key="TabActiveBackgroundBrush" Color="{StaticResource TabActiveBackgroundColor}" />
+    <SolidColorBrush x:Key="TabInactiveBackgroundBrush" Color="{StaticResource TabInactiveBackgroundColor}" />
+    <SolidColorBrush x:Key="MenuBackgroundBrush" Color="{StaticResource MenuBackgroundColor}" />
+    <SolidColorBrush x:Key="HoverBackgroundBrush" Color="{StaticResource HoverBackgroundColor}" />
+    <SolidColorBrush x:Key="SelectionBackgroundBrush" Color="{StaticResource SelectionBackgroundColor}" />
+    <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="{StaticResource ButtonBackgroundColor}" />
+    <SolidColorBrush x:Key="ButtonHoverBackgroundBrush" Color="{StaticResource ButtonHoverBackgroundColor}" />
+    <SolidColorBrush x:Key="ContextMenuBackgroundBrush" Color="{StaticResource ContextMenuBackgroundColor}" />
+
+    <!-- Window Control Brushes -->
+    <SolidColorBrush x:Key="WindowControlHoverBackgroundBrush" Color="{StaticResource WindowControlHoverBackgroundColor}" />
+    <SolidColorBrush x:Key="WindowCloseHoverBackgroundBrush" Color="{StaticResource WindowCloseHoverBackgroundColor}" />
+
+    <!-- Foreground Brushes -->
+    <SolidColorBrush x:Key="PrimaryForegroundBrush" Color="{StaticResource PrimaryForegroundColor}" />
+    <SolidColorBrush x:Key="SecondaryForegroundBrush" Color="{StaticResource SecondaryForegroundColor}" />
+    <SolidColorBrush x:Key="DisabledForegroundBrush" Color="{StaticResource DisabledForegroundColor}" />
+    <SolidColorBrush x:Key="ActiveIconBrush" Color="{StaticResource ActiveIconColor}" />
+    <SolidColorBrush x:Key="InactiveIconBrush" Color="{StaticResource InactiveIconColor}" />
+    <SolidColorBrush x:Key="LinkForegroundBrush" Color="{StaticResource LinkForegroundColor}" />
+    <SolidColorBrush x:Key="ErrorForegroundBrush" Color="{StaticResource ErrorForegroundColor}" />
+    <SolidColorBrush x:Key="WarningForegroundBrush" Color="{StaticResource WarningForegroundColor}" />
+    <SolidColorBrush x:Key="SuccessForegroundBrush" Color="{StaticResource SuccessForegroundColor}" />
+
+    <!-- Border Brushes -->
+    <SolidColorBrush x:Key="PrimaryBorderBrush" Color="{StaticResource PrimaryBorderColor}" />
+    <SolidColorBrush x:Key="FocusBorderBrush" Color="{StaticResource FocusBorderColor}" />
+    <SolidColorBrush x:Key="ActiveTabBorderBrush" Color="{StaticResource ActiveTabBorderColor}" />
+    <SolidColorBrush x:Key="PanelSeparatorBrush" Color="{StaticResource PanelSeparatorColor}" />
+
+</ResourceDictionary>
