@@ -337,6 +337,9 @@ Border (Focus):             #007fd4
 Border (Active Tab):        #1f1f1f (bottom border of active tab, matches editor bg)
 Border (Panel Separator):   #2b2b2b
 
+Corner Radius (Menu Popup): 6px  (dropdown menus, context menus)
+Corner Radius (Menu Item):  4px  (top-level menu highlight, dropdown item highlight)
+
 Font Family:                Segoe UI (UI), Cascadia Code / Consolas (monospace)
 Font Size:                  13px (UI), 14px (editor/console)
 Font Weight:                400 (normal), 600 (bold for labels)
