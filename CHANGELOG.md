@@ -4,6 +4,19 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-b-002
+- Refactored plugin system infrastructure to align with PLUGIN_REQUIREMENTS.md
+- Enhanced SettingContribution model: added `EnumValues` (List<string>), `Section` (optional string), `ForceOverride` (bool), and `ValidTypes` static set (boolean, string, number, enum)
+- Added `Reset(key)` and `ResetAll()` to IPluginSettingsStore and PluginSettingsStore with SettingChanged notifications and persistence
+- Implemented forceOverride logic in PluginHost.ActivatePlugin — settings with `forceOverride: true` have their developer default written on every activation
+- Added input validation to all PluginContext registration methods (ArgumentNullException / ArgumentException for null/empty IDs, factories, handlers, extensions)
+- Hardened PluginManifestLoader validation: settings type validation (must be boolean/string/number/enum), enum requires non-empty enumValues, settings id uniqueness, settings id vs contribution id collision, settings title required
+- Created PluginIconConstants with documented size constants: SidebarIconSize (24), FileIconSize (16), ToolbarIconSize (16)
+- Created PluginSafeInvoke utility: SafeCreateView wraps view factories with try-catch returning error placeholders, SafeInvoke wraps plugin actions with error logging
+- Added PluginRegistryUrls list to AppSettings with OfficialRegistryUrl constant, file:// support for local dev, included in ResetToDefaults
+- Added 36 new unit tests across PluginSettingsStoreTests (Reset, ResetAll), PluginContextTests (input validation), PluginManifestLoaderTests (settings validation), PluginSafeInvokeTests, PluginInfrastructureTests (AppSettings registry URLs, icon constants, SettingContribution model), ResetToDefaultsTests (PluginRegistryUrls)
+- Total tests: 620 passed (4 pre-existing env-dependent failures), 0 warnings, 0 errors
+
 ### vi-017
 - Implemented drag-and-drop support for video files, folders, and unsupported file types from Windows Explorer
 - Video files dropped on the player area load and play immediately, opening the parent folder in the file explorer

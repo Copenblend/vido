@@ -275,4 +275,97 @@ public class PluginContextTests
         Assert.Empty(_contributions.GetBottomPanels());
         Assert.Empty(_contributions.GetStatusBarItems());
     }
+
+    // ── Input validation ──
+
+    [Fact]
+    public void RegisterSidebarPanel_NullId_Throws()
+    {
+        var ctx = CreateContext();
+        Assert.Throws<ArgumentNullException>(() => ctx.RegisterSidebarPanel(null!, () => "v"));
+    }
+
+    [Fact]
+    public void RegisterSidebarPanel_EmptyId_Throws()
+    {
+        var ctx = CreateContext();
+        Assert.Throws<ArgumentException>(() => ctx.RegisterSidebarPanel("", () => "v"));
+    }
+
+    [Fact]
+    public void RegisterSidebarPanel_NullFactory_Throws()
+    {
+        var ctx = CreateContext();
+        Assert.Throws<ArgumentNullException>(() => ctx.RegisterSidebarPanel("sidebar1", null!));
+    }
+
+    [Fact]
+    public void RegisterBottomPanel_NullFactory_Throws()
+    {
+        var ctx = CreateContext();
+        Assert.Throws<ArgumentNullException>(() => ctx.RegisterBottomPanel("bottom1", null!));
+    }
+
+    [Fact]
+    public void RegisterRightPanel_EmptyId_Throws()
+    {
+        var ctx = CreateContext();
+        Assert.Throws<ArgumentException>(() => ctx.RegisterRightPanel(" ", () => "v"));
+    }
+
+    [Fact]
+    public void RegisterStatusBarItem_NullFactory_Throws()
+    {
+        var ctx = CreateContext();
+        Assert.Throws<ArgumentNullException>(() => ctx.RegisterStatusBarItem("status1", null!));
+    }
+
+    [Fact]
+    public void RegisterToolbarButtonHandler_NullHandler_Throws()
+    {
+        var ctx = CreateContext();
+        Assert.Throws<ArgumentNullException>(() => ctx.RegisterToolbarButtonHandler("btn1", null!));
+    }
+
+    [Fact]
+    public void RegisterContextMenuHandler_NullHandler_Throws()
+    {
+        var ctx = CreateContext();
+        Assert.Throws<ArgumentNullException>(() => ctx.RegisterContextMenuHandler("ctx1", null!));
+    }
+
+    [Fact]
+    public void RegisterFileHandler_EmptyExtensions_Throws()
+    {
+        var ctx = CreateContext();
+        Assert.Throws<ArgumentException>(() => ctx.RegisterFileHandler([], _ => { }));
+    }
+
+    [Fact]
+    public void RegisterFileHandler_NullHandler_Throws()
+    {
+        var ctx = CreateContext();
+        Assert.Throws<ArgumentNullException>(() => ctx.RegisterFileHandler([".txt"], null!));
+    }
+
+    [Fact]
+    public void RegisterFileIcons_EmptyDict_Throws()
+    {
+        var ctx = CreateContext();
+        Assert.Throws<ArgumentException>(() => ctx.RegisterFileIcons(new Dictionary<string, string>()));
+    }
+
+    [Fact]
+    public void RegisterKeyBinding_NullBinding_Throws()
+    {
+        var ctx = CreateContext();
+        Assert.Throws<ArgumentNullException>(() => ctx.RegisterKeyBinding(null!, () => { }));
+    }
+
+    [Fact]
+    public void RegisterKeyBinding_NullHandler_Throws()
+    {
+        var ctx = CreateContext();
+        Assert.Throws<ArgumentNullException>(() => ctx.RegisterKeyBinding(new KeyBinding("F5"), null!));
+    }
 }

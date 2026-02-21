@@ -52,6 +52,9 @@ public sealed class PluginContext : IPluginContext
 
     public void RegisterSidebarPanel(string contributionId, Func<object> viewFactory)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
+        ArgumentNullException.ThrowIfNull(viewFactory);
+
         var contrib = FindSidebarContribution(contributionId);
         var iconPath = ResolveIconPath(contrib?.Icon);
         _contributions.RegisterSidebarPanel(
@@ -65,6 +68,9 @@ public sealed class PluginContext : IPluginContext
 
     public void RegisterBottomPanel(string contributionId, Func<object> viewFactory)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
+        ArgumentNullException.ThrowIfNull(viewFactory);
+
         var contrib = FindBottomPanelContribution(contributionId);
         _contributions.RegisterBottomPanel(
             Manifest.Id, contributionId,
@@ -76,6 +82,9 @@ public sealed class PluginContext : IPluginContext
 
     public void RegisterRightPanel(string contributionId, Func<object> viewFactory)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
+        ArgumentNullException.ThrowIfNull(viewFactory);
+
         var contrib = FindRightPanelContribution(contributionId);
         _contributions.RegisterRightPanel(
             Manifest.Id, contributionId,
@@ -87,6 +96,9 @@ public sealed class PluginContext : IPluginContext
 
     public void RegisterStatusBarItem(string contributionId, Func<object> viewFactory)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
+        ArgumentNullException.ThrowIfNull(viewFactory);
+
         var contrib = FindStatusBarContribution(contributionId);
         _contributions.RegisterStatusBarItem(
             Manifest.Id, contributionId,
@@ -98,6 +110,9 @@ public sealed class PluginContext : IPluginContext
 
     public void RegisterToolbarButtonHandler(string contributionId, Action clickHandler)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
+        ArgumentNullException.ThrowIfNull(clickHandler);
+
         var contrib = FindToolbarButtonContribution(contributionId);
         var iconPath = ResolveIconPath(contrib?.Icon);
         _contributions.RegisterToolbarButton(
@@ -111,6 +126,9 @@ public sealed class PluginContext : IPluginContext
 
     public void RegisterContextMenuHandler(string contributionId, Action<FileNode> handler)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
+        ArgumentNullException.ThrowIfNull(handler);
+
         var contrib = FindContextMenuContribution(contributionId);
         var label = contrib?.Label ?? contributionId;
         var extensions = contrib?.FileExtensions?.ToArray() ?? [];
@@ -147,12 +165,21 @@ public sealed class PluginContext : IPluginContext
 
     public void RegisterFileHandler(string[] extensions, Action<FileNode> handler)
     {
+        ArgumentNullException.ThrowIfNull(extensions);
+        ArgumentNullException.ThrowIfNull(handler);
+        if (extensions.Length == 0)
+            throw new ArgumentException("At least one file extension is required.", nameof(extensions));
+
         _contributions.RegisterFileHandler(Manifest.Id, extensions, handler);
         Logger.Debug($"Plugin '{Manifest.Id}' registered file handler for [{string.Join(", ", extensions)}]", "PluginHost");
     }
 
     public void RegisterFileIcons(Dictionary<string, string> extensionToIconPath)
     {
+        ArgumentNullException.ThrowIfNull(extensionToIconPath);
+        if (extensionToIconPath.Count == 0)
+            throw new ArgumentException("At least one file icon mapping is required.", nameof(extensionToIconPath));
+
         // Resolve relative icon paths to absolute paths
         var resolved = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (var (ext, relativePath) in extensionToIconPath)
@@ -165,6 +192,9 @@ public sealed class PluginContext : IPluginContext
 
     public void RegisterKeyBinding(KeyBinding binding, Action handler)
     {
+        ArgumentNullException.ThrowIfNull(binding);
+        ArgumentNullException.ThrowIfNull(handler);
+
         var commandId = $"plugin.{Manifest.Id}.{binding.DisplayString}";
         if (_keyboardShortcutService.Register(binding, commandId, handler))
         {

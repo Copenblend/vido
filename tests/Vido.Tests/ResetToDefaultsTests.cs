@@ -30,7 +30,8 @@ public sealed class ResetToDefaultsTests
             RightPanelVisible = false,
             RightPanelCollapsed = true,
             RightPanelWidth = 999,
-            ShowHiddenFiles = true
+            ShowHiddenFiles = true,
+            PluginRegistryUrls = ["https://custom.example.com"]
         };
 
         settings.ResetToDefaults();
@@ -49,6 +50,8 @@ public sealed class ResetToDefaultsTests
         Assert.False(settings.RightPanelCollapsed);
         Assert.Equal(300, settings.RightPanelWidth);
         Assert.False(settings.ShowHiddenFiles);
+        Assert.Single(settings.PluginRegistryUrls);
+        Assert.Equal(AppSettings.OfficialRegistryUrl, settings.PluginRegistryUrls[0]);
     }
 
     [Fact]
@@ -80,6 +83,7 @@ public sealed class ResetToDefaultsTests
         Assert.Equal(fresh.RightPanelCollapsed, mutated.RightPanelCollapsed);
         Assert.Equal(fresh.RightPanelWidth, mutated.RightPanelWidth);
         Assert.Equal(fresh.ShowHiddenFiles, mutated.ShowHiddenFiles);
+        Assert.Equal(fresh.PluginRegistryUrls, mutated.PluginRegistryUrls);
     }
 
     [Fact]
