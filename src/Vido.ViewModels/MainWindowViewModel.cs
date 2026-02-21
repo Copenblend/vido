@@ -336,7 +336,13 @@ public partial class MainWindowViewModel : ObservableObject
     /// Opens (or re-opens) a bottom panel tab. If it doesn't exist, creates it
     /// and inserts it at its canonical position.
     /// </summary>
-    public void OpenBottomPanelTab(string tabId)
+    public void OpenBottomPanelTab(string tabId) => OpenBottomPanelTab(tabId, null);
+
+    /// <summary>
+    /// Opens (or re-opens) a bottom panel tab with an optional custom title.
+    /// If it doesn't exist, creates it and inserts it at its canonical position.
+    /// </summary>
+    public void OpenBottomPanelTab(string tabId, string? customTitle)
     {
         var existing = FindBottomPanelTab(tabId);
         if (existing is not null)
@@ -349,7 +355,7 @@ public partial class MainWindowViewModel : ObservableObject
         var (title, canonicalIndex) = tabId switch
         {
             OutputTabId => ("LOG OUTPUT", 0),
-            _ => (tabId.ToUpperInvariant(), BottomPanelTabs.Count)
+            _ => (customTitle ?? tabId.ToUpperInvariant(), BottomPanelTabs.Count)
         };
 
         var tab = new BottomPanelTabItem(tabId, title) { IsClosable = true };
@@ -389,7 +395,7 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     /// <summary>Finds a bottom panel tab by ID.</summary>
-    internal BottomPanelTabItem? FindBottomPanelTab(string tabId)
+    public BottomPanelTabItem? FindBottomPanelTab(string tabId)
     {
         for (int i = 0; i < BottomPanelTabs.Count; i++)
         {

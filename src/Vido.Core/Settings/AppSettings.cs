@@ -26,6 +26,14 @@ public sealed class AppSettings
     // --- File Explorer ---
     public bool ShowHiddenFiles { get; set; } = false;
 
+    // --- Plugins ---
+
+    /// <summary>Additional directories to scan for plugins (besides %APPDATA%/Vido/plugins/).</summary>
+    public List<string> PluginDirectories { get; set; } = [];
+
+    /// <summary>Plugin IDs that the user has explicitly disabled.</summary>
+    public List<string> DisabledPluginIds { get; set; } = [];
+
     /// <summary>
     /// Resets every property to its default value.
     /// Call after tests that mutate settings to prevent pollution.
@@ -46,5 +54,7 @@ public sealed class AppSettings
         RightPanelCollapsed = false;
         RightPanelWidth = 300;
         ShowHiddenFiles = false;
+        PluginDirectories = [];
+        DisabledPluginIds = [];
     }
 }
