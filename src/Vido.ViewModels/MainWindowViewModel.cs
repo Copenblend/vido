@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Vido.Core.Layout;
+using Vido.Core.Settings;
 
 namespace Vido.ViewModels;
 
@@ -11,6 +12,14 @@ namespace Vido.ViewModels;
 /// </summary>
 public partial class MainWindowViewModel : ObservableObject
 {
+    private readonly ISettingsService _settingsService;
+
+    /// <summary>
+    /// When true, property change handlers skip persisting to settings.
+    /// Used during fullscreen transitions to avoid saving transient UI state.
+    /// </summary>
+    public bool SuppressSettingsSave { get; set; }
+
     /// <summary>Well-known tab ID for the video player.</summary>
     public const string PlayerTabId = "Player";
 
@@ -92,8 +101,10 @@ public partial class MainWindowViewModel : ObservableObject
         if (newValue is not null) newValue.IsActive = true;
     }
 
-    public MainWindowViewModel()
+    public MainWindowViewModel(ISettingsService settingsService)
     {
+        _settingsService = settingsService;
+
         // The Player tab is always present, pinned leftmost, not closable
         var playerTab = new TabItemModel(PlayerTabId, "Player")
         {
@@ -110,11 +121,13 @@ public partial class MainWindowViewModel : ObservableObject
         BottomPanelTabs.Add(outputTab);
         ActiveBottomPanelTab = outputTab;
 
-        // Both panels start visible but collapsed
-        IsBottomPanelVisible = true;
-        IsBottomPanelCollapsed = true;
-        IsRightPanelVisible = true;
-        IsRightPanelCollapsed = true;
+        // Initialize panel state from persisted settings (use backing fields to avoid triggering saves)
+        var s = settingsService.Current;
+        _isBottomPanelVisible = s.BottomPanelVisible;
+        _isBottomPanelCollapsed = s.BottomPanelCollapsed;
+        _isRightPanelVisible = s.RightPanelVisible;
+        _isRightPanelCollapsed = s.RightPanelCollapsed;
+        _isStatusBarVisible = s.StatusBarVisible;
     }
 
     // ── Tab Commands ──
@@ -261,6 +274,41 @@ public partial class MainWindowViewModel : ObservableObject
     public void ToggleStatusBar()
     {
         IsStatusBarVisible = !IsStatusBarVisible;
+    }
+
+    partial void OnIsBottomPanelVisibleChanged(bool value)
+    {
+        if (SuppressSettingsSave) return;
+        _settingsService.Current.BottomPanelVisible = value;
+        _settingsService.QueueSave();
+    }
+
+    partial void OnIsRightPanelVisibleChanged(bool value)
+    {
+        if (SuppressSettingsSave) return;
+        _settingsService.Current.RightPanelVisible = value;
+        _settingsService.QueueSave();
+    }
+
+    partial void OnIsStatusBarVisibleChanged(bool value)
+    {
+        if (SuppressSettingsSave) return;
+        _settingsService.Current.StatusBarVisible = value;
+        _settingsService.QueueSave();
+    }
+
+    partial void OnIsBottomPanelCollapsedChanged(bool value)
+    {
+        if (SuppressSettingsSave) return;
+        _settingsService.Current.BottomPanelCollapsed = value;
+        _settingsService.QueueSave();
+    }
+
+    partial void OnIsRightPanelCollapsedChanged(bool value)
+    {
+        if (SuppressSettingsSave) return;
+        _settingsService.Current.RightPanelCollapsed = value;
+        _settingsService.QueueSave();
     }
 
     // ── Bottom Panel Tab Commands ──

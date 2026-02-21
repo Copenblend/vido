@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Vido.Core.Layout;
+using Vido.Core.Settings;
 
 namespace Vido.ViewModels;
 
@@ -10,11 +11,22 @@ namespace Vido.ViewModels;
 /// </summary>
 public partial class ActivityBarViewModel : ObservableObject
 {
+    private readonly ISettingsService? _settingsService;
+
     [ObservableProperty]
     private SidebarPanelKind _activePanel = SidebarPanelKind.Explorer;
 
     [ObservableProperty]
     private bool _isSidebarVisible = true;
+
+    public ActivityBarViewModel() : this(null) { }
+
+    public ActivityBarViewModel(ISettingsService? settingsService)
+    {
+        _settingsService = settingsService;
+        if (settingsService is not null)
+            _isSidebarVisible = settingsService.Current.SidebarVisible;
+    }
 
     /// <summary>
     /// Selects a panel. If the panel is already active, toggles the sidebar.
@@ -32,6 +44,21 @@ public partial class ActivityBarViewModel : ObservableObject
             ActivePanel = panel;
             IsSidebarVisible = true;
         }
+    }
+
+    /// <summary>
+    /// Sets the active panel without toggling visibility. Used for state restoration.
+    /// </summary>
+    public void SetActivePanel(SidebarPanelKind panel)
+    {
+        ActivePanel = panel;
+    }
+
+    partial void OnIsSidebarVisibleChanged(bool value)
+    {
+        if (_settingsService is null) return;
+        _settingsService.Current.SidebarVisible = value;
+        _settingsService.QueueSave();
     }
 
     /// <summary>

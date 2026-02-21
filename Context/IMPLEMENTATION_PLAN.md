@@ -1369,6 +1369,7 @@ For a developer to create a Vido plugin:
 12. Wire plugin-contributed file handlers into file double-click dispatch
 13. Wire plugin-contributed file icons into the explorer's icon resolution
 14. Write extensive unit tests for PluginLoader, PluginContext, and contribution registry
+15. Ensure plugins are easy to test - allow users to add custom repositories, the default should always be active - and lets set this up as part of the task and test it, but they should be able to add any number of custome repositories for getting plugins so they dont depend on the main repo owner adding their plugins. It should should also have the capability to specify a local repository on their machine for easy testing. 
 
 **Acceptance Criteria**:
 - If a plugin directory exists with valid `plugin.json` and DLL, it is loaded and activated on startup

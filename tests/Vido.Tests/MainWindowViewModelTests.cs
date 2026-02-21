@@ -1,4 +1,6 @@
+using NSubstitute;
 using Vido.Core.Layout;
+using Vido.Core.Settings;
 using Vido.ViewModels;
 using Xunit;
 
@@ -10,7 +12,19 @@ namespace Vido.Tests;
 /// </summary>
 public class MainWindowViewModelTests
 {
-    private readonly MainWindowViewModel _sut = new();
+    private readonly ISettingsService _settingsService;
+    private readonly MainWindowViewModel _sut;
+
+    public MainWindowViewModelTests()
+    {
+        _settingsService = Substitute.For<ISettingsService>();
+        _settingsService.Current.Returns(new AppSettings
+        {
+            BottomPanelVisible = true,
+            RightPanelVisible = true
+        });
+        _sut = new MainWindowViewModel(_settingsService);
+    }
 
     // ── Constructor / Initial State ──
 
@@ -39,10 +53,35 @@ public class MainWindowViewModelTests
     [Fact]
     public void Constructor_PanelsVisibleButCollapsedByDefault()
     {
-        Assert.True(_sut.IsBottomPanelVisible);
-        Assert.True(_sut.IsBottomPanelCollapsed);
-        Assert.True(_sut.IsRightPanelVisible);
-        Assert.True(_sut.IsRightPanelCollapsed);
+        // Create a VM with explicit collapsed=true to test the "collapsed but visible" state
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings
+        {
+            BottomPanelVisible = true,
+            BottomPanelCollapsed = true,
+            RightPanelVisible = true,
+            RightPanelCollapsed = true
+        });
+        var vm = new MainWindowViewModel(settingsSvc);
+
+        Assert.True(vm.IsBottomPanelVisible);
+        Assert.True(vm.IsBottomPanelCollapsed);
+        Assert.True(vm.IsRightPanelVisible);
+        Assert.True(vm.IsRightPanelCollapsed);
+    }
+
+    [Fact]
+    public void Constructor_PanelsVisibleAndExpanded_WhenDefaultSettings()
+    {
+        // Default AppSettings now has panels visible + expanded
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings());
+        var vm = new MainWindowViewModel(settingsSvc);
+
+        Assert.True(vm.IsBottomPanelVisible);
+        Assert.False(vm.IsBottomPanelCollapsed);
+        Assert.True(vm.IsRightPanelVisible);
+        Assert.False(vm.IsRightPanelCollapsed);
     }
 
     // ── OpenTab ──

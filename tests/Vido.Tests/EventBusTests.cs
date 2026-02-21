@@ -103,7 +103,7 @@ public sealed class EventBusTests
     }
 
     [Fact]
-    public void ConcurrentPublishAndSubscribe_DoesNotThrow()
+    public async Task ConcurrentPublishAndSubscribe_DoesNotThrow()
     {
         var count = 0;
         var tasks = new List<Task>();
@@ -118,7 +118,7 @@ public sealed class EventBusTests
             }));
         }
 
-        Task.WaitAll(tasks.ToArray());
+        await Task.WhenAll(tasks);
         // Just verifying no exceptions — count is non-deterministic
         Assert.True(count >= 0);
     }

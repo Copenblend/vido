@@ -26,6 +26,9 @@ public interface IVideoEngine : IDisposable
     /// <summary>Whether playback loops when reaching the end.</summary>
     bool IsLooping { get; set; }
 
+    /// <summary>Playback speed multiplier (0.25–4.0). Default is 1.0.</summary>
+    double SpeedRatio { get; set; }
+
     /// <summary>Metadata for the currently loaded video, or null if none.</summary>
     VideoMetadata? CurrentMetadata { get; }
 

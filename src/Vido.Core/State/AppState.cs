@@ -10,7 +10,7 @@ public sealed class AppState
     // --- Window Geometry ---
     public double WindowLeft { get; set; } = double.NaN;
     public double WindowTop { get; set; } = double.NaN;
-    public double WindowWidth { get; set; } = 2560;
+    public double WindowWidth { get; set; } = 1280;
     public double WindowHeight { get; set; } = 720;
     public bool IsMaximized { get; set; } = false;
 
@@ -28,4 +28,25 @@ public sealed class AppState
     /// These files are hidden (not deleted from disk) and persist across restarts.
     /// </summary>
     public List<string> HiddenFiles { get; set; } = [];
+
+    // --- Recent Files ---
+    /// <summary>
+    /// Most recently opened video file paths, newest first. Capped at 10.
+    /// </summary>
+    public List<string> RecentFiles { get; set; } = [];
+
+    /// <summary>Maximum number of recent files to retain.</summary>
+    public const int MaxRecentFiles = 10;
+
+    /// <summary>
+    /// Adds a file to the recent files list, moving it to the front if it already exists.
+    /// Trims the list to <see cref="MaxRecentFiles"/>.
+    /// </summary>
+    public void AddRecentFile(string filePath)
+    {
+        RecentFiles.RemoveAll(f => string.Equals(f, filePath, StringComparison.OrdinalIgnoreCase));
+        RecentFiles.Insert(0, filePath);
+        if (RecentFiles.Count > MaxRecentFiles)
+            RecentFiles.RemoveRange(MaxRecentFiles, RecentFiles.Count - MaxRecentFiles);
+    }
 }

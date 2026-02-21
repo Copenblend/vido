@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Vido.Core.Logging;
 
 namespace Vido.Services.Logging;
@@ -11,15 +10,17 @@ namespace Vido.Services.Logging;
 /// </summary>
 public sealed class LogService : ILogService
 {
-    private readonly ConcurrentBag<LogEntry> _entries = [];
-    private readonly object _eventLock = new();
+    private readonly List<LogEntry> _entries = [];
+    private readonly object _lock = new();
 
     public IReadOnlyList<LogEntry> Entries
     {
         get
         {
-            // Return chronologically ordered snapshot
-            return _entries.Reverse().ToList().AsReadOnly();
+            lock (_lock)
+            {
+                return _entries.ToList().AsReadOnly();
+            }
         }
     }
 
@@ -32,18 +33,21 @@ public sealed class LogService : ILogService
 
     public void Clear()
     {
-        // ConcurrentBag doesn't have Clear — drain it
-        while (_entries.TryTake(out _)) { }
+        lock (_lock)
+        {
+            _entries.Clear();
+        }
     }
 
     private void Log(LogLevel level, string message, string? source)
     {
         var entry = new LogEntry(DateTime.UtcNow, level, message, source);
-        _entries.Add(entry);
 
-        lock (_eventLock)
+        lock (_lock)
         {
-            EntryAdded?.Invoke(entry);
+            _entries.Add(entry);
         }
+
+        EntryAdded?.Invoke(entry);
     }
 }

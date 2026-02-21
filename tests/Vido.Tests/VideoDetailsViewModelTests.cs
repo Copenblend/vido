@@ -1,6 +1,8 @@
 using NSubstitute;
 using Vido.Core.Logging;
 using Vido.Core.Playback;
+using Vido.Core.Settings;
+using Vido.Core.State;
 using Vido.ViewModels;
 using Xunit;
 
@@ -15,6 +17,8 @@ public class VideoDetailsViewModelTests : IDisposable
 {
     private readonly IVideoEngine _engine;
     private readonly ILogService _logService;
+    private readonly ISettingsService _settingsService;
+    private readonly IStateService _stateService;
     private readonly VideoPlayerViewModel _playerVm;
     private readonly VideoDetailsViewModel _sut;
 
@@ -39,8 +43,12 @@ public class VideoDetailsViewModelTests : IDisposable
     {
         _engine = Substitute.For<IVideoEngine>();
         _logService = Substitute.For<ILogService>();
+        _settingsService = Substitute.For<ISettingsService>();
+        _settingsService.Current.Returns(new AppSettings());
+        _stateService = Substitute.For<IStateService>();
+        _stateService.Current.Returns(new AppState());
         _engine.Volume.Returns(75);
-        _playerVm = new VideoPlayerViewModel(_engine, _logService);
+        _playerVm = new VideoPlayerViewModel(_engine, _logService, _settingsService, _stateService);
         _sut = new VideoDetailsViewModel(_playerVm);
     }
 

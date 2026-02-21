@@ -23,10 +23,6 @@ public partial class OutputLogViewModel : ObservableObject
     [ObservableProperty]
     private bool _isAutoScrollEnabled = true;
 
-    /// <summary>The currently selected minimum log level filter.</summary>
-    [ObservableProperty]
-    private LogLevel _selectedLevel = LogLevel.Debug;
-
     /// <summary>Whether the log has any entries (for empty state display).</summary>
     [ObservableProperty]
     private bool _hasEntries;
@@ -109,7 +105,6 @@ public partial class OutputLogViewModel : ObservableObject
     public void SetFilter(LogLevel level)
     {
         _minimumLevel = level;
-        SelectedLevel = level;
         FilterText = LevelToFilterText(level);
         RebuildFilteredEntries();
     }

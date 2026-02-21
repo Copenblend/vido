@@ -21,7 +21,6 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     private int _videoStreamIndex = -1;
     private int _audioStreamIndex = -1;
     private AVStream* _videoStream;
-    private AVStream* _audioStream;
 
     // ── Audio resampling ──
     private SwrContext* _swrContext;
@@ -49,6 +48,7 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     private int _volume = 75;
     private bool _isMuted;
     private bool _isLooping;
+    private double _speedRatio = 1.0;
     private VideoMetadata? _currentMetadata;
     private bool _disposed;
     private readonly object _stateLock = new();
@@ -129,6 +129,25 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     {
         get => _isLooping;
         set => _isLooping = value;
+    }
+
+    public double SpeedRatio
+    {
+        get => _speedRatio;
+        set
+        {
+            var clamped = Math.Clamp(value, 0.25, 4.0);
+            if (Math.Abs(clamped - _speedRatio) < 0.001) return;
+
+            // Snapshot current position before changing speed to prevent clock jumps
+            if (_playbackClock.IsRunning)
+            {
+                _clockOffset = GetClockPosition();
+                _playbackClock.Restart();
+            }
+
+            _speedRatio = clamped;
+        }
     }
 
     public VideoMetadata? CurrentMetadata => _currentMetadata;
@@ -285,8 +304,8 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         _audioStreamIndex = FindBestStream(AVMediaType.AVMEDIA_TYPE_AUDIO);
         if (_audioStreamIndex >= 0)
         {
-            _audioStream = _formatContext->streams[_audioStreamIndex];
-            _audioCodecContext = OpenCodec(_audioStream);
+            var audioStream = _formatContext->streams[_audioStreamIndex];
+            _audioCodecContext = OpenCodec(audioStream);
             InitializeAudioResampler();
             InitializeAudioRenderer();
         }
@@ -637,7 +656,7 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
 
     private TimeSpan GetClockPosition()
     {
-        return _clockOffset + _playbackClock.Elapsed;
+        return _clockOffset + TimeSpan.FromTicks((long)(_playbackClock.Elapsed.Ticks * _speedRatio));
     }
 
     private void StartPositionTimer()
@@ -749,7 +768,6 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         _videoStreamIndex = -1;
         _audioStreamIndex = -1;
         _videoStream = null;
-        _audioStream = null;
 
         _currentMetadata = null;
         Duration = TimeSpan.Zero;

@@ -7,6 +7,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="PlayerStyles.xaml" />
+                <ResourceDictionary Source="../Themes/ContextMenuStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -41,6 +42,57 @@
                Stretch="Uniform"
                RenderOptions.BitmapScalingMode="HighQuality"
                Visibility="Collapsed" />
+
+        <!-- ═══ Resume playback bar ═══ -->
+        <Border x:Name="ResumeBar"
+                VerticalAlignment="Top"
+                HorizontalAlignment="Stretch"
+                Background="{DynamicResource StatusBarBackgroundBrush}"
+                Visibility="{Binding ShowResumeBar, Converter={StaticResource BoolToVis}}"
+                Padding="12,5">
+            <DockPanel>
+                <!-- Right-side buttons -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <StackPanel.Resources>
+                        <Style x:Key="ResumeBarButtonStyle" TargetType="Button">
+                            <Setter Property="FontFamily" Value="Segoe UI" />
+                            <Setter Property="FontSize" Value="12" />
+                            <Setter Property="Foreground" Value="#ffffff" />
+                            <Setter Property="Cursor" Value="Hand" />
+                            <Setter Property="Padding" Value="12,3" />
+                            <Setter Property="Margin" Value="0,0,4,0" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="Bd" Background="Transparent"
+                                                Padding="{TemplateBinding Padding}"
+                                                CornerRadius="3">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Bd" Property="Background" Value="#33ffffff" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </StackPanel.Resources>
+                    <Button Content="Yes" Style="{StaticResource ResumeBarButtonStyle}"
+                            Command="{Binding ResumePlaybackCommand}" />
+                    <Button Content="No" Style="{StaticResource ResumeBarButtonStyle}"
+                            Command="{Binding DismissResumeCommand}" />
+                </StackPanel>
+                <!-- Resume text -->
+                <TextBlock VerticalAlignment="Center"
+                           Foreground="#ffffff"
+                           FontFamily="Segoe UI" FontSize="12">
+                    <Run Text="Resume playback of " /><Run Text="{Binding ResumeBarTitle, Mode=OneWay}" FontWeight="SemiBold" /><Run Text="?" />
+                </TextBlock>
+            </DockPanel>
+        </Border>
 
         <!-- ═══ Transport controls overlay ═══ -->
         <!-- In normal mode: docked at bottom with solid bg. In fullscreen: overlaid with gradient bg. -->
@@ -184,6 +236,39 @@
                                   Fill="Transparent"
                                   Stretch="Uniform" Width="14" Height="14" />
                         </ToggleButton>
+
+                        <!-- Playback speed -->
+                        <Button x:Name="SpeedButton"
+                                Style="{StaticResource TransportButtonStyle}"
+                                Width="Auto" MinWidth="28" Height="28" Padding="4,5"
+                                ToolTip="Playback Speed"
+                                Click="OnSpeedButtonClick">
+                            <TextBlock Text="{Binding PlaybackSpeedText}"
+                                       FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" />
+                            <Button.ContextMenu>
+                                <ContextMenu x:Name="SpeedContextMenu"
+                                             Style="{StaticResource DarkContextMenuStyle}"
+                                             Opened="OnSpeedContextMenuOpened">
+                                    <MenuItem Header="0.25x" Style="{StaticResource ContextMenuItemStyle}"
+                                              Click="OnSpeedItemClick" Tag="0.25" />
+                                    <MenuItem Header="0.5x" Style="{StaticResource ContextMenuItemStyle}"
+                                              Click="OnSpeedItemClick" Tag="0.5" />
+                                    <MenuItem Header="0.75x" Style="{StaticResource ContextMenuItemStyle}"
+                                              Click="OnSpeedItemClick" Tag="0.75" />
+                                    <MenuItem Header="1x" Style="{StaticResource ContextMenuItemStyle}"
+                                              Click="OnSpeedItemClick" Tag="1.0" />
+                                    <MenuItem Header="1.25x" Style="{StaticResource ContextMenuItemStyle}"
+                                              Click="OnSpeedItemClick" Tag="1.25" />
+                                    <MenuItem Header="1.5x" Style="{StaticResource ContextMenuItemStyle}"
+                                              Click="OnSpeedItemClick" Tag="1.5" />
+                                    <MenuItem Header="2x" Style="{StaticResource ContextMenuItemStyle}"
+                                              Click="OnSpeedItemClick" Tag="2.0" />
+                                    <MenuItem Header="4x" Style="{StaticResource ContextMenuItemStyle}"
+                                              Click="OnSpeedItemClick" Tag="4.0" />
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
 
                         <!-- Mute toggle -->
                         <Button Style="{StaticResource TransportButtonStyle}"

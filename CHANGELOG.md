@@ -4,6 +4,47 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-016
+- Implemented full state persistence — Vido now remembers all settings and state between sessions
+- Added QueueSave() method to IStateService interface with 500ms debounce, matching SettingsService pattern
+- StateService implements IDisposable, has thread-safe debounce with lock guard on CancellationTokenSource
+- SettingsService debounce also hardened with lock guard for thread safety
+- Added RecentFiles list to AppState (capped at 10) with AddRecentFile() method (deduplicates case-insensitive, inserts at front)
+- VideoPlayerViewModel now injects ISettingsService + IStateService: restores volume/mute/loop from settings; saves volume/mute/loop on change; tracks last video path/position in state; saves position every 5 seconds of playback; adds to recent files on video load
+- Added RestoreLastVideoAsync() — reloads last played video paused at saved position on startup
+- MainWindowViewModel now injects ISettingsService: restores bottom/right panel visibility and status bar from settings; saves on toggle
+- ActivityBarViewModel now injects ISettingsService: restores sidebar visibility from settings; saves on change; added SetActivePanel() for non-toggling state restoration
+- FileExplorerViewModel now injects ISettingsService: restores ShowHiddenFiles from settings; saves on toggle
+- FileExplorerViewModel now calls QueueSave() after folder open/close, hide/unhide file mutations
+- MainWindow.xaml.cs RestoreLayoutState() restores panel dimensions, sidebar width, active sidebar panel, and last video on startup
+- MainWindow.xaml.cs SaveWindowState() now also persists sidebar width, panel heights, and sidebar visibility to settings
+- Sidebar width uses persisted value from settings instead of hardcoded 300px
+- Constructor property initialization uses backing fields to avoid wasteful save triggers during startup
+- Tests: 13 new (AppState.AddRecentFile, panel/sidebar/status bar persistence, settings/state round-trips) — 434 total, all passing
+
+#### vi-016 Bug Fixes
+- Fixed gray background on video restore: RestoreLastVideoAsync now uses Play→Seek→await SeekCompleted→Pause to ensure a frame renders before pausing (FFmpegVideoEngine's decode thread must be running for Seek to take effect)
+- Fixed bottom/right panel collapsed state not persisting: added BottomPanelCollapsed and RightPanelCollapsed to AppSettings, saved on change, restored on startup
+- Fixed sidebar panel reverting to Explorer on restart: RestoreLayoutState now calls OnPanelChanged after SetActivePanel to refresh sidebar content
+- Fixed recent files not shown in UI: File > Recent Files submenu now dynamically populates from AppState on open, clicking a recent file loads and plays it
+- Added "Show Hidden Files" toggle to View menu with checkmark state, synced with existing context menu checkmark in file explorer
+
+#### vi-016 Enhancements
+- View menu "Toggle Sidebar" and "Toggle Status Bar" now dynamically show "Show/Hide" text like Right/Bottom Panel menus
+- Added Playback Speed button to transport controls (visible in both normal and fullscreen modes) with 0.25x–4x presets, persisted in settings
+- Playback Speed submenu in Playback menu now functional with speed presets and active checkmark
+- IVideoEngine.SpeedRatio property added; FFmpegVideoEngine multiplies playback clock by speed ratio with smooth clock offset transitions on speed change
+- Added keyboard shortcuts: Ctrl+K (Close Folder), Ctrl+Shift+R (Rescan Folder)
+- Removed Zoom In/Out placeholder menu items (Ctrl+=, Ctrl+-)
+- Added "Clear Watch History" button at the bottom of File > Recent Files submenu with separator
+
+#### vi-016 Code Audit
+- Fixed fullscreen transitions incorrectly saving transient panel state: added SuppressSettingsSave guard on MainWindowViewModel, used during Enter/ExitFullscreen to prevent reactive save handlers from persisting hidden-panel state
+- Fixed _lastSavedPositionSeconds not reset when loading new video: position save debounce now starts fresh per video
+- Removed dead ConfirmOnExit property from AppSettings (never read or exposed in UI)
+- Removed redundant SidebarVisible save in SaveWindowState() (already handled reactively by ActivityBarViewModel)
+- Made SettingsService testable with custom directory constructor (test isolation)
+
 ### vi-015
 - Implemented fullscreen mode toggle via F11, F key, or double-click on video area
 - EnterFullscreen saves all pre-fullscreen state (window geometry, sidebar, bottom/right panel, status bar visibility) and hides all UI chrome (title bar, activity bar, sidebar, tab strip, status bar, bottom panel, right panel)

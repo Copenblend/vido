@@ -7,8 +7,10 @@ namespace Vido.Services.State;
 /// <summary>
 /// JSON-based state persistence to %APPDATA%/Vido/state.json.
 /// Stores implicit application state (window geometry, last session, etc.).
+/// Supports debounced saving — multiple rapid <see cref="QueueSave"/> calls
+/// coalesce into a single disk write after 500ms of inactivity.
 /// </summary>
-public sealed class StateService : IStateService
+public sealed class StateService : IStateService, IDisposable
 {
     private static readonly string StateDir =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Vido");
@@ -24,6 +26,9 @@ public sealed class StateService : IStateService
     };
 
     private readonly SemaphoreSlim _saveLock = new(1, 1);
+    private readonly object _debounceGuard = new();
+    private CancellationTokenSource? _debounceCts;
+    private const int DebounceMs = 500;
 
     public AppState Current { get; private set; } = new();
 
@@ -39,10 +44,33 @@ public sealed class StateService : IStateService
             if (loaded is not null)
                 Current = loaded;
         }
-        catch
+        catch (Exception ex) when (ex is System.Text.Json.JsonException or IOException)
         {
-            // Corrupted file — use defaults
+            // Corrupted or inaccessible file — use defaults
             Current = new AppState();
+        }
+    }
+
+    public void QueueSave()
+    {
+        lock (_debounceGuard)
+        {
+            _debounceCts?.Cancel();
+            _debounceCts = new CancellationTokenSource();
+            var token = _debounceCts.Token;
+
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await Task.Delay(DebounceMs, token);
+                    await SaveAsync();
+                }
+                catch (TaskCanceledException)
+                {
+                    // Debounce cancelled — a newer save was queued
+                }
+            }, token);
         }
     }
 
@@ -59,5 +87,12 @@ public sealed class StateService : IStateService
         {
             _saveLock.Release();
         }
+    }
+
+    public void Dispose()
+    {
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+        _saveLock.Dispose();
     }
 }

@@ -10,11 +10,11 @@ namespace Vido.Services.Settings;
 /// </summary>
 public sealed class SettingsService : ISettingsService, IDisposable
 {
-    private static readonly string SettingsDir =
+    private static readonly string DefaultSettingsDir =
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Vido");
 
-    private static readonly string SettingsPath =
-        Path.Combine(SettingsDir, "settings.json");
+    private readonly string _settingsDir;
+    private readonly string _settingsPath;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -23,48 +23,67 @@ public sealed class SettingsService : ISettingsService, IDisposable
     };
 
     private readonly SemaphoreSlim _saveLock = new(1, 1);
+    private readonly object _debounceGuard = new();
     private CancellationTokenSource? _debounceCts;
     private const int DebounceMs = 500;
+
+    /// <summary>
+    /// Creates a settings service that persists to the default %APPDATA%/Vido directory.
+    /// </summary>
+    public SettingsService() : this(DefaultSettingsDir) { }
+
+    /// <summary>
+    /// Creates a settings service that persists to the specified directory.
+    /// Used for testing with isolated temp directories.
+    /// </summary>
+    public SettingsService(string settingsDirectory)
+    {
+        _settingsDir = settingsDirectory;
+        _settingsPath = Path.Combine(_settingsDir, "settings.json");
+    }
 
     public AppSettings Current { get; private set; } = new();
 
     public async Task LoadAsync()
     {
-        if (!File.Exists(SettingsPath))
+        if (!File.Exists(_settingsPath))
             return;
 
         try
         {
-            var json = await File.ReadAllTextAsync(SettingsPath);
+            var json = await File.ReadAllTextAsync(_settingsPath);
             var loaded = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
             if (loaded is not null)
                 Current = loaded;
         }
-        catch
+        catch (Exception ex) when (ex is System.Text.Json.JsonException or IOException)
         {
-            // Corrupted file — use defaults
+            // Corrupted or inaccessible file — use defaults
             Current = new AppSettings();
         }
     }
 
     public void QueueSave()
     {
-        _debounceCts?.Cancel();
-        _debounceCts = new CancellationTokenSource();
-        var token = _debounceCts.Token;
-
-        _ = Task.Run(async () =>
+        lock (_debounceGuard)
         {
-            try
+            _debounceCts?.Cancel();
+            _debounceCts = new CancellationTokenSource();
+            var token = _debounceCts.Token;
+
+            _ = Task.Run(async () =>
             {
-                await Task.Delay(DebounceMs, token);
-                await SaveAsync();
-            }
-            catch (TaskCanceledException)
-            {
-                // Debounce cancelled — a newer save was queued
-            }
-        }, token);
+                try
+                {
+                    await Task.Delay(DebounceMs, token);
+                    await SaveAsync();
+                }
+                catch (TaskCanceledException)
+                {
+                    // Debounce cancelled — a newer save was queued
+                }
+            }, token);
+        }
     }
 
     public async Task SaveAsync()
@@ -72,9 +91,9 @@ public sealed class SettingsService : ISettingsService, IDisposable
         await _saveLock.WaitAsync();
         try
         {
-            Directory.CreateDirectory(SettingsDir);
+            Directory.CreateDirectory(_settingsDir);
             var json = JsonSerializer.Serialize(Current, JsonOptions);
-            await File.WriteAllTextAsync(SettingsPath, json);
+            await File.WriteAllTextAsync(_settingsPath, json);
         }
         finally
         {

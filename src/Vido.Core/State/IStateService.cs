@@ -17,7 +17,14 @@ public interface IStateService
     Task LoadAsync();
 
     /// <summary>
-    /// Saves state to disk immediately.
+    /// Queues a debounced save to disk (500ms delay).
+    /// Multiple rapid calls coalesce into a single write.
+    /// </summary>
+    void QueueSave();
+
+    /// <summary>
+    /// Saves state to disk immediately, bypassing the debounce.
+    /// Used during application shutdown.
     /// </summary>
     Task SaveAsync();
 }

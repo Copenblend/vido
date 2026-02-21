@@ -1,6 +1,8 @@
 using NSubstitute;
 using Vido.Core.Logging;
 using Vido.Core.Playback;
+using Vido.Core.Settings;
+using Vido.Core.State;
 using Vido.ViewModels;
 using Xunit;
 
@@ -14,16 +16,22 @@ public class VideoPlayerViewModelTests : IDisposable
 {
     private readonly IVideoEngine _engine;
     private readonly ILogService _logService;
+    private readonly ISettingsService _settingsService;
+    private readonly IStateService _stateService;
     private readonly VideoPlayerViewModel _sut;
 
     public VideoPlayerViewModelTests()
     {
         _engine = Substitute.For<IVideoEngine>();
         _logService = Substitute.For<ILogService>();
+        _settingsService = Substitute.For<ISettingsService>();
+        _settingsService.Current.Returns(new AppSettings());
+        _stateService = Substitute.For<IStateService>();
+        _stateService.Current.Returns(new AppState());
         _engine.Volume.Returns(75);
         _engine.IsMuted.Returns(false);
         _engine.IsLooping.Returns(false);
-        _sut = new VideoPlayerViewModel(_engine, _logService);
+        _sut = new VideoPlayerViewModel(_engine, _logService, _settingsService, _stateService);
     }
 
     // ── Initial State ──
@@ -49,7 +57,7 @@ public class VideoPlayerViewModelTests : IDisposable
     [Fact]
     public void InitialVolume_InheritsFromEngine()
     {
-        Assert.Equal(75, _sut.Volume);
+        Assert.Equal(50, _sut.Volume);
     }
 
     [Fact]

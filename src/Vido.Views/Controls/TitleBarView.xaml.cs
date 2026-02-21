@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -150,6 +151,15 @@ public partial class TitleBarView : UserControl
     /// <summary>Raised when View > Toggle Sidebar is clicked.</summary>
     public event Action? ToggleSidebarRequested;
 
+    /// <summary>Raised when View > Show Hidden Files is toggled.</summary>
+    public event Action? ToggleShowHiddenFilesRequested;
+
+    /// <summary>
+    /// Function that returns whether hidden files are currently shown.
+    /// Set by MainWindow so TitleBarView can sync the checkmark state.
+    /// </summary>
+    public Func<bool>? GetShowHiddenFiles { get; set; }
+
     // ── Playback menu events ──
 
     /// <summary>Raised when Playback > Play/Pause is clicked.</summary>
@@ -167,14 +177,42 @@ public partial class TitleBarView : UserControl
     /// <summary>Raised when Playback > Loop is clicked.</summary>
     public event Action? LoopRequested;
 
+    /// <summary>Raised when a playback speed is selected from the menu.</summary>
+    public event Action<double>? PlaybackSpeedSelected;
+
+    /// <summary>
+    /// Function that returns the current playback speed.
+    /// Set by MainWindow so TitleBarView can sync checkmarks.
+    /// </summary>
+    public Func<double>? GetPlaybackSpeed { get; set; }
+
     /// <summary>Raised when View > Fullscreen is clicked.</summary>
     public event Action? FullscreenRequested;
+
+    /// <summary>Raised when a recent file is selected from File > Recent Files.</summary>
+    public event Action<string>? RecentFileSelected;
+
+    /// <summary>Raised when File > Recent Files > Clear Watch History is clicked.</summary>
+    public event Action? ClearWatchHistoryRequested;
+
+    /// <summary>
+    /// Function that returns the current list of recent files.
+    /// Set by MainWindow so TitleBarView can populate the submenu without
+    /// directly depending on IStateService.
+    /// </summary>
+    public Func<IReadOnlyList<string>>? GetRecentFiles { get; set; }
 
     /// <summary>Whether the bottom panel is currently visible. Used to update the submenu text.</summary>
     private bool _isBottomPanelVisible;
 
     /// <summary>Whether the right panel is currently visible. Used to update the submenu text.</summary>
     private bool _isRightPanelVisible;
+
+    /// <summary>Whether the sidebar is currently visible. Used to update the submenu text.</summary>
+    private bool _isSidebarVisible;
+
+    /// <summary>Whether the status bar is currently visible. Used to update the submenu text.</summary>
+    private bool _isStatusBarVisible;
 
     /// <summary>
     /// Updates the Bottom Panel submenu state based on current panel visibility.
@@ -192,6 +230,24 @@ public partial class TitleBarView : UserControl
     public void SetRightPanelVisible(bool visible)
     {
         _isRightPanelVisible = visible;
+    }
+
+    /// <summary>
+    /// Updates the Sidebar submenu state based on current sidebar visibility.
+    /// Called by MainWindow when the sidebar visibility changes.
+    /// </summary>
+    public void SetSidebarVisible(bool visible)
+    {
+        _isSidebarVisible = visible;
+    }
+
+    /// <summary>
+    /// Updates the Status Bar submenu state based on current status bar visibility.
+    /// Called by MainWindow when the status bar visibility changes.
+    /// </summary>
+    public void SetStatusBarVisible(bool visible)
+    {
+        _isStatusBarVisible = visible;
     }
 
     private void OnBottomPanelSubmenuOpened(object sender, RoutedEventArgs e)
@@ -238,6 +294,18 @@ public partial class TitleBarView : UserControl
         ToggleSidebarRequested?.Invoke();
     }
 
+    private void OnViewSubmenuOpened(object sender, RoutedEventArgs e)
+    {
+        ShowHiddenFilesMenuItem.IsChecked = GetShowHiddenFiles?.Invoke() ?? false;
+        ShowHideSidebarMenuItem.Header = _isSidebarVisible ? "_Hide Sidebar" : "_Show Sidebar";
+        ShowHideStatusBarMenuItem.Header = _isStatusBarVisible ? "Hide S_tatus Bar" : "Show S_tatus Bar";
+    }
+
+    private void OnToggleShowHiddenFilesClick(object sender, RoutedEventArgs e)
+    {
+        ToggleShowHiddenFilesRequested?.Invoke();
+    }
+
     private void OnPlayPauseClick(object sender, RoutedEventArgs e)
     {
         PlayPauseRequested?.Invoke();
@@ -263,8 +331,79 @@ public partial class TitleBarView : UserControl
         LoopRequested?.Invoke();
     }
 
+    private void OnSpeedSubmenuOpened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not MenuItem parent) return;
+        var currentSpeed = GetPlaybackSpeed?.Invoke() ?? 1.0;
+
+        foreach (var item in parent.Items.OfType<MenuItem>())
+        {
+            if (item.Tag is string tagStr && double.TryParse(tagStr,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var speed))
+            {
+                item.IsChecked = Math.Abs(currentSpeed - speed) < 0.01;
+            }
+        }
+    }
+
+    private void OnSpeedMenuItemClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem item && item.Tag is string tagStr
+            && double.TryParse(tagStr,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var speed))
+        {
+            PlaybackSpeedSelected?.Invoke(speed);
+        }
+    }
+
     private void OnFullscreenClick(object sender, RoutedEventArgs e)
     {
         FullscreenRequested?.Invoke();
+    }
+
+    private void OnRecentFilesSubmenuOpened(object sender, RoutedEventArgs e)
+    {
+        RecentFilesMenu.Items.Clear();
+
+        var recentFiles = GetRecentFiles?.Invoke();
+        if (recentFiles is null || recentFiles.Count == 0)
+        {
+            var empty = new MenuItem
+            {
+                Header = "No recent files",
+                IsEnabled = false,
+            };
+            empty.SetResourceReference(StyleProperty, "DropdownMenuItemStyle");
+            RecentFilesMenu.Items.Add(empty);
+            return;
+        }
+
+        foreach (var filePath in recentFiles)
+        {
+            var item = new MenuItem
+            {
+                Header = System.IO.Path.GetFileName(filePath),
+                ToolTip = filePath,
+            };
+            item.SetResourceReference(StyleProperty, "DropdownMenuItemStyle");
+            var path = filePath; // capture for closure
+            item.Click += (_, _) => RecentFileSelected?.Invoke(path);
+            RecentFilesMenu.Items.Add(item);
+        }
+
+        // Add separator and Clear Watch History
+        var separator = new Separator();
+        separator.SetResourceReference(StyleProperty, "MenuSeparatorStyle");
+        RecentFilesMenu.Items.Add(separator);
+
+        var clearItem = new MenuItem
+        {
+            Header = "Clear Watch History",
+        };
+        clearItem.SetResourceReference(StyleProperty, "DropdownMenuItemStyle");
+        clearItem.Click += (_, _) => ClearWatchHistoryRequested?.Invoke();
+        RecentFilesMenu.Items.Add(clearItem);
     }
 }

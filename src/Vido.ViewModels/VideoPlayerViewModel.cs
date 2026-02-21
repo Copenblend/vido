@@ -2,8 +2,11 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Vido.Core.FileSystem;
+using Vido.Core.Formatting;
 using Vido.Core.Logging;
 using Vido.Core.Playback;
+using Vido.Core.Settings;
+using Vido.Core.State;
 
 namespace Vido.ViewModels;
 
@@ -15,8 +18,17 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
 {
     private readonly IVideoEngine _engine;
     private readonly ILogService _logService;
+    private readonly ISettingsService _settingsService;
+    private readonly IStateService _stateService;
     private bool _disposed;
     private bool _isSeeking;
+    private double _lastSavedPositionSeconds;
+
+    /// <summary>Seek slider range maximum (0 – SliderMaximum).</summary>
+    private const double SeekSliderMaximum = 1000.0;
+
+    /// <summary>Minimum playback change (seconds) before persisting position to state.</summary>
+    private const double PositionSaveIntervalSeconds = 5.0;
 
     // ── Observable state ──
 
@@ -47,6 +59,14 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// <summary>Whether shuffle mode is active.</summary>
     [ObservableProperty]
     private bool _isShuffling;
+
+    /// <summary>Current playback speed multiplier (0.25–4.0).</summary>
+    [ObservableProperty]
+    private double _playbackSpeed = 1.0;
+
+    /// <summary>Display text for the current playback speed (e.g. "1x", "2x").</summary>
+    [ObservableProperty]
+    private string _playbackSpeedText = "1x";
 
     /// <summary>Whether a video file is currently loaded.</summary>
     [ObservableProperty]
@@ -81,6 +101,16 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string? _currentFilePath;
 
+    // ── Resume Bar ──
+
+    /// <summary>Whether the resume playback prompt bar is visible.</summary>
+    [ObservableProperty]
+    private bool _showResumeBar;
+
+    /// <summary>Title text shown in the resume bar (e.g. the video file name).</summary>
+    [ObservableProperty]
+    private string _resumeBarTitle = string.Empty;
+
     /// <summary>
     /// Ordered list of all video files under the explorer root.
     /// Populated when the explorer root changes or a file is loaded.
@@ -105,13 +135,25 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// </summary>
     public event Action<FrameData>? FrameReady;
 
-    public VideoPlayerViewModel(IVideoEngine engine, ILogService logService)
+    public VideoPlayerViewModel(IVideoEngine engine, ILogService logService,
+        ISettingsService settingsService, IStateService stateService)
     {
         _engine = engine;
         _logService = logService;
-        Volume = _engine.Volume;
-        IsMuted = _engine.IsMuted;
-        IsLooping = _engine.IsLooping;
+        _settingsService = settingsService;
+        _stateService = stateService;
+
+        // Initialize from persisted settings (use backing fields to avoid triggering save handlers)
+        var settings = settingsService.Current;
+        _engine.Volume = (int)(settings.Volume * 100);
+        _engine.IsMuted = settings.IsMuted;
+        _engine.IsLooping = settings.LoopPlayback;
+        _volume = _engine.Volume;
+        _isMuted = _engine.IsMuted;
+        _isLooping = _engine.IsLooping;
+        _playbackSpeed = settings.PlaybackSpeed;
+        _playbackSpeedText = FormatSpeed(_playbackSpeed);
+        _engine.SpeedRatio = _playbackSpeed;
 
         _engine.StateChanged += OnEngineStateChanged;
         _engine.PositionChanged += OnEnginePositionChanged;
@@ -135,7 +177,15 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         PositionText = FormatTime(position);
 
         if (Duration.TotalSeconds > 0)
-            SeekPosition = position.TotalSeconds / Duration.TotalSeconds * 1000.0;
+            SeekPosition = position.TotalSeconds / Duration.TotalSeconds * SeekSliderMaximum;
+
+        // Save position to state every N seconds of playback change
+        if (Math.Abs(position.TotalSeconds - _lastSavedPositionSeconds) >= PositionSaveIntervalSeconds)
+        {
+            _lastSavedPositionSeconds = position.TotalSeconds;
+            _stateService.Current.LastVideoPosition = position.TotalSeconds;
+            _stateService.QueueSave();
+        }
     }
 
     private void OnEngineFrameReady(FrameData frame)
@@ -167,6 +217,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// </summary>
     public async Task LoadAndPlayAsync(string filePath)
     {
+        ShowResumeBar = false;
         _logService.Info($"Loading video: {Path.GetFileName(filePath)}", "Player");
         await _engine.LoadAsync(filePath);
 
@@ -191,6 +242,95 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
 
         _engine.Play();
         _logService.Info($"Playing: {Path.GetFileName(filePath)} ({CurrentMetadata?.Resolution}, {FormatTime(Duration)})", "Player");
+
+        // Track last video and recent files
+        _lastSavedPositionSeconds = 0;
+        _stateService.Current.LastVideoPath = filePath;
+        _stateService.Current.LastVideoPosition = 0;
+        _stateService.Current.AddRecentFile(filePath);
+        _stateService.QueueSave();
+    }
+
+    /// <summary>
+    /// Restores the last played video from state, seeking to the saved position
+    /// and pausing. Shows a resume bar prompting the user to continue or dismiss.
+    /// </summary>
+    public async Task RestoreLastVideoAsync()
+    {
+        var lastPath = _stateService.Current.LastVideoPath;
+        if (string.IsNullOrEmpty(lastPath) || !File.Exists(lastPath))
+            return;
+
+        _logService.Info($"Restoring last video: {Path.GetFileName(lastPath)}", "Player");
+        await _engine.LoadAsync(lastPath);
+
+        CurrentFilePath = lastPath;
+        Duration = _engine.Duration;
+        DurationText = FormatTime(Duration);
+        CurrentMetadata = _engine.CurrentMetadata;
+        HasMedia = true;
+
+        BuildSiblingList(lastPath);
+
+        // Start playback so the decode thread renders a frame, then seek and pause.
+        // Without Play(), the decode thread never starts and Seek is a no-op,
+        // leaving a gray background.
+        var seekDone = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        void OnSeekDone() => seekDone.TrySetResult();
+        _engine.SeekCompleted += OnSeekDone;
+
+        _engine.Play();
+
+        var savedPosition = _stateService.Current.LastVideoPosition;
+        if (savedPosition > 0 && Duration.TotalSeconds > 0)
+        {
+            var target = TimeSpan.FromSeconds(Math.Min(savedPosition, Duration.TotalSeconds));
+            _engine.Seek(target);
+            Position = target;
+            PositionText = FormatTime(target);
+            SeekPosition = target.TotalSeconds / Duration.TotalSeconds * SeekSliderMaximum;
+            _lastSavedPositionSeconds = target.TotalSeconds;
+        }
+        else
+        {
+            Position = TimeSpan.Zero;
+            PositionText = "00:00";
+            SeekPosition = 0;
+            // Seek to zero so SeekCompleted fires
+            _engine.Seek(TimeSpan.Zero);
+        }
+
+        // Wait for the seek to complete (frame is decoded and rendered), then pause
+        await Task.WhenAny(seekDone.Task, Task.Delay(2000));
+        _engine.SeekCompleted -= OnSeekDone;
+        _engine.Pause();
+
+        // Show the resume bar prompt
+        ResumeBarTitle = Path.GetFileName(lastPath);
+        ShowResumeBar = true;
+
+        _logService.Info($"Restored: {Path.GetFileName(lastPath)} at {PositionText}", "Player");
+    }
+
+    /// <summary>Accepts the resume prompt — continues playback from the restored position.</summary>
+    [RelayCommand]
+    public void ResumePlayback()
+    {
+        ShowResumeBar = false;
+        if (HasMedia)
+        {
+            _engine.Play();
+            _logService.Info("Resume accepted — playback started", "Player");
+        }
+    }
+
+    /// <summary>Dismisses the resume prompt — closes/unloads the video.</summary>
+    [RelayCommand]
+    public void DismissResume()
+    {
+        ShowResumeBar = false;
+        Stop();
+        _logService.Info("Resume dismissed — video unloaded", "Player");
     }
 
     /// <summary>Toggles between play and pause.</summary>
@@ -198,6 +338,13 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     public void PlayPause()
     {
         if (!HasMedia) return;
+
+        // If resume bar is visible, treat play/pause as accepting the resume
+        if (ShowResumeBar)
+        {
+            ResumePlayback();
+            return;
+        }
 
         if (State == PlaybackState.Playing)
         {
@@ -218,7 +365,6 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         if (!HasMedia) return;
         _engine.Stop();
         _logService.Info("Playback stopped", "Player");
-        _logService.Info("Playback stopped", "Player");
         HasMedia = false;
         CurrentMetadata = null;
         CurrentFilePath = null;
@@ -227,6 +373,10 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         PositionText = "00:00";
         DurationText = "00:00";
         SeekPosition = 0;
+
+        _stateService.Current.LastVideoPath = null;
+        _stateService.Current.LastVideoPosition = 0;
+        _stateService.QueueSave();
     }
 
     /// <summary>Skips to the previous video file in the folder (wraps around).</summary>
@@ -277,16 +427,23 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         // Any manual volume adjustment should unmute
         if (IsMuted)
             IsMuted = false;
+
+        _settingsService.Current.Volume = value / 100.0;
+        _settingsService.QueueSave();
     }
 
     partial void OnIsMutedChanged(bool value)
     {
         _engine.IsMuted = value;
+        _settingsService.Current.IsMuted = value;
+        _settingsService.QueueSave();
     }
 
     partial void OnIsLoopingChanged(bool value)
     {
         _engine.IsLooping = value;
+        _settingsService.Current.LoopPlayback = value;
+        _settingsService.QueueSave();
     }
 
     partial void OnIsShufflingChanged(bool value)
@@ -295,6 +452,26 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
             BuildShufflePlaylist();
         else
             ClearShufflePlaylist();
+    }
+
+    partial void OnPlaybackSpeedChanged(double value)
+    {
+        _engine.SpeedRatio = value;
+        PlaybackSpeedText = FormatSpeed(value);
+        _settingsService.Current.PlaybackSpeed = value;
+        _settingsService.QueueSave();
+    }
+
+    /// <summary>Sets the playback speed to a specific value.</summary>
+    [RelayCommand]
+    public void SetPlaybackSpeed(double speed)
+    {
+        PlaybackSpeed = Math.Clamp(speed, 0.25, 4.0);
+    }
+
+    private static string FormatSpeed(double speed)
+    {
+        return speed == (int)speed ? $"{(int)speed}x" : $"{speed:0.##}x";
     }
 
     // ── Seek support ──
@@ -325,7 +502,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     {
         if (Duration.TotalSeconds > 0)
         {
-            var target = TimeSpan.FromSeconds(SeekPosition / 1000.0 * Duration.TotalSeconds);
+            var target = TimeSpan.FromSeconds(SeekPosition / SeekSliderMaximum * Duration.TotalSeconds);
             _engine.Seek(target);
             Position = target;
             PositionText = FormatTime(target);
@@ -387,7 +564,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
                 .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }
-        catch
+        catch (Exception)
         {
             _siblingVideoFiles = [];
         }
@@ -476,12 +653,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
 
     // ── Formatting ──
 
-    internal static string FormatTime(TimeSpan ts)
-    {
-        if (ts.TotalHours >= 1)
-            return ts.ToString(@"h\:mm\:ss");
-        return ts.ToString(@"mm\:ss");
-    }
+    internal static string FormatTime(TimeSpan ts) => TimeFormatter.Format(ts);
 
     // ── Cleanup ──
 

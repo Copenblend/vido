@@ -48,15 +48,17 @@
                 <MenuItem Header="Open _Folder..." InputGestureText="Ctrl+Shift+O"
                           Style="{StaticResource DropdownMenuItemStyle}"
                           Click="OnOpenFolderClick" />
-                <MenuItem x:Name="CloseFolderMenuItem" Header="_Close Folder"
+                <MenuItem x:Name="CloseFolderMenuItem" Header="_Close Folder" InputGestureText="Ctrl+K"
                           Style="{StaticResource DropdownMenuItemStyle}"
                           IsEnabled="False"
                           Click="OnCloseFolderClick" />
-                <MenuItem x:Name="RescanFolderMenuItem" Header="_Rescan Folder"
+                <MenuItem x:Name="RescanFolderMenuItem" Header="_Rescan Folder" InputGestureText="Ctrl+Shift+R"
                           Style="{StaticResource DropdownMenuItemStyle}"
                           IsEnabled="False"
                           Click="OnRescanFolderClick" />
-                <MenuItem Header="_Recent Files" Style="{StaticResource SubmenuParentItemStyle}">
+                <MenuItem x:Name="RecentFilesMenu" Header="_Recent Files"
+                          Style="{StaticResource SubmenuParentItemStyle}"
+                          SubmenuOpened="OnRecentFilesSubmenuOpened">
                     <MenuItem Header="No recent files" Style="{StaticResource DropdownMenuItemStyle}"
                               IsEnabled="False" />
                 </MenuItem>
@@ -73,20 +75,19 @@
             </MenuItem>
 
             <!-- View -->
-            <MenuItem Header="_View" Style="{StaticResource TitleBarMenuItemStyle}">
-                <MenuItem Header="Toggle _Sidebar" InputGestureText="Ctrl+B"
+            <MenuItem Header="_View" Style="{StaticResource TitleBarMenuItemStyle}"
+                      SubmenuOpened="OnViewSubmenuOpened">
+                <MenuItem x:Name="ShowHideSidebarMenuItem"
+                          Header="_Show Sidebar" InputGestureText="Ctrl+B"
                           Style="{StaticResource DropdownMenuItemStyle}"
                           Click="OnToggleSidebarClick" />
-                <MenuItem Header="Toggle S_tatus Bar"
+                <MenuItem x:Name="ShowHideStatusBarMenuItem"
+                          Header="Show S_tatus Bar"
                           Style="{StaticResource DropdownMenuItemStyle}"
                           Click="OnToggleStatusBarClick" />
                 <MenuItem Header="_Fullscreen" InputGestureText="F11"
                           Style="{StaticResource DropdownMenuItemStyle}"
                           Click="OnFullscreenClick" />
-                <MenuItem Header="Zoom _In" InputGestureText="Ctrl+="
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                <MenuItem Header="Zoom _Out" InputGestureText="Ctrl+-"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
                 <MenuItem x:Name="RightPanelMenu"
                           Header="_Right Panel"
                           Style="{StaticResource SubmenuParentItemStyle}"
@@ -113,6 +114,12 @@
                               Style="{StaticResource DropdownMenuItemStyle}"
                               Click="OnToggleBottomPanelClick" />
                 </MenuItem>
+                <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                <MenuItem x:Name="ShowHiddenFilesMenuItem"
+                          Header="Show _Hidden Files"
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          IsCheckable="True"
+                          Click="OnToggleShowHiddenFilesClick" />
             </MenuItem>
 
             <!-- Playback -->
@@ -132,12 +139,24 @@
                 <MenuItem Header="_Loop"
                           Style="{StaticResource DropdownMenuItemStyle}"
                           Click="OnLoopClick" />
-                <MenuItem Header="Playback _Speed" Style="{StaticResource SubmenuParentItemStyle}">
-                    <MenuItem Header="0.25x" Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                    <MenuItem Header="0.5x" Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                    <MenuItem Header="1.0x" Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                    <MenuItem Header="1.5x" Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                    <MenuItem Header="2.0x" Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
+                <MenuItem Header="Playback _Speed" Style="{StaticResource SubmenuParentItemStyle}"
+                          SubmenuOpened="OnSpeedSubmenuOpened">
+                    <MenuItem Header="0.25x" Style="{StaticResource DropdownMenuItemStyle}"
+                              Click="OnSpeedMenuItemClick" Tag="0.25" />
+                    <MenuItem Header="0.5x" Style="{StaticResource DropdownMenuItemStyle}"
+                              Click="OnSpeedMenuItemClick" Tag="0.5" />
+                    <MenuItem Header="0.75x" Style="{StaticResource DropdownMenuItemStyle}"
+                              Click="OnSpeedMenuItemClick" Tag="0.75" />
+                    <MenuItem Header="1x" Style="{StaticResource DropdownMenuItemStyle}"
+                              Click="OnSpeedMenuItemClick" Tag="1.0" />
+                    <MenuItem Header="1.25x" Style="{StaticResource DropdownMenuItemStyle}"
+                              Click="OnSpeedMenuItemClick" Tag="1.25" />
+                    <MenuItem Header="1.5x" Style="{StaticResource DropdownMenuItemStyle}"
+                              Click="OnSpeedMenuItemClick" Tag="1.5" />
+                    <MenuItem Header="2x" Style="{StaticResource DropdownMenuItemStyle}"
+                              Click="OnSpeedMenuItemClick" Tag="2.0" />
+                    <MenuItem Header="4x" Style="{StaticResource DropdownMenuItemStyle}"
+                              Click="OnSpeedMenuItemClick" Tag="4.0" />
                 </MenuItem>
             </MenuItem>
 

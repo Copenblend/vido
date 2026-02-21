@@ -47,7 +47,6 @@ public sealed class OutputLogViewModelTests
     public void InitialState_FilterIsAll()
     {
         Assert.Equal("All", _sut.FilterText);
-        Assert.Equal(LogLevel.Debug, _sut.SelectedLevel);
     }
 
     // ── Loading existing entries ──
@@ -132,23 +131,18 @@ public sealed class OutputLogViewModelTests
     {
         // Initial: All (Debug)
         Assert.Equal("All", _sut.FilterText);
-        Assert.Equal(LogLevel.Debug, _sut.SelectedLevel);
 
         _sut.CycleFilter();
         Assert.Equal("Info+", _sut.FilterText);
-        Assert.Equal(LogLevel.Info, _sut.SelectedLevel);
 
         _sut.CycleFilter();
         Assert.Equal("Warn+", _sut.FilterText);
-        Assert.Equal(LogLevel.Warning, _sut.SelectedLevel);
 
         _sut.CycleFilter();
         Assert.Equal("Errors", _sut.FilterText);
-        Assert.Equal(LogLevel.Error, _sut.SelectedLevel);
 
         _sut.CycleFilter();
         Assert.Equal("All", _sut.FilterText);
-        Assert.Equal(LogLevel.Debug, _sut.SelectedLevel);
     }
 
     [Fact]
@@ -218,7 +212,6 @@ public sealed class OutputLogViewModelTests
     {
         _sut.SetFilter(LogLevel.Error);
 
-        Assert.Equal(LogLevel.Error, _sut.SelectedLevel);
         Assert.Equal("Errors", _sut.FilterText);
     }
 

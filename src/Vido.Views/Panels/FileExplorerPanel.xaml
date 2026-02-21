@@ -59,7 +59,8 @@
 
             <!-- Context menu for tree background -->
             <ContextMenu x:Key="TreeBackgroundContextMenu"
-                         Style="{StaticResource DarkContextMenuStyle}">
+                         Style="{StaticResource DarkContextMenuStyle}"
+                         Opened="OnTreeBackgroundContextMenuOpened">
                 <MenuItem Header="Open Folder..."
                           Style="{StaticResource ContextMenuItemStyle}"
                           Click="OnContextOpenFolderClick" />

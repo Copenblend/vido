@@ -72,7 +72,7 @@ public sealed class FileNode : INotifyPropertyChanged
             : (Path.GetFileName(fullPath) ?? fullPath);
         IsDirectory = isDirectory;
         IsVideoFile = !isDirectory && VideoExtensions.Contains(
-            Path.GetExtension(fullPath).ToLowerInvariant());
+            Path.GetExtension(fullPath));
 
         // Directories get a placeholder child so the TreeView shows an expander arrow.
         if (isDirectory)

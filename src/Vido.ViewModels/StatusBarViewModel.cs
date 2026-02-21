@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Vido.Core.Formatting;
 using Vido.Core.Layout;
 using Vido.Core.Playback;
 
@@ -177,12 +178,7 @@ public partial class StatusBarViewModel : ObservableObject, IDisposable
         collection.Add(item);
     }
 
-    internal static string FormatDuration(TimeSpan duration)
-    {
-        return duration.TotalHours >= 1
-            ? duration.ToString(@"hh\:mm\:ss")
-            : duration.ToString(@"mm\:ss");
-    }
+    internal static string FormatDuration(TimeSpan duration) => TimeFormatter.FormatPadded(duration);
 
     public void Dispose()
     {
