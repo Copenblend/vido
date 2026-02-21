@@ -1,0 +1,127 @@
+<UserControl x:Class="Vido.Views.Controls.TabWell"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:layout="clr-namespace:Vido.Core.Layout;assembly=Vido.Core">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="TabStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <!--
+        The tab well is a Grid with two layers:
+        - Layer 0: Background fill (tab strip color) + 1px bottom border line stretching full width
+        - Layer 1: ScrollViewer with tab items, each tab is 36px (35px content + 1px bottom)
+        
+        Inactive tabs paint their bottom 1px with PrimaryBorderBrush (blends with background line).
+        Active tab paints its bottom 1px with EditorBackgroundBrush (hides the line, joins with content).
+        Empty space right of tabs shows the background line naturally.
+        
+        All rendering happens within bounds — no negative margins or clip tricks needed.
+    -->
+    <Grid Height="36">
+        <!-- Bottom border line — full width, sits at bottom of grid -->
+        <Border Background="{DynamicResource TabInactiveBackgroundBrush}">
+            <Border BorderBrush="{DynamicResource PrimaryBorderBrush}"
+                    BorderThickness="0,0,0,1" />
+        </Border>
+
+        <!-- Tabs (on top of border, same grid cell) -->
+        <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                      VerticalScrollBarVisibility="Disabled"
+                      Style="{StaticResource TabScrollViewerStyle}">
+            <ItemsControl x:Name="TabStrip"
+                          ItemsSource="{Binding Tabs}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type layout:TabItemModel}">
+                        <Grid x:Name="TabRoot"
+                              MouseLeftButtonDown="OnTabMouseDown"
+                              MouseMove="OnTabMouseMove"
+                              MouseLeftButtonUp="OnTabMouseUp"
+                              Tag="{Binding}"
+                              Cursor="Hand">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="35" />
+                                <RowDefinition Height="1" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Tab content (35px) -->
+                            <Border x:Name="TabContent"
+                                    Grid.Row="0"
+                                    Padding="12,0"
+                                    Background="{DynamicResource TabInactiveBackgroundBrush}"
+                                    BorderBrush="{DynamicResource PrimaryBorderBrush}"
+                                    BorderThickness="0,0,1,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Path x:Name="TabIcon"
+                                          Grid.Column="0"
+                                          Data="{Binding IconGeometry}"
+                                          Fill="{DynamicResource SecondaryForegroundBrush}"
+                                          Stretch="Uniform"
+                                          Width="10" Height="10"
+                                          Margin="0,0,6,0"
+                                          VerticalAlignment="Center" />
+
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding Title}"
+                                               Foreground="{DynamicResource PrimaryForegroundBrush}"
+                                               FontFamily="Segoe UI"
+                                               FontSize="13"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"
+                                               MaxWidth="200" />
+
+                                    <Button x:Name="CloseButton"
+                                            Grid.Column="2"
+                                            Style="{StaticResource TabCloseButtonStyle}"
+                                            Visibility="{Binding IsClosable, Converter={StaticResource BoolToVis}}"
+                                            Click="OnTabCloseClick"
+                                            Tag="{Binding}" />
+                                </Grid>
+                            </Border>
+
+                            <!-- Bottom border area (1px).
+                                 Matches outer border for inactive tabs.
+                                 Active tab paints EditorBackgroundBrush to hide the border. -->
+                            <Border x:Name="TabBottomLine"
+                                    Grid.Row="1"
+                                    Background="{DynamicResource PrimaryBorderBrush}" />
+                        </Grid>
+
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                <!-- Blue accent top border -->
+                                <Setter TargetName="TabContent" Property="BorderBrush"
+                                        Value="{DynamicResource ActiveTabBorderBrush}" />
+                                <Setter TargetName="TabContent" Property="BorderThickness"
+                                        Value="0,2,0,0" />
+                                <!-- Editor background on content -->
+                                <Setter TargetName="TabContent" Property="Background"
+                                        Value="{DynamicResource EditorBackgroundBrush}" />
+                                <!-- Hide the bottom divider line -->
+                                <Setter TargetName="TabBottomLine" Property="Background"
+                                        Value="{DynamicResource EditorBackgroundBrush}" />
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

@@ -4,6 +4,20 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-010
+- Created TabItemModel — tab data model with Id, Title, IconGeometry, IsClosable, IsPinned properties
+- Created MainWindowViewModel — manages tab system (OpenTab, CloseTab, ActivateTab, ReorderTab), bottom/right panel visibility toggles, OpenSettings command; Player tab is pinned leftmost and not closable
+- Created TabWell.xaml — horizontal tab strip control with ItemsControl, click-to-activate, close button on hover (closable tabs only), drag-to-reorder support with pinned tab constraints, scroll arrows for overflow
+- Created TabStyles.xaml — VS Code Dark Modern tab styles: TabItemBorderStyle (35px height, right border), TabCloseButtonStyle (×, appears on hover), TabScrollViewerStyle (hidden scrollbar with ◀▶ arrows), TabScrollButtonStyle, PanelTabStripStyle/PanelTabItemStyle (panel header tabs), HorizontalSplitterStyle (drag handle for bottom panel)
+- Created SettingsPage.xaml — placeholder settings tab content with gear icon and "Settings will be available in a future update" text
+- Reorganized MainWindow.xaml layout — editor area now contains TabWell + tab content (VideoPlayer visible when Player active, DynamicTabContent for other tabs); added bottom panel area with splitter and OUTPUT tab stub; added right panel area with splitter and VIDEO INFO tab stub
+- Updated MainWindow.xaml.cs — added MainWindowViewModel integration, SetupTabSystem, UpdateTabContent (switches between Player/Settings/future tabs), UpdateBottomPanelVisibility/UpdateRightPanelVisibility (panel toggle with remembered dimensions)
+- Updated ActivityBarView.xaml.cs — Settings gear icon now raises SettingsRequested event (opens as tab) instead of toggling sidebar panel
+- Updated TitleBarView — enabled View > Toggle Bottom Panel and View > Toggle Right Panel menu items with click handlers and ToggleBottomPanelRequested/ToggleRightPanelRequested events
+- Registered MainWindowViewModel as singleton in DI container
+- Added tests: MainWindowViewModelTests (32) — covering constructor defaults (4), OpenTab (4), CloseTab (6), ActivateTab (2), ReorderTab (5), OpenSettings (3), panel toggles (2), FindTab (2), TabItemModel defaults (1), PropertyChanged notifications (3)
+- Total test count: 259 (all passing)
+
 ### vi-009
 - Created VideoPlayerViewModel — binds to IVideoEngine, exposes PlayPause/Stop/SkipPrevious/SkipNext/ToggleMute/ToggleLoop commands, seek support with BeginSeek/EndSeek for slider dragging, position/duration text formatting, sibling video file navigation for skip prev/next, auto-advance on media end, FrameReady event forwarding
 - Created VideoPlayerControl.xaml — video player tab combining video display (WriteableBitmap rendered to Image) and transport controls bar; empty state with film reel icon and "Open a video file to begin" text; seek bar with elapsed/total time labels; skip prev/next, play/pause, stop buttons; volume slider with mute toggle; loop toggle

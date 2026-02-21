@@ -1,0 +1,204 @@
+using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Vido.Core.Layout;
+
+namespace Vido.ViewModels;
+
+/// <summary>
+/// ViewModel for the main window. Manages the tab system and panel visibility.
+/// Coordinates between the tab well, bottom panel, and right panel.
+/// </summary>
+public partial class MainWindowViewModel : ObservableObject
+{
+    /// <summary>Well-known tab ID for the video player.</summary>
+    public const string PlayerTabId = "Player";
+
+    /// <summary>Well-known tab ID for the settings page.</summary>
+    public const string SettingsTabId = "Settings";
+
+    /// <summary>Material Design gear icon geometry for the Settings tab.</summary>
+    private const string SettingsIconGeometry =
+        "M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5"
+        + "M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37"
+        + "C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05"
+        + "C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10"
+        + "C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05"
+        + "C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11"
+        + "C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63"
+        + "C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.04 4.95,18.95L7.44,17.94"
+        + "C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14"
+        + "C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95"
+        + "C19.27,19.04 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z";
+
+    // ── Tab Management ──
+
+    /// <summary>All open tabs, in display order.</summary>
+    public ObservableCollection<TabItemModel> Tabs { get; } = [];
+
+    /// <summary>The currently active tab.</summary>
+    [ObservableProperty]
+    private TabItemModel? _activeTab;
+
+    partial void OnActiveTabChanged(TabItemModel? oldValue, TabItemModel? newValue)
+    {
+        if (oldValue is not null) oldValue.IsActive = false;
+        if (newValue is not null) newValue.IsActive = true;
+    }
+
+    // ── Panel Visibility ──
+
+    /// <summary>Whether the bottom panel is visible.</summary>
+    [ObservableProperty]
+    private bool _isBottomPanelVisible;
+
+    /// <summary>Whether the right panel is visible.</summary>
+    [ObservableProperty]
+    private bool _isRightPanelVisible;
+
+    /// <summary>Remembered height of the bottom panel (before collapse).</summary>
+    [ObservableProperty]
+    private double _bottomPanelHeight = 200;
+
+    /// <summary>Remembered width of the right panel (before collapse).</summary>
+    [ObservableProperty]
+    private double _rightPanelWidth = 300;
+
+    public MainWindowViewModel()
+    {
+        // The Player tab is always present, pinned leftmost, not closable
+        var playerTab = new TabItemModel(PlayerTabId, "Player")
+        {
+            IconGeometry = "M 4,2 L 4,18 L 18,10 Z",
+            IsClosable = false,
+            IsPinned = true
+        };
+
+        Tabs.Add(playerTab);
+        ActiveTab = playerTab;
+    }
+
+    // ── Tab Commands ──
+
+    /// <summary>
+    /// Opens a tab. If a tab with the same ID already exists, activates it.
+    /// Otherwise creates a new tab and activates it.
+    /// </summary>
+    public void OpenTab(string tabId, string title, string? iconGeometry = null, bool isClosable = true)
+    {
+        var existing = FindTab(tabId);
+        if (existing is not null)
+        {
+            ActiveTab = existing;
+            return;
+        }
+
+        var tab = new TabItemModel(tabId, title)
+        {
+            IconGeometry = iconGeometry,
+            IsClosable = isClosable
+        };
+
+        Tabs.Add(tab);
+        ActiveTab = tab;
+    }
+
+    /// <summary>
+    /// Closes a tab by ID. Cannot close non-closable tabs (e.g., Player).
+    /// If the closed tab was active, activates the nearest remaining tab.
+    /// </summary>
+    [RelayCommand]
+    public void CloseTab(string tabId)
+    {
+        var tab = FindTab(tabId);
+        if (tab is null || !tab.IsClosable) return;
+
+        var index = Tabs.IndexOf(tab);
+        Tabs.Remove(tab);
+
+        // If the closed tab was active, activate the nearest neighbor
+        if (ActiveTab == tab || ActiveTab is null)
+        {
+            if (Tabs.Count > 0)
+            {
+                var newIndex = Math.Min(index, Tabs.Count - 1);
+                ActiveTab = Tabs[newIndex];
+            }
+            else
+            {
+                ActiveTab = null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Activates a tab by ID.
+    /// </summary>
+    [RelayCommand]
+    public void ActivateTab(string tabId)
+    {
+        var tab = FindTab(tabId);
+        if (tab is not null)
+            ActiveTab = tab;
+    }
+
+    /// <summary>
+    /// Reorders a tab from one index to another.
+    /// Pinned tabs cannot be moved. Tabs cannot be moved before pinned tabs.
+    /// </summary>
+    public void ReorderTab(int fromIndex, int toIndex)
+    {
+        if (fromIndex < 0 || fromIndex >= Tabs.Count) return;
+        if (toIndex < 0 || toIndex >= Tabs.Count) return;
+        if (fromIndex == toIndex) return;
+
+        var tab = Tabs[fromIndex];
+        if (tab.IsPinned) return;
+
+        // Cannot move before pinned tabs
+        var firstUnpinnedIndex = 0;
+        for (int i = 0; i < Tabs.Count; i++)
+        {
+            if (!Tabs[i].IsPinned) { firstUnpinnedIndex = i; break; }
+        }
+
+        if (toIndex < firstUnpinnedIndex) return;
+
+        Tabs.Move(fromIndex, toIndex);
+    }
+
+    // ── Panel Commands ──
+
+    /// <summary>Toggles the bottom panel visibility.</summary>
+    [RelayCommand]
+    public void ToggleBottomPanel()
+    {
+        IsBottomPanelVisible = !IsBottomPanelVisible;
+    }
+
+    /// <summary>Toggles the right panel visibility.</summary>
+    [RelayCommand]
+    public void ToggleRightPanel()
+    {
+        IsRightPanelVisible = !IsRightPanelVisible;
+    }
+
+    /// <summary>Opens Settings as a tab (like VS Code).</summary>
+    [RelayCommand]
+    public void OpenSettings()
+    {
+        OpenTab(SettingsTabId, "Settings", iconGeometry: SettingsIconGeometry, isClosable: true);
+    }
+
+    // ── Helpers ──
+
+    /// <summary>Finds a tab by its ID.</summary>
+    internal TabItemModel? FindTab(string tabId)
+    {
+        for (int i = 0; i < Tabs.Count; i++)
+        {
+            if (Tabs[i].Id == tabId) return Tabs[i];
+        }
+        return null;
+    }
+}

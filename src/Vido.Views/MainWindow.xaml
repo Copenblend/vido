@@ -14,7 +14,10 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/Brushes.xaml" />
                 <ResourceDictionary Source="Controls/LayoutStyles.xaml" />
+                <ResourceDictionary Source="Controls/TabStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
+
+            <BooleanToVisibilityConverter x:Key="BoolToVis" />
         </ResourceDictionary>
     </Window.Resources>
 
@@ -47,7 +50,7 @@
                     <ColumnDefinition x:Name="SidebarColumn" Width="300" MinWidth="170" MaxWidth="600" />
                     <!-- Splitter -->
                     <ColumnDefinition Width="Auto" />
-                    <!-- Editor area -->
+                    <!-- Editor + panels area -->
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
@@ -70,62 +73,138 @@
                 <GridSplitter x:Name="SidebarSplitter" Grid.Column="2"
                               Style="{StaticResource VerticalSplitterStyle}" />
 
-                <!-- Editor Area -->
-                <Grid Grid.Column="3"
-                      Background="{DynamicResource EditorBackgroundBrush}">
-                    <Grid.RowDefinitions>
-                        <!-- Tab strip -->
-                        <RowDefinition Height="Auto" />
-                        <!-- Tab content -->
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+                <!-- Editor + Right Panel area -->
+                <Grid Grid.Column="3">
+                    <Grid.ColumnDefinitions>
+                        <!-- Editor + bottom panel -->
+                        <ColumnDefinition Width="*" />
+                        <!-- Right panel splitter -->
+                        <ColumnDefinition x:Name="RightPanelSplitterColumn" Width="Auto" />
+                        <!-- Right panel -->
+                        <ColumnDefinition x:Name="RightPanelColumn" Width="0" />
+                    </Grid.ColumnDefinitions>
 
-                    <!-- Tab strip -->
-                    <Border Grid.Row="0"
-                            Background="{DynamicResource TabInactiveBackgroundBrush}"
-                            BorderBrush="{DynamicResource PrimaryBorderBrush}"
-                            BorderThickness="0,0,0,1">
-                        <StackPanel Orientation="Horizontal">
-                            <!-- Player tab — always leftmost, no close button -->
-                            <Border x:Name="PlayerTab"
-                                    Height="35"
-                                    Padding="12,0"
-                                    Background="{DynamicResource EditorBackgroundBrush}"
-                                    Cursor="Hand"
-                                    MouseLeftButtonDown="OnPlayerTabClick">
-                                <StackPanel Orientation="Horizontal"
-                                            VerticalAlignment="Center">
-                                    <Path Data="M 4,2 L 4,18 L 18,10 Z"
-                                          Fill="{DynamicResource SecondaryForegroundBrush}"
-                                          Stretch="Uniform"
-                                          Width="10" Height="10"
-                                          Margin="0,0,6,0"
-                                          VerticalAlignment="Center" />
-                                    <TextBlock Text="Player"
-                                               Foreground="{DynamicResource PrimaryForegroundBrush}"
+                    <!-- Editor (tabs + content) + Bottom Panel -->
+                    <Grid Grid.Column="0">
+                        <Grid.RowDefinitions>
+                            <!-- Tab strip + tab content -->
+                            <RowDefinition Height="*" />
+                            <!-- Bottom panel splitter -->
+                            <RowDefinition x:Name="BottomPanelSplitterRow" Height="Auto" />
+                            <!-- Bottom panel -->
+                            <RowDefinition x:Name="BottomPanelRow" Height="0" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Editor area: tab strip + content -->
+                        <Grid Grid.Row="0"
+                              Background="{DynamicResource EditorBackgroundBrush}">
+                            <Grid.RowDefinitions>
+                                <!-- Tab strip -->
+                                <RowDefinition Height="Auto" />
+                                <!-- Tab content -->
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Tab Well -->
+                            <controls:TabWell x:Name="TabWell" Grid.Row="0" />
+
+                            <!-- Tab content area — shows the active tab's content -->
+                            <Grid x:Name="TabContentArea" Grid.Row="1">
+                                <!-- Video player (always present, visibility toggled) -->
+                                <controls:VideoPlayerControl x:Name="VideoPlayer" />
+
+                                <!-- Dynamic tab content host (Settings, etc.) -->
+                                <ContentPresenter x:Name="DynamicTabContent"
+                                                  Visibility="Collapsed" />
+                            </Grid>
+                        </Grid>
+
+                        <!-- Bottom panel splitter -->
+                        <GridSplitter x:Name="BottomPanelSplitter"
+                                      Grid.Row="1"
+                                      Style="{StaticResource HorizontalSplitterStyle}"
+                                      Visibility="Collapsed" />
+
+                        <!-- Bottom panel -->
+                        <Border x:Name="BottomPanel"
+                                Grid.Row="2"
+                                Background="{DynamicResource PanelBackgroundBrush}"
+                                Visibility="Collapsed">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <!-- Panel tab strip -->
+                                    <RowDefinition Height="Auto" />
+                                    <!-- Panel content -->
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+
+                                <!-- Bottom panel tab strip -->
+                                <Border Grid.Row="0"
+                                        Style="{StaticResource PanelTabStripStyle}"
+                                        BorderThickness="0,1,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="OUTPUT"
+                                                   Style="{StaticResource PanelTabItemStyle}"
+                                                   Foreground="{DynamicResource PrimaryForegroundBrush}" />
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Bottom panel content (stub) -->
+                                <Border Grid.Row="1"
+                                        Padding="12,8">
+                                    <TextBlock Text="Output log will be available in a future update."
+                                               Foreground="{DynamicResource DisabledForegroundBrush}"
                                                FontFamily="Segoe UI"
-                                               FontSize="13"
-                                               VerticalAlignment="Center" />
+                                               FontSize="12"
+                                               VerticalAlignment="Center"
+                                               HorizontalAlignment="Center" />
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <!-- Right panel splitter -->
+                    <GridSplitter x:Name="RightPanelSplitter"
+                                  Grid.Column="1"
+                                  Style="{StaticResource VerticalSplitterStyle}"
+                                  Visibility="Collapsed" />
+
+                    <!-- Right panel -->
+                    <Border x:Name="RightPanel"
+                            Grid.Column="2"
+                            Background="{DynamicResource PanelBackgroundBrush}"
+                            Visibility="Collapsed">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <!-- Panel tab strip -->
+                                <RowDefinition Height="Auto" />
+                                <!-- Panel content -->
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Right panel tab strip -->
+                            <Border Grid.Row="0"
+                                    Style="{StaticResource PanelTabStripStyle}"
+                                    BorderThickness="0,0,0,1">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="VIDEO INFO"
+                                               Style="{StaticResource PanelTabItemStyle}"
+                                               Foreground="{DynamicResource PrimaryForegroundBrush}" />
                                 </StackPanel>
-                                <!-- Active tab bottom accent line -->
-                                <Border.Effect>
-                                    <DropShadowEffect ShadowDepth="0" BlurRadius="0" />
-                                </Border.Effect>
                             </Border>
-                        </StackPanel>
+
+                            <!-- Right panel content (stub) -->
+                            <Border Grid.Row="1"
+                                    Padding="12,8">
+                                <TextBlock Text="Video details will be available in a future update."
+                                           Foreground="{DynamicResource DisabledForegroundBrush}"
+                                           FontFamily="Segoe UI"
+                                           FontSize="12"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center" />
+                            </Border>
+                        </Grid>
                     </Border>
-
-                    <!-- Active tab bottom border (accent line under active tab) -->
-                    <Border Grid.Row="0"
-                            VerticalAlignment="Bottom"
-                            Height="1"
-                            Width="{Binding ActualWidth, ElementName=PlayerTab}"
-                            HorizontalAlignment="Left"
-                            Background="{DynamicResource AccentBrush}" />
-
-                    <!-- Tab content area -->
-                    <controls:VideoPlayerControl x:Name="VideoPlayer"
-                                                 Grid.Row="1" />
                 </Grid>
             </Grid>
 

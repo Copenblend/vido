@@ -28,27 +28,35 @@ public partial class MainWindow : Window
     private readonly ISettingsService _settingsService;
     private readonly FileExplorerViewModel _fileExplorerViewModel;
     private readonly VideoPlayerViewModel _videoPlayerViewModel;
+    private readonly MainWindowViewModel _mainWindowViewModel;
 
     private TitleBarViewModel? _titleBarViewModel;
     private ActivityBarViewModel? _activityBarViewModel;
     private SidebarViewModel? _sidebarViewModel;
     private FileExplorerPanel? _fileExplorerPanel;
 
+    // Remembered panel dimensions for toggle persistence
+    private double _bottomPanelHeight = 200;
+    private double _rightPanelWidth = 300;
+
     public MainWindow(
         IStateService stateService,
         ISettingsService settingsService,
         FileExplorerViewModel fileExplorerViewModel,
-        VideoPlayerViewModel videoPlayerViewModel)
+        VideoPlayerViewModel videoPlayerViewModel,
+        MainWindowViewModel mainWindowViewModel)
     {
         _stateService = stateService;
         _settingsService = settingsService;
         _fileExplorerViewModel = fileExplorerViewModel;
         _videoPlayerViewModel = videoPlayerViewModel;
+        _mainWindowViewModel = mainWindowViewModel;
 
         InitializeComponent();
         SetupWindowChrome();
         SetupTitleBar();
         SetupLayout();
+        SetupTabSystem();
         SetupVideoPlayer();
         SetupFileExplorer();
         RestoreWindowState();
@@ -100,6 +108,9 @@ public partial class MainWindow : Window
         ActivityBar.DataContext = _activityBarViewModel;
         Sidebar.DataContext = _sidebarViewModel;
 
+        // Settings gear opens as a tab, not in the sidebar
+        ActivityBar.SettingsRequested += (_, _) => _mainWindowViewModel.OpenSettings();
+
         // Initialize visual states
         ActivityBar.UpdateActiveStates();
     }
@@ -107,6 +118,22 @@ public partial class MainWindow : Window
     private void SetupVideoPlayer()
     {
         VideoPlayer.DataContext = _videoPlayerViewModel;
+    }
+
+    private void SetupTabSystem()
+    {
+        TabWell.DataContext = _mainWindowViewModel;
+
+        // Listen for active tab changes to switch content
+        _mainWindowViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.ActiveTab))
+                UpdateTabContent();
+            else if (e.PropertyName == nameof(MainWindowViewModel.IsBottomPanelVisible))
+                UpdateBottomPanelVisibility();
+            else if (e.PropertyName == nameof(MainWindowViewModel.IsRightPanelVisible))
+                UpdateRightPanelVisibility();
+        };
     }
 
     private void SetupFileExplorer()
@@ -120,6 +147,10 @@ public partial class MainWindow : Window
         TitleBar.FolderOpened += OnFolderOpened;
         TitleBar.FolderClosed += OnFolderClosed;
         TitleBar.FolderRescanned += OnFolderRescanned;
+
+        // Wire View menu panel toggles
+        TitleBar.ToggleBottomPanelRequested += () => _mainWindowViewModel.ToggleBottomPanel();
+        TitleBar.ToggleRightPanelRequested += () => _mainWindowViewModel.ToggleRightPanel();
 
         // Wire the "Open Folder" button inside the explorer panel
         _fileExplorerPanel.OpenFolderRequested += ShowOpenFolderDialog;
@@ -193,6 +224,8 @@ public partial class MainWindow : Window
 
         try
         {
+            // Ensure the Player tab is active when playing a video
+            _mainWindowViewModel.ActivateTab(MainWindowViewModel.PlayerTabId);
             await _videoPlayerViewModel.LoadAndPlayAsync(node.FullPath);
         }
         catch
@@ -201,9 +234,101 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OnPlayerTabClick(object sender, MouseButtonEventArgs e)
+    // ── Tab content switching ──
+
+    /// <summary>
+    /// Switches the visible content area based on the active tab.
+    /// The VideoPlayerControl is always present but hidden when another tab is active.
+    /// Settings and other tabs use the DynamicTabContent presenter.
+    /// </summary>
+    private void UpdateTabContent()
     {
-        // Player tab is always active — no-op for now; future tabs will switch here.
+        var activeTab = _mainWindowViewModel.ActiveTab;
+        if (activeTab is null) return;
+
+        if (activeTab.Id == MainWindowViewModel.PlayerTabId)
+        {
+            // Show the video player, hide dynamic content
+            VideoPlayer.Visibility = Visibility.Visible;
+            DynamicTabContent.Visibility = Visibility.Collapsed;
+        }
+        else if (activeTab.Id == MainWindowViewModel.SettingsTabId)
+        {
+            // Show settings page
+            VideoPlayer.Visibility = Visibility.Collapsed;
+            DynamicTabContent.Content = new SettingsPage();
+            DynamicTabContent.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            // Future tabs — show empty for now
+            VideoPlayer.Visibility = Visibility.Collapsed;
+            DynamicTabContent.Content = null;
+            DynamicTabContent.Visibility = Visibility.Visible;
+        }
+
+        // Update tab visual states (active background + accent line)
+        UpdateTabVisualStates();
+    }
+
+    /// <summary>
+    /// Updates the visual styling of tabs in the tab well — the active tab gets
+    /// the editor background and an accent bottom border.
+    /// </summary>
+    private void UpdateTabVisualStates()
+    {
+        // The TabWell handles visual states internally via data binding.
+        // This is a hook for any additional MainWindow-level visual updates.
+    }
+
+    // ── Panel visibility ──
+
+    private void UpdateBottomPanelVisibility()
+    {
+        if (_mainWindowViewModel.IsBottomPanelVisible)
+        {
+            BottomPanel.Visibility = Visibility.Visible;
+            BottomPanelSplitter.Visibility = Visibility.Visible;
+            BottomPanelRow.Height = new GridLength(_bottomPanelHeight);
+            BottomPanelSplitterRow.Height = GridLength.Auto;
+        }
+        else
+        {
+            // Remember current height before collapsing
+            if (BottomPanelRow.Height.Value > 0)
+                _bottomPanelHeight = BottomPanelRow.Height.Value;
+
+            BottomPanel.Visibility = Visibility.Collapsed;
+            BottomPanelSplitter.Visibility = Visibility.Collapsed;
+            BottomPanelRow.Height = new GridLength(0);
+            BottomPanelSplitterRow.Height = new GridLength(0);
+        }
+    }
+
+    private void UpdateRightPanelVisibility()
+    {
+        if (_mainWindowViewModel.IsRightPanelVisible)
+        {
+            RightPanel.Visibility = Visibility.Visible;
+            RightPanelSplitter.Visibility = Visibility.Visible;
+            RightPanelColumn.Width = new GridLength(_rightPanelWidth);
+            RightPanelColumn.MinWidth = 170;
+            RightPanelColumn.MaxWidth = 600;
+            RightPanelSplitterColumn.Width = GridLength.Auto;
+        }
+        else
+        {
+            // Remember current width before collapsing
+            if (RightPanelColumn.Width.Value > 0)
+                _rightPanelWidth = RightPanelColumn.Width.Value;
+
+            RightPanel.Visibility = Visibility.Collapsed;
+            RightPanelSplitter.Visibility = Visibility.Collapsed;
+            RightPanelColumn.Width = new GridLength(0);
+            RightPanelColumn.MinWidth = 0;
+            RightPanelColumn.MaxWidth = double.PositiveInfinity;
+            RightPanelSplitterColumn.Width = new GridLength(0);
+        }
     }
 
     private void OnPanelChanged(object sender, RoutedEventArgs e)
