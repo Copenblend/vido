@@ -25,18 +25,19 @@
         <Grid>
             <Grid.RowDefinitions>
                 <!-- Title bar -->
-                <RowDefinition Height="30" />
+                <RowDefinition x:Name="TitleBarRow" Height="30" />
                 <!-- Content area (activity bar + sidebar + editor) -->
                 <RowDefinition Height="*" />
                 <!-- Status bar -->
-                <RowDefinition Height="Auto" />
+                <RowDefinition x:Name="StatusBarRow" Height="Auto" />
             </Grid.RowDefinitions>
 
             <!-- Title Bar -->
             <controls:TitleBarView x:Name="TitleBar" Grid.Row="0" />
 
             <!-- Divider between title bar and content -->
-            <Border Grid.Row="0"
+            <Border x:Name="TitleBarDivider"
+                    Grid.Row="0"
                     VerticalAlignment="Bottom"
                     Height="1"
                     Background="{DynamicResource PrimaryBorderBrush}" />
@@ -96,7 +97,7 @@
                         </Grid.RowDefinitions>
 
                         <!-- Editor area: tab strip + content -->
-                        <Grid Grid.Row="0"
+                        <Grid x:Name="EditorAreaGrid" Grid.Row="0"
                               Background="{DynamicResource EditorBackgroundBrush}">
                             <Grid.RowDefinitions>
                                 <!-- Tab strip -->

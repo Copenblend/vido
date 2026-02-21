@@ -4,7 +4,9 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Shell;
+using System.Windows.Threading;
 using Vido.Core.Keyboard;
 using Vido.Core.Layout;
 using KeyBinding = Vido.Core.Keyboard.KeyBinding;
@@ -46,6 +48,30 @@ public partial class MainWindow : Window
     // Remembered panel dimensions for toggle persistence
     private double _bottomPanelHeight = 200;
     private double _rightPanelWidth = 300;
+
+    // ── Fullscreen state ──
+    private bool _isFullscreen;
+    private WindowState _preFullscreenWindowState;
+    private double _preFullscreenLeft;
+    private double _preFullscreenTop;
+    private double _preFullscreenWidth;
+    private double _preFullscreenHeight;
+    private Thickness _preFullscreenBorderThickness;
+
+    // Pre-fullscreen UI visibility state
+    private bool _preFullscreenSidebarVisible;
+    private bool _preFullscreenBottomPanelVisible;
+    private bool _preFullscreenBottomPanelCollapsed;
+    private bool _preFullscreenRightPanelVisible;
+    private bool _preFullscreenRightPanelCollapsed;
+    private bool _preFullscreenStatusBarVisible;
+    private string? _preFullscreenActiveTabId;
+
+    // Fullscreen auto-hide timer
+    private DispatcherTimer? _fullscreenHideTimer;
+    private bool _controlsVisible = true;
+    private const int FullscreenHideDelayMs = 3000;
+    private const int ControlsFadeDurationMs = 200;
 
     public MainWindow(
         IStateService stateService,
@@ -110,6 +136,9 @@ public partial class MainWindow : Window
 
     private void OnWindowStateChanged(object? sender, EventArgs e)
     {
+        // In fullscreen mode, skip normal state sync — fullscreen manages its own chrome
+        if (_isFullscreen) return;
+
         var appState = WindowState switch
         {
             WindowState.Maximized => AppWindowState.Maximized,
@@ -142,6 +171,7 @@ public partial class MainWindow : Window
     private void SetupVideoPlayer()
     {
         VideoPlayer.DataContext = _videoPlayerViewModel;
+        VideoPlayer.FullscreenToggleRequested += ToggleFullscreen;
     }
 
     private void SetupOutputLog()
@@ -226,6 +256,17 @@ public partial class MainWindow : Window
         // File operations
         _keyboardShortcutService.Register(
             new KeyBinding("O", ctrl: true, shift: true), "vido.openFolder", ShowOpenFolderDialog);
+
+        // Fullscreen
+        _keyboardShortcutService.Register(
+            new KeyBinding("F11"), "vido.toggleFullscreen", ToggleFullscreen);
+        _keyboardShortcutService.Register(
+            new KeyBinding("F"), "vido.toggleFullscreenF", ToggleFullscreen);
+        _keyboardShortcutService.Register(
+            new KeyBinding("Escape"), "vido.exitFullscreen", () =>
+            {
+                if (_isFullscreen) ExitFullscreen();
+            });
 
         // Wire PreviewKeyDown
         PreviewKeyDown += OnPreviewKeyDown;
@@ -347,6 +388,278 @@ public partial class MainWindow : Window
         OnPanelChanged(this, new RoutedEventArgs());
     }
 
+    // ── Fullscreen ──
+
+    /// <summary>
+    /// Toggles fullscreen mode on/off.
+    /// </summary>
+    private void ToggleFullscreen()
+    {
+        if (_isFullscreen)
+            ExitFullscreen();
+        else
+            EnterFullscreen();
+    }
+
+    /// <summary>
+    /// Enters fullscreen mode. Saves current UI state, hides all chrome,
+    /// and shows the video filling the entire screen with overlay controls.
+    /// </summary>
+    private void EnterFullscreen()
+    {
+        if (_isFullscreen) return;
+        _isFullscreen = true;
+        _mainWindowViewModel.IsFullscreen = true;
+
+        // Save pre-fullscreen window geometry
+        _preFullscreenWindowState = WindowState;
+        if (WindowState == WindowState.Normal)
+        {
+            _preFullscreenLeft = Left;
+            _preFullscreenTop = Top;
+            _preFullscreenWidth = Width;
+            _preFullscreenHeight = Height;
+        }
+        else
+        {
+            var bounds = RestoreBounds;
+            _preFullscreenLeft = bounds.Left;
+            _preFullscreenTop = bounds.Top;
+            _preFullscreenWidth = bounds.Width;
+            _preFullscreenHeight = bounds.Height;
+        }
+        _preFullscreenBorderThickness = WindowBorder.BorderThickness;
+
+        // Save pre-fullscreen UI visibility
+        _preFullscreenSidebarVisible = _activityBarViewModel?.IsSidebarVisible ?? false;
+        _preFullscreenBottomPanelVisible = _mainWindowViewModel.IsBottomPanelVisible;
+        _preFullscreenBottomPanelCollapsed = _mainWindowViewModel.IsBottomPanelCollapsed;
+        _preFullscreenRightPanelVisible = _mainWindowViewModel.IsRightPanelVisible;
+        _preFullscreenRightPanelCollapsed = _mainWindowViewModel.IsRightPanelCollapsed;
+        _preFullscreenStatusBarVisible = _mainWindowViewModel.IsStatusBarVisible;
+
+        // Hide all UI chrome
+        TitleBar.Visibility = Visibility.Collapsed;
+        TitleBarDivider.Visibility = Visibility.Collapsed;
+        TitleBarRow.Height = new GridLength(0);
+        ActivityBar.Visibility = Visibility.Collapsed;
+        ActivityBarDivider.Visibility = Visibility.Collapsed;
+        TabWell.Visibility = Visibility.Collapsed;
+        StatusBarRow.Height = new GridLength(0);
+        WindowBorder.BorderThickness = new Thickness(0);
+
+        // Set all backgrounds to black for cinema-style fullscreen
+        Background = System.Windows.Media.Brushes.Black;
+        EditorAreaGrid.Background = System.Windows.Media.Brushes.Black;
+
+        // Hide sidebar
+        Sidebar.Visibility = Visibility.Collapsed;
+        SidebarSplitter.Visibility = Visibility.Collapsed;
+        SidebarColumn.Width = new GridLength(0);
+        SidebarColumn.MinWidth = 0;
+        SidebarColumn.MaxWidth = 0;
+
+        // Hide bottom panel, right panel, and status bar via VM properties
+        // so UpdateXxxVisibility handlers fire correctly on restore
+        _mainWindowViewModel.IsBottomPanelVisible = false;
+        _mainWindowViewModel.IsRightPanelVisible = false;
+        _mainWindowViewModel.IsStatusBarVisible = false;
+
+        // Force video tab active — fullscreen should always show the video player
+        _preFullscreenActiveTabId = _mainWindowViewModel.ActiveTab?.Id;
+        if (_preFullscreenActiveTabId != MainWindowViewModel.PlayerTabId)
+        {
+            _mainWindowViewModel.ActivateTab(MainWindowViewModel.PlayerTabId);
+            UpdateTabContent();
+        }
+
+        // Switch to fullscreen overlay mode for controls
+        VideoPlayer.EnterFullscreenOverlay();
+
+        // Remove WindowChrome caption so there's no drag area
+        var chrome = WindowChrome.GetWindowChrome(this);
+        if (chrome is not null)
+        {
+            chrome.CaptionHeight = 0;
+            chrome.ResizeBorderThickness = new Thickness(0);
+        }
+
+        // Go to maximized (covers entire screen with taskbar hidden due to WindowStyle.None)
+        if (WindowState == WindowState.Maximized)
+            WindowState = WindowState.Normal; // Reset first so WPF reapplies
+        WindowState = WindowState.Maximized;
+
+        // Setup auto-hide timer for controls
+        SetupFullscreenAutoHide();
+
+        // Wire mouse move for control visibility
+        MouseMove += OnFullscreenMouseMove;
+
+        _logService.Info("Entered fullscreen mode", "App");
+    }
+
+    /// <summary>
+    /// Exits fullscreen mode. Restores all UI chrome and window geometry
+    /// to their pre-fullscreen state.
+    /// </summary>
+    private void ExitFullscreen()
+    {
+        if (!_isFullscreen) return;
+        _isFullscreen = false;
+        _mainWindowViewModel.IsFullscreen = false;
+
+        // Stop auto-hide timer and unwire mouse
+        _fullscreenHideTimer?.Stop();
+        MouseMove -= OnFullscreenMouseMove;
+
+        // Ensure controls are visible and cursor is shown
+        ShowFullscreenControls(animate: false);
+        Mouse.OverrideCursor = null;
+
+        // Restore WindowChrome
+        var chrome = WindowChrome.GetWindowChrome(this);
+        if (chrome is not null)
+        {
+            chrome.CaptionHeight = 30;
+            chrome.ResizeBorderThickness = new Thickness(6);
+        }
+
+        // Restore controls to normal mode
+        VideoPlayer.ExitFullscreenOverlay();
+
+        // Restore UI chrome
+        TitleBar.Visibility = Visibility.Visible;
+        TitleBarDivider.Visibility = Visibility.Visible;
+        TitleBarRow.Height = new GridLength(30);
+        ActivityBar.Visibility = Visibility.Visible;
+        ActivityBarDivider.Visibility = Visibility.Visible;
+        TabWell.Visibility = Visibility.Visible;
+        StatusBarRow.Height = GridLength.Auto;
+        WindowBorder.BorderThickness = _preFullscreenBorderThickness;
+
+        // Restore backgrounds from fullscreen black
+        SetResourceReference(BackgroundProperty, "EditorBackgroundBrush");
+        EditorAreaGrid.SetResourceReference(System.Windows.Controls.Panel.BackgroundProperty, "EditorBackgroundBrush");
+
+        // Restore active tab if it was changed for fullscreen
+        if (_preFullscreenActiveTabId is not null
+            && _preFullscreenActiveTabId != MainWindowViewModel.PlayerTabId)
+        {
+            _mainWindowViewModel.ActivateTab(_preFullscreenActiveTabId);
+            UpdateTabContent();
+        }
+
+        // Restore sidebar
+        if (_activityBarViewModel is not null)
+        {
+            _activityBarViewModel.IsSidebarVisible = _preFullscreenSidebarVisible;
+            OnPanelChanged(this, new RoutedEventArgs());
+        }
+
+        // Restore panels
+        _mainWindowViewModel.IsBottomPanelVisible = _preFullscreenBottomPanelVisible;
+        _mainWindowViewModel.IsBottomPanelCollapsed = _preFullscreenBottomPanelCollapsed;
+        _mainWindowViewModel.IsRightPanelVisible = _preFullscreenRightPanelVisible;
+        _mainWindowViewModel.IsRightPanelCollapsed = _preFullscreenRightPanelCollapsed;
+        _mainWindowViewModel.IsStatusBarVisible = _preFullscreenStatusBarVisible;
+
+        // Restore window geometry
+        WindowState = _preFullscreenWindowState;
+        if (_preFullscreenWindowState == WindowState.Normal)
+        {
+            Left = _preFullscreenLeft;
+            Top = _preFullscreenTop;
+            Width = _preFullscreenWidth;
+            Height = _preFullscreenHeight;
+        }
+
+        _logService.Info("Exited fullscreen mode", "App");
+    }
+
+    /// <summary>
+    /// Sets up the timer that auto-hides controls and cursor after inactivity.
+    /// </summary>
+    private void SetupFullscreenAutoHide()
+    {
+        if (_fullscreenHideTimer is null)
+        {
+            _fullscreenHideTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(FullscreenHideDelayMs)
+            };
+            _fullscreenHideTimer.Tick += (_, _) =>
+            {
+                if (_isFullscreen)
+                    HideFullscreenControls();
+            };
+        }
+
+        _fullscreenHideTimer.Start();
+        _controlsVisible = true;
+    }
+
+    /// <summary>
+    /// Handles mouse movement during fullscreen — shows controls and resets hide timer.
+    /// </summary>
+    private void OnFullscreenMouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_isFullscreen) return;
+
+        if (!_controlsVisible)
+            ShowFullscreenControls(animate: true);
+
+        // Reset the auto-hide timer
+        _fullscreenHideTimer?.Stop();
+        _fullscreenHideTimer?.Start();
+    }
+
+    /// <summary>
+    /// Fades in the controls overlay and shows the mouse cursor.
+    /// </summary>
+    private void ShowFullscreenControls(bool animate)
+    {
+        if (_controlsVisible && animate) return;
+        _controlsVisible = true;
+
+        Mouse.OverrideCursor = null;
+
+        var overlay = VideoPlayer.ControlsOverlayElement;
+        if (animate)
+        {
+            var fadeIn = new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(ControlsFadeDurationMs));
+            overlay.BeginAnimation(OpacityProperty, fadeIn);
+        }
+        else
+        {
+            overlay.BeginAnimation(OpacityProperty, null);
+            overlay.Opacity = 1.0;
+        }
+        overlay.IsHitTestVisible = true;
+    }
+
+    /// <summary>
+    /// Fades out the controls overlay and hides the mouse cursor.
+    /// </summary>
+    private void HideFullscreenControls()
+    {
+        if (!_controlsVisible) return;
+        _controlsVisible = false;
+
+        _fullscreenHideTimer?.Stop();
+
+        var overlay = VideoPlayer.ControlsOverlayElement;
+        var fadeOut = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(ControlsFadeDurationMs));
+        fadeOut.Completed += (_, _) =>
+        {
+            if (!_controlsVisible)
+            {
+                overlay.IsHitTestVisible = false;
+                Mouse.OverrideCursor = Cursors.None;
+            }
+        };
+        overlay.BeginAnimation(OpacityProperty, fadeOut);
+    }
+
     /// <summary>
     /// Shows or hides the status bar based on the ViewModel state.
     /// </summary>
@@ -465,6 +778,9 @@ public partial class MainWindow : Window
         };
         TitleBar.ToggleStatusBarRequested += () => _mainWindowViewModel.ToggleStatusBar();
         TitleBar.ToggleSidebarRequested += ToggleSidebar;
+
+        // Wire fullscreen menu event
+        TitleBar.FullscreenRequested += ToggleFullscreen;
 
         // Wire playback menu events
         TitleBar.PlayPauseRequested += () => _videoPlayerViewModel.PlayPause();
@@ -792,18 +1108,32 @@ public partial class MainWindow : Window
     /// <summary>
     /// Captures current window geometry into AppState for persistence.
     /// Uses RestoreBounds when maximized to save the normal-state geometry.
+    /// If in fullscreen, saves the pre-fullscreen geometry instead.
     /// </summary>
     private void SaveWindowState()
     {
         var state = _stateService.Current;
-        state.IsMaximized = WindowState == WindowState.Maximized;
 
-        // Save the restore bounds (normal position/size), not the maximized dimensions
-        var bounds = WindowState == WindowState.Maximized ? RestoreBounds : new Rect(Left, Top, Width, Height);
-        state.WindowLeft = bounds.Left;
-        state.WindowTop = bounds.Top;
-        state.WindowWidth = bounds.Width;
-        state.WindowHeight = bounds.Height;
+        if (_isFullscreen)
+        {
+            // Save the pre-fullscreen state, not the fullscreen dimensions
+            state.IsMaximized = _preFullscreenWindowState == WindowState.Maximized;
+            state.WindowLeft = _preFullscreenLeft;
+            state.WindowTop = _preFullscreenTop;
+            state.WindowWidth = _preFullscreenWidth;
+            state.WindowHeight = _preFullscreenHeight;
+        }
+        else
+        {
+            state.IsMaximized = WindowState == WindowState.Maximized;
+
+            // Save the restore bounds (normal position/size), not the maximized dimensions
+            var bounds = WindowState == WindowState.Maximized ? RestoreBounds : new Rect(Left, Top, Width, Height);
+            state.WindowLeft = bounds.Left;
+            state.WindowTop = bounds.Top;
+            state.WindowWidth = bounds.Width;
+            state.WindowHeight = bounds.Height;
+        }
     }
 
     #endregion
@@ -852,14 +1182,16 @@ public partial class MainWindow : Window
                 var mi = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
                 if (GetMonitorInfo(hMonitor, ref mi))
                 {
-                    var work = mi.rcWork;
+                    // In fullscreen mode, use the full monitor rect (covers taskbar).
+                    // In normal mode, use the work area (respects taskbar).
+                    var bounds = _isFullscreen ? mi.rcMonitor : mi.rcWork;
                     var monRect = mi.rcMonitor;
 
                     var mmi = Marshal.PtrToStructure<MINMAXINFO>(lParam);
-                    mmi.ptMaxPosition.X = work.Left - monRect.Left;
-                    mmi.ptMaxPosition.Y = work.Top - monRect.Top;
-                    mmi.ptMaxSize.X = work.Right - work.Left;
-                    mmi.ptMaxSize.Y = work.Bottom - work.Top;
+                    mmi.ptMaxPosition.X = bounds.Left - monRect.Left;
+                    mmi.ptMaxPosition.Y = bounds.Top - monRect.Top;
+                    mmi.ptMaxSize.X = bounds.Right - bounds.Left;
+                    mmi.ptMaxSize.Y = bounds.Bottom - bounds.Top;
 
                     var dpi = VisualTreeHelper.GetDpi(this);
                     mmi.ptMinTrackSize.X = (int)(MinWindowWidth * dpi.DpiScaleX);

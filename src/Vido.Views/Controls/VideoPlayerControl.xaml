@@ -13,17 +13,11 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <!-- Video display area -->
-            <RowDefinition Height="*" />
-            <!-- Controls bar -->
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <Grid x:Name="RootGrid" Background="Transparent">
+        <!-- Video display area fills entire control -->
 
         <!-- Empty state: no video loaded -->
         <StackPanel x:Name="EmptyState"
-                    Grid.Row="0"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
                     Visibility="Visible">
@@ -44,13 +38,14 @@
 
         <!-- Video display surface -->
         <Image x:Name="VideoSurface"
-               Grid.Row="0"
                Stretch="Uniform"
                RenderOptions.BitmapScalingMode="HighQuality"
                Visibility="Collapsed" />
 
-        <!-- ═══ Transport controls bar ═══ -->
-        <Border Grid.Row="1"
+        <!-- ═══ Transport controls overlay ═══ -->
+        <!-- In normal mode: docked at bottom with solid bg. In fullscreen: overlaid with gradient bg. -->
+        <Border x:Name="ControlsOverlay"
+                VerticalAlignment="Bottom"
                 Background="{DynamicResource EditorBackgroundBrush}"
                 BorderBrush="{DynamicResource PrimaryBorderBrush}"
                 BorderThickness="0,1,0,0"

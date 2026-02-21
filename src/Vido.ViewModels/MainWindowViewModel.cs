@@ -18,6 +18,8 @@ public partial class MainWindowViewModel : ObservableObject
     public const string SettingsTabId = "Settings";
 
     // ── Bottom Panel Tab IDs ──
+
+    /// <summary>Well-known tab ID for the output log panel.</summary>
     public const string OutputTabId = "LogOutput";
 
     /// <summary>Material Design gear icon geometry for the Settings tab.</summary>
@@ -70,6 +72,10 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>Whether the status bar is visible.</summary>
     [ObservableProperty]
     private bool _isStatusBarVisible = true;
+
+    /// <summary>Whether the application is in fullscreen mode.</summary>
+    [ObservableProperty]
+    private bool _isFullscreen;
 
     // ── Bottom Panel Tabs ──
 
