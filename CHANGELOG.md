@@ -4,6 +4,28 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-013
+- Created StatusBarAlignment enum (Left/Right) in Vido.Core — no external dependencies
+- Created StatusBarItem model in Vido.Core — manual INotifyPropertyChanged implementation (Id, Alignment, Priority readonly; Text, Tooltip, IsVisible observable); no CommunityToolkit dependency per Vido.Core zero-NuGet-deps rule
+- Created StatusBarViewModel — manages item registry with LeftItems/RightItems ObservableCollections; 4 built-in items: FileName (left, priority 0), Duration (right, priority 100), Resolution (right, priority 200), Codec (right, priority 300); subscribes to VideoPlayerViewModel.CurrentMetadata PropertyChanged for auto-update; FormatDuration (hh:mm:ss when ≥1hr, mm:ss otherwise); RegisterItem/UnregisterItem/FindItem with priority-ordered insertion; IDisposable with event unsubscription
+- Updated StatusBarView.xaml — full layout with DockPanel, left/right ItemsControls, VS Code-styled blue background (#007acc), white text (#ffffff), 12px Segoe UI, 22px height, top 1px border separator, separator dots (3px ellipses, #99ffffff) between right-side items, DataTrigger to hide separator for first right item (Duration priority 100), BooleanToVisibilityConverter for item visibility
+- Added IsStatusBarVisible property (default true) and ToggleStatusBar command to MainWindowViewModel
+- Enabled "Toggle Status Bar" menu item in TitleBarView — connected Click handler to ToggleStatusBarRequested event
+- Wired StatusBarViewModel in MainWindow constructor — SetupStatusBar sets DataContext, UpdateStatusBarVisibility toggles Visibility based on IsStatusBarVisible, PropertyChanged handler in SetupTabSystem
+- Registered StatusBarViewModel as singleton in DI container
+- Added tests: StatusBarViewModelTests (31) — initial state (4), metadata updates (7), metadata sync (1), duration formatting (4 theory cases), item registry (9), StatusBarItem INPC (3), dispose (2), short duration edge case (1); MainWindowViewModelTests (+3) — status bar visibility default, toggle, PropertyChanged
+- Total test count: 371 (all passing)
+
+### vi-012
+- Created VideoDetailsViewModel — subscribes to VideoPlayerViewModel.CurrentMetadata PropertyChanged; exposes 12 bindable properties (HasMetadata, FileName, FilePath, FileSize, FormattedDuration, Resolution, VideoCodec, AudioCodec, FrameRate, Bitrate, ContainerFormat, AudioInfo); static formatting helpers for file size (B/KB/MB/GB), duration, bitrate (bps/Kbps/Mbps), audio info (codec + channels + sample rate); IDisposable
+- Created VideoDetailsPanel.xaml — right panel content with three sections (VIDEO INFORMATION, VIDEO, AUDIO) separated by dividers; empty state "No video loaded" centered text; scrollable with themed scrollbar; label/value layout in grid columns
+- Wired right panel — VideoDetailsPanel set as RightPanelContent in MainWindow; collapse/expand chevron, remembered width on toggle; View > Right Panel > Show/Hide and Video Info menu items in TitleBar
+- Consolidated RightPanelCollapseButtonStyle — reduced from 54-line duplicate to 5-line BasedOn override in TabStyles.xaml
+- Changed RightPanelContent from ContentControl to ContentPresenter for consistency
+- Removed 3 unused x:Name attributes (TabContentArea, BottomPanelCollapseButton, RightPanelCollapseButton)
+- Added tests: VideoDetailsViewModelTests (17) — initial state (1), metadata updates (5), file size formatting (1 theory ×6), duration formatting (1 theory ×4), bitrate formatting (1 theory ×6), audio info formatting (1 theory ×5 + 1), dispose (2), player integration (1), duration display (2)
+- Total test count: 337 (all passing)
+
 ### vi-011
 - Created OutputLogViewModel — observes ILogService, provides filtered ObservableCollection of LogEntryViewModel entries for UI display; supports level cycling (All → Info+ → Warn+ → Errors → All), auto-scroll toggle, and clear; uses SynchronizationContext for UI thread marshalling; loads existing entries on construction
 - Created LogEntryViewModel — presentation wrapper for LogEntry with pre-formatted timestamp (HH:mm:ss.fff local time), level tag (DBG/INF/WRN/ERR), FormattedLine property including optional source

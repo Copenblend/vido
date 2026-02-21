@@ -87,6 +87,7 @@ public partial class App : Application
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<OutputLogViewModel>();
         services.AddSingleton<VideoDetailsViewModel>();
+        services.AddSingleton<StatusBarViewModel>();
 
         // Windows
         services.AddSingleton<MainWindow>();

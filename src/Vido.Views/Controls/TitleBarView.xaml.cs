@@ -144,6 +144,9 @@ public partial class TitleBarView : UserControl
     /// <summary>Raised when View > Right Panel > Video Info is clicked.</summary>
     public event Action? ShowVideoInfoRequested;
 
+    /// <summary>Raised when View > Toggle Status Bar is clicked.</summary>
+    public event Action? ToggleStatusBarRequested;
+
     /// <summary>Whether the bottom panel is currently visible. Used to update the submenu text.</summary>
     private bool _isBottomPanelVisible;
 
@@ -200,5 +203,10 @@ public partial class TitleBarView : UserControl
     private void OnShowVideoInfoClick(object sender, RoutedEventArgs e)
     {
         ShowVideoInfoRequested?.Invoke();
+    }
+
+    private void OnToggleStatusBarClick(object sender, RoutedEventArgs e)
+    {
+        ToggleStatusBarRequested?.Invoke();
     }
 }
