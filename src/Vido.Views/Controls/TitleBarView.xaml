@@ -81,10 +81,14 @@
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
                 <MenuItem Header="Toggle S_tatus Bar"
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                <MenuItem Header="Toggle _Bottom Panel" InputGestureText="Ctrl+J"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                <MenuItem Header="Toggle _Right Panel"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
+                <MenuItem x:Name="ToggleBottomPanelMenuItem"
+                          Header="Toggle _Bottom Panel" InputGestureText="Ctrl+J"
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnToggleBottomPanelClick" />
+                <MenuItem x:Name="ToggleRightPanelMenuItem"
+                          Header="Toggle _Right Panel"
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnToggleRightPanelClick" />
                 <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="_Fullscreen" InputGestureText="F11"
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />

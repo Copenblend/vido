@@ -129,4 +129,22 @@ public partial class TitleBarView : UserControl
     {
         Application.Current.Shutdown();
     }
+
+    // ── View menu events ──
+
+    /// <summary>Raised when View > Toggle Bottom Panel is clicked.</summary>
+    public event Action? ToggleBottomPanelRequested;
+
+    /// <summary>Raised when View > Toggle Right Panel is clicked.</summary>
+    public event Action? ToggleRightPanelRequested;
+
+    private void OnToggleBottomPanelClick(object sender, RoutedEventArgs e)
+    {
+        ToggleBottomPanelRequested?.Invoke();
+    }
+
+    private void OnToggleRightPanelClick(object sender, RoutedEventArgs e)
+    {
+        ToggleRightPanelRequested?.Invoke();
+    }
 }

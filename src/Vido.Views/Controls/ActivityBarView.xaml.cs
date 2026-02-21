@@ -54,13 +54,16 @@ public partial class ActivityBarView : UserControl
 
     private void OnSettingsClick(object sender, RoutedEventArgs e)
     {
-        if (DataContext is ActivityBarViewModel vm)
-        {
-            vm.SelectPanelCommand.Execute(SidebarPanelKind.Settings);
-            UpdateActiveStates();
-            RaisePanelChanged();
-        }
+        // Settings opens as a tab (like VS Code), not in the sidebar.
+        // The MainWindow handles this via the SettingsRequested event.
+        SettingsRequested?.Invoke(this, e);
     }
+
+    /// <summary>
+    /// Raised when the Settings gear icon is clicked.
+    /// The MainWindow opens Settings as a tab instead of a sidebar panel.
+    /// </summary>
+    public event RoutedEventHandler? SettingsRequested;
 
     /// <summary>
     /// Routed event raised when the active panel or sidebar visibility changes.
