@@ -12,6 +12,7 @@ using Vido.Services.Logging;
 using Vido.Services.Menus;
 using Vido.Services.Settings;
 using Vido.Services.State;
+using Vido.Services.Video;
 using Vido.ViewModels;
 using Vido.Views;
 
@@ -37,6 +38,10 @@ public partial class App : Application
         var stateService = _serviceProvider.GetRequiredService<IStateService>();
         await settingsService.LoadAsync();
         await stateService.LoadAsync();
+
+        // Initialize FFmpeg (non-fatal if DLLs are not present)
+        var logService = _serviceProvider.GetRequiredService<ILogService>();
+        FFmpegInitializer.Initialize(logService);
 
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;
@@ -69,6 +74,9 @@ public partial class App : Application
 
         // File system
         services.AddSingleton<IFileSystemService, FileSystemService>();
+
+        // Video engine
+        services.AddSingleton<Vido.Core.Playback.IVideoEngine, FFmpegVideoEngine>();
 
         // Menus
         services.AddSingleton<IContextMenuRegistry, ContextMenuRegistry>();

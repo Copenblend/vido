@@ -10,7 +10,7 @@ public sealed class AppState
     // --- Window Geometry ---
     public double WindowLeft { get; set; } = double.NaN;
     public double WindowTop { get; set; } = double.NaN;
-    public double WindowWidth { get; set; } = 1280;
+    public double WindowWidth { get; set; } = 2560;
     public double WindowHeight { get; set; } = 720;
     public bool IsMaximized { get; set; } = false;
 

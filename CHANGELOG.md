@@ -4,6 +4,25 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-008
+- Created PlaybackState enum (None, Playing, Paused, Stopped) in Vido.Core.Playback
+- Created VideoMetadata model with full media properties (resolution, codecs, frame rate, bitrate, duration, file info, container format, audio details) and computed Resolution property
+- Created FrameData model for decoded BGRA32 video frames with pixel data, dimensions, stride, and PTS
+- Created IVideoEngine interface — playback control (Load/Play/Pause/Stop/Seek), state properties (Position, Duration, Volume, Mute, Loop), events (PositionChanged at ~60Hz, StateChanged, FrameReady, MediaEnded), IDisposable
+- Created FFmpegInitializer — locates FFmpeg DLLs in app base directory or runtimes/win-x64/native/ (NuGet convention), validates presence of avcodec DLL, thread-safe one-time initialization via DynamicallyLoadedBindings
+- Created FrameConverter — swscale-based AVFrame to BGRA32 pixel data conversion, auto-configures on format/dimension changes
+- Created AudioRenderer — NAudio WASAPI audio output with buffered wave provider, volume/mute control, play/pause/stop/flush operations, graceful degradation when no audio device available
+- Created FFmpegVideoEngine implementing IVideoEngine — full playback engine with: demuxing via avformat, video/audio stream detection, codec setup with multi-threaded decoding, swresample audio conversion to float interleaved, background decode thread with pause support, PTS-based frame timing, seek with codec buffer flush, loop support, position updates at ~60Hz, proper cleanup of all FFmpeg contexts
+- Added FFmpeg.AutoGen.Abstractions 8.0.0 and FFmpeg.AutoGen.Bindings.DynamicallyLoaded 8.0.0 NuGet packages to Vido.Services
+- Added FFmpeg.LGPL 20260220.1.0 NuGet package to Vido.Services — provides native FFmpeg DLLs (avcodec-62, avformat-62, avutil-60, swscale-9, swresample-6) automatically via NuGet runtimes convention, no manual DLL downloads required
+- Added NAudio 2.2.1 NuGet package to Vido.Services for WASAPI audio output
+- Enabled AllowUnsafeBlocks in Vido.Services for FFmpeg P/Invoke interop
+- Added InternalsVisibleTo for Vido.Tests in Vido.Services
+- Registered IVideoEngine → FFmpegVideoEngine as singleton in DI container
+- FFmpeg initialization called on startup (non-fatal — logs warning if DLLs not present)
+- Added tests: PlaybackStateTests (3), VideoMetadataTests (4), FrameDataTests (3), FFmpegInitializerTests (9), FFmpegVideoEngineTests (13) — 32 new tests covering models, path resolution, engine state, preconditions, and error handling
+- Total test count: 172 (all passing)
+
 ### vi-007
 - Created ContextMenuStyles.xaml — VS Code Dark Modern themed context menus with rounded corners, drop shadow, hover highlights, keyboard shortcut hints, and separator styling
 - Created IContextMenuRegistry interface and ContextMenuRegistry implementation — thread-safe, ordered menu entry registry supporting File, Folder, and Background context targets (extensible by plugins)

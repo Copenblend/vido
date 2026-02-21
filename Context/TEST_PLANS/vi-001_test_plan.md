@@ -12,7 +12,7 @@
 **Steps:**
 1. Run `dotnet run --project src/Vido.App`
 2. Observe the window that appears
-**Expected Result:** A dark frameless window appears, centered on screen, with default size ~1280x720. The window title (taskbar) reads "Vido". A faint "Vido" watermark is centered in the window.
+**Expected Result:** A dark frameless window appears, centered on screen, with default size ~2560x720. The window title (taskbar) reads "Vido". A faint "Vido" watermark is centered in the window.
 
 ### MT-3: Window is Movable
 **Steps:**
