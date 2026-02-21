@@ -391,6 +391,7 @@ A Vido plugin is a .NET class library (DLL) with the following structure:
 MyPlugin/
 ├── MyPlugin.dll              (compiled plugin assembly)
 ├── plugin.json               (plugin manifest)
+├── README.md                 (Full readme for the plugin, display in Markdown in the Plugin Main window)
 ├── Resources/                (optional: icons, assets)
 │   └── my-icon.png
 └── (any additional DLLs the plugin depends on)
@@ -404,7 +405,7 @@ MyPlugin/
   "name": "My Plugin",
   "displayName": "My Awesome Plugin",
   "version": "1.0.0",
-  "description": "Adds awesome functionality to Vido",
+  "panelDescription": "Adds awesome functionality to Vido",
   "author": "Author Name",
   "license": "MIT",
   "entryPoint": "MyPlugin.dll",
@@ -1383,40 +1384,309 @@ For a developer to create a Vido plugin:
 
 ---
 
-### vi-019: Plugin Manager — Sidebar Panel
+### vi-b-002: Plugin System Refactor — Align vi-018 with PLUGIN_REQUIREMENTS.md
 
-**Goal**: Implement the Plugin Manager sidebar panel for browsing, installing, and managing plugins.
+**Goal**: Refactor the already-implemented vi-018 Plugin System infrastructure to fully align with the detailed requirements in `Context/PLUGIN_REQUIREMENTS.md`. vi-018 was implemented before the detailed plugin requirements document existed, so several gaps and misalignments need to be corrected before vi-019 can be built on top.
+
+> **Reference**: Read `Context/PLUGIN_REQUIREMENTS.md` in its entirety. Every requirement there must be satisfiable by the infrastructure this ticket produces.
+
+**Tasks**:
+
+##### 1. SettingContribution Model Enhancements (`PluginManifest.cs`)
+- Add `section` property (optional string) — allows developers to group settings under named section headers with dividers
+- Add `forceOverride` property (optional bool, default `false`) — when `true`, the developer's default value overwrites any user-saved value on plugin load
+- Ensure `EnumValues` property exists (list of strings for enum-type settings)
+- Ensure `Type` field supports exactly four values: `"boolean"`, `"string"`, `"number"`, `"enum"`
+- Add validation: if `type` is `"enum"`, `enumValues` must be non-empty; log a warning and skip the setting otherwise
+
+##### 2. PluginSettingsStore Enhancements
+- Implement `forceOverride` logic: on plugin activation, if a setting has `forceOverride: true`, call `Set()` with the developer's default value (overwriting whatever the user had saved)
+- Ensure `Get<T>` / `Set<T>` correctly handles all four types through JSON serialization round-trips (boolean, string, number/double, string for enum)
+- Add a `Reset(string key)` method that deletes a single key from the store and fires `SettingChanged`
+- Add a `ResetAll()` method that clears all settings for the plugin
+
+##### 3. PluginContext Enhancements
+- Ensure `IPluginContext` exposes the `PluginSettingsStore` for the current plugin (not just a generic interface)
+- Add `RegisterRightPanel(string title, Func<System.Windows.Controls.UserControl> viewFactory)` if not already present — the sample plugin needs a right panel tab
+- Verify all registration methods are implemented and functional:
+  - `RegisterSidebarPanel`
+  - `RegisterBottomPanel`
+  - `RegisterRightPanel`
+  - `RegisterStatusBarItem`
+  - `RegisterToolbarButton`
+  - `RegisterContextMenuHandler`
+  - `RegisterFileHandler`
+  - `RegisterFileIcon`
+  - `RegisterKeyBinding`
+- Each registration method must validate inputs (null checks, empty strings) and log warnings for invalid registrations without crashing
+
+##### 4. ContributionRegistry Audit
+- Ensure the contribution registry correctly collects, stores, and dispatches contributions for **all** contribution types listed above
+- Ensure contributions are cleaned up when a plugin is deactivated or uninstalled
+- Ensure each contribution type has a `PluginId` field so contributions can be traced back to their source plugin
+
+##### 5. Plugin Manifest Validation Hardening
+- Validate that `contributes.settings` entries with `type: "enum"` have non-empty `enumValues`
+- Validate that all `contributes.settings` entries have non-empty `id` and `type`
+- Validate that `entryPoint` DLL exists on disk before attempting to load
+- Validate that `pluginClass` can be resolved to a type implementing `IVidoPlugin`
+- All validation failures must produce clear log messages in the Output panel and result in the plugin being disabled (not loaded), never crash the host
+
+##### 6. Icon Size Enforcement
+- When a plugin provides a file icon or sidebar icon, enforce maximum dimensions (24x24 for sidebar, 16x16 for file explorer) — scale down if the source image is larger
+- Document the expected icon sizes in code comments
+
+##### 7. Plugin Isolation Hardening
+- Wrap all calls to plugin code (`Activate`, `Deactivate`, event handlers, view factories) in try-catch blocks
+- If a plugin throws during `Activate`, log the error, set the plugin state to Error, and continue loading other plugins
+- If a plugin-contributed view factory throws, show a fallback "Plugin error" placeholder in the UI slot instead of crashing
+- Ensure no plugin can modify the host's DI container, replace core services, or alter the base UI structure
+
+##### 8. Multi-Registry Infrastructure
+- Ensure the settings system supports a list of registry URLs (not just a single URL)
+- The default/official registry URL must always be present and cannot be removed
+- Users can add custom registry URLs (including `file://` for local testing)
+- `PluginManagerViewModel` (when built in vi-019) will need to query all registries — ensure the data layer supports this
+- Store the registry list in the application settings (`ISettingsService`)
+
+##### 9. Unit Tests
+- Write/update tests for:
+  - `SettingContribution` model with `section`, `forceOverride`, `EnumValues` properties
+  - `PluginSettingsStore` — `forceOverride` logic, `Reset`, `ResetAll`, all four types
+  - `PluginContext` — all registration methods, input validation
+  - `ContributionRegistry` — add/remove/query for all contribution types
+  - Plugin manifest validation — enum without enumValues, missing id, missing type, missing entryPoint, invalid pluginClass
+  - Icon size enforcement
+  - Plugin isolation — plugin throwing in Activate, throwing in view factory
+
+**Acceptance Criteria**:
+- `SettingContribution` model has `section`, `forceOverride`, and `EnumValues` properties
+- `PluginSettingsStore` supports `forceOverride`, `Reset`, and `ResetAll`
+- All registration methods on `IPluginContext` / `PluginContext` are implemented and validated
+- `ContributionRegistry` handles all contribution types with proper cleanup
+- Plugin manifest validation catches all invalid configurations and logs clear errors
+- Icon size enforcement prevents oversized images from breaking the UI
+- Plugin isolation prevents any plugin error from crashing the application
+- Multi-registry URL list is stored in settings with the default always present
+- All unit tests pass
+- The solution builds and runs without errors
+
+---
+
+### vi-019: Plugin Manager UI, Sample Plugin & End-to-End Validation
+
+**Goal**: Implement the complete Plugin Manager UI (sidebar panel + main window detail panel), create a sample plugin that exercises **every** plugin extension point, and produce a testing guide so the user can fully validate the plugin system end-to-end. This ticket combines what was previously vi-019 (Plugin Manager) and vi-022 (Sample Plugin) along with the full requirements from `PLUGIN_REQUIREMENTS.md`.
+
+> **Reference**: Read `Context/PLUGIN_REQUIREMENTS.md` in its entirety before starting this ticket. Every requirement listed there is mandatory.
+
+---
+
+#### Part A — Plugin Manager Sidebar Panel (`PluginManagerPanel.xaml`)
+
+The sidebar panel MUST accurately replicate VS Code's Extensions sidebar in form and function. All styling must use the existing Dark Modern palette (blue accent `#007acc` / `#0078d4`, dark backgrounds, etc.).
 
 **Tasks**:
 1. Create `PluginManagerViewModel`:
-   - Fetches `registry.json` from configured GitHub URL
-   - Parses plugin entries
-   - Compares with locally installed plugins (shows installed/available/update available)
-   - Search/filter by name, description, tags
-2. Create `PluginManagerPanel.xaml` — matching VS Code's Extensions panel:
-   - Search text box at the top with magnifying glass icon
-   - "INSTALLED" section listing installed plugins with version, enable/disable toggle, uninstall button
-   - "AVAILABLE" section listing registry plugins with install button
-   - Each plugin entry shows: icon, name, version, author, short description
-   - Update badge on plugins with available updates
-3. Implement `PluginInstaller`:
+   - Fetches `registry.json` from configured GitHub URL(s) — supports **multiple registries** (default always active; user can add any number of custom repositories including `file://` URLs for local testing)
+   - Parses plugin entries, deduplicates by `id` (first registry wins if duplicated)
+   - Compares with locally installed plugins (shows installed / available / update available)
+   - Search/filter by **title and tags** (not just name/description)
+   - Exposes a registry source dropdown list: "All" + one entry per configured registry, same width as the search bar
+2. Create `PluginManagerPanel.xaml`:
+   - **Search bar** at the top with magnifying glass icon — filters on title and tags
+   - **Registry dropdown** directly below the search bar — lists all configured registry display names + "All"; same width as the search bar; Dark Modern styled (background `#313131`, light text, accent border on focus)
+   - **Two collapsible sections** (top-down collapse matching the rest of the app — chevron pointing **right** = collapsed, pointing **down** = expanded):
+     - **INSTALLED** (top section)
+     - **AVAILABLE** (bottom section)
+   - Each section header shows a **gray circle badge with white count** of plugins in that section (e.g., `INSTALLED (2)`)
+   - Collapsing behaviour must be uniform with the existing collapsible panels elsewhere in the app
+3. Each plugin item in the sidebar must display:
+   - **Icon** — left-justified, constrained to standard size (never oversized regardless of source image)
+   - **Title** — bold white, to the right of the icon
+   - **Short description** — lighter grey (`SecondaryForegroundBrush`), non-bold, smaller font than title, below the title
+   - **Publisher** — smaller font than the description, same lighter colour, below the description
+     - If the plugin is from the **official Vido plugin registry**, the publisher text is "Vido" and is followed by a blue accent circle with a thin black checkmark (verified badge)
+   - **For INSTALLED plugins**:
+     - A **settings cog** icon on the right side, aligned with the publisher line — clicking it opens the plugin's detail tab in the main window, scrolled to the Settings section
+     - An **enable/disable toggle** — `OneWay` binding to `IsEnabled`
+     - An **Enabled** or **Disabled** pill/tag indicator
+     - An **Uninstall** button (solid red `#c42b1c`, white text, no border)
+   - **For AVAILABLE plugins**:
+     - An **Install** button — small, blue accent (`#0078d4`), white font, no border, on the right side aligned with the publisher
+4. Install flow:
    - Download `.zip` from `downloadUrl`
    - Extract to `%APPDATA%/Vido/plugins/<plugin-id>/`
    - Validate `plugin.json` exists in extracted content
-   - Reload plugins (for newly installed) or flag for restart
-4. Implement uninstall: Deactivate plugin, delete directory, flag for cleanup on restart
-5. Implement enable/disable toggle (persisted in settings)
-6. Implement "Check for Updates" — compare local versions with registry versions, offer update
+   - Auto-enable the plugin on install
+   - Move the plugin from the AVAILABLE section to the INSTALLED section immediately (no restart required for list update)
+   - Open the plugin's detail tab after install
+   - Reload/activate plugin (or flag for restart if DLL locking prevents immediate load)
+5. Uninstall flow:
+   - Deactivate plugin, mark directory for deletion (`.uninstall` marker if DLLs are locked)
+   - Move the plugin from INSTALLED to AVAILABLE immediately
+   - Clean up on next restart if locked files prevented full deletion
+6. Enable/disable toggle persisted in settings; disabled plugins are not loaded on next startup
+7. "Check for Updates" — compare local versions with registry versions, offer update badge
+
+---
+
+#### Part B — Plugin Detail Panel (Main Window Tab)
+
+When a plugin is clicked in the sidebar (or installed), open a **detail tab** in the main editor tab area, styled identically to VS Code's extension detail page.
+
+**Tasks**:
+1. Create `PluginDetailPanel.xaml` / `.xaml.cs`:
+   - **Header section**:
+     - Large plugin icon (top-left), constrained to a standard size
+     - Title in bold white to the right of the icon
+     - Publisher (same verified-badge rules as sidebar)
+     - Short description (lighter grey)
+     - Under the description, two action buttons **inline** with each other:
+       - **Install / Uninstall** — must reflect accurate current state at all times
+       - **Enable / Disable** — must reflect accurate current state at all times
+       - Install = blue (`#0078d4`), Uninstall = red (`#c42b1c`), Enable = blue, Disable = red — all solid, no borders
+     - A **Settings** gear button to the right of the action buttons — chromeless grey icon that brightens on hover; scrolls to the settings section of the detail panel
+   - **Content area** — split into two independently scrollable sections:
+     - **Left section (75%)** — tabbed:
+       - **Details** — the plugin's `README.md` rendered as Markdown
+       - **Changelog** — the plugin's `CHANGELOG.md` rendered as Markdown
+       - **Settings** — interactive, type-aware plugin settings (see Part D below)
+     - **Right section (25%)**:
+       - Version
+       - Tags
+       - Last Updated
+       - License
+2. The detail panel must react in real-time to changes made in the sidebar (install/uninstall/enable/disable) via `PropertyChanged` subscription on the `PluginItemViewModel`
+3. The detail tab must be closable (standard tab close button)
+
+---
+
+#### Part C — Plugin Settings (Interactive, Type-Aware)
+
+Plugin settings MUST be a consistent experience regardless of where the user accesses them (sidebar cog or detail panel Settings tab). Clicking any settings entry point opens the detail tab scrolled to the Settings section.
+
+**Tasks**:
+1. Settings are declared in `plugin.json` under `contributes.settings`. Each setting has:
+   - `id` — unique key
+   - `type` — one of: `"boolean"`, `"string"`, `"number"`, `"enum"`
+   - `default` — the default value (required; `null` is allowed)
+   - `title` — display label
+   - `description` — help text shown below the control
+   - `enumValues` — (only for `"enum"` type) list of allowed string values
+   - `section` — (optional) group name for visual sectioning
+   - `forceOverride` — (optional, default `false`) if `true`, the developer's default always overwrites the user's saved value on plugin load (for breaking changes)
+
+2. Settings controls by type — **no type label in the control**, value is pre-populated from the persisted store (falling back to the developer-specified default):
+   - **Boolean** → ComboBox dropdown with two options: `True` / `False`
+   - **Number** → TextBox with numeric-only input restriction (digits, decimal point, minus sign validated via `PreviewTextInput`)
+   - **String** → regular TextBox
+   - **Enum** → ComboBox dropdown populated with the developer's `enumValues` list
+
+3. Settings persistence:
+   - All values are read/written via `PluginSettingsStore` (`%APPDATA%/Vido/plugins/<plugin-id>/settings.json`)
+   - Changes save immediately on edit (no Save button)
+   - `SettingChanged` event fires so plugins can react at runtime
+
+4. Settings sections:
+   - If the developer specifies a `section` property, settings are visually grouped under section headers separated by a thin divider (matching the existing application divider style)
+   - Section headers use the standard bold secondary text style
+
+5. Settings override logic:
+   - Default behaviour: user-saved values always take precedence over developer defaults
+   - If `forceOverride` is `true` for a setting, the developer's default replaces the user's saved value on plugin load
+
+---
+
+#### Part D — Sample Plugin (`Vido.SamplePlugin`)
+
+Create a sample plugin **outside the main solution** (in a sibling directory `c:\source\vido-sample-plugin\`) that exercises **every** plugin extension point. This plugin serves as both a validation tool and documentation for future plugin developers.
+
+**Tasks**:
+1. Create a .NET 8 class library project `Vido.SamplePlugin` with a project reference to `Vido.Core`
+2. The plugin MUST demonstrate **ALL** of the following extension points:
+   - **Sidebar panel**: A "Sample Panel" with a heading, descriptive text, and a button that writes to the Output log
+   - **Bottom panel tab**: A "Sample Log" tab that displays custom messages with timestamps
+   - **Right panel tab**: A "Sample Info" tab showing a read-only property list
+   - **Status bar item**: Shows "Sample Plugin v1.0" on the right side of the status bar
+   - **Toolbar button**: A button in the title bar area (right of menu bar) that, when clicked, logs a message to the Output panel
+   - **Context menu item**: "Hello from Plugin" on all files — when clicked, logs the filename to the Output panel
+   - **File handler**: Handles `.sample` files — when double-clicked, logs "Opened sample file: <name>"
+   - **File icon**: Custom icon for `.sample` files (provided as a small PNG or XAML path)
+   - **Key binding**: `Ctrl+Shift+H` → logs "Hello from keyboard shortcut!" to the Output panel
+3. The plugin MUST declare **all four setting types** to fully exercise the settings system:
+   - **Boolean**: `"enableGreeting"` — whether the status bar greeting is visible (default: `true`)
+   - **String**: `"greetingText"` — the text displayed in the status bar (default: `"Hello, Vido!"`)
+   - **Number**: `"refreshInterval"` — how often the plugin refreshes its display, in seconds (default: `30`)
+   - **Enum**: `"logLevel"` — verbosity of the plugin's diagnostic output (values: `["Debug", "Info", "Warning", "Error"]`, default: `"Info"`)
+   - At least two settings must be in a named `section` (e.g., `"Display"` and `"Advanced"`) to exercise section grouping
+   - At least one setting should use `forceOverride: true` to demonstrate the override mechanism
+4. The plugin must include a `README.md` and a `CHANGELOG.md` so the detail panel's Details and Changelog tabs have real content to render
+5. Create a proper `plugin.json` manifest with: `id`, `name`, `displayName`, `version`, `description`, `longDescription`, `author`, `license`, `entryPoint`, `pluginClass`, `minVidoVersion`, `tags`, `repository`, `downloadUrl`, and the full `contributes` block
+6. Create a `package.ps1` script that builds in Release mode and produces a `vido-sample-plugin-1.0.0.zip`
+7. Document every API usage in the source code with XML doc comments explaining what each registration does
+
+---
+
+#### Part E — Plugin Registry & GitHub Setup
+
+**Tasks**:
+1. Create (or update) the GitHub plugin registry repository (`vido-plugin-registry`) to include the sample plugin entry in `registry.json`
+2. Create a GitHub release on the sample plugin's repo and attach the built zip
+3. Verify the `downloadUrl` in `registry.json` points to the correct release asset
+
+---
+
+#### Part F — Testing Guide Document
+
+**Tasks**:
+1. Produce a markdown document at `Context/PLUGIN_TESTING_GUIDE.md` with **exact step-by-step instructions** the user must follow to see and test the sample plugin in their running application. This document must cover:
+   - Prerequisites (GitHub repos, release URLs, registry configuration)
+   - How to add the sample plugin to the registry
+   - How to configure the registry URL in Vido's settings
+   - How to browse, install, and verify the sample plugin from the Plugin Manager sidebar
+   - How to verify **every** contributed UI element (sidebar panel, bottom tab, right tab, status bar item, toolbar button, context menu item, file handler, file icon, keyboard shortcut)
+   - How to open and interact with plugin settings (all four types + sections)
+   - How to test enable/disable toggle and verify the plugin deactivates
+   - How to test uninstall and verify cleanup
+   - How to test the detail panel (header, action buttons, README tab, Changelog tab, Settings tab, right metadata pane)
+   - Expected results for every step
+   - Troubleshooting section for common issues (e.g., DLL locking, network errors)
+
+---
+
+#### Part G — Unit Tests
+
+Write comprehensive unit tests covering:
+1. `PluginManagerViewModel` — registry fetch, search/filter, install/uninstall state tracking, multi-registry support, registry dropdown
+2. `PluginInstaller` — download, extraction, validation, auto-enable, directory cleanup, `.uninstall` marker handling
+3. `PluginSettingsStore` — Get/Set for all four types (boolean, string, number, enum), default fallback, `forceOverride`, `SettingChanged` event, section grouping
+4. `PluginDetailPanel` integration — action button state accuracy (Install↔Uninstall, Enable↔Disable), settings control binding, PropertyChanged reactivity
+5. Settings model (`SettingDisplayItem`) — value initialisation from store, value initialisation from defaults, auto-save on property change, type visibility helpers
+6. Sidebar item display logic — verified badge for official registry, correct button visibility per installed/available state, count badges
+7. Sample plugin manifest validation — all required fields present, all contribution types declared, all setting types declared
+
+---
 
 **Acceptance Criteria**:
-- Plugin Manager panel appears in sidebar when Extensions icon is clicked in activity bar
-- Search filters plugins by name/description
-- Installed plugins show with correct version and status
-- Available plugins from registry are displayed (requires internet and a valid registry URL)
-- Install downloads and extracts plugin correctly
-- Uninstall removes plugin directory
-- Enable/disable toggle works (disabled plugins are not loaded on next startup)
-- Update detection works when registry has newer versions
+- Plugin Manager sidebar panel appears when Extensions icon is clicked in the activity bar
+- Search bar filters plugins by title and tags
+- Registry dropdown filters by registry source
+- INSTALLED and AVAILABLE sections are collapsible with correct chevron direction and count badges
+- Each plugin item displays icon, title, description, publisher (with verified badge where applicable)
+- Installed plugins show settings cog, enable/disable toggle, Enabled/Disabled tag, and uninstall button
+- Available plugins show install button
+- Install downloads, extracts, auto-enables, moves to INSTALLED section, and opens detail tab
+- Uninstall deactivates, removes (or marks for removal), and moves to AVAILABLE section
+- Detail panel shows header with accurate action buttons, tabbed content (Details/Changelog/Settings), and right metadata pane
+- Settings are interactive with correct controls per type (boolean→dropdown, number→numeric TextBox, string→TextBox, enum→dropdown)
+- Settings persist immediately via `PluginSettingsStore`
+- Settings sections with headers and dividers render when `section` is specified
+- `forceOverride` settings overwrite user values on plugin load
+- Sample plugin loads and contributes: sidebar panel, bottom tab, right tab, status bar item, toolbar button, context menu item, file handler, file icon, keyboard shortcut
+- Sample plugin declares all four setting types across at least two sections
+- `Context/PLUGIN_TESTING_GUIDE.md` is produced with complete step-by-step instructions
+- All unit tests pass
+- The application builds and runs without errors
 
 ---
 
@@ -1481,44 +1751,7 @@ For a developer to create a Vido plugin:
 
 ---
 
-### vi-022: Sample Plugin — Hello World
-
-**Goal**: Create a sample "Hello World" plugin that demonstrates the entire plugin API. This validates that the plugin system works end-to-end and serves as documentation for plugin developers.
-
-**Tasks**:
-1. Create a separate project: `Vido.SamplePlugin` (a .NET 8 class library)
-2. The plugin should demonstrate ALL extension points:
-   - **Sidebar panel**: A "Hello World" panel with a text message and a button
-   - **Bottom panel tab**: A "Sample Log" tab that logs custom messages
-   - **Status bar item**: Shows "Sample Plugin v1.0" on the right side of status bar
-   - **Toolbar button**: A button in the title bar area that, when clicked, shows a message in the log
-   - **Context menu item**: "Hello from Plugin" on all files — when clicked, logs the filename
-   - **File handler**: Handles `.sample` files — when double-clicked, logs "Opened sample file: <name>"
-   - **File icon**: Custom icon for `.sample` files
-   - **Settings**: One boolean setting "Enable Greeting" and one string setting "Greeting Text"
-   - **Key binding**: Ctrl+Shift+H → logs "Hello from keyboard shortcut!"
-3. Create proper `plugin.json` manifest
-4. Document the plugin's code with comments explaining each API usage
-5. Build plugin output goes to `%APPDATA%/Vido/plugins/com.vido.sample-plugin/`
-
-**Acceptance Criteria**:
-- Plugin loads automatically on app startup
-- All contributed UI elements appear in their correct locations
-- Sidebar panel shows in activity bar with custom icon
-- Bottom panel tab appears in bottom panel tab strip
-- Status bar item appears
-- Toolbar button appears and works
-- Context menu item appears on right-click in file explorer
-- File handler works for `.sample` files
-- Custom icon appears for `.sample` files in explorer
-- Settings appear in Settings tab under "Sample Plugin" section
-- Keyboard shortcut works
-- Plugin can be disabled/enabled from the Plugin Manager
-- Plugin serves as complete documentation of the plugin API
-
----
-
-### vi-023: File Associations & Open File Command
+### vi-022: File Associations & Open File Command
 
 **Goal**: Implement opening files from the command line, File > Open File, and prepare for installer file associations.
 
@@ -1546,7 +1779,7 @@ For a developer to create a Vido plugin:
 
 ---
 
-### vi-024: Playback Speed Control
+### vi-023: Playback Speed Control
 
 **Goal**: Implement playback speed control throughout the application.
 
@@ -1570,7 +1803,7 @@ For a developer to create a Vido plugin:
 
 ---
 
-### vi-025: Zoom In/Out
+### vi-024: Zoom In/Out
 
 **Goal**: Implement zoom in/out functionality for the video display.
 
@@ -1592,7 +1825,7 @@ For a developer to create a Vido plugin:
 
 ---
 
-### vi-026: About Dialog & Help Menu
+### vi-025: About Dialog & Help Menu
 
 **Goal**: Implement the Help menu items including an About dialog.
 
@@ -1620,7 +1853,7 @@ For a developer to create a Vido plugin:
 
 ---
 
-### vi-027: Performance Optimization Pass
+### vi-026: Performance Optimization Pass
 
 **Goal**: Profile and optimize the application for ultra-performance.
 
@@ -1656,7 +1889,7 @@ For a developer to create a Vido plugin:
 
 ---
 
-### vi-028: Installer & Portable Distribution
+### vi-027: Installer & Portable Distribution
 
 **Goal**: Create both a portable zip distribution and an MSI installer.
 
@@ -1690,7 +1923,7 @@ For a developer to create a Vido plugin:
 
 ---
 
-### vi-029: Final Review & Polish
+### vi-028: Final Review & Polish
 
 **Goal**: Final pass over the entire codebase for quality, consistency, and completeness.
 
@@ -1911,8 +2144,8 @@ vi-001 (Scaffold)
             └→ vi-008 (FFmpeg Engine)
                  └→ vi-009 (Video Player UI)
                       └→ vi-015 (Fullscreen)
-                      └→ vi-024 (Playback Speed)
-                      └→ vi-025 (Zoom)
+                      └→ vi-023 (Playback Speed)
+                      └→ vi-024 (Zoom)
             └→ vi-010 (Tab System)
                  └→ vi-011 (Output Log)
                  └→ vi-012 (Video Details)
@@ -1923,13 +2156,13 @@ vi-001 (Scaffold)
             └→ vi-016 (State Persistence)
             └→ vi-017 (Drag & Drop)
        └→ vi-018 (Plugin System)
-            └→ vi-019 (Plugin Manager)
-            └→ vi-022 (Sample Plugin)
-  └→ vi-023 (File Associations)
-  └→ vi-026 (About Dialog)
-  └→ vi-027 (Performance)
-  └→ vi-028 (Distribution)
-  └→ vi-029 (Final Review)
+            └→ vi-b-002 (Plugin System Refactor)
+            └→ vi-019 (Plugin Manager + Sample Plugin)
+  └→ vi-022 (File Associations)
+  └→ vi-025 (About Dialog)
+  └→ vi-026 (Performance)
+  └→ vi-027 (Distribution)
+  └→ vi-028 (Final Review)
 ```
 
-Tickets should be executed in the order listed (vi-001 through vi-029). Some tickets have no hard dependency on the immediately preceding ticket, but the listed order provides the most logical incremental build-up of functionality.
+Tickets should be executed in the order listed (vi-001 through vi-028, with vi-b-002 executed before vi-019). Some tickets have no hard dependency on the immediately preceding ticket, but the listed order provides the most logical incremental build-up of functionality.

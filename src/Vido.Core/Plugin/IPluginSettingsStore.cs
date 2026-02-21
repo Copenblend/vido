@@ -12,6 +12,12 @@ public interface IPluginSettingsStore
     /// <summary>Set a setting value by key. Persisted automatically.</summary>
     void Set<T>(string key, T value);
 
+    /// <summary>Remove a single setting by key and fire <see cref="SettingChanged"/>.</summary>
+    bool Reset(string key);
+
+    /// <summary>Remove all settings for this plugin.</summary>
+    void ResetAll();
+
     /// <summary>Event raised when any setting changes. The string argument is the key.</summary>
     event Action<string>? SettingChanged;
 }

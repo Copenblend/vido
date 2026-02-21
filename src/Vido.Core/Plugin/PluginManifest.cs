@@ -216,4 +216,31 @@ public sealed class SettingContribution
     /// <summary>Longer description text shown below the title.</summary>
     [JsonPropertyName("description")]
     public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Allowed values for <c>type: "enum"</c> settings.
+    /// Must be non-empty when <see cref="Type"/> is <c>"enum"</c>.
+    /// </summary>
+    [JsonPropertyName("enumValues")]
+    public List<string> EnumValues { get; set; } = [];
+
+    /// <summary>
+    /// Optional section name for visual grouping.
+    /// Settings with the same section value are grouped under a header with a divider.
+    /// </summary>
+    [JsonPropertyName("section")]
+    public string? Section { get; set; }
+
+    /// <summary>
+    /// When <c>true</c>, the developer's default value overwrites the user's saved value
+    /// on every plugin load. Use sparingly — intended for breaking changes.
+    /// </summary>
+    [JsonPropertyName("forceOverride")]
+    public bool ForceOverride { get; set; }
+
+    /// <summary>Supported setting type identifiers.</summary>
+    public static readonly HashSet<string> ValidTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "boolean", "string", "number", "enum"
+    };
 }

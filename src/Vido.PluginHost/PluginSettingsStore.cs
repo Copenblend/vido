@@ -75,6 +75,38 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
         SettingChanged?.Invoke(key);
     }
 
+    public bool Reset(string key)
+    {
+        bool removed;
+        lock (_lock)
+        {
+            EnsureLoaded();
+            removed = _store.Remove(key);
+            if (removed)
+                Save();
+        }
+
+        if (removed)
+            SettingChanged?.Invoke(key);
+
+        return removed;
+    }
+
+    public void ResetAll()
+    {
+        List<string> keys;
+        lock (_lock)
+        {
+            EnsureLoaded();
+            keys = [.. _store.Keys];
+            _store.Clear();
+            Save();
+        }
+
+        foreach (var key in keys)
+            SettingChanged?.Invoke(key);
+    }
+
     private void EnsureLoaded()
     {
         if (_loaded) return;

@@ -293,6 +293,10 @@ public sealed class PluginHost : IPluginHost
         try
         {
             var settingsStore = new PluginSettingsStore(info.Manifest.Id);
+
+            // Apply forceOverride settings — developer-specified values that always win
+            ApplyForceOverrides(info.Manifest, settingsStore);
+
             var context = new PluginContext(
                 info.Manifest,
                 info.Directory,
@@ -346,5 +350,29 @@ public sealed class PluginHost : IPluginHost
 
         info.State = PluginState.Deactivated;
         _logService.Info($"Plugin '{info.Manifest.Id}' deactivated", "PluginHost");
+    }
+
+    // ── Force Override ──
+
+    /// <summary>
+    /// For settings marked <c>forceOverride: true</c> in the manifest,
+    /// overwrite the stored value with the developer-specified default on every activation.
+    /// This lets plugin authors enforce specific values (e.g. debug flags during beta).
+    /// </summary>
+    private void ApplyForceOverrides(PluginManifest manifest, PluginSettingsStore settingsStore)
+    {
+        if (manifest.Contributes.Settings is not { Count: > 0 })
+            return;
+
+        foreach (var setting in manifest.Contributes.Settings)
+        {
+            if (!setting.ForceOverride || setting.Default is null)
+                continue;
+
+            settingsStore.Set(setting.Id, setting.Default);
+            _logService.Debug(
+                $"Plugin '{manifest.Id}': forceOverride applied for setting '{setting.Id}'",
+                "PluginHost");
+        }
     }
 }

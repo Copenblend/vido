@@ -156,4 +156,104 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.Equal("two", store2.Get("b", ""));
         Assert.Equal(3.14, store2.Get("c", 0.0));
     }
+
+    // ── Reset / ResetAll ──
+
+    [Fact]
+    public void Reset_ExistingKey_RemovesAndReturnsTrue()
+    {
+        var store = CreateStore();
+        store.Set("key", "value");
+
+        var result = store.Reset("key");
+
+        Assert.True(result);
+        Assert.Equal("default", store.Get("key", "default"));
+    }
+
+    [Fact]
+    public void Reset_MissingKey_ReturnsFalse()
+    {
+        var store = CreateStore();
+
+        Assert.False(store.Reset("nonexistent"));
+    }
+
+    [Fact]
+    public void Reset_FiresSettingChangedForRemovedKey()
+    {
+        var store = CreateStore();
+        store.Set("key", 42);
+        string? changedKey = null;
+        store.SettingChanged += k => changedKey = k;
+
+        store.Reset("key");
+
+        Assert.Equal("key", changedKey);
+    }
+
+    [Fact]
+    public void Reset_DoesNotFireSettingChangedForMissingKey()
+    {
+        var store = CreateStore();
+        var fired = false;
+        store.SettingChanged += _ => fired = true;
+
+        store.Reset("nonexistent");
+
+        Assert.False(fired);
+    }
+
+    [Fact]
+    public void Reset_PersistsRemoval()
+    {
+        var store = CreateStore();
+        store.Set("key", "value");
+        store.Reset("key");
+
+        var store2 = new PluginSettingsStore("test", _settingsFile);
+        Assert.Equal("default", store2.Get("key", "default"));
+    }
+
+    [Fact]
+    public void ResetAll_ClearsAllSettings()
+    {
+        var store = CreateStore();
+        store.Set("a", 1);
+        store.Set("b", "two");
+        store.Set("c", true);
+
+        store.ResetAll();
+
+        Assert.Equal(0, store.Get("a", 0));
+        Assert.Equal("", store.Get("b", ""));
+        Assert.False(store.Get("c", false));
+    }
+
+    [Fact]
+    public void ResetAll_FiresSettingChangedForEachKey()
+    {
+        var store = CreateStore();
+        store.Set("x", 1);
+        store.Set("y", 2);
+        var changedKeys = new List<string>();
+        store.SettingChanged += k => changedKeys.Add(k);
+
+        store.ResetAll();
+
+        Assert.Equal(2, changedKeys.Count);
+        Assert.Contains("x", changedKeys);
+        Assert.Contains("y", changedKeys);
+    }
+
+    [Fact]
+    public void ResetAll_PersistsEmptyStore()
+    {
+        var store = CreateStore();
+        store.Set("key", "val");
+        store.ResetAll();
+
+        var store2 = new PluginSettingsStore("test", _settingsFile);
+        Assert.Equal("default", store2.Get("key", "default"));
+    }
 }

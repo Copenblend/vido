@@ -1,5 +1,6 @@
 using NSubstitute;
 using Vido.Core.Logging;
+using Vido.Core.Plugin;
 using Vido.PluginHost;
 using Xunit;
 
@@ -272,5 +273,165 @@ public class PluginManifestLoaderTests : IDisposable
         var errors = PluginManifestLoader.Validate(manifest);
 
         Assert.Empty(errors);
+    }
+
+    // ── Settings validation ──
+
+    private static PluginManifest ValidManifest() => new()
+    {
+        Id = "com.test.settings",
+        Name = "test",
+        Version = "1.0.0",
+        EntryPoint = "Test.dll",
+        PluginClass = "Test.Plugin"
+    };
+
+    [Fact]
+    public void Validate_SettingWithValidType_NoErrors()
+    {
+        var m = ValidManifest();
+        m.Contributes.Settings =
+        [
+            new SettingContribution { Id = "s1", Type = "boolean", Title = "Flag" },
+            new SettingContribution { Id = "s2", Type = "string", Title = "Name" },
+            new SettingContribution { Id = "s3", Type = "number", Title = "Count" },
+            new SettingContribution { Id = "s4", Type = "enum", Title = "Mode", EnumValues = ["a", "b"] }
+        ];
+
+        var errors = PluginManifestLoader.Validate(m);
+        Assert.Empty(errors);
+    }
+
+    [Fact]
+    public void Validate_SettingInvalidType_ReturnsError()
+    {
+        var m = ValidManifest();
+        m.Contributes.Settings =
+        [
+            new SettingContribution { Id = "s1", Type = "color", Title = "Color" }
+        ];
+
+        var errors = PluginManifestLoader.Validate(m);
+        Assert.Single(errors);
+        Assert.Contains("invalid type", errors[0]);
+    }
+
+    [Fact]
+    public void Validate_EnumWithoutEnumValues_ReturnsError()
+    {
+        var m = ValidManifest();
+        m.Contributes.Settings =
+        [
+            new SettingContribution { Id = "s1", Type = "enum", Title = "Mode" }
+        ];
+
+        var errors = PluginManifestLoader.Validate(m);
+        Assert.Single(errors);
+        Assert.Contains("enumValues", errors[0]);
+    }
+
+    [Fact]
+    public void Validate_SettingMissingId_ReturnsError()
+    {
+        var m = ValidManifest();
+        m.Contributes.Settings =
+        [
+            new SettingContribution { Id = "", Type = "boolean", Title = "Flag" }
+        ];
+
+        var errors = PluginManifestLoader.Validate(m);
+        Assert.Contains(errors, e => e.Contains("empty 'id'"));
+    }
+
+    [Fact]
+    public void Validate_SettingMissingTitle_ReturnsError()
+    {
+        var m = ValidManifest();
+        m.Contributes.Settings =
+        [
+            new SettingContribution { Id = "s1", Type = "boolean", Title = "" }
+        ];
+
+        var errors = PluginManifestLoader.Validate(m);
+        Assert.Contains(errors, e => e.Contains("empty 'title'"));
+    }
+
+    [Fact]
+    public void Validate_DuplicateSettingIds_ReturnsError()
+    {
+        var m = ValidManifest();
+        m.Contributes.Settings =
+        [
+            new SettingContribution { Id = "dup", Type = "boolean", Title = "A" },
+            new SettingContribution { Id = "dup", Type = "string", Title = "B" }
+        ];
+
+        var errors = PluginManifestLoader.Validate(m);
+        Assert.Contains(errors, e => e.Contains("Duplicate setting id"));
+    }
+
+    [Fact]
+    public void Validate_SettingIdConflictsWithContribution_ReturnsError()
+    {
+        var m = ValidManifest();
+        m.Contributes.Sidebar = [new SidebarContribution { Id = "shared-id" }];
+        m.Contributes.Settings =
+        [
+            new SettingContribution { Id = "shared-id", Type = "boolean", Title = "Flag" }
+        ];
+
+        var errors = PluginManifestLoader.Validate(m);
+        Assert.Contains(errors, e => e.Contains("conflicts"));
+    }
+
+    [Fact]
+    public void Load_SettingsInManifest_ParsesCorrectly()
+    {
+        var dir = CreatePluginDir("""
+        {
+            "id": "com.test.with-settings",
+            "name": "settings-plugin",
+            "version": "1.0.0",
+            "entryPoint": "Test.dll",
+            "pluginClass": "Test.Plugin",
+            "contributes": {
+                "settings": [
+                    {
+                        "id": "enabled",
+                        "type": "boolean",
+                        "default": true,
+                        "title": "Enabled",
+                        "description": "Enable the plugin",
+                        "section": "General",
+                        "forceOverride": false
+                    },
+                    {
+                        "id": "mode",
+                        "type": "enum",
+                        "default": "fast",
+                        "title": "Mode",
+                        "enumValues": ["fast", "slow", "auto"]
+                    }
+                ]
+            }
+        }
+        """, "settings-plugin");
+
+        var manifest = PluginManifestLoader.Load(dir, _logger);
+
+        Assert.NotNull(manifest);
+        Assert.Equal(2, manifest.Contributes.Settings.Count);
+
+        var enabled = manifest.Contributes.Settings[0];
+        Assert.Equal("enabled", enabled.Id);
+        Assert.Equal("boolean", enabled.Type);
+        Assert.Equal("Enabled", enabled.Title);
+        Assert.Equal("General", enabled.Section);
+        Assert.False(enabled.ForceOverride);
+
+        var mode = manifest.Contributes.Settings[1];
+        Assert.Equal("enum", mode.Type);
+        Assert.Equal(3, mode.EnumValues.Count);
+        Assert.Contains("auto", mode.EnumValues);
     }
 }

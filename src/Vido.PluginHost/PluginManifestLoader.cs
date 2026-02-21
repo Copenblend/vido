@@ -99,6 +99,9 @@ public static class PluginManifestLoader
         ValidateContributionIds(manifest.Contributes.ToolbarButtons.Select(c => c.Id), "toolbarButtons", contributionIds, errors);
         ValidateContributionIds(manifest.Contributes.ContextMenu.Select(c => c.Id), "contextMenu", contributionIds, errors);
 
+        // Validate settings contributions
+        ValidateSettings(manifest.Contributes.Settings, contributionIds, errors);
+
         return errors;
     }
 
@@ -131,6 +134,52 @@ public static class PluginManifestLoader
             {
                 errors.Add($"Duplicate contribution id '{id}' in '{section}'");
             }
+        }
+    }
+
+    /// <summary>
+    /// Validates settings contributions: id uniqueness, valid type, enum requires enumValues.
+    /// </summary>
+    private static void ValidateSettings(
+        List<SettingContribution> settings,
+        HashSet<string> seenContributionIds,
+        List<string> errors)
+    {
+        if (settings is not { Count: > 0 })
+            return;
+
+        var seenSettingIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var setting in settings)
+        {
+            if (string.IsNullOrWhiteSpace(setting.Id))
+            {
+                errors.Add("Setting has empty 'id'");
+                continue;
+            }
+
+            if (!seenSettingIds.Add(setting.Id))
+                errors.Add($"Duplicate setting id '{setting.Id}'");
+
+            // Settings IDs also must not collide with contribution IDs
+            if (!seenContributionIds.Add(setting.Id))
+                errors.Add($"Setting id '{setting.Id}' conflicts with an existing contribution id");
+
+            if (string.IsNullOrWhiteSpace(setting.Type))
+            {
+                errors.Add($"Setting '{setting.Id}' has empty 'type'");
+            }
+            else if (!SettingContribution.ValidTypes.Contains(setting.Type))
+            {
+                errors.Add($"Setting '{setting.Id}' has invalid type '{setting.Type}' — must be one of: {string.Join(", ", SettingContribution.ValidTypes)}");
+            }
+            else if (string.Equals(setting.Type, "enum", StringComparison.OrdinalIgnoreCase)
+                     && (setting.EnumValues is null || setting.EnumValues.Count == 0))
+            {
+                errors.Add($"Setting '{setting.Id}' is type 'enum' but has no 'enumValues'");
+            }
+
+            if (string.IsNullOrWhiteSpace(setting.Title))
+                errors.Add($"Setting '{setting.Id}' has empty 'title'");
         }
     }
 }

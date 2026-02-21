@@ -35,6 +35,16 @@ public sealed class AppSettings
     public List<string> DisabledPluginIds { get; set; } = [];
 
     /// <summary>
+    /// Plugin registry URLs. The official Vido registry is always the first entry
+    /// and cannot be removed. Users may add custom URLs (including <c>file://</c>
+    /// paths for local development).
+    /// </summary>
+    public List<string> PluginRegistryUrls { get; set; } = [OfficialRegistryUrl];
+
+    /// <summary>The official Vido plugin registry URL (always present).</summary>
+    public const string OfficialRegistryUrl = "https://plugins.vido.app/registry";
+
+    /// <summary>
     /// Resets every property to its default value.
     /// Call after tests that mutate settings to prevent pollution.
     /// </summary>
@@ -56,5 +66,6 @@ public sealed class AppSettings
         ShowHiddenFiles = false;
         PluginDirectories = [];
         DisabledPluginIds = [];
+        PluginRegistryUrls = [OfficialRegistryUrl];
     }
 }
