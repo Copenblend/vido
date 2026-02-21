@@ -1231,6 +1231,8 @@ For a developer to create a Vido plugin:
    - `Ctrl+Shift+O` → Open Folder
    - `Ctrl+B` → Toggle Sidebar
    - `Ctrl+J` → Toggle Bottom Panel
+   - 'Ctrl+H' -> Toggle Right Panel
+      - This also needs added to the View -> Right Panel -> Show/Hide in the top menu
    - `Ctrl+=` → Zoom In
    - `Ctrl+-` → Zoom Out
    - `Up Arrow` → Volume Up (by 5%)

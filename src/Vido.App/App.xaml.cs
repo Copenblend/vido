@@ -2,12 +2,14 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Vido.Core.Events;
 using Vido.Core.FileSystem;
+using Vido.Core.Keyboard;
 using Vido.Core.Logging;
 using Vido.Core.Menus;
 using Vido.Core.Settings;
 using Vido.Core.State;
 using Vido.Services.Events;
 using Vido.Services.FileSystem;
+using Vido.Services.Keyboard;
 using Vido.Services.Logging;
 using Vido.Services.Menus;
 using Vido.Services.Settings;
@@ -80,6 +82,9 @@ public partial class App : Application
 
         // Menus
         services.AddSingleton<IContextMenuRegistry, ContextMenuRegistry>();
+
+        // Keyboard shortcuts
+        services.AddSingleton<IKeyboardShortcutService, KeyboardShortcutService>();
 
         // ViewModels
         services.AddSingleton<FileExplorerViewModel>();
