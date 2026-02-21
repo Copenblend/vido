@@ -167,6 +167,9 @@ public partial class TitleBarView : UserControl
     /// <summary>Raised when Playback > Loop is clicked.</summary>
     public event Action? LoopRequested;
 
+    /// <summary>Raised when View > Fullscreen is clicked.</summary>
+    public event Action? FullscreenRequested;
+
     /// <summary>Whether the bottom panel is currently visible. Used to update the submenu text.</summary>
     private bool _isBottomPanelVisible;
 
@@ -258,5 +261,10 @@ public partial class TitleBarView : UserControl
     private void OnLoopClick(object sender, RoutedEventArgs e)
     {
         LoopRequested?.Invoke();
+    }
+
+    private void OnFullscreenClick(object sender, RoutedEventArgs e)
+    {
+        FullscreenRequested?.Invoke();
     }
 }

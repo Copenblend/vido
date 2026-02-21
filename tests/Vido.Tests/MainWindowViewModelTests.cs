@@ -6,7 +6,7 @@ namespace Vido.Tests;
 
 /// <summary>
 /// Tests for <see cref="MainWindowViewModel"/> — tab management,
-/// panel visibility, and tab reordering logic.
+/// panel visibility, tab reordering, status bar, and fullscreen state.
 /// </summary>
 public class MainWindowViewModelTests
 {
@@ -621,6 +621,39 @@ public class MainWindowViewModelTests
         };
 
         _sut.ToggleStatusBar();
+
+        Assert.True(raised);
+    }
+
+    // ── Fullscreen ──
+
+    [Fact]
+    public void IsFullscreen_DefaultFalse()
+    {
+        Assert.False(_sut.IsFullscreen);
+    }
+
+    [Fact]
+    public void IsFullscreen_CanBeSet()
+    {
+        _sut.IsFullscreen = true;
+        Assert.True(_sut.IsFullscreen);
+
+        _sut.IsFullscreen = false;
+        Assert.False(_sut.IsFullscreen);
+    }
+
+    [Fact]
+    public void IsFullscreen_RaisesPropertyChanged()
+    {
+        var raised = false;
+        _sut.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.IsFullscreen))
+                raised = true;
+        };
+
+        _sut.IsFullscreen = true;
 
         Assert.True(raised);
     }

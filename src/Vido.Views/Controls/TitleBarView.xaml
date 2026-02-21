@@ -81,7 +81,8 @@
                           Style="{StaticResource DropdownMenuItemStyle}"
                           Click="OnToggleStatusBarClick" />
                 <MenuItem Header="_Fullscreen" InputGestureText="F11"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnFullscreenClick" />
                 <MenuItem Header="Zoom _In" InputGestureText="Ctrl+="
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
                 <MenuItem Header="Zoom _Out" InputGestureText="Ctrl+-"

@@ -4,6 +4,24 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-015
+- Implemented fullscreen mode toggle via F11, F key, or double-click on video area
+- EnterFullscreen saves all pre-fullscreen state (window geometry, sidebar, bottom/right panel, status bar visibility) and hides all UI chrome (title bar, activity bar, sidebar, tab strip, status bar, bottom panel, right panel)
+- ExitFullscreen (Escape, F11, F, double-click) restores all UI chrome, panel states, and window geometry exactly to pre-fullscreen state
+- Restructured VideoPlayerControl from 2-row Grid to overlay layout — transport controls (seek bar + buttons) now overlay the video at bottom, enabling both normal-mode docked appearance and fullscreen gradient-overlay mode
+- Added EnterFullscreenOverlay/ExitFullscreenOverlay methods to VideoPlayerControl — switches between solid editor background (normal) and semi-transparent gradient (fullscreen: transparent→black fade)
+- Added double-click handler on VideoSurface (FullscreenToggleRequested event) — fires on double-click only, no interference with single-click
+- Added fullscreen auto-hide: DispatcherTimer (3s inactivity) fades controls out (200ms), mouse movement fades them back in; mouse cursor hidden via Mouse.OverrideCursor when controls are hidden
+- WindowChrome CaptionHeight set to 0 and ResizeBorderThickness to 0 during fullscreen (no drag/resize), restored to 30/6 on exit
+- Registered 3 new keyboard shortcuts: F11 (toggle fullscreen), F (toggle fullscreen), Escape (exit fullscreen only)
+- Enabled Fullscreen menu item in TitleBarView View menu — added FullscreenRequested event and OnFullscreenClick handler
+- SaveWindowState correctly persists pre-fullscreen geometry when app closed in fullscreen mode
+- OnWindowStateChanged skips normal state sync during fullscreen to avoid interference
+- Fixed tick handler accumulation bug — DispatcherTimer created once via null check, Tick handler attached only on first creation
+- Fixed status bar restoration — hidden via IsStatusBarVisible VM property (not direct Visibility) so PropertyChanged fires correctly on restore
+- Added xmldoc to OutputTabId constant, updated MainWindowViewModelTests class summary
+- Tests: 3 new (IsFullscreen default, set, PropertyChanged) — 421 total, all passing
+
 ### vi-014
 - Created KeyBinding model in Vido.Core/Keyboard — sealed value-equality class (Key, Ctrl, Shift, Alt); case-insensitive key comparison; DisplayString property (e.g. "Ctrl+Shift+O"); IEquatable\<KeyBinding\>, GetHashCode, ToString; zero external dependencies
 - Created IKeyboardShortcutService interface in Vido.Core/Keyboard — Register (conflict detection), Unregister, TryExecute, FindBinding (by commandId), GetAllCommandIds, GetCommandId (by KeyBinding)

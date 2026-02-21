@@ -27,6 +27,12 @@ internal sealed unsafe class FrameConverter : IDisposable
     /// </summary>
     public void Configure(int srcWidth, int srcHeight, AVPixelFormat srcFormat)
     {
+        // Normalize deprecated YUVJ* formats to their non-deprecated equivalents.
+        // These legacy formats embed full-range (JPEG) in the pixel format enum;
+        // modern FFmpeg expects the base format + color_range metadata instead.
+        // Without this, sws_getContext emits: "deprecated pixel format used, make sure you did set range correctly"
+        srcFormat = NormalizePixelFormat(srcFormat);
+
         if (_srcWidth == srcWidth && _srcHeight == srcHeight && _srcFormat == srcFormat)
             return;
 
@@ -125,5 +131,21 @@ internal sealed unsafe class FrameConverter : IDisposable
             Cleanup();
             _disposed = true;
         }
+    }
+
+    /// <summary>
+    /// Maps deprecated YUVJ* pixel formats to their modern equivalents.
+    /// The color range information is preserved by the codec context's color_range field.
+    /// </summary>
+    private static AVPixelFormat NormalizePixelFormat(AVPixelFormat format)
+    {
+        return format switch
+        {
+            AVPixelFormat.AV_PIX_FMT_YUVJ420P => AVPixelFormat.AV_PIX_FMT_YUV420P,
+            AVPixelFormat.AV_PIX_FMT_YUVJ422P => AVPixelFormat.AV_PIX_FMT_YUV422P,
+            AVPixelFormat.AV_PIX_FMT_YUVJ444P => AVPixelFormat.AV_PIX_FMT_YUV444P,
+            AVPixelFormat.AV_PIX_FMT_YUVJ440P => AVPixelFormat.AV_PIX_FMT_YUV440P,
+            _ => format
+        };
     }
 }
