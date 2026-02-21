@@ -5,6 +5,7 @@ using Vido.Core.FileSystem;
 using Vido.Core.Keyboard;
 using Vido.Core.Logging;
 using Vido.Core.Menus;
+using Vido.Core.Plugin;
 using Vido.Core.Settings;
 using Vido.Core.State;
 using Vido.Services.Events;
@@ -48,12 +49,34 @@ public partial class App : Application
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;
         mainWindow.Show();
+
+        // Activate plugins after the main window is shown
+        try
+        {
+            var pluginHost = _serviceProvider.GetRequiredService<IPluginHost>();
+            pluginHost.ActivateAll();
+        }
+        catch (Exception ex)
+        {
+            logService.Error($"Plugin system initialization failed: {ex.Message}", "PluginHost");
+        }
     }
 
     protected override async void OnExit(ExitEventArgs e)
     {
         if (_serviceProvider is not null)
         {
+            // Deactivate all plugins before shutdown
+            try
+            {
+                var pluginHost = _serviceProvider.GetRequiredService<IPluginHost>();
+                pluginHost.DeactivateAll();
+            }
+            catch
+            {
+                // Plugin errors should not prevent shutdown
+            }
+
             // Persist state and flush any pending settings before shutdown
             var stateService = _serviceProvider.GetRequiredService<IStateService>();
             var settingsService = _serviceProvider.GetRequiredService<ISettingsService>();
@@ -85,6 +108,11 @@ public partial class App : Application
 
         // Keyboard shortcuts
         services.AddSingleton<IKeyboardShortcutService, KeyboardShortcutService>();
+
+        // Plugin system
+        services.AddSingleton<PluginHost.ContributionRegistry>();
+        services.AddSingleton<IContributionRegistry>(sp => sp.GetRequiredService<PluginHost.ContributionRegistry>());
+        services.AddSingleton<IPluginHost, PluginHost.PluginHost>();
 
         // ViewModels
         services.AddSingleton<FileExplorerViewModel>();

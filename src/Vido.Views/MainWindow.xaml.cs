@@ -12,6 +12,7 @@ using Vido.Core.FileSystem;
 using Vido.Core.Keyboard;
 using Vido.Core.Layout;
 using KeyBinding = Vido.Core.Keyboard.KeyBinding;
+using Vido.Core.Plugin;
 using Vido.Core.Settings;
 using Vido.Core.State;
 using Vido.Core.Windowing;
@@ -41,6 +42,7 @@ public partial class MainWindow : Window
     private readonly VideoDetailsViewModel _videoDetailsViewModel;
     private readonly StatusBarViewModel _statusBarViewModel;
     private readonly IKeyboardShortcutService _keyboardShortcutService;
+    private readonly IContributionRegistry _contributionRegistry;
 
     private TitleBarViewModel? _titleBarViewModel;
     private ActivityBarViewModel? _activityBarViewModel;
@@ -80,6 +82,7 @@ public partial class MainWindow : Window
         ISettingsService settingsService,
         ILogService logService,
         IKeyboardShortcutService keyboardShortcutService,
+        IContributionRegistry contributionRegistry,
         FileExplorerViewModel fileExplorerViewModel,
         VideoPlayerViewModel videoPlayerViewModel,
         MainWindowViewModel mainWindowViewModel,
@@ -91,6 +94,7 @@ public partial class MainWindow : Window
         _settingsService = settingsService;
         _logService = logService;
         _keyboardShortcutService = keyboardShortcutService;
+        _contributionRegistry = contributionRegistry;
         _fileExplorerViewModel = fileExplorerViewModel;
         _videoPlayerViewModel = videoPlayerViewModel;
         _mainWindowViewModel = mainWindowViewModel;
@@ -110,6 +114,7 @@ public partial class MainWindow : Window
         SetupKeyboardShortcuts();
         SetupFileExplorer();
         SetupDragDrop();
+        SetupPluginContributions();
         RestoreWindowState();
         RestoreLayoutState();
 
@@ -1181,6 +1186,107 @@ public partial class MainWindow : Window
         Drop += OnWindowDrop;
         DragEnter += OnWindowDragEnter;
         DragOver += OnWindowDragOver;
+    }
+
+    // ── Plugin contribution wiring ──
+
+    /// <summary>
+    /// Subscribes to contribution registry changes and wires any already-registered
+    /// plugin UI contributions (bottom panel tabs, status bar items, etc.).
+    /// Called during setup; plugins may be activated later, at which point
+    /// the <see cref="IContributionRegistry.ContributionsChanged"/> callback
+    /// picks up new contributions.
+    /// </summary>
+    private void SetupPluginContributions()
+    {
+        _contributionRegistry.ContributionsChanged += OnPluginContributionsChanged;
+        WirePluginContributions();
+    }
+
+    /// <summary>
+    /// Callback fired when plugins register or unregister UI contributions.
+    /// Dispatches to the UI thread to apply changes safely.
+    /// </summary>
+    private void OnPluginContributionsChanged()
+    {
+        if (Dispatcher.CheckAccess())
+            WirePluginContributions();
+        else
+            Dispatcher.BeginInvoke(WirePluginContributions);
+    }
+
+    /// <summary>
+    /// Applies all current plugin contributions to the UI. Idempotent — safe to call
+    /// multiple times. Only adds contributions that aren't already wired.
+    /// </summary>
+    private void WirePluginContributions()
+    {
+        WirePluginBottomPanels();
+        WirePluginStatusBarItems();
+    }
+
+    /// <summary>Map of plugin contribution IDs to bottom panel content for cleanup.</summary>
+    private readonly HashSet<string> _wiredBottomPanelIds = [];
+
+    /// <summary>Map of plugin contribution IDs to status bar item IDs for cleanup.</summary>
+    private readonly HashSet<string> _wiredStatusBarIds = [];
+
+    private void WirePluginBottomPanels()
+    {
+        foreach (var panel in _contributionRegistry.GetBottomPanels())
+        {
+            var fullId = $"plugin.{panel.PluginId}.{panel.ContributionId}";
+            if (!_wiredBottomPanelIds.Add(fullId)) continue;
+
+            try
+            {
+                var view = panel.ViewFactory();
+                if (view is UIElement uiElement)
+                {
+                    _bottomPanelContents[fullId] = uiElement;
+                    _mainWindowViewModel.OpenBottomPanelTab(fullId, panel.Title.ToUpperInvariant());
+                }
+                else
+                {
+                    _logService.Warning(
+                        $"Plugin '{panel.PluginId}' bottom panel '{panel.ContributionId}' " +
+                        "view factory returned a non-UIElement — skipping",
+                        "PluginHost");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logService.Error(
+                    $"Plugin '{panel.PluginId}' bottom panel '{panel.ContributionId}' " +
+                    $"view factory threw: {ex.Message}",
+                    "PluginHost");
+            }
+        }
+    }
+
+    private void WirePluginStatusBarItems()
+    {
+        foreach (var item in _contributionRegistry.GetStatusBarItems())
+        {
+            var fullId = $"plugin.{item.PluginId}.{item.ContributionId}";
+            if (!_wiredStatusBarIds.Add(fullId)) continue;
+
+            try
+            {
+                var alignment = item.Position.Equals("left", StringComparison.OrdinalIgnoreCase)
+                    ? Core.Layout.StatusBarAlignment.Left
+                    : Core.Layout.StatusBarAlignment.Right;
+
+                _statusBarViewModel.RegisterItem(fullId, alignment, item.Order);
+            }
+            catch (Exception ex)
+            {
+                _logService.Error(
+                    $"Plugin '{item.PluginId}' status bar item '{item.ContributionId}' " +
+                    $"registration failed: {ex.Message}",
+                    "PluginHost");
+            }
+        }
     }
 
     /// <summary>

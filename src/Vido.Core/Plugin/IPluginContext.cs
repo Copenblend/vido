@@ -1,0 +1,80 @@
+using Vido.Core.Events;
+using Vido.Core.FileSystem;
+using Vido.Core.Keyboard;
+using Vido.Core.Logging;
+using Vido.Core.Playback;
+
+namespace Vido.Core.Plugin;
+
+/// <summary>
+/// Provides plugins with access to all Vido extension points.
+/// Passed to <see cref="IVidoPlugin.Activate"/>.
+/// </summary>
+public interface IPluginContext
+{
+    /// <summary>Plugin's own manifest data.</summary>
+    PluginManifest Manifest { get; }
+
+    /// <summary>Path to the plugin's installation directory on disk.</summary>
+    string PluginDirectory { get; }
+
+    /// <summary>Access to the Vido event bus for subscribing/publishing events.</summary>
+    IEventBus Events { get; }
+
+    /// <summary>Access to the video playback engine.</summary>
+    IVideoEngine VideoEngine { get; }
+
+    /// <summary>Access to application logging.</summary>
+    ILogService Logger { get; }
+
+    /// <summary>Access to the settings store (for reading/writing plugin settings).</summary>
+    IPluginSettingsStore Settings { get; }
+
+    // ── UI Contribution Registration ──
+
+    /// <summary>
+    /// Register a sidebar panel view factory.
+    /// The <paramref name="contributionId"/> must match a sidebar contribution
+    /// declared in the plugin manifest.
+    /// The factory must return a WPF <c>FrameworkElement</c> (returned as <c>object</c>
+    /// to keep Vido.Core platform-agnostic).
+    /// </summary>
+    void RegisterSidebarPanel(string contributionId, Func<object> viewFactory);
+
+    /// <summary>
+    /// Register a bottom panel tab view factory.
+    /// The factory must return a WPF <c>FrameworkElement</c>.
+    /// </summary>
+    void RegisterBottomPanel(string contributionId, Func<object> viewFactory);
+
+    /// <summary>
+    /// Register a right panel tab view factory.
+    /// The factory must return a WPF <c>FrameworkElement</c>.
+    /// </summary>
+    void RegisterRightPanel(string contributionId, Func<object> viewFactory);
+
+    /// <summary>
+    /// Register a status bar item view factory.
+    /// The factory must return a WPF <c>FrameworkElement</c>.
+    /// </summary>
+    void RegisterStatusBarItem(string contributionId, Func<object> viewFactory);
+
+    /// <summary>Register a toolbar button click handler.</summary>
+    void RegisterToolbarButtonHandler(string contributionId, Action clickHandler);
+
+    /// <summary>Register a context menu action handler.</summary>
+    void RegisterContextMenuHandler(string contributionId, Action<FileNode> handler);
+
+    /// <summary>Register a file double-click handler for specific extensions.</summary>
+    void RegisterFileHandler(string[] extensions, Action<FileNode> handler);
+
+    /// <summary>
+    /// Register custom file icons for specific extensions.
+    /// Keys are extensions (e.g. ".funscript"), values are paths relative
+    /// to the plugin directory.
+    /// </summary>
+    void RegisterFileIcons(Dictionary<string, string> extensionToIconPath);
+
+    /// <summary>Register a keyboard shortcut.</summary>
+    void RegisterKeyBinding(KeyBinding binding, Action handler);
+}
