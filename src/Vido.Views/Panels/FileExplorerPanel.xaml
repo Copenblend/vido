@@ -1,7 +1,10 @@
 <UserControl x:Class="Vido.Views.Panels.FileExplorerPanel"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:fs="clr-namespace:Vido.Core.FileSystem;assembly=Vido.Core">
+             xmlns:fs="clr-namespace:Vido.Core.FileSystem;assembly=Vido.Core"
+             AllowDrop="True"
+             DragEnter="OnExplorerDragEnter" DragOver="OnExplorerDragOver"
+             DragLeave="OnExplorerDragLeave" Drop="OnExplorerDrop">
 
     <UserControl.Resources>
         <ResourceDictionary>
@@ -19,6 +22,9 @@
                 <MenuItem Header="Hide from View"
                           Style="{StaticResource ContextMenuItemStyle}"
                           Click="OnHideFileClick" />
+                <MenuItem Header="Remove"
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          Click="OnRemoveFileClick" />
                 <MenuItem Header="Reveal in File Explorer"
                           Style="{StaticResource ContextMenuItemStyle}"
                           Click="OnRevealInExplorerClick" />
@@ -30,6 +36,9 @@
                 <MenuItem Header="Hide from View"
                           Style="{StaticResource ContextMenuItemStyle}"
                           Click="OnHideFileClick" />
+                <MenuItem Header="Remove"
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          Click="OnRemoveFileClick" />
                 <MenuItem Header="Reveal in File Explorer"
                           Style="{StaticResource ContextMenuItemStyle}"
                           Click="OnRevealInExplorerClick" />
@@ -41,6 +50,9 @@
                 <MenuItem Header="Hide from View"
                           Style="{StaticResource ContextMenuItemStyle}"
                           Click="OnHideFileClick" />
+                <MenuItem Header="Remove"
+                          Style="{StaticResource ContextMenuItemStyle}"
+                          Click="OnRemoveFileClick" />
                 <MenuItem Header="Reveal in File Explorer"
                           Style="{StaticResource ContextMenuItemStyle}"
                           Click="OnRevealInExplorerClick" />
@@ -230,5 +242,20 @@
                 </TreeView.ItemTemplate>
             </TreeView>
         </DockPanel>
+
+        <!-- Drag-over overlay -->
+        <Border x:Name="DragOverlay"
+                BorderBrush="{DynamicResource FocusBorderBrush}"
+                BorderThickness="2"
+                Background="#180078D4"
+                IsHitTestVisible="False"
+                Visibility="Collapsed">
+            <TextBlock Text="Drop to open folder"
+                       Foreground="{DynamicResource PrimaryForegroundBrush}"
+                       FontSize="13"
+                       FontFamily="Segoe UI"
+                       VerticalAlignment="Center"
+                       HorizontalAlignment="Center" />
+        </Border>
     </Grid>
 </UserControl>

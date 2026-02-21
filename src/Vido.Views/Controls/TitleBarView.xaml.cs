@@ -22,6 +22,12 @@ public partial class TitleBarView : UserControl
     /// <summary>Raised when the user selects File > Rescan Folder.</summary>
     public event Action? FolderRescanned;
 
+    /// <summary>Raised when the user selects File > Add File and picks one or more files.</summary>
+    public event Action<string[]>? FilesAdded;
+
+    /// <summary>Raised when the user selects File > Add Folder and picks a folder.</summary>
+    public event Action<string[]>? FolderAddedToExplorer;
+
     public TitleBarView()
     {
         InitializeComponent();
@@ -124,6 +130,34 @@ public partial class TitleBarView : UserControl
     private void OnRescanFolderClick(object sender, RoutedEventArgs e)
     {
         FolderRescanned?.Invoke();
+    }
+
+    private void OnAddFileClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Add File to Explorer",
+            Multiselect = true,
+            Filter = "Video Files|*.mp4;*.avi;*.mkv;*.mov;*.wmv;*.flv;*.webm|All Files|*.*"
+        };
+
+        if (dialog.ShowDialog() == true && dialog.FileNames.Length > 0)
+        {
+            FilesAdded?.Invoke(dialog.FileNames);
+        }
+    }
+
+    private void OnAddFolderClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog
+        {
+            Title = "Add Folder to Explorer"
+        };
+
+        if (dialog.ShowDialog() == true && !string.IsNullOrEmpty(dialog.FolderName))
+        {
+            FolderAddedToExplorer?.Invoke([dialog.FolderName]);
+        }
     }
 
     private void OnExitClick(object sender, RoutedEventArgs e)

@@ -25,4 +25,26 @@ public sealed class AppSettings
 
     // --- File Explorer ---
     public bool ShowHiddenFiles { get; set; } = false;
+
+    /// <summary>
+    /// Resets every property to its default value.
+    /// Call after tests that mutate settings to prevent pollution.
+    /// </summary>
+    public void ResetToDefaults()
+    {
+        Volume = 0.50;
+        IsMuted = false;
+        PlaybackSpeed = 1.0;
+        LoopPlayback = false;
+        SidebarVisible = true;
+        SidebarWidth = 300;
+        StatusBarVisible = true;
+        BottomPanelVisible = true;
+        BottomPanelCollapsed = false;
+        BottomPanelHeight = 200;
+        RightPanelVisible = true;
+        RightPanelCollapsed = false;
+        RightPanelWidth = 300;
+        ShowHiddenFiles = false;
+    }
 }

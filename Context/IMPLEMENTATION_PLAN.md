@@ -1369,7 +1369,9 @@ For a developer to create a Vido plugin:
 12. Wire plugin-contributed file handlers into file double-click dispatch
 13. Wire plugin-contributed file icons into the explorer's icon resolution
 14. Write extensive unit tests for PluginLoader, PluginContext, and contribution registry
-15. Ensure plugins are easy to test - allow users to add custom repositories, the default should always be active - and lets set this up as part of the task and test it, but they should be able to add any number of custome repositories for getting plugins so they dont depend on the main repo owner adding their plugins. It should should also have the capability to specify a local repository on their machine for easy testing. 
+15. Ensure plugins are easy to test - allow users to add custom repositories, the default should always be active - and lets set this up as part of the task and test it, but they should be able to add any number of custome repositories for getting plugins so they dont depend on the main repo owner adding their plugins. It should should also have the capability to specify a local repository on their machine for easy testing.
+16. Ensure the main application is very protected from harm from the plugin, the plugin should not possibly be able to put the main application in a poor state, ensure the validation is performed on plugin load to ensure it cant create NRE or other error. If a plugin fails this validation warn the user it could not be loaded, output details to the Log output and disable the plugin
+17. Plugins must not be able to materially channge any of the base consistencies - for example if they submit a giant png for their file the main application must ensure that the icon is shrunk to size so that it fits perfectly. All of the current rules and bounds of the system must be protected. 
 
 **Acceptance Criteria**:
 - If a plugin directory exists with valid `plugin.json` and DLL, it is loaded and activated on startup
@@ -1437,6 +1439,8 @@ For a developer to create a Vido plugin:
 4. Settings tab can be closed like any other tab
 5. Plugin settings: when a plugin declares settings in its manifest, they appear under a "[Plugin Name]" section in the Settings tab
 6. Settings search filters visible settings by matching against label and description text
+7. Make sure everything that is configurable is configurable via settings
+8. Make sure it is possible for plugins to have their own settings tabs if not already done
 
 **Acceptance Criteria**:
 - Clicking Settings gear in activity bar opens a Settings tab

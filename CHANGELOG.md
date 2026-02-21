@@ -4,6 +4,21 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-017
+- Implemented drag-and-drop support for video files, folders, and unsupported file types from Windows Explorer
+- Video files dropped on the player area load and play immediately, opening the parent folder in the file explorer
+- Video files dropped on the file explorer open the parent folder and play the video
+- Folders dropped anywhere open in the file explorer sidebar
+- Non-video files show a "File type not supported" warning notification that auto-hides after 3 seconds
+- Visual feedback during drag-over: blue border (#007fd4) with semi-transparent background and hint text
+- Player area shows "Drop video file to play"; file explorer shows "Drop to open folder"
+- Main window acts as fallback handler for drops on title bar, status bar, or other chrome areas
+- Created DropClassifier utility (Vido.Core) to centralize drag-drop file classification logic
+- DropClassification enum: Folder, VideoFile, UnsupportedFile, Invalid
+- DropClassifier.Classify() and ClassifyFirst() methods replace duplicated logic in all three drop handlers
+- Added 28 unit tests: DropClassifierTests covering null/empty/whitespace, non-existent paths, directories, all 7 video extensions, case-insensitive matching, 6 non-video extensions, array handling
+- Total tests: 463 (435 → 463), 0 warnings, 0 errors
+
 ### vi-016
 - Implemented full state persistence — Vido now remembers all settings and state between sessions
 - Added QueueSave() method to IStateService interface with 500ms debounce, matching SettingsService pattern
