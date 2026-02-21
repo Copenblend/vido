@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Vido.Core.Formatting;
 using Vido.Core.Playback;
 
 namespace Vido.ViewModels;
@@ -127,12 +128,7 @@ public partial class VideoDetailsViewModel : ObservableObject, IDisposable
         };
     }
 
-    internal static string FormatDuration(TimeSpan duration)
-    {
-        return duration.TotalHours >= 1
-            ? duration.ToString(@"hh\:mm\:ss")
-            : duration.ToString(@"mm\:ss");
-    }
+    internal static string FormatDuration(TimeSpan duration) => TimeFormatter.FormatPadded(duration);
 
     internal static string FormatBitrate(long bitsPerSecond)
     {

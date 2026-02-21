@@ -18,30 +18,29 @@ public sealed class KeyBinding : IEquatable<KeyBinding>
     /// <summary>Whether Alt must be held.</summary>
     public bool Alt { get; }
 
+    private readonly string _displayString;
+
     public KeyBinding(string key, bool ctrl = false, bool shift = false, bool alt = false)
     {
         Key = key ?? throw new ArgumentNullException(nameof(key));
         Ctrl = ctrl;
         Shift = shift;
         Alt = alt;
+
+        // Pre-compute display string (immutable record)
+        var parts = new List<string>(4);
+        if (ctrl) parts.Add("Ctrl");
+        if (alt) parts.Add("Alt");
+        if (shift) parts.Add("Shift");
+        parts.Add(key);
+        _displayString = string.Join("+", parts);
     }
 
     /// <summary>
     /// Returns a human-readable display string (e.g., "Ctrl+Shift+O").
     /// Matches the format used in menu InputGestureText.
     /// </summary>
-    public string DisplayString
-    {
-        get
-        {
-            var parts = new List<string>(4);
-            if (Ctrl) parts.Add("Ctrl");
-            if (Alt) parts.Add("Alt");
-            if (Shift) parts.Add("Shift");
-            parts.Add(Key);
-            return string.Join("+", parts);
-        }
-    }
+    public string DisplayString => _displayString;
 
     public bool Equals(KeyBinding? other)
     {

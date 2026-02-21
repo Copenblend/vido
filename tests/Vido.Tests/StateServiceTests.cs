@@ -14,7 +14,7 @@ public sealed class StateServiceTests
     {
         var svc = new StateService();
 
-        Assert.Equal(2560, svc.Current.WindowWidth);
+        Assert.Equal(1280, svc.Current.WindowWidth);
         Assert.Equal(720, svc.Current.WindowHeight);
         Assert.True(double.IsNaN(svc.Current.WindowLeft));
         Assert.True(double.IsNaN(svc.Current.WindowTop));

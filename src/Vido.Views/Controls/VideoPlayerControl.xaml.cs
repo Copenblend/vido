@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -279,6 +280,46 @@ public partial class VideoPlayerControl : UserControl
             current = VisualTreeHelper.GetParent(current);
         }
         return false;
+    }
+
+    // ── Playback speed ──
+
+    private void OnSpeedButtonClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && button.ContextMenu is not null)
+        {
+            button.ContextMenu.PlacementTarget = button;
+            button.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Top;
+            button.ContextMenu.IsOpen = true;
+        }
+    }
+
+    private void OnSpeedContextMenuOpened(object sender, RoutedEventArgs e)
+    {
+        if (sender is not ContextMenu menu || DataContext is not VideoPlayerViewModel vm)
+            return;
+
+        foreach (var item in menu.Items.OfType<MenuItem>())
+        {
+            if (item.Tag is string tagStr && double.TryParse(tagStr,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var speed))
+            {
+                item.IsChecked = Math.Abs(vm.PlaybackSpeed - speed) < 0.01;
+            }
+        }
+    }
+
+    private void OnSpeedItemClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuItem item && item.Tag is string tagStr
+            && double.TryParse(tagStr,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out var speed)
+            && DataContext is VideoPlayerViewModel vm)
+        {
+            vm.SetPlaybackSpeed(speed);
+        }
     }
 
     // ── Fullscreen overlay mode ──

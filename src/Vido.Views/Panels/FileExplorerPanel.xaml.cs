@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -183,6 +184,21 @@ public partial class FileExplorerPanel : UserControl
     }
 
     // ─── Background context menu handlers ───────────────────────────
+
+    private void OnTreeBackgroundContextMenuOpened(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is FileExplorerViewModel vm && sender is ContextMenu menu)
+        {
+            foreach (var item in menu.Items.OfType<MenuItem>())
+            {
+                if (item.Name == "ContextShowHiddenFiles")
+                {
+                    item.IsChecked = vm.ShowHiddenFiles;
+                    break;
+                }
+            }
+        }
+    }
 
     private void OnContextOpenFolderClick(object sender, RoutedEventArgs e)
     {

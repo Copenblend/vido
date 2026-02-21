@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Vido.Core.FileSystem;
 using Vido.Core.Logging;
+using Vido.Core.Settings;
 using Vido.Core.State;
 
 namespace Vido.ViewModels;
@@ -16,6 +17,7 @@ public partial class FileExplorerViewModel : ObservableObject
 {
     private readonly IFileSystemService _fileSystemService;
     private readonly IStateService _stateService;
+    private readonly ISettingsService _settingsService;
     private readonly ILogService _logService;
 
     /// <summary>Root-level nodes displayed in the tree.</summary>
@@ -44,11 +46,14 @@ public partial class FileExplorerViewModel : ObservableObject
     [ObservableProperty]
     private bool _showHiddenFiles;
 
-    public FileExplorerViewModel(IFileSystemService fileSystemService, IStateService stateService, ILogService logService)
+    public FileExplorerViewModel(IFileSystemService fileSystemService, IStateService stateService,
+        ISettingsService settingsService, ILogService logService)
     {
         _fileSystemService = fileSystemService;
         _stateService = stateService;
+        _settingsService = settingsService;
         _logService = logService;
+        _showHiddenFiles = settingsService.Current.ShowHiddenFiles;
     }
 
     /// <summary>
@@ -111,6 +116,7 @@ public partial class FileExplorerViewModel : ObservableObject
             RootNodes.Add(node);
 
         _stateService.Current.LastOpenFolder = path;
+        _stateService.QueueSave();
         _logService.Info($"Folder opened: {path}", "Explorer");
     }
 
@@ -127,6 +133,7 @@ public partial class FileExplorerViewModel : ObservableObject
         HasFolderOpen = false;
         SelectedNode = null;
         _stateService.Current.LastOpenFolder = null;
+        _stateService.QueueSave();
         if (wasOpen is not null)
             _logService.Info("Folder closed", "Explorer");
     }
@@ -182,6 +189,8 @@ public partial class FileExplorerViewModel : ObservableObject
         if (!hiddenFiles.Contains(node.FullPath, StringComparer.OrdinalIgnoreCase))
             hiddenFiles.Add(node.FullPath);
 
+        _stateService.QueueSave();
+
         if (ShowHiddenFiles)
         {
             // Mark it hidden visually but keep in tree
@@ -206,6 +215,7 @@ public partial class FileExplorerViewModel : ObservableObject
         _stateService.Current.HiddenFiles.RemoveAll(
             p => string.Equals(p, node.FullPath, StringComparison.OrdinalIgnoreCase));
 
+        _stateService.QueueSave();
         node.IsHidden = false;
     }
 
@@ -226,9 +236,9 @@ public partial class FileExplorerViewModel : ObservableObject
                 UseShellExecute = true
             });
         }
-        catch
+        catch (Exception)
         {
-            // Silently ignore if explorer cannot be launched
+            // Explorer launch failed — non-critical, ignore
         }
     }
 
@@ -240,6 +250,8 @@ public partial class FileExplorerViewModel : ObservableObject
     public void ToggleShowHiddenFiles()
     {
         ShowHiddenFiles = !ShowHiddenFiles;
+        _settingsService.Current.ShowHiddenFiles = ShowHiddenFiles;
+        _settingsService.QueueSave();
         RefreshTree();
     }
 

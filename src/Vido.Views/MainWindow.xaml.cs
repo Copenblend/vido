@@ -1,3 +1,4 @@
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -108,6 +109,7 @@ public partial class MainWindow : Window
         SetupKeyboardShortcuts();
         SetupFileExplorer();
         RestoreWindowState();
+        RestoreLayoutState();
 
         _logService.Info("Vido started", "App");
     }
@@ -155,7 +157,7 @@ public partial class MainWindow : Window
 
     private void SetupLayout()
     {
-        _activityBarViewModel = new ActivityBarViewModel();
+        _activityBarViewModel = new ActivityBarViewModel(_settingsService);
         _sidebarViewModel = new SidebarViewModel();
 
         ActivityBar.DataContext = _activityBarViewModel;
@@ -256,6 +258,18 @@ public partial class MainWindow : Window
         // File operations
         _keyboardShortcutService.Register(
             new KeyBinding("O", ctrl: true, shift: true), "vido.openFolder", ShowOpenFolderDialog);
+        _keyboardShortcutService.Register(
+            new KeyBinding("K", ctrl: true), "vido.closeFolder", () =>
+            {
+                if (_fileExplorerViewModel.HasFolderOpen)
+                    OnFolderClosed();
+            });
+        _keyboardShortcutService.Register(
+            new KeyBinding("R", ctrl: true, shift: true), "vido.rescanFolder", () =>
+            {
+                if (_fileExplorerViewModel.HasFolderOpen)
+                    OnFolderRescanned();
+            });
 
         // Fullscreen
         _keyboardShortcutService.Register(
@@ -460,10 +474,12 @@ public partial class MainWindow : Window
         SidebarColumn.MaxWidth = 0;
 
         // Hide bottom panel, right panel, and status bar via VM properties
-        // so UpdateXxxVisibility handlers fire correctly on restore
+        // Suppress settings save — these are transient fullscreen changes, not user preferences
+        _mainWindowViewModel.SuppressSettingsSave = true;
         _mainWindowViewModel.IsBottomPanelVisible = false;
         _mainWindowViewModel.IsRightPanelVisible = false;
         _mainWindowViewModel.IsStatusBarVisible = false;
+        _mainWindowViewModel.SuppressSettingsSave = false;
 
         // Force video tab active — fullscreen should always show the video player
         _preFullscreenActiveTabId = _mainWindowViewModel.ActiveTab?.Id;
@@ -556,12 +572,14 @@ public partial class MainWindow : Window
             OnPanelChanged(this, new RoutedEventArgs());
         }
 
-        // Restore panels
+        // Restore panels — suppress save since we're restoring to the already-persisted state
+        _mainWindowViewModel.SuppressSettingsSave = true;
         _mainWindowViewModel.IsBottomPanelVisible = _preFullscreenBottomPanelVisible;
         _mainWindowViewModel.IsBottomPanelCollapsed = _preFullscreenBottomPanelCollapsed;
         _mainWindowViewModel.IsRightPanelVisible = _preFullscreenRightPanelVisible;
         _mainWindowViewModel.IsRightPanelCollapsed = _preFullscreenRightPanelCollapsed;
         _mainWindowViewModel.IsStatusBarVisible = _preFullscreenStatusBarVisible;
+        _mainWindowViewModel.SuppressSettingsSave = false;
 
         // Restore window geometry
         WindowState = _preFullscreenWindowState;
@@ -782,12 +800,23 @@ public partial class MainWindow : Window
         // Wire fullscreen menu event
         TitleBar.FullscreenRequested += ToggleFullscreen;
 
+        // Wire recent files
+        TitleBar.GetRecentFiles = () => _stateService.Current.RecentFiles;
+        TitleBar.RecentFileSelected += path => SafeFireAndForget(OnRecentFileSelected(path));
+        TitleBar.ClearWatchHistoryRequested += OnClearWatchHistory;
+
+        // Wire show hidden files
+        TitleBar.GetShowHiddenFiles = () => _fileExplorerViewModel.ShowHiddenFiles;
+        TitleBar.ToggleShowHiddenFilesRequested += () => _fileExplorerViewModel.ToggleShowHiddenFiles();
+
         // Wire playback menu events
         TitleBar.PlayPauseRequested += () => _videoPlayerViewModel.PlayPause();
         TitleBar.StopRequested += () => _videoPlayerViewModel.Stop();
         TitleBar.SkipForwardRequested += () => SafeFireAndForget(_videoPlayerViewModel.SkipNext());
         TitleBar.SkipBackwardRequested += () => SafeFireAndForget(_videoPlayerViewModel.SkipPrevious());
         TitleBar.LoopRequested += () => _videoPlayerViewModel.ToggleLoop();
+        TitleBar.PlaybackSpeedSelected += speed => _videoPlayerViewModel.SetPlaybackSpeed(speed);
+        TitleBar.GetPlaybackSpeed = () => _videoPlayerViewModel.PlaybackSpeed;
 
         // Sync panel visibility state to title bar for dynamic menu text
         _mainWindowViewModel.PropertyChanged += (_, e) =>
@@ -796,11 +825,25 @@ public partial class MainWindow : Window
                 TitleBar.SetBottomPanelVisible(_mainWindowViewModel.IsBottomPanelVisible);
             else if (e.PropertyName == nameof(MainWindowViewModel.IsRightPanelVisible))
                 TitleBar.SetRightPanelVisible(_mainWindowViewModel.IsRightPanelVisible);
+            else if (e.PropertyName == nameof(MainWindowViewModel.IsStatusBarVisible))
+                TitleBar.SetStatusBarVisible(_mainWindowViewModel.IsStatusBarVisible);
         };
+
+        // Sync sidebar visibility to title bar
+        if (_activityBarViewModel is not null)
+        {
+            _activityBarViewModel.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(ActivityBarViewModel.IsSidebarVisible))
+                    TitleBar.SetSidebarVisible(_activityBarViewModel.IsSidebarVisible);
+            };
+            TitleBar.SetSidebarVisible(_activityBarViewModel.IsSidebarVisible);
+        }
 
         // Initialize title bar panel visibility state
         TitleBar.SetBottomPanelVisible(_mainWindowViewModel.IsBottomPanelVisible);
         TitleBar.SetRightPanelVisible(_mainWindowViewModel.IsRightPanelVisible);
+        TitleBar.SetStatusBarVisible(_mainWindowViewModel.IsStatusBarVisible);
 
         // Wire the "Open Folder" button inside the explorer panel
         _fileExplorerPanel.OpenFolderRequested += ShowOpenFolderDialog;
@@ -867,6 +910,24 @@ public partial class MainWindow : Window
     {
         _fileExplorerViewModel.RescanFolder();
         _logService.Info("Folder rescanned", "Explorer");
+    }
+
+    private async Task OnRecentFileSelected(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            _logService.Error($"Recent file not found: {filePath}", "App");
+            return;
+        }
+
+        _mainWindowViewModel.ActivateTab(MainWindowViewModel.PlayerTabId);
+        await _videoPlayerViewModel.LoadAndPlayAsync(filePath);
+    }
+
+    private void OnClearWatchHistory()
+    {
+        _stateService.Current.RecentFiles.Clear();
+        _stateService.QueueSave();
     }
 
     private async void OnPlayFileRequested(Core.FileSystem.FileNode node)
@@ -1030,7 +1091,7 @@ public partial class MainWindow : Window
         {
             Sidebar.Visibility = Visibility.Visible;
             SidebarSplitter.Visibility = Visibility.Visible;
-            SidebarColumn.Width = new GridLength(300);
+            SidebarColumn.Width = new GridLength(_settingsService.Current.SidebarWidth);
             SidebarColumn.MinWidth = 170;
             SidebarColumn.MaxWidth = 600;
             _sidebarViewModel.SetPanel(_activityBarViewModel.ActivePanel);
@@ -1106,6 +1167,47 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
+    /// Restores layout dimensions (sidebar width, panel heights) from persisted settings.
+    /// Called after RestoreWindowState so the window geometry is already set.
+    /// </summary>
+    private void RestoreLayoutState()
+    {
+        var settings = _settingsService.Current;
+
+        // Restore remembered dimensions for panels
+        _bottomPanelHeight = settings.BottomPanelHeight;
+        _rightPanelWidth = settings.RightPanelWidth;
+
+        // Restore sidebar width — applied when sidebar visibility fires via OnPanelChanged
+        // The sidebar visibility itself is restored by the activity bar view model.
+
+        // Restore active sidebar panel from state
+        var state = _stateService.Current;
+        if (_activityBarViewModel is not null && !string.IsNullOrEmpty(state.ActiveSidebarPanel))
+        {
+            if (Enum.TryParse<SidebarPanelKind>(state.ActiveSidebarPanel, out var panel))
+            {
+                _activityBarViewModel.SetActivePanel(panel);
+                // Refresh sidebar content to match the restored panel
+                OnPanelChanged(this, new RoutedEventArgs());
+            }
+        }
+
+        // Restore last video (paused at saved position)
+        Loaded += async (_, _) =>
+        {
+            try
+            {
+                await _videoPlayerViewModel.RestoreLastVideoAsync();
+            }
+            catch (Exception ex)
+            {
+                _logService.Error($"Failed to restore last video: {ex.Message}", "App");
+            }
+        };
+    }
+
+    /// <summary>
     /// Captures current window geometry into AppState for persistence.
     /// Uses RestoreBounds when maximized to save the normal-state geometry.
     /// If in fullscreen, saves the pre-fullscreen geometry instead.
@@ -1134,6 +1236,17 @@ public partial class MainWindow : Window
             state.WindowWidth = bounds.Width;
             state.WindowHeight = bounds.Height;
         }
+
+        // Save layout dimensions to settings
+        var settings = _settingsService.Current;
+        if (_activityBarViewModel is not null)
+        {
+            state.ActiveSidebarPanel = _activityBarViewModel.ActivePanel.ToString();
+        }
+        if (SidebarColumn.Width.Value > 0)
+            settings.SidebarWidth = SidebarColumn.Width.Value;
+        settings.BottomPanelHeight = _bottomPanelHeight;
+        settings.RightPanelWidth = _rightPanelWidth;
     }
 
     #endregion

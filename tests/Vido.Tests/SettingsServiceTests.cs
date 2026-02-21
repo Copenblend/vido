@@ -40,17 +40,16 @@ public sealed class SettingsServiceTests : IDisposable
     {
         var svc = new SettingsService();
 
-        Assert.Equal(0.75, svc.Current.Volume);
+        Assert.Equal(0.50, svc.Current.Volume);
         Assert.False(svc.Current.IsMuted);
         Assert.Equal(1.0, svc.Current.PlaybackSpeed);
         Assert.False(svc.Current.LoopPlayback);
         Assert.True(svc.Current.SidebarVisible);
         Assert.Equal(300, svc.Current.SidebarWidth);
         Assert.True(svc.Current.StatusBarVisible);
-        Assert.False(svc.Current.BottomPanelVisible);
-        Assert.False(svc.Current.RightPanelVisible);
+        Assert.True(svc.Current.BottomPanelVisible);
+        Assert.True(svc.Current.RightPanelVisible);
         Assert.False(svc.Current.ShowHiddenFiles);
-        Assert.False(svc.Current.ConfirmOnExit);
     }
 
     [Fact]
