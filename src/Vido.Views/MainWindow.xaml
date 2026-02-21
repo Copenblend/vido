@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:Vido.Views.Controls"
         Title="Vido"
-        Width="1280"
+        Width="2560"
         Height="720"
         WindowStyle="None"
         Background="{DynamicResource EditorBackgroundBrush}"

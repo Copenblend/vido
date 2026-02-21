@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using Vido.Core.FileSystem;
 using Vido.ViewModels;
 
@@ -85,35 +86,38 @@ public partial class FileExplorerPanel : UserControl
     // ─── Node right-click → context menu assignment ──────────────────
 
     /// <summary>
-    /// Assigns the correct context menu based on the node type when right-clicking.
-    /// Hidden nodes always get the "Unhide" context menu.
+    /// Assigns the correct context menu based on the node type when right-clicking
+    /// anywhere on a TreeViewItem row (not just the text/icon area).
+    /// Uses PreviewMouseRightButtonUp (tunneling) so the ContextMenu is set on the
+    /// TreeViewItem before WPF's context-menu service processes MouseRightButtonUp.
     /// </summary>
-    private void OnNodeRightClick(object sender, MouseButtonEventArgs e)
+    private void OnTreeItemPreviewRightClick(object sender, MouseButtonEventArgs e)
     {
-        if (sender is not FrameworkElement element
-            || element.DataContext is not FileNode node)
+        if (sender is not TreeViewItem item || item.DataContext is not FileNode node)
             return;
 
-        // Hidden nodes get a special context menu with "Unhide"
-        if (node.IsHidden)
-        {
-            element.ContextMenu = (ContextMenu)FindResource("HiddenNodeContextMenu");
-        }
-        else if (node.IsDirectory)
-        {
-            element.ContextMenu = (ContextMenu)FindResource("FolderContextMenu");
-        }
-        else if (node.IsVideoFile)
-        {
-            element.ContextMenu = (ContextMenu)FindResource("VideoFileContextMenu");
-        }
-        else
-        {
-            element.ContextMenu = (ContextMenu)FindResource("NonVideoFileContextMenu");
-        }
+        // Only handle for the TreeViewItem closest to the actual click source,
+        // preventing parent TreeViewItems from also processing during tunneling.
+        var nearestItem = FindVisualParent<TreeViewItem>(e.OriginalSource as DependencyObject);
+        if (nearestItem != item)
+            return;
 
-        // Tag the context menu with the node for handlers
-        element.ContextMenu.Tag = node;
+        // Select the item so it highlights
+        item.IsSelected = true;
+
+        // Assign the correct context menu to the TreeViewItem itself
+        ContextMenu menu;
+        if (node.IsHidden)
+            menu = (ContextMenu)FindResource("HiddenNodeContextMenu");
+        else if (node.IsDirectory)
+            menu = (ContextMenu)FindResource("FolderContextMenu");
+        else if (node.IsVideoFile)
+            menu = (ContextMenu)FindResource("VideoFileContextMenu");
+        else
+            menu = (ContextMenu)FindResource("NonVideoFileContextMenu");
+
+        menu.Tag = node;
+        item.ContextMenu = menu;
     }
 
     // ─── Context menu click handlers ────────────────────────────────
@@ -203,6 +207,22 @@ public partial class FileExplorerPanel : UserControl
             // The parent ContextMenu has the node stashed in its Tag
             if (menuItem.Parent is ContextMenu ctx && ctx.Tag is FileNode node)
                 return node;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Walks up the visual tree from <paramref name="start"/> and returns the
+    /// first ancestor of type <typeparamref name="T"/>, or null if none is found.
+    /// </summary>
+    private static T? FindVisualParent<T>(DependencyObject? start) where T : DependencyObject
+    {
+        var current = start;
+        while (current != null)
+        {
+            if (current is T match)
+                return match;
+            current = VisualTreeHelper.GetParent(current);
         }
         return null;
     }

@@ -101,8 +101,8 @@ All decisions from the requirements clarification process:
 | **CommunityToolkit.Mvvm** (8.4+) | MVVM source generators (`[ObservableProperty]`, `[RelayCommand]`) | MIT |
 | **Microsoft.Extensions.DependencyInjection** (8.0+) | DI container | MIT |
 | **Microsoft.Extensions.Hosting** (8.0+) | Generic host for app lifecycle | MIT |
-| **FFmpeg.AutoGen** (7.x) | FFmpeg P/Invoke bindings for decoding/demuxing | LGPL |
-| **FFmpeg shared libraries** (7.x) | `avcodec`, `avformat`, `avutil`, `swscale`, `swresample` DLLs | LGPL |
+| **FFmpeg.AutoGen.Abstractions** + **FFmpeg.AutoGen.Bindings.DynamicallyLoaded** (8.0) | FFmpeg P/Invoke bindings for decoding/demuxing | LGPL |
+| **FFmpeg.LGPL** (NuGet) | Native FFmpeg DLLs (`avcodec-62`, `avformat-62`, `avutil-60`, `swscale-9`, `swresample-6`) provided automatically via NuGet runtimes convention | LGPL |
 | **SharpDX** or **Vortice.Windows** (DirectX) | Hardware-accelerated video rendering to WPF via D3DImage | MIT |
 | **System.Text.Json** (built-in) | JSON serialization for settings, plugin manifests | MIT |
 | **xUnit** + **xUnit.runner** | Unit testing framework | Apache 2.0 |
@@ -286,13 +286,7 @@ Vido.sln
 │       ├── vi-001_test_plan.md
 │       ├── vi-002_test_plan.md
 │       └── ...
-└── ffmpeg/
-    ├── avcodec-61.dll
-    ├── avformat-61.dll
-    ├── avutil-59.dll
-    ├── swscale-8.dll
-    ├── swresample-5.dll
-    └── (additional FFmpeg DLLs)
+└── (FFmpeg native DLLs provided automatically via FFmpeg.LGPL NuGet package)
 ```
 
 ---
@@ -1033,7 +1027,7 @@ For a developer to create a Vido plugin:
 **Goal**: Implement the core video playback engine using FFmpeg.AutoGen with hardware-accelerated rendering.
 
 **Tasks**:
-1. Create `FFmpegInitializer` — locates and initializes FFmpeg DLLs from the `ffmpeg/` directory
+1. Create `FFmpegInitializer` — locates and initializes FFmpeg DLLs from the app base directory (provided by FFmpeg.LGPL NuGet package)
 2. Create `FFmpegVideoEngine` implementing `IVideoEngine`:
    - `LoadAsync(filePath)`: Open file, detect streams, setup decoders
    - `Play()` / `Pause()` / `Stop()`: Control playback state
@@ -1047,9 +1041,9 @@ For a developer to create a Vido plugin:
 4. Implement frame timing: maintain correct PTS-based presentation timing
 5. Register `IVideoEngine` in DI container
 6. Write unit tests for engine initialization and metadata extraction
-7. Include FFmpeg DLLs in build output (copy to output directory)
+7. FFmpeg native DLLs provided automatically via `FFmpeg.LGPL` NuGet package (no manual downloads needed)
 
-**Note on FFmpeg DLLs**: Download pre-built shared FFmpeg libraries for Windows x64 from https://github.com/BtbN/FFmpeg-Builds/releases (LGPL build). Place in `ffmpeg/` directory. The `.csproj` should copy these to output.
+**Note on FFmpeg DLLs**: The `FFmpeg.LGPL` NuGet package provides all required native DLLs automatically via the standard `runtimes/win-x64/native` convention. No manual download or directory setup is required.
 
 **Acceptance Criteria**:
 - FFmpeg initializes without errors on startup
@@ -1744,10 +1738,7 @@ Before starting the first ticket, ensure you have:
 
 1. **.NET 8 SDK** installed (verify with `dotnet --version`)
 2. **Visual Studio 2022** or **VS Code with C# DevKit** (either works)
-3. **FFmpeg shared libraries** for Windows x64 — download from: https://github.com/BtbN/FFmpeg-Builds/releases
-   - Download `ffmpeg-master-latest-win64-lgpl-shared.zip` (LGPL build for no GPL restrictions)
-   - Extract the DLLs from `bin/` → place in `ffmpeg/` directory at the solution root
-   - Required DLLs: `avcodec-61.dll`, `avformat-61.dll`, `avutil-59.dll`, `swscale-8.dll`, `swresample-5.dll` (and their dependencies)
+3. **FFmpeg native DLLs** — provided automatically by the `FFmpeg.LGPL` NuGet package (no manual download needed)
 4. **Git** initialized: `git init` in the `c:\source\vido` directory
 
 ### 9.2 Per-Ticket Workflow
@@ -1890,9 +1881,11 @@ The colors listed in Section 4.1 cover the most critical UI elements. When imple
 
 ## Appendix B: FFmpeg.AutoGen Integration Notes
 
-- NuGet package: `FFmpeg.AutoGen` (latest 7.x)
-- Set `ffmpeg.RootPath` to the `ffmpeg/` directory before any FFmpeg calls
+- NuGet packages: `FFmpeg.AutoGen.Abstractions` + `FFmpeg.AutoGen.Bindings.DynamicallyLoaded` (8.0.0)
+- Native DLLs: `FFmpeg.LGPL` NuGet package (provides avcodec-62, avformat-62, avutil-60, swscale-9, swresample-6 automatically)
+- Set `DynamicallyLoadedBindings.LibrariesPath` to the directory containing FFmpeg DLLs, then call `DynamicallyLoadedBindings.Initialize()`
 - All FFmpeg functions are accessed via static methods on `ffmpeg` class (e.g., `ffmpeg.avformat_open_input(...)`)
+- Key type mappings in v8.0: `byte_ptr4` (not `byte_ptrArray4`), `int4` (not `int_array4`), `sws_scale` takes `byte*[]` and `int[]`
 - Use `AVHWDeviceType.AV_HWDEVICE_TYPE_D3D11VA` for hardware acceleration on Windows
 - Decode loop pattern: `av_read_frame()` → `avcodec_send_packet()` → `avcodec_receive_frame()` → `sws_scale()` → copy to WriteableBitmap
 - For audio: `avcodec_receive_frame()` → `swr_convert()` → write to WASAPI buffer via NAudio
