@@ -1,17 +1,18 @@
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shell;
 using Vido.Core.Layout;
-using Vido.Core.Playback;
 using Vido.Core.Settings;
 using Vido.Core.State;
 using Vido.Core.Windowing;
 using Vido.ViewModels;
 using Vido.Views.Panels;
 using Vido.Views.Services;
+using Vido.Core.Logging;
 
 namespace Vido.Views;
 
@@ -26,9 +27,11 @@ public partial class MainWindow : Window
 
     private readonly IStateService _stateService;
     private readonly ISettingsService _settingsService;
+    private readonly ILogService _logService;
     private readonly FileExplorerViewModel _fileExplorerViewModel;
     private readonly VideoPlayerViewModel _videoPlayerViewModel;
     private readonly MainWindowViewModel _mainWindowViewModel;
+    private readonly OutputLogViewModel _outputLogViewModel;
 
     private TitleBarViewModel? _titleBarViewModel;
     private ActivityBarViewModel? _activityBarViewModel;
@@ -42,15 +45,19 @@ public partial class MainWindow : Window
     public MainWindow(
         IStateService stateService,
         ISettingsService settingsService,
+        ILogService logService,
         FileExplorerViewModel fileExplorerViewModel,
         VideoPlayerViewModel videoPlayerViewModel,
-        MainWindowViewModel mainWindowViewModel)
+        MainWindowViewModel mainWindowViewModel,
+        OutputLogViewModel outputLogViewModel)
     {
         _stateService = stateService;
         _settingsService = settingsService;
+        _logService = logService;
         _fileExplorerViewModel = fileExplorerViewModel;
         _videoPlayerViewModel = videoPlayerViewModel;
         _mainWindowViewModel = mainWindowViewModel;
+        _outputLogViewModel = outputLogViewModel;
 
         InitializeComponent();
         SetupWindowChrome();
@@ -58,8 +65,11 @@ public partial class MainWindow : Window
         SetupLayout();
         SetupTabSystem();
         SetupVideoPlayer();
+        SetupOutputLog();
         SetupFileExplorer();
         RestoreWindowState();
+
+        _logService.Info("Vido started", "App");
     }
 
     private void SetupWindowChrome()
@@ -120,9 +130,83 @@ public partial class MainWindow : Window
         VideoPlayer.DataContext = _videoPlayerViewModel;
     }
 
+    private void SetupOutputLog()
+    {
+        var outputLogPanel = new OutputLogPanel
+        {
+            DataContext = _outputLogViewModel
+        };
+
+        BottomPanelContent.Content = outputLogPanel;
+
+        // Store panel content mapping for bottom panel tab switching
+        _bottomPanelContents[MainWindowViewModel.OutputTabId] = outputLogPanel;
+
+        // Wire bottom panel tab content switching
+        _mainWindowViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.ActiveBottomPanelTab))
+                UpdateBottomPanelContent();
+        };
+    }
+
+    /// <summary>Map of bottom panel tab IDs to their content controls.</summary>
+    private readonly Dictionary<string, UIElement> _bottomPanelContents = [];
+
+    /// <summary>Creates a placeholder panel for tabs without real content yet.</summary>
+    private static Border CreatePlaceholderPanel(string tabTitle)
+    {
+        var border = new Border { Padding = new Thickness(12, 8, 12, 8) };
+        var text = new TextBlock
+        {
+            Text = $"{tabTitle} will be available in a future update.",
+            FontFamily = new FontFamily("Segoe UI"),
+            FontSize = 12,
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+        text.SetResourceReference(TextBlock.ForegroundProperty, "DisabledForegroundBrush");
+        border.Child = text;
+        return border;
+    }
+
+    /// <summary>
+    /// Switches the bottom panel content to match the active bottom panel tab.
+    /// </summary>
+    private void UpdateBottomPanelContent()
+    {
+        var activeTab = _mainWindowViewModel.ActiveBottomPanelTab;
+        if (activeTab is null) return;
+
+        if (!_bottomPanelContents.TryGetValue(activeTab.Id, out var content))
+        {
+            // Create placeholder for tabs without real implementations
+            content = CreatePlaceholderPanel(activeTab.Title);
+            _bottomPanelContents[activeTab.Id] = content;
+        }
+
+        BottomPanelContent.Content = content;
+    }
+
+    /// <summary>Bottom panel tab click handler — activates the clicked tab.</summary>
+    private void OnBottomPanelTabClick(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.DataContext is BottomPanelTabItem tab)
+        {
+            _mainWindowViewModel.ActivateBottomPanelTab(tab.Id);
+        }
+    }
+
+    /// <summary>Bottom panel collapse/expand chevron click handler.</summary>
+    private void OnBottomPanelCollapseClick(object sender, RoutedEventArgs e)
+    {
+        _mainWindowViewModel.ToggleBottomPanelCollapse();
+    }
+
     private void SetupTabSystem()
     {
         TabWell.DataContext = _mainWindowViewModel;
+        BottomPanel.DataContext = _mainWindowViewModel;
 
         // Listen for active tab changes to switch content
         _mainWindowViewModel.PropertyChanged += (_, e) =>
@@ -130,6 +214,8 @@ public partial class MainWindow : Window
             if (e.PropertyName == nameof(MainWindowViewModel.ActiveTab))
                 UpdateTabContent();
             else if (e.PropertyName == nameof(MainWindowViewModel.IsBottomPanelVisible))
+                UpdateBottomPanelVisibility();
+            else if (e.PropertyName == nameof(MainWindowViewModel.IsBottomPanelCollapsed))
                 UpdateBottomPanelVisibility();
             else if (e.PropertyName == nameof(MainWindowViewModel.IsRightPanelVisible))
                 UpdateRightPanelVisibility();
@@ -151,6 +237,14 @@ public partial class MainWindow : Window
         // Wire View menu panel toggles
         TitleBar.ToggleBottomPanelRequested += () => _mainWindowViewModel.ToggleBottomPanel();
         TitleBar.ToggleRightPanelRequested += () => _mainWindowViewModel.ToggleRightPanel();
+        TitleBar.ShowOutputRequested += () => _mainWindowViewModel.ActivateBottomPanelTab(MainWindowViewModel.OutputTabId);
+
+        // Sync bottom panel visibility state to title bar for dynamic menu text
+        _mainWindowViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.IsBottomPanelVisible))
+                TitleBar.SetBottomPanelVisible(_mainWindowViewModel.IsBottomPanelVisible);
+        };
 
         // Wire the "Open Folder" button inside the explorer panel
         _fileExplorerPanel.OpenFolderRequested += ShowOpenFolderDialog;
@@ -216,6 +310,7 @@ public partial class MainWindow : Window
     private void OnFolderRescanned()
     {
         _fileExplorerViewModel.RescanFolder();
+        _logService.Info("Folder rescanned", "Explorer");
     }
 
     private async void OnPlayFileRequested(Core.FileSystem.FileNode node)
@@ -228,9 +323,9 @@ public partial class MainWindow : Window
             _mainWindowViewModel.ActivateTab(MainWindowViewModel.PlayerTabId);
             await _videoPlayerViewModel.LoadAndPlayAsync(node.FullPath);
         }
-        catch
+        catch (Exception ex)
         {
-            // Playback errors are handled gracefully — video just won't play
+            _logService.Error($"Failed to play {node.Name}: {ex.Message}", "Player");
         }
     }
 
@@ -266,19 +361,6 @@ public partial class MainWindow : Window
             DynamicTabContent.Content = null;
             DynamicTabContent.Visibility = Visibility.Visible;
         }
-
-        // Update tab visual states (active background + accent line)
-        UpdateTabVisualStates();
-    }
-
-    /// <summary>
-    /// Updates the visual styling of tabs in the tab well — the active tab gets
-    /// the editor background and an accent bottom border.
-    /// </summary>
-    private void UpdateTabVisualStates()
-    {
-        // The TabWell handles visual states internally via data binding.
-        // This is a hook for any additional MainWindow-level visual updates.
     }
 
     // ── Panel visibility ──
@@ -288,14 +370,32 @@ public partial class MainWindow : Window
         if (_mainWindowViewModel.IsBottomPanelVisible)
         {
             BottomPanel.Visibility = Visibility.Visible;
-            BottomPanelSplitter.Visibility = Visibility.Visible;
-            BottomPanelRow.Height = new GridLength(_bottomPanelHeight);
-            BottomPanelSplitterRow.Height = GridLength.Auto;
+
+            if (_mainWindowViewModel.IsBottomPanelCollapsed)
+            {
+                // Collapsed: show only the tab strip bar (no splitter, fixed height)
+                // Remember current height before collapsing
+                if (BottomPanelRow.Height.Value > 40)
+                    _bottomPanelHeight = BottomPanelRow.Height.Value;
+
+                BottomPanelSplitter.Visibility = Visibility.Collapsed;
+                BottomPanelSplitterRow.Height = new GridLength(0);
+                BottomPanelRow.Height = new GridLength(29); // Tab strip height only
+                BottomPanelContent.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                // Expanded: full panel with splitter
+                BottomPanelSplitter.Visibility = Visibility.Visible;
+                BottomPanelSplitterRow.Height = GridLength.Auto;
+                BottomPanelRow.Height = new GridLength(_bottomPanelHeight);
+                BottomPanelContent.Visibility = Visibility.Visible;
+            }
         }
         else
         {
-            // Remember current height before collapsing
-            if (BottomPanelRow.Height.Value > 0)
+            // Remember current height before hiding
+            if (BottomPanelRow.Height.Value > 40)
                 _bottomPanelHeight = BottomPanelRow.Height.Value;
 
             BottomPanel.Visibility = Visibility.Collapsed;
@@ -381,6 +481,7 @@ public partial class MainWindow : Window
 
     protected override async void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
+        _logService.Info("Vido shutting down", "App");
         SaveWindowState();
         await _stateService.SaveAsync();
         await _settingsService.SaveAsync();

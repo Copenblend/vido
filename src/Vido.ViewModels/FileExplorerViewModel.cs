@@ -3,6 +3,7 @@ using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Vido.Core.FileSystem;
+using Vido.Core.Logging;
 using Vido.Core.State;
 
 namespace Vido.ViewModels;
@@ -15,6 +16,7 @@ public partial class FileExplorerViewModel : ObservableObject
 {
     private readonly IFileSystemService _fileSystemService;
     private readonly IStateService _stateService;
+    private readonly ILogService _logService;
 
     /// <summary>Root-level nodes displayed in the tree.</summary>
     public ObservableCollection<FileNode> RootNodes { get; } = [];
@@ -42,10 +44,11 @@ public partial class FileExplorerViewModel : ObservableObject
     [ObservableProperty]
     private bool _showHiddenFiles;
 
-    public FileExplorerViewModel(IFileSystemService fileSystemService, IStateService stateService)
+    public FileExplorerViewModel(IFileSystemService fileSystemService, IStateService stateService, ILogService logService)
     {
         _fileSystemService = fileSystemService;
         _stateService = stateService;
+        _logService = logService;
     }
 
     /// <summary>
@@ -108,6 +111,7 @@ public partial class FileExplorerViewModel : ObservableObject
             RootNodes.Add(node);
 
         _stateService.Current.LastOpenFolder = path;
+        _logService.Info($"Folder opened: {path}", "Explorer");
     }
 
     /// <summary>
@@ -116,12 +120,15 @@ public partial class FileExplorerViewModel : ObservableObject
     [RelayCommand]
     public void CloseFolder()
     {
+        var wasOpen = FolderPath;
         RootNodes.Clear();
         FolderPath = null;
         FolderName = null;
         HasFolderOpen = false;
         SelectedNode = null;
         _stateService.Current.LastOpenFolder = null;
+        if (wasOpen is not null)
+            _logService.Info("Folder closed", "Explorer");
     }
 
     /// <summary>

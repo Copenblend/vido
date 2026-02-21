@@ -115,7 +115,7 @@
     <!-- ===== Panel tab strip style (for bottom and right panels) ===== -->
     <Style x:Key="PanelTabStripStyle" TargetType="Border">
         <Setter Property="Height" Value="28" />
-        <Setter Property="Background" Value="{DynamicResource EditorBackgroundBrush}" />
+        <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource PrimaryBorderBrush}" />
     </Style>
 
@@ -123,11 +123,71 @@
     <Style x:Key="PanelTabItemStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Segoe UI" />
         <Setter Property="FontSize" Value="11" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontWeight" Value="Normal" />
         <Setter Property="Foreground" Value="{DynamicResource SecondaryForegroundBrush}" />
         <Setter Property="Padding" Value="12,4" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- ===== Bottom panel tab item (button-like, highlights on active) ===== -->
+    <Style x:Key="BottomPanelTabButtonStyle" TargetType="Border">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Padding" Value="8,0" />
+        <Setter Property="Height" Value="28" />
+    </Style>
+
+    <!-- ===== Bottom panel collapse/expand chevron button ===== -->
+    <Style x:Key="PanelCollapseButtonStyle" TargetType="ToggleButton">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Width" Value="22" />
+        <Setter Property="Height" Value="22" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="4,0,0,0" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border Background="Transparent" Width="22" Height="22"
+                            CornerRadius="3" x:Name="Bd">
+                        <Path x:Name="Arrow"
+                              Data="M 4,2 L 10,6 4,10"
+                              Stroke="{DynamicResource SecondaryForegroundBrush}"
+                              StrokeThickness="1.2"
+                              StrokeLineJoin="Round"
+                              StrokeStartLineCap="Round"
+                              StrokeEndLineCap="Round"
+                              Fill="Transparent"
+                              HorizontalAlignment="Center"
+                              VerticalAlignment="Center"
+                              RenderTransformOrigin="0.5,0.5">
+                            <Path.RenderTransform>
+                                <RotateTransform Angle="90" />
+                            </Path.RenderTransform>
+                        </Path>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <!-- When checked (collapsed), chevron points right (0°) -->
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Arrow" Property="RenderTransform">
+                                <Setter.Value>
+                                    <RotateTransform Angle="0" />
+                                </Setter.Value>
+                            </Setter>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background"
+                                    Value="{DynamicResource HoverBackgroundBrush}" />
+                            <Setter TargetName="Arrow" Property="Stroke"
+                                    Value="{DynamicResource PrimaryForegroundBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ===== Horizontal splitter (for bottom panel resize) ===== -->

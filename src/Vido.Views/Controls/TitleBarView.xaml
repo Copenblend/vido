@@ -57,12 +57,10 @@
                           Style="{StaticResource DropdownMenuItemStyle}"
                           IsEnabled="False"
                           Click="OnRescanFolderClick" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="_Recent Files" Style="{StaticResource SubmenuParentItemStyle}">
                     <MenuItem Header="No recent files" Style="{StaticResource DropdownMenuItemStyle}"
                               IsEnabled="False" />
                 </MenuItem>
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="E_xit" InputGestureText="Alt+F4"
                           Style="{StaticResource DropdownMenuItemStyle}"
                           Click="OnExitClick" />
@@ -81,18 +79,25 @@
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
                 <MenuItem Header="Toggle S_tatus Bar"
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                <MenuItem x:Name="ToggleBottomPanelMenuItem"
-                          Header="Toggle _Bottom Panel" InputGestureText="Ctrl+J"
-                          Style="{StaticResource DropdownMenuItemStyle}"
-                          Click="OnToggleBottomPanelClick" />
+                <MenuItem x:Name="BottomPanelMenu"
+                          Header="_Bottom Panel"
+                          Style="{StaticResource SubmenuParentItemStyle}"
+                          SubmenuOpened="OnBottomPanelSubmenuOpened">
+                    <MenuItem x:Name="OutputMenuItem"
+                              Header="_Output"
+                              Style="{StaticResource DropdownMenuItemStyle}"
+                              Click="OnShowOutputClick" />
+                    <MenuItem x:Name="ShowHideBottomPanelMenuItem"
+                              Header="_Show Bottom Panel" InputGestureText="Ctrl+J"
+                              Style="{StaticResource DropdownMenuItemStyle}"
+                              Click="OnToggleBottomPanelClick" />
+                </MenuItem>
                 <MenuItem x:Name="ToggleRightPanelMenuItem"
                           Header="Toggle _Right Panel"
                           Style="{StaticResource DropdownMenuItemStyle}"
                           Click="OnToggleRightPanelClick" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="_Fullscreen" InputGestureText="F11"
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="Zoom _In" InputGestureText="Ctrl+="
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
                 <MenuItem Header="Zoom _Out" InputGestureText="Ctrl+-"
@@ -105,15 +110,12 @@
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
                 <MenuItem Header="_Stop"
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="Skip _Forward"
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
                 <MenuItem Header="Skip _Backward"
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="_Loop"
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="Playback _Speed" Style="{StaticResource SubmenuParentItemStyle}">
                     <MenuItem Header="0.25x" Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
                     <MenuItem Header="0.5x" Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
@@ -127,7 +129,6 @@
             <MenuItem Header="_Help" Style="{StaticResource TitleBarMenuItemStyle}">
                 <MenuItem Header="_About Vido"
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem Header="_Check for Updates"
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
             </MenuItem>

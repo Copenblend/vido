@@ -1,5 +1,6 @@
 using NSubstitute;
 using Vido.Core.FileSystem;
+using Vido.Core.Logging;
 using Vido.Core.State;
 using Vido.ViewModels;
 using Xunit;
@@ -10,13 +11,14 @@ public sealed class FileExplorerViewModelTests
 {
     private readonly IFileSystemService _fileSystemService = Substitute.For<IFileSystemService>();
     private readonly IStateService _stateService = Substitute.For<IStateService>();
+    private readonly ILogService _logService = Substitute.For<ILogService>();
     private readonly AppState _appState = new();
     private readonly FileExplorerViewModel _sut;
 
     public FileExplorerViewModelTests()
     {
         _stateService.Current.Returns(_appState);
-        _sut = new FileExplorerViewModel(_fileSystemService, _stateService);
+        _sut = new FileExplorerViewModel(_fileSystemService, _stateService, _logService);
     }
 
     [Fact]

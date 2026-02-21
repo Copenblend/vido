@@ -1,0 +1,244 @@
+<UserControl x:Class="Vido.Views.Panels.OutputLogPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Vido.ViewModels;assembly=Vido.ViewModels"
+             Background="{DynamicResource PanelBackgroundBrush}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../Themes/Brushes.xaml" />
+                <ResourceDictionary Source="../Themes/ScrollBarStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Log entry foreground by level -->
+            <Style x:Key="LogEntryTextStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="Cascadia Code, Consolas, Courier New" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Padding" Value="8,1" />
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryForegroundBrush}" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Level}" Value="Debug">
+                        <Setter Property="Foreground" Value="{DynamicResource SecondaryForegroundBrush}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Level}" Value="Warning">
+                        <Setter Property="Foreground" Value="{DynamicResource WarningForegroundBrush}" />
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding Level}" Value="Error">
+                        <Setter Property="Foreground" Value="{DynamicResource ErrorForegroundBrush}" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <!-- Toolbar button style -->
+            <Style x:Key="OutputToolbarButton" TargetType="Button">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Foreground" Value="{DynamicResource SecondaryForegroundBrush}" />
+                <Setter Property="FontFamily" Value="Segoe UI" />
+                <Setter Property="FontSize" Value="11" />
+                <Setter Property="Padding" Value="6,2" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="3"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background"
+                                            Value="{DynamicResource HoverBackgroundBrush}" />
+                                    <Setter Property="Foreground"
+                                            Value="{DynamicResource PrimaryForegroundBrush}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Toggle button style for auto-scroll (shows active state) -->
+            <Style x:Key="OutputToggleButton" TargetType="ToggleButton">
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Foreground" Value="{DynamicResource SecondaryForegroundBrush}" />
+                <Setter Property="FontFamily" Value="Segoe UI" />
+                <Setter Property="FontSize" Value="11" />
+                <Setter Property="Padding" Value="6,2" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Border x:Name="Bd"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="3"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background"
+                                            Value="{DynamicResource HoverBackgroundBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter Property="Foreground"
+                                            Value="{DynamicResource PrimaryForegroundBrush}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- Toolbar row -->
+            <RowDefinition Height="Auto" />
+            <!-- Log entries -->
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar: filter + clear + auto-scroll -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource PanelBackgroundBrush}"
+                BorderBrush="{DynamicResource PrimaryBorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="4,2">
+            <DockPanel>
+                <!-- Right-aligned buttons -->
+                <StackPanel DockPanel.Dock="Right"
+                            Orientation="Horizontal"
+                            Margin="4,0,0,0">
+                    <!-- Auto-scroll toggle -->
+                    <ToggleButton Style="{StaticResource OutputToggleButton}"
+                                  IsChecked="{Binding IsAutoScrollEnabled}"
+                                  ToolTip="Toggle Auto-Scroll">
+                        <StackPanel Orientation="Horizontal">
+                            <!-- Down arrow icon -->
+                            <Path Data="M 3,0 L 6,4 L 9,0"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"
+                                  StrokeThickness="1.5"
+                                  Width="10" Height="6"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,4,0" />
+                            <TextBlock Text="Auto-Scroll" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </ToggleButton>
+
+                    <!-- Clear button -->
+                    <Button Style="{StaticResource OutputToolbarButton}"
+                            Command="{Binding ClearLogCommand}"
+                            ToolTip="Clear Output"
+                            Margin="4,0,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <!-- X icon -->
+                            <Path Data="M 0,0 L 6,6 M 6,0 L 0,6"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  StrokeThickness="1.5"
+                                  Width="8" Height="8"
+                                  Stretch="Uniform"
+                                  VerticalAlignment="Center"
+                                  Margin="0,0,4,0" />
+                            <TextBlock Text="Clear" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+
+                <!-- Left-aligned filter button -->
+                <Button Style="{StaticResource OutputToolbarButton}"
+                        Command="{Binding CycleFilterCommand}"
+                        ToolTip="Cycle log level filter (click to change)">
+                    <StackPanel Orientation="Horizontal">
+                        <!-- Filter icon -->
+                        <Path Data="M 0,0 L 10,0 L 6,5 L 6,8 L 4,8 L 4,5 Z"
+                              Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                              Width="10" Height="8"
+                              Stretch="Uniform"
+                              VerticalAlignment="Center"
+                              Margin="0,0,4,0" />
+                        <TextBlock Text="{Binding FilterText}"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </DockPanel>
+        </Border>
+
+        <!-- Log entries list -->
+        <ListBox x:Name="LogListBox"
+                 Grid.Row="1"
+                 ItemsSource="{Binding Entries}"
+                 Background="Transparent"
+                 BorderThickness="0"
+                 Style="{StaticResource ThinScrollBarListBoxStyle}"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 VirtualizingPanel.IsVirtualizing="True"
+                 VirtualizingPanel.VirtualizationMode="Recycling">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="Margin" Value="0" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="ListBoxItem">
+                                <Border x:Name="Bd"
+                                        Background="Transparent"
+                                        Padding="0">
+                                    <ContentPresenter />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="Bd" Property="Background"
+                                                Value="{DynamicResource HoverBackgroundBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsSelected" Value="True">
+                                        <Setter TargetName="Bd" Property="Background"
+                                                Value="{DynamicResource SelectionBackgroundBrush}" />
+                                    </Trigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </ListBox.ItemContainerStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:LogEntryViewModel}">
+                    <TextBlock Text="{Binding FormattedLine}"
+                               Style="{StaticResource LogEntryTextStyle}" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <!-- Empty state (visible only when no entries) -->
+        <TextBlock Grid.Row="1"
+                   Text="No output yet."
+                   Foreground="{DynamicResource DisabledForegroundBrush}"
+                   FontFamily="Segoe UI"
+                   FontSize="12"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Visibility" Value="Visible" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding HasEntries}" Value="True">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+    </Grid>
+</UserControl>

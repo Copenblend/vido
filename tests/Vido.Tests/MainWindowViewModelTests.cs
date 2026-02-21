@@ -356,4 +356,178 @@ public class MainWindowViewModelTests
 
         Assert.True(raised);
     }
+
+    // ── Bottom Panel Tabs ──
+
+    [Fact]
+    public void Constructor_CreatesBottomPanelTabs()
+    {
+        Assert.Single(_sut.BottomPanelTabs);
+        Assert.Equal(MainWindowViewModel.OutputTabId, _sut.BottomPanelTabs[0].Id);
+    }
+
+    [Fact]
+    public void Constructor_OutputTabIsActiveByDefault()
+    {
+        Assert.NotNull(_sut.ActiveBottomPanelTab);
+        Assert.Equal(MainWindowViewModel.OutputTabId, _sut.ActiveBottomPanelTab!.Id);
+    }
+
+    [Fact]
+    public void ActivateBottomPanelTab_SwitchesToTab()
+    {
+        _sut.ActivateBottomPanelTab(MainWindowViewModel.OutputTabId);
+
+        Assert.Equal(MainWindowViewModel.OutputTabId, _sut.ActiveBottomPanelTab!.Id);
+    }
+
+    [Fact]
+    public void ActivateBottomPanelTab_ShowsPanel()
+    {
+        Assert.False(_sut.IsBottomPanelVisible);
+
+        _sut.ActivateBottomPanelTab(MainWindowViewModel.OutputTabId);
+
+        Assert.True(_sut.IsBottomPanelVisible);
+    }
+
+    [Fact]
+    public void CloseBottomPanelTab_CannotCloseNonClosableTab()
+    {
+        // Output tab has IsClosable = false
+        _sut.CloseBottomPanelTab(MainWindowViewModel.OutputTabId);
+
+        Assert.Single(_sut.BottomPanelTabs);
+        Assert.NotNull(_sut.FindBottomPanelTab(MainWindowViewModel.OutputTabId));
+    }
+
+    [Fact]
+    public void Constructor_OutputTabIsNotClosable()
+    {
+        var outputTab = _sut.FindBottomPanelTab(MainWindowViewModel.OutputTabId);
+        Assert.NotNull(outputTab);
+        Assert.False(outputTab!.IsClosable);
+    }
+
+    [Fact]
+    public void OpenBottomPanelTab_ExistingTab_ActivatesIt()
+    {
+        _sut.OpenBottomPanelTab(MainWindowViewModel.OutputTabId);
+
+        Assert.Equal(MainWindowViewModel.OutputTabId, _sut.ActiveBottomPanelTab!.Id);
+        Assert.Single(_sut.BottomPanelTabs); // No duplicates
+    }
+
+    [Fact]
+    public void ActivateBottomPanelTab_ExistingTab_ShowsPanel()
+    {
+        Assert.False(_sut.IsBottomPanelVisible);
+
+        _sut.ActivateBottomPanelTab(MainWindowViewModel.OutputTabId);
+
+        Assert.True(_sut.IsBottomPanelVisible);
+        Assert.Equal(MainWindowViewModel.OutputTabId, _sut.ActiveBottomPanelTab!.Id);
+    }
+
+    [Fact]
+    public void ActiveBottomPanelTab_SetsIsActiveFlags()
+    {
+        var output = _sut.FindBottomPanelTab(MainWindowViewModel.OutputTabId)!;
+        Assert.True(output.IsActive);
+    }
+
+    [Fact]
+    public void ActiveBottomPanelTab_RaisesPropertyChanged()
+    {
+        var raised = false;
+        _sut.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.ActiveBottomPanelTab))
+                raised = true;
+        };
+
+        // Activate the same tab explicitly — the ActivateBottomPanelTab method
+        // sets ActiveBottomPanelTab which raises PropertyChanged
+        _sut.ActiveBottomPanelTab = null; // Reset to force change
+        raised = false;
+        _sut.ActivateBottomPanelTab(MainWindowViewModel.OutputTabId);
+
+        Assert.True(raised);
+    }
+
+    [Fact]
+    public void FindBottomPanelTab_ReturnsCorrectTab()
+    {
+        var tab = _sut.FindBottomPanelTab(MainWindowViewModel.OutputTabId);
+        Assert.NotNull(tab);
+        Assert.Equal("OUTPUT", tab!.Title);
+    }
+
+    [Fact]
+    public void FindBottomPanelTab_NonexistentId_ReturnsNull()
+    {
+        Assert.Null(_sut.FindBottomPanelTab("nonexistent"));
+    }
+
+    [Fact]
+    public void CloseBottomPanelTab_NonexistentId_DoesNothing()
+    {
+        _sut.CloseBottomPanelTab("nonexistent");
+        Assert.Single(_sut.BottomPanelTabs);
+    }
+
+    // ── Bottom Panel Collapse ──
+
+    [Fact]
+    public void ToggleBottomPanelCollapse_TogglesState()
+    {
+        _sut.IsBottomPanelVisible = true;
+        Assert.False(_sut.IsBottomPanelCollapsed);
+
+        _sut.ToggleBottomPanelCollapse();
+        Assert.True(_sut.IsBottomPanelCollapsed);
+
+        _sut.ToggleBottomPanelCollapse();
+        Assert.False(_sut.IsBottomPanelCollapsed);
+    }
+
+    [Fact]
+    public void ToggleBottomPanelCollapse_WhenHidden_ShowsExpanded()
+    {
+        Assert.False(_sut.IsBottomPanelVisible);
+
+        _sut.ToggleBottomPanelCollapse();
+
+        Assert.True(_sut.IsBottomPanelVisible);
+        Assert.False(_sut.IsBottomPanelCollapsed);
+    }
+
+    [Fact]
+    public void ToggleBottomPanel_ShowsExpanded_ClearsCollapsed()
+    {
+        _sut.IsBottomPanelVisible = true;
+        _sut.IsBottomPanelCollapsed = true;
+
+        _sut.ToggleBottomPanel(); // hides
+        _sut.ToggleBottomPanel(); // shows — should clear collapsed
+
+        Assert.True(_sut.IsBottomPanelVisible);
+        Assert.False(_sut.IsBottomPanelCollapsed);
+    }
+
+    [Fact]
+    public void IsBottomPanelCollapsed_RaisesPropertyChanged()
+    {
+        var raised = false;
+        _sut.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.IsBottomPanelCollapsed))
+                raised = true;
+        };
+
+        _sut.IsBottomPanelVisible = true;
+        _sut.ToggleBottomPanelCollapse();
+
+        Assert.True(raised);
+    }
 }

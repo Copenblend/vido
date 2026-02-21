@@ -10,7 +10,7 @@
     <Color x:Key="ActivityBarBackgroundColor">#181818</Color>
     <Color x:Key="TitleBarBackgroundColor">#181818</Color>
     <Color x:Key="StatusBarBackgroundColor">#007acc</Color>  <!-- Uses AccentColor value -->
-    <Color x:Key="PanelBackgroundColor">#1f1f1f</Color>
+    <Color x:Key="PanelBackgroundColor">#181818</Color>
     <Color x:Key="InputBackgroundColor">#313131</Color>
     <Color x:Key="DropdownBackgroundColor">#313131</Color>
     <Color x:Key="TabActiveBackgroundColor">#1f1f1f</Color>
