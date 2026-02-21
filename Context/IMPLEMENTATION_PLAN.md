@@ -1240,6 +1240,7 @@ For a developer to create a Vido plugin:
 3. Wire keyboard input in the main window (PreviewKeyDown) to route through the shortcut service
 4. Ensure shortcuts don't fire when the user is typing in a text input
 5. Write unit tests for the shortcut registry, binding, and conflict detection
+6. Ensure keyboard shortcuts only affect the portions of the application they are meant to affect - they must not affect anything else in the ui.
 
 **Acceptance Criteria**:
 - All listed keyboard shortcuts work correctly

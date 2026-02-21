@@ -76,23 +76,6 @@
         </Setter>
     </Style>
 
-    <!-- Dropdown separator style -->
-    <Style x:Key="MenuSeparatorStyle" TargetType="Separator">
-        <Setter Property="Height" Value="1" />
-        <Setter Property="Margin" Value="8,0" />
-        <Setter Property="Background" Value="{DynamicResource PrimaryBorderBrush}" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Separator">
-                    <Border Height="1"
-                            Margin="{TemplateBinding Margin}"
-                            Background="{TemplateBinding Background}"
-                            SnapsToDevicePixels="True" />
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
     <!-- Dropdown menu item style (items inside the dropdown) -->
     <Style x:Key="DropdownMenuItemStyle" TargetType="MenuItem">
         <Setter Property="Foreground" Value="{DynamicResource PrimaryForegroundBrush}" />
@@ -187,7 +170,8 @@
                                AllowsTransparency="True"
                                Focusable="False"
                                PopupAnimation="None"
-                               HorizontalOffset="-4">
+                               HorizontalOffset="-4"
+                               VerticalOffset="-5">
                             <Border Background="{DynamicResource ContextMenuBackgroundBrush}"
                                     BorderBrush="{DynamicResource PrimaryBorderBrush}"
                                     BorderThickness="1"

@@ -132,15 +132,42 @@ public partial class TitleBarView : UserControl
 
     // ── View menu events ──
 
-    /// <summary>Raised when View > Toggle Bottom Panel is clicked.</summary>
+    /// <summary>Raised when View > Bottom Panel > Show/Hide is clicked.</summary>
     public event Action? ToggleBottomPanelRequested;
+
+    /// <summary>Raised when View > Bottom Panel > Output is clicked to show the output panel.</summary>
+    public event Action? ShowOutputRequested;
 
     /// <summary>Raised when View > Toggle Right Panel is clicked.</summary>
     public event Action? ToggleRightPanelRequested;
 
+    /// <summary>Whether the bottom panel is currently visible. Used to update the submenu text.</summary>
+    private bool _isBottomPanelVisible;
+
+    /// <summary>
+    /// Updates the Bottom Panel submenu state based on current panel visibility.
+    /// Called by MainWindow when the panel visibility changes.
+    /// </summary>
+    public void SetBottomPanelVisible(bool visible)
+    {
+        _isBottomPanelVisible = visible;
+    }
+
+    private void OnBottomPanelSubmenuOpened(object sender, RoutedEventArgs e)
+    {
+        ShowHideBottomPanelMenuItem.Header = _isBottomPanelVisible
+            ? "_Hide Bottom Panel"
+            : "_Show Bottom Panel";
+    }
+
     private void OnToggleBottomPanelClick(object sender, RoutedEventArgs e)
     {
         ToggleBottomPanelRequested?.Invoke();
+    }
+
+    private void OnShowOutputClick(object sender, RoutedEventArgs e)
+    {
+        ShowOutputRequested?.Invoke();
     }
 
     private void OnToggleRightPanelClick(object sender, RoutedEventArgs e)

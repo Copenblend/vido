@@ -1,4 +1,5 @@
 using NSubstitute;
+using Vido.Core.Logging;
 using Vido.Core.Playback;
 using Vido.ViewModels;
 using Xunit;
@@ -12,15 +13,17 @@ namespace Vido.Tests;
 public class VideoPlayerViewModelTests : IDisposable
 {
     private readonly IVideoEngine _engine;
+    private readonly ILogService _logService;
     private readonly VideoPlayerViewModel _sut;
 
     public VideoPlayerViewModelTests()
     {
         _engine = Substitute.For<IVideoEngine>();
+        _logService = Substitute.For<ILogService>();
         _engine.Volume.Returns(75);
         _engine.IsMuted.Returns(false);
         _engine.IsLooping.Returns(false);
-        _sut = new VideoPlayerViewModel(_engine);
+        _sut = new VideoPlayerViewModel(_engine, _logService);
     }
 
     // ── Initial State ──

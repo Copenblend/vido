@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:Vido.Views.Controls"
+        xmlns:layout="clr-namespace:Vido.Core.Layout;assembly=Vido.Core"
         Title="Vido"
         Width="2560"
         Height="720"
@@ -16,8 +17,6 @@
                 <ResourceDictionary Source="Controls/LayoutStyles.xaml" />
                 <ResourceDictionary Source="Controls/TabStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
-
-            <BooleanToVisibilityConverter x:Key="BoolToVis" />
         </ResourceDictionary>
     </Window.Resources>
 
@@ -138,27 +137,58 @@
                                     <RowDefinition Height="*" />
                                 </Grid.RowDefinitions>
 
-                                <!-- Bottom panel tab strip -->
+                                <!-- Bottom panel tab strip with shadow -->
                                 <Border Grid.Row="0"
                                         Style="{StaticResource PanelTabStripStyle}"
-                                        BorderThickness="0,1,0,0">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="OUTPUT"
-                                                   Style="{StaticResource PanelTabItemStyle}"
-                                                   Foreground="{DynamicResource PrimaryForegroundBrush}" />
-                                    </StackPanel>
+                                        BorderThickness="0">
+                                    <DockPanel>
+                                        <!-- Collapse/expand chevron (left-aligned) -->
+                                        <ToggleButton x:Name="BottomPanelCollapseButton"
+                                                      DockPanel.Dock="Left"
+                                                      Style="{StaticResource PanelCollapseButtonStyle}"
+                                                      IsChecked="{Binding IsBottomPanelCollapsed, Mode=OneWay}"
+                                                      Margin="4,0,0,0"
+                                                      ToolTip="Collapse Panel"
+                                                      Click="OnBottomPanelCollapseClick" />
+                                        <!-- Tab items -->
+                                        <ItemsControl x:Name="BottomPanelTabStrip"
+                                                      ItemsSource="{Binding BottomPanelTabs}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <StackPanel Orientation="Horizontal" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type layout:BottomPanelTabItem}">
+                                                    <Border x:Name="TabBorder"
+                                                            Style="{StaticResource BottomPanelTabButtonStyle}"
+                                                            MouseLeftButtonDown="OnBottomPanelTabClick">
+                                                        <TextBlock x:Name="TabTitle"
+                                                                   Text="{Binding Title}"
+                                                                   Style="{StaticResource PanelTabItemStyle}"
+                                                                   Padding="0"
+                                                                   VerticalAlignment="Center" />
+                                                    </Border>
+                                                    <DataTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                            <Setter TargetName="TabTitle" Property="Foreground" Value="{DynamicResource PrimaryForegroundBrush}" />
+                                                        </DataTrigger>
+                                                    </DataTemplate.Triggers>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </DockPanel>
                                 </Border>
 
-                                <!-- Bottom panel content (stub) -->
-                                <Border Grid.Row="1"
-                                        Padding="12,8">
-                                    <TextBlock Text="Output log will be available in a future update."
-                                               Foreground="{DynamicResource DisabledForegroundBrush}"
-                                               FontFamily="Segoe UI"
-                                               FontSize="12"
-                                               VerticalAlignment="Center"
-                                               HorizontalAlignment="Center" />
-                                </Border>
+                                <!-- Subtle shadow line below tab strip -->
+                                <Border Grid.Row="0"
+                                        VerticalAlignment="Bottom"
+                                        Height="1"
+                                        Background="{DynamicResource PrimaryBorderBrush}" />
+
+                                <!-- Panel content area -->
+                                <ContentPresenter x:Name="BottomPanelContent"
+                                                  Grid.Row="1" />
                             </Grid>
                         </Border>
                     </Grid>

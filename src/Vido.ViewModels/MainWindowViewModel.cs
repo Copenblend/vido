@@ -17,6 +17,9 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>Well-known tab ID for the settings page.</summary>
     public const string SettingsTabId = "Settings";
 
+    // ── Bottom Panel Tab IDs ──
+    public const string OutputTabId = "Output";
+
     /// <summary>Material Design gear icon geometry for the Settings tab.</summary>
     private const string SettingsIconGeometry =
         "M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5"
@@ -52,17 +55,28 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private bool _isBottomPanelVisible;
 
+    /// <summary>Whether the bottom panel is collapsed (showing only tab strip).</summary>
+    [ObservableProperty]
+    private bool _isBottomPanelCollapsed;
+
     /// <summary>Whether the right panel is visible.</summary>
     [ObservableProperty]
     private bool _isRightPanelVisible;
 
-    /// <summary>Remembered height of the bottom panel (before collapse).</summary>
-    [ObservableProperty]
-    private double _bottomPanelHeight = 200;
+    // ── Bottom Panel Tabs ──
 
-    /// <summary>Remembered width of the right panel (before collapse).</summary>
+    /// <summary>All open bottom panel tabs.</summary>
+    public ObservableCollection<BottomPanelTabItem> BottomPanelTabs { get; } = [];
+
+    /// <summary>The currently active bottom panel tab.</summary>
     [ObservableProperty]
-    private double _rightPanelWidth = 300;
+    private BottomPanelTabItem? _activeBottomPanelTab;
+
+    partial void OnActiveBottomPanelTabChanged(BottomPanelTabItem? oldValue, BottomPanelTabItem? newValue)
+    {
+        if (oldValue is not null) oldValue.IsActive = false;
+        if (newValue is not null) newValue.IsActive = true;
+    }
 
     public MainWindowViewModel()
     {
@@ -76,6 +90,11 @@ public partial class MainWindowViewModel : ObservableObject
 
         Tabs.Add(playerTab);
         ActiveTab = playerTab;
+
+        // Initialize bottom panel tabs
+        var outputTab = new BottomPanelTabItem(OutputTabId, "OUTPUT") { IsClosable = false };
+        BottomPanelTabs.Add(outputTab);
+        ActiveBottomPanelTab = outputTab;
     }
 
     // ── Tab Commands ──
@@ -174,6 +193,23 @@ public partial class MainWindowViewModel : ObservableObject
     public void ToggleBottomPanel()
     {
         IsBottomPanelVisible = !IsBottomPanelVisible;
+        if (IsBottomPanelVisible)
+            IsBottomPanelCollapsed = false;
+    }
+
+    /// <summary>Toggles the bottom panel between collapsed (tab strip only) and expanded.</summary>
+    [RelayCommand]
+    public void ToggleBottomPanelCollapse()
+    {
+        if (!IsBottomPanelVisible)
+        {
+            // If panel is hidden entirely, show it expanded
+            IsBottomPanelVisible = true;
+            IsBottomPanelCollapsed = false;
+            return;
+        }
+
+        IsBottomPanelCollapsed = !IsBottomPanelCollapsed;
     }
 
     /// <summary>Toggles the right panel visibility.</summary>
@@ -181,6 +217,93 @@ public partial class MainWindowViewModel : ObservableObject
     public void ToggleRightPanel()
     {
         IsRightPanelVisible = !IsRightPanelVisible;
+    }
+
+    // ── Bottom Panel Tab Commands ──
+
+    /// <summary>
+    /// Activates a bottom panel tab by ID. If the panel is hidden, opens it.
+    /// If the tab was closed, re-adds it.
+    /// </summary>
+    [RelayCommand]
+    public void ActivateBottomPanelTab(string tabId)
+    {
+        var tab = FindBottomPanelTab(tabId);
+        if (tab is null)
+        {
+            // Re-add the tab if it was closed
+            OpenBottomPanelTab(tabId);
+            return;
+        }
+
+        ActiveBottomPanelTab = tab;
+        IsBottomPanelVisible = true;
+    }
+
+    /// <summary>
+    /// Opens (or re-opens) a bottom panel tab. If it doesn't exist, creates it
+    /// and inserts it at its canonical position.
+    /// </summary>
+    public void OpenBottomPanelTab(string tabId)
+    {
+        var existing = FindBottomPanelTab(tabId);
+        if (existing is not null)
+        {
+            ActiveBottomPanelTab = existing;
+            IsBottomPanelVisible = true;
+            return;
+        }
+
+        var (title, canonicalIndex) = tabId switch
+        {
+            OutputTabId => ("OUTPUT", 0),
+            _ => (tabId.ToUpperInvariant(), BottomPanelTabs.Count)
+        };
+
+        var tab = new BottomPanelTabItem(tabId, title) { IsClosable = true };
+
+        // Insert at the canonical position (or at end if past current count)
+        var insertIndex = Math.Min(canonicalIndex, BottomPanelTabs.Count);
+        BottomPanelTabs.Insert(insertIndex, tab);
+        ActiveBottomPanelTab = tab;
+        IsBottomPanelVisible = true;
+    }
+
+    /// <summary>
+    /// Closes a bottom panel tab. If it was the active tab, activates
+    /// the nearest neighbor. If no tabs remain, hides the panel.
+    /// </summary>
+    [RelayCommand]
+    public void CloseBottomPanelTab(string tabId)
+    {
+        var tab = FindBottomPanelTab(tabId);
+        if (tab is null || !tab.IsClosable) return;
+
+        var index = BottomPanelTabs.IndexOf(tab);
+        BottomPanelTabs.Remove(tab);
+
+        if (BottomPanelTabs.Count == 0)
+        {
+            ActiveBottomPanelTab = null;
+            IsBottomPanelVisible = false;
+            return;
+        }
+
+        if (ActiveBottomPanelTab == tab || ActiveBottomPanelTab is null)
+        {
+            var newIndex = Math.Min(index, BottomPanelTabs.Count - 1);
+            ActiveBottomPanelTab = BottomPanelTabs[newIndex];
+        }
+    }
+
+    /// <summary>Finds a bottom panel tab by ID.</summary>
+    internal BottomPanelTabItem? FindBottomPanelTab(string tabId)
+    {
+        for (int i = 0; i < BottomPanelTabs.Count; i++)
+        {
+            if (BottomPanelTabs[i].Id == tabId) return BottomPanelTabs[i];
+        }
+        return null;
     }
 
     /// <summary>Opens Settings as a tab (like VS Code).</summary>

@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Vido.Core.FileSystem;
+using Vido.Core.Logging;
 using Vido.Core.Playback;
 
 namespace Vido.ViewModels;
@@ -13,6 +14,7 @@ namespace Vido.ViewModels;
 public partial class VideoPlayerViewModel : ObservableObject, IDisposable
 {
     private readonly IVideoEngine _engine;
+    private readonly ILogService _logService;
     private bool _disposed;
     private bool _isSeeking;
 
@@ -103,9 +105,10 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// </summary>
     public event Action<FrameData>? FrameReady;
 
-    public VideoPlayerViewModel(IVideoEngine engine)
+    public VideoPlayerViewModel(IVideoEngine engine, ILogService logService)
     {
         _engine = engine;
+        _logService = logService;
         Volume = _engine.Volume;
         IsMuted = _engine.IsMuted;
         IsLooping = _engine.IsLooping;
@@ -164,6 +167,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// </summary>
     public async Task LoadAndPlayAsync(string filePath)
     {
+        _logService.Info($"Loading video: {Path.GetFileName(filePath)}", "Player");
         await _engine.LoadAsync(filePath);
 
         CurrentFilePath = filePath;
@@ -186,6 +190,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         }
 
         _engine.Play();
+        _logService.Info($"Playing: {Path.GetFileName(filePath)} ({CurrentMetadata?.Resolution}, {FormatTime(Duration)})", "Player");
     }
 
     /// <summary>Toggles between play and pause.</summary>
@@ -195,9 +200,15 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         if (!HasMedia) return;
 
         if (State == PlaybackState.Playing)
+        {
             _engine.Pause();
+            _logService.Info("Playback paused", "Player");
+        }
         else
+        {
             _engine.Play();
+            _logService.Info("Playback resumed", "Player");
+        }
     }
 
     /// <summary>Stops playback and resets position.</summary>
@@ -206,6 +217,8 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     {
         if (!HasMedia) return;
         _engine.Stop();
+        _logService.Info("Playback stopped", "Player");
+        _logService.Info("Playback stopped", "Player");
         HasMedia = false;
         CurrentMetadata = null;
         CurrentFilePath = null;

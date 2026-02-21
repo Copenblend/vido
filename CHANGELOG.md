@@ -4,6 +4,24 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-011
+- Created OutputLogViewModel — observes ILogService, provides filtered ObservableCollection of LogEntryViewModel entries for UI display; supports level cycling (All → Info+ → Warn+ → Errors → All), auto-scroll toggle, and clear; uses SynchronizationContext for UI thread marshalling; loads existing entries on construction
+- Created LogEntryViewModel — presentation wrapper for LogEntry with pre-formatted timestamp (HH:mm:ss.fff local time), level tag (DBG/INF/WRN/ERR), FormattedLine property including optional source
+- Created OutputLogPanel.xaml — VS Code-style scrollable log view with monospace font (Cascadia Code/Consolas), color-coded entries (grey=Debug, white=Info, yellow=Warning, red=Error), toolbar with filter cycle button, auto-scroll toggle, and clear button; empty state text when no entries; virtualized ListBox for performance; hover/selection highlighting
+- Created OutputLogPanel.xaml.cs — auto-scroll behavior via CollectionChanged subscription, deferred scroll at Loaded priority, managed Loaded/Unloaded lifecycle
+- Replaced bottom panel stub in MainWindow.xaml — swapped placeholder text with ContentPresenter hosting OutputLogPanel
+- Updated MainWindow.xaml.cs — added ILogService and OutputLogViewModel dependencies, SetupOutputLog wiring, startup/shutdown log messages, error logging for playback failures
+- Added logging throughout the application:
+  - FileExplorerViewModel: folder opened (with path), folder closed, folder rescanned
+  - VideoPlayerViewModel: video loading, playing (with resolution/duration), paused, resumed, stopped
+  - MainWindow: app started, app shutting down, playback error details
+- Updated FileExplorerViewModel — added ILogService constructor parameter
+- Updated VideoPlayerViewModel — added ILogService constructor parameter
+- Registered OutputLogViewModel as singleton in DI container
+- Updated existing tests — FileExplorerViewModelTests and VideoPlayerViewModelTests now pass ILogService mock
+- Added tests: OutputLogViewModelTests (20) — covering initial state (3), existing entry loading (1), new entry via callback (2), clear (1), auto-scroll toggle (1), filter cycling (2), filter exclusion (1), SetFilter (2), LogEntryViewModel formatting (4), level tags theory (4)
+- Total test count: 279 (all passing)
+
 ### vi-010
 - Created TabItemModel — tab data model with Id, Title, IconGeometry, IsClosable, IsPinned properties
 - Created MainWindowViewModel — manages tab system (OpenTab, CloseTab, ActivateTab, ReorderTab), bottom/right panel visibility toggles, OpenSettings command; Player tab is pinned leftmost and not closable
