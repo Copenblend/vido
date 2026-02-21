@@ -1,0 +1,233 @@
+<UserControl x:Class="Vido.Views.Controls.VideoPlayerControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource EditorBackgroundBrush}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="PlayerStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <!-- Video display area -->
+            <RowDefinition Height="*" />
+            <!-- Controls bar -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Empty state: no video loaded -->
+        <StackPanel x:Name="EmptyState"
+                    Grid.Row="0"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Visibility="Visible">
+            <Path Data="{StaticResource FilmReelGeometry}"
+                  Stroke="{DynamicResource DisabledForegroundBrush}"
+                  StrokeThickness="1.2"
+                  Fill="Transparent"
+                  Stretch="Uniform"
+                  Width="48" Height="48"
+                  HorizontalAlignment="Center"
+                  Margin="0,0,0,16" />
+            <TextBlock Text="Open a video file to begin"
+                       Foreground="{DynamicResource DisabledForegroundBrush}"
+                       FontSize="16"
+                       FontFamily="Segoe UI"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+
+        <!-- Video display surface -->
+        <Image x:Name="VideoSurface"
+               Grid.Row="0"
+               Stretch="Uniform"
+               RenderOptions.BitmapScalingMode="HighQuality"
+               Visibility="Collapsed" />
+
+        <!-- ═══ Transport controls bar ═══ -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource EditorBackgroundBrush}"
+                BorderBrush="{DynamicResource PrimaryBorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="8,4">
+
+            <Grid>
+                <Grid.RowDefinitions>
+                    <!-- Seek bar row -->
+                    <RowDefinition Height="Auto" />
+                    <!-- Controls row -->
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Seek bar with time labels -->
+                <Grid Grid.Row="0" Margin="0,2,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding PositionText}"
+                               Style="{StaticResource TimeLabelStyle}"
+                               Margin="0,0,8,0" />
+
+                    <Slider x:Name="SeekSlider"
+                            Grid.Column="1"
+                            Style="{StaticResource SeekSliderStyle}"
+                            Value="{Binding SeekPosition, Mode=TwoWay}"
+                            IsEnabled="{Binding HasMedia}" />
+
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding DurationText}"
+                               Style="{StaticResource TimeLabelStyle}"
+                               Margin="8,0,0,0" />
+                </Grid>
+
+                <!-- Transport buttons and volume -->
+                <Grid Grid.Row="1" Margin="0,2,0,2">
+                    <Grid.ColumnDefinitions>
+                        <!-- Left section: transport buttons -->
+                        <ColumnDefinition Width="Auto" />
+                        <!-- Center spacer -->
+                        <ColumnDefinition Width="*" />
+                        <!-- Right section: volume + loop -->
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Transport buttons -->
+                    <StackPanel Grid.Column="0"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <!-- Skip Previous -->
+                        <Button Style="{StaticResource TransportButtonStyle}"
+                                Command="{Binding SkipPreviousCommand}"
+                                IsEnabled="{Binding HasMedia}"
+                                ToolTip="Previous">
+                            <Path Data="{StaticResource SkipPreviousGeometry}"
+                                  Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  Stretch="Uniform" Width="14" Height="14" />
+                        </Button>
+
+                        <!-- Play / Pause -->
+                        <Button Style="{StaticResource PlayPauseButtonStyle}"
+                                Command="{Binding PlayPauseCommand}"
+                                IsEnabled="{Binding HasMedia}"
+                                ToolTip="Play/Pause">
+                            <Grid>
+                                <Path x:Name="PlayIcon"
+                                      Data="{StaticResource PlayIconGeometry}"
+                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                      Stretch="Uniform" Width="16" Height="16"
+                                      Visibility="{Binding ShowPlayIcon, Converter={StaticResource BoolToVis}}" />
+                                <Path x:Name="PauseIcon"
+                                      Data="{StaticResource PauseIconGeometry}"
+                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                      Stretch="Uniform" Width="16" Height="16">
+                                    <Path.Style>
+                                        <Style TargetType="Path">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding ShowPlayIcon}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Path.Style>
+                                </Path>
+                            </Grid>
+                        </Button>
+
+                        <!-- Stop -->
+                        <Button Style="{StaticResource TransportButtonStyle}"
+                                Command="{Binding StopCommand}"
+                                IsEnabled="{Binding HasMedia}"
+                                ToolTip="Stop">
+                            <Path Data="{StaticResource StopIconGeometry}"
+                                  Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  Stretch="Uniform" Width="12" Height="12" />
+                        </Button>
+
+                        <!-- Skip Next -->
+                        <Button Style="{StaticResource TransportButtonStyle}"
+                                Command="{Binding SkipNextCommand}"
+                                IsEnabled="{Binding HasMedia}"
+                                ToolTip="Next">
+                            <Path Data="{StaticResource SkipNextGeometry}"
+                                  Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                  Stretch="Uniform" Width="14" Height="14" />
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Volume and loop controls -->
+                    <StackPanel Grid.Column="2"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <!-- Loop toggle -->
+                        <ToggleButton Style="{StaticResource TransportToggleButtonStyle}"
+                                      IsChecked="{Binding IsLooping}"
+                                      ToolTip="Loop">
+                            <Path Data="{StaticResource LoopIconGeometry}"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"
+                                  StrokeThickness="1.2"
+                                  Fill="Transparent"
+                                  Stretch="Uniform" Width="14" Height="14" />
+                        </ToggleButton>
+
+                        <!-- Shuffle toggle -->
+                        <ToggleButton Style="{StaticResource TransportToggleButtonStyle}"
+                                      IsChecked="{Binding IsShuffling}"
+                                      ToolTip="Shuffle">
+                            <Path Data="{StaticResource ShuffleIconGeometry}"
+                                  Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"
+                                  StrokeThickness="1.2"
+                                  Fill="Transparent"
+                                  Stretch="Uniform" Width="14" Height="14" />
+                        </ToggleButton>
+
+                        <!-- Mute toggle -->
+                        <Button Style="{StaticResource TransportButtonStyle}"
+                                Width="28" Height="28" Padding="5"
+                                Command="{Binding ToggleMuteCommand}"
+                                ToolTip="Mute">
+                            <Grid>
+                                <Path Data="{StaticResource VolumeHighGeometry}"
+                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                      Stretch="Uniform" Width="14" Height="14">
+                                    <Path.Style>
+                                        <Style TargetType="Path">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsMuted}" Value="True">
+                                                    <Setter Property="Visibility" Value="Collapsed" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Path.Style>
+                                </Path>
+                                <Path Data="{StaticResource VolumeMutedGeometry}"
+                                      Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                      Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
+                                      StrokeThickness="1.5"
+                                      Stretch="Uniform" Width="14" Height="14"
+                                      Visibility="{Binding IsMuted, Converter={StaticResource BoolToVis}}" />
+                            </Grid>
+                        </Button>
+
+                        <!-- Volume slider -->
+                        <Slider x:Name="VolumeSlider"
+                                Style="{StaticResource VolumeSliderStyle}"
+                                Value="{Binding Volume, Mode=TwoWay}"
+                                ToolTip="Volume"
+                                Margin="4,0,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -83,6 +83,7 @@ public partial class App : Application
 
         // ViewModels
         services.AddSingleton<FileExplorerViewModel>();
+        services.AddSingleton<VideoPlayerViewModel>();
 
         // Windows
         services.AddSingleton<MainWindow>();

@@ -1,5 +1,4 @@
-using System.Collections.Concurrent;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen.Abstractions;
 using Vido.Core.Logging;
@@ -35,12 +34,8 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
 
     // ── Threading ──
     private Thread? _decodeThread;
-    private readonly CancellationTokenSource _decodeCts = new();
+    private CancellationTokenSource _decodeCts = new();
     private readonly ManualResetEventSlim _pauseEvent = new(true);
-    private readonly ConcurrentQueue<FrameData> _videoFrameQueue = new();
-    private readonly ConcurrentQueue<byte[]> _audioSampleQueue = new();
-    private const int MaxVideoQueueSize = 8;
-    private const int MaxAudioQueueSize = 16;
 
     // ── Timing ──
     private readonly Stopwatch _playbackClock = new();
@@ -57,7 +52,25 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     private VideoMetadata? _currentMetadata;
     private bool _disposed;
     private readonly object _stateLock = new();
-    private volatile bool _isSeeking;
+
+    // ── Thread-safe seek ──
+    // Seek targets are posted here and consumed by the decode thread so that
+    // all codec access (send_packet, receive_frame, flush_buffers) happens
+    // on a single thread, avoiding the FFmpeg pthread_frame async_lock assertion.
+    private long _pendingSeekTicks = long.MinValue;
+    private const long NoSeekPending = long.MinValue;
+
+    // Generation counter incremented on each seek request. Frames decoded under
+    // an older generation are discarded, preventing stale frames from rendering
+    // at high speed between Seek() and SeekInternal().
+    private volatile uint _seekGeneration;
+
+    // After a seek, avformat_seek_file lands on the nearest keyframe BEFORE the
+    // target. Frames from that keyframe up to the target must be decoded (for
+    // codec reference) but NOT rendered — this is "silent preroll."
+    // _prerollTargetPts holds the seek target; frames with PTS below it are
+    // decoded silently. Set to -1 when no preroll is active.
+    private long _prerollTargetPts = -1;
 
     public FFmpegVideoEngine(ILogService logService)
     {
@@ -125,6 +138,7 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     public event Action<PlaybackState>? StateChanged;
     public event Action<FrameData>? FrameReady;
     public event Action? MediaEnded;
+    public event Action? SeekCompleted;
 
     // ── Commands ──
 
@@ -198,7 +212,19 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         if (State == PlaybackState.None) return;
 
         StopPositionTimer();
+
+        // Cancel and join the decode thread so it stops accessing codecs.
+        _decodeCts.Cancel();
         _pauseEvent.Set(); // Unblock decode thread so it can exit
+        _decodeThread?.Join(TimeSpan.FromSeconds(2));
+        _decodeThread = null;
+
+        // Reset CTS for the next Play() call.
+        _decodeCts.Dispose();
+        _decodeCts = new CancellationTokenSource();
+
+        // Discard any pending seek that was never processed.
+        Interlocked.Exchange(ref _pendingSeekTicks, NoSeekPending);
 
         _audioRenderer.Stop();
         _playbackClock.Stop();
@@ -206,17 +232,30 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         Position = TimeSpan.Zero;
         _clockOffset = TimeSpan.Zero;
 
-        // Clear queues
-        while (_videoFrameQueue.TryDequeue(out _)) { }
-        while (_audioSampleQueue.TryDequeue(out _)) { }
-
         State = PlaybackState.Stopped;
     }
 
     public void Seek(TimeSpan position)
     {
         if (State == PlaybackState.None) return;
-        SeekInternal(position);
+
+        // Increment generation so the decode thread discards any in-flight
+        // frames from before this seek. This is the key to preventing the
+        // speed-up artifact — stale frames are never rendered.
+        unchecked { _seekGeneration++; }
+
+        // Update position for the UI (position timer / slider) but do NOT
+        // reset the playback clock. The clock stays at the old position so
+        // WaitForPresentationTime keeps frames paced normally until
+        // SeekInternal runs on the decode thread and resets the clock there.
+        Position = position;
+        PositionChanged?.Invoke(position);
+
+        // Post the seek target for the decode thread to process.
+        Interlocked.Exchange(ref _pendingSeekTicks, position.Ticks);
+
+        // Wake the decode thread if it's blocked on the pause gate.
+        _pauseEvent.Set();
     }
 
     // ── Internal Implementation ──
@@ -401,25 +440,39 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
                 // Respect pause
                 _pauseEvent.Wait(_decodeCts.Token);
 
-                if (_isSeeking)
+                // Process any pending seek on this thread so all codec access
+                // (send_packet / receive_frame / flush_buffers) is single-threaded.
+                var seekTicks = Interlocked.Exchange(ref _pendingSeekTicks, NoSeekPending);
+                if (seekTicks != NoSeekPending)
                 {
-                    Thread.Sleep(1);
+                    SeekInternal(TimeSpan.FromTicks(seekTicks));
+                    SeekCompleted?.Invoke();
+
+                    // If we're paused, re-block so we wait again at the top.
+                    if (State == PlaybackState.Paused)
+                        _pauseEvent.Reset();
+
                     continue;
                 }
 
-                // Throttle if queues are full
-                if (_videoFrameQueue.Count >= MaxVideoQueueSize)
-                {
-                    Thread.Sleep(1);
-                    continue;
-                }
+                // Capture generation BEFORE reading the packet. If a seek arrives
+                // between here and DecodeVideoPacket, the generation mismatch
+                // will cause the stale packet's frames to be discarded.
+                var gen = _seekGeneration;
 
                 var readResult = ffmpeg.av_read_frame(_formatContext, packet);
                 if (readResult < 0)
                 {
-                    // End of file or error
+                    // End of file
                     if (readResult == ffmpeg.AVERROR_EOF)
                     {
+                        if (_isLooping)
+                        {
+                            // Seek back to beginning and keep decoding
+                            SeekInternal(TimeSpan.Zero);
+                            continue;
+                        }
+
                         HandleMediaEnded();
                     }
                     break;
@@ -429,7 +482,7 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
                 {
                     if (packet->stream_index == _videoStreamIndex)
                     {
-                        DecodeVideoPacket(packet, frame);
+                        DecodeVideoPacket(packet, frame, gen);
                     }
                     else if (packet->stream_index == _audioStreamIndex)
                     {
@@ -457,13 +510,38 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         }
     }
 
-    private void DecodeVideoPacket(AVPacket* packet, AVFrame* frame)
+    private void DecodeVideoPacket(AVPacket* packet, AVFrame* frame, uint generation)
     {
+        // If a seek arrived since this packet was read, discard immediately.
+        if (_seekGeneration != generation) return;
+
         var result = ffmpeg.avcodec_send_packet(_videoCodecContext, packet);
         if (result < 0) return;
 
         while (ffmpeg.avcodec_receive_frame(_videoCodecContext, frame) == 0)
         {
+            // If a seek was requested since we started, discard stale frames.
+            if (_seekGeneration != generation)
+            {
+                ffmpeg.av_frame_unref(frame);
+                return;
+            }
+
+            // Silent preroll: after a seek, avformat_seek_file lands at a keyframe
+            // BEFORE the target. We must decode these frames (B-frame references)
+            // but not render them. Once we reach the target PTS, clear the flag.
+            var prerollTarget = _prerollTargetPts;
+            if (prerollTarget >= 0)
+            {
+                if (frame->best_effort_timestamp < prerollTarget)
+                {
+                    ffmpeg.av_frame_unref(frame);
+                    continue; // Decode next frame silently
+                }
+                // Reached or passed the target -- end preroll
+                _prerollTargetPts = -1;
+            }
+
             // Configure frame converter on first frame or format change
             _frameConverter.Configure(
                 frame->width, frame->height,
@@ -475,9 +553,16 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
             var frameData = _frameConverter.Convert(frame, pts);
             if (frameData != null)
             {
-                // Wait for the correct display time
-                WaitForPresentationTime(pts);
-                _videoFrameQueue.Enqueue(frameData);
+                // Wait for the correct display time, but abort if a seek arrives
+                WaitForPresentationTime(pts, generation);
+
+                // Check generation after the wait
+                if (_seekGeneration != generation)
+                {
+                    ffmpeg.av_frame_unref(frame);
+                    return;
+                }
+
                 FrameReady?.Invoke(frameData);
             }
 
@@ -530,7 +615,7 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         return TimeSpan.FromSeconds(seconds);
     }
 
-    private void WaitForPresentationTime(TimeSpan pts)
+    private void WaitForPresentationTime(TimeSpan pts, uint generation)
     {
         if (State != PlaybackState.Playing) return;
 
@@ -539,11 +624,14 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
 
         if (delay > TimeSpan.FromMilliseconds(1) && delay < TimeSpan.FromSeconds(2))
         {
-            // Use SpinWait for short waits, Thread.Sleep for longer
-            if (delay.TotalMilliseconds < 5)
-                Thread.SpinWait((int)(delay.TotalMilliseconds * 1000));
-            else
-                Thread.Sleep(delay - TimeSpan.FromMilliseconds(1));
+            // Break the wait into small chunks so we can abort on seek
+            var end = Stopwatch.GetTimestamp() + (long)(delay.TotalSeconds * Stopwatch.Frequency);
+            while (Stopwatch.GetTimestamp() < end)
+            {
+                if (_seekGeneration != generation || _decodeCts.IsCancellationRequested)
+                    return;
+                Thread.Sleep(1);
+            }
         }
     }
 
@@ -577,36 +665,32 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     {
         if (_formatContext == null) return;
 
-        _isSeeking = true;
+        _audioRenderer.Flush();
 
-        try
+        // Seek to the target position (lands on nearest keyframe BEFORE target)
+        var timestamp = (long)(position.TotalSeconds * ffmpeg.AV_TIME_BASE);
+        ffmpeg.avformat_seek_file(_formatContext, -1, long.MinValue, timestamp, long.MaxValue, 0);
+
+        // Flush codec buffers
+        if (_videoCodecContext != null)
+            ffmpeg.avcodec_flush_buffers(_videoCodecContext);
+        if (_audioCodecContext != null)
+            ffmpeg.avcodec_flush_buffers(_audioCodecContext);
+
+        // Enable silent preroll: frames from the keyframe up to the target are
+        // decoded (for codec reference / B-frames) but not rendered.
+        if (_videoStream != null)
         {
-            // Clear queues
-            while (_videoFrameQueue.TryDequeue(out _)) { }
-            while (_audioSampleQueue.TryDequeue(out _)) { }
-            _audioRenderer.Flush();
-
-            // Seek to the target position
-            var timestamp = (long)(position.TotalSeconds * ffmpeg.AV_TIME_BASE);
-            ffmpeg.avformat_seek_file(_formatContext, -1, long.MinValue, timestamp, long.MaxValue, 0);
-
-            // Flush codec buffers
-            if (_videoCodecContext != null)
-                ffmpeg.avcodec_flush_buffers(_videoCodecContext);
-            if (_audioCodecContext != null)
-                ffmpeg.avcodec_flush_buffers(_audioCodecContext);
-
-            Position = position;
-            _clockOffset = position;
-            if (_playbackClock.IsRunning)
-                _playbackClock.Restart();
-
-            PositionChanged?.Invoke(position);
+            var tb = _videoStream->time_base;
+            _prerollTargetPts = (long)(position.TotalSeconds * tb.den / tb.num);
         }
-        finally
-        {
-            _isSeeking = false;
-        }
+
+        Position = position;
+        _clockOffset = position;
+        if (_playbackClock.IsRunning)
+            _playbackClock.Restart();
+
+        PositionChanged?.Invoke(position);
     }
 
     // ── End of Media ──
@@ -614,13 +698,6 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     private void HandleMediaEnded()
     {
         MediaEnded?.Invoke();
-
-        if (_isLooping)
-        {
-            SeekInternal(TimeSpan.Zero);
-            return;
-        }
-
         Stop();
     }
 
@@ -632,6 +709,10 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         _decodeCts.Cancel();
         _pauseEvent.Set();
         _decodeThread?.Join(TimeSpan.FromSeconds(2));
+
+        // Reset CTS so the next decode thread gets a fresh, non-cancelled token
+        _decodeCts.Dispose();
+        _decodeCts = new CancellationTokenSource();
 
         StopPositionTimer();
         _audioRenderer.Stop();
@@ -669,10 +750,6 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         _audioStreamIndex = -1;
         _videoStream = null;
         _audioStream = null;
-
-        // Clear queues
-        while (_videoFrameQueue.TryDequeue(out _)) { }
-        while (_audioSampleQueue.TryDequeue(out _)) { }
 
         _currentMetadata = null;
         Duration = TimeSpan.Zero;

@@ -146,6 +146,7 @@
                     <Style TargetType="TreeViewItem"
                            BasedOn="{StaticResource FileExplorerTreeViewItemStyle}">
                         <EventSetter Event="PreviewMouseRightButtonUp" Handler="OnTreeItemPreviewRightClick" />
+                        <EventSetter Event="MouseDoubleClick" Handler="OnTreeItemDoubleClick" />
                     </Style>
                 </TreeView.ItemContainerStyle>
                 <TreeView.ItemTemplate>

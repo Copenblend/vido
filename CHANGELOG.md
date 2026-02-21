@@ -4,6 +4,19 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-009
+- Created VideoPlayerViewModel — binds to IVideoEngine, exposes PlayPause/Stop/SkipPrevious/SkipNext/ToggleMute/ToggleLoop commands, seek support with BeginSeek/EndSeek for slider dragging, position/duration text formatting, sibling video file navigation for skip prev/next, auto-advance on media end, FrameReady event forwarding
+- Created VideoPlayerControl.xaml — video player tab combining video display (WriteableBitmap rendered to Image) and transport controls bar; empty state with film reel icon and "Open a video file to begin" text; seek bar with elapsed/total time labels; skip prev/next, play/pause, stop buttons; volume slider with mute toggle; loop toggle
+- Created PlayerStyles.xaml — VS Code Dark Modern styled transport controls: TransportButtonStyle/PlayPauseButtonStyle (rounded hover), TransportToggleButtonStyle (accent when active), SeekSliderStyle (flat bar with accent fill, thumb visible on hover), VolumeSliderStyle (compact), TimeLabelStyle (Consolas monospace); icon geometries for play, pause, stop, skip prev/next, volume high/muted, loop, film reel
+- Created VideoPlayerControl.xaml.cs — WriteableBitmap frame rendering via BeginInvoke, auto-resize on resolution change, seek slider drag start/complete handlers, visual state switching between empty/media states
+- Added Video tab ("Player") — always the leftmost tab with play icon, no close button, active bottom accent line (AccentBrush), styled tab strip matching VS Code tab appearance
+- Wired double-click on video files in file explorer — TreeViewItem MouseDoubleClick EventSetter triggers playback; VideoFileDoubleClicked event added to FileExplorerPanel
+- Wired context menu "Play" action to trigger video playback
+- Registered VideoPlayerViewModel as singleton in DI container
+- Added InternalsVisibleTo for Vido.Tests in Vido.ViewModels
+- Added tests: VideoPlayerViewModelTests (38) — covering initial state (12), volume clamping (5), mute/loop toggle (4), no-op commands without media (2), engine event handling (5 — state, position, frame), FormatTime formatting (5 theory cases), GetAdjacentVideoFile (1), seek begin/end (2), dispose safety (2)
+- Total test count: 210 (all passing)
+
 ### vi-008
 - Created PlaybackState enum (None, Playing, Paused, Stopped) in Vido.Core.Playback
 - Created VideoMetadata model with full media properties (resolution, codecs, frame rate, bitrate, duration, file info, container format, audio details) and computed Resolution property
