@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Resource Include="Assets\Vido.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Vido.Core\Vido.Core.csproj" />
     <ProjectReference Include="..\Vido.ViewModels\Vido.ViewModels.csproj" />
   </ItemGroup>

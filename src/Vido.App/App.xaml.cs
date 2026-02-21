@@ -86,6 +86,7 @@ public partial class App : Application
         services.AddSingleton<VideoPlayerViewModel>();
         services.AddSingleton<MainWindowViewModel>();
         services.AddSingleton<OutputLogViewModel>();
+        services.AddSingleton<VideoDetailsViewModel>();
 
         // Windows
         services.AddSingleton<MainWindow>();

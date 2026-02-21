@@ -32,6 +32,7 @@ public partial class MainWindow : Window
     private readonly VideoPlayerViewModel _videoPlayerViewModel;
     private readonly MainWindowViewModel _mainWindowViewModel;
     private readonly OutputLogViewModel _outputLogViewModel;
+    private readonly VideoDetailsViewModel _videoDetailsViewModel;
 
     private TitleBarViewModel? _titleBarViewModel;
     private ActivityBarViewModel? _activityBarViewModel;
@@ -49,7 +50,8 @@ public partial class MainWindow : Window
         FileExplorerViewModel fileExplorerViewModel,
         VideoPlayerViewModel videoPlayerViewModel,
         MainWindowViewModel mainWindowViewModel,
-        OutputLogViewModel outputLogViewModel)
+        OutputLogViewModel outputLogViewModel,
+        VideoDetailsViewModel videoDetailsViewModel)
     {
         _stateService = stateService;
         _settingsService = settingsService;
@@ -58,6 +60,7 @@ public partial class MainWindow : Window
         _videoPlayerViewModel = videoPlayerViewModel;
         _mainWindowViewModel = mainWindowViewModel;
         _outputLogViewModel = outputLogViewModel;
+        _videoDetailsViewModel = videoDetailsViewModel;
 
         InitializeComponent();
         SetupWindowChrome();
@@ -66,6 +69,7 @@ public partial class MainWindow : Window
         SetupTabSystem();
         SetupVideoPlayer();
         SetupOutputLog();
+        SetupVideoDetails();
         SetupFileExplorer();
         RestoreWindowState();
 
@@ -153,6 +157,16 @@ public partial class MainWindow : Window
     /// <summary>Map of bottom panel tab IDs to their content controls.</summary>
     private readonly Dictionary<string, UIElement> _bottomPanelContents = [];
 
+    private void SetupVideoDetails()
+    {
+        var videoDetailsPanel = new VideoDetailsPanel
+        {
+            DataContext = _videoDetailsViewModel
+        };
+
+        RightPanelContent.Content = videoDetailsPanel;
+    }
+
     /// <summary>Creates a placeholder panel for tabs without real content yet.</summary>
     private static Border CreatePlaceholderPanel(string tabTitle)
     {
@@ -203,10 +217,17 @@ public partial class MainWindow : Window
         _mainWindowViewModel.ToggleBottomPanelCollapse();
     }
 
+    /// <summary>Right panel collapse/expand chevron click handler.</summary>
+    private void OnRightPanelCollapseClick(object sender, RoutedEventArgs e)
+    {
+        _mainWindowViewModel.ToggleRightPanelCollapse();
+    }
+
     private void SetupTabSystem()
     {
         TabWell.DataContext = _mainWindowViewModel;
         BottomPanel.DataContext = _mainWindowViewModel;
+        RightPanel.DataContext = _mainWindowViewModel;
 
         // Listen for active tab changes to switch content
         _mainWindowViewModel.PropertyChanged += (_, e) =>
@@ -219,7 +240,13 @@ public partial class MainWindow : Window
                 UpdateBottomPanelVisibility();
             else if (e.PropertyName == nameof(MainWindowViewModel.IsRightPanelVisible))
                 UpdateRightPanelVisibility();
+            else if (e.PropertyName == nameof(MainWindowViewModel.IsRightPanelCollapsed))
+                UpdateRightPanelVisibility();
         };
+
+        // Apply initial panel states (both panels start visible+collapsed)
+        UpdateBottomPanelVisibility();
+        UpdateRightPanelVisibility();
     }
 
     private void SetupFileExplorer()
@@ -238,13 +265,24 @@ public partial class MainWindow : Window
         TitleBar.ToggleBottomPanelRequested += () => _mainWindowViewModel.ToggleBottomPanel();
         TitleBar.ToggleRightPanelRequested += () => _mainWindowViewModel.ToggleRightPanel();
         TitleBar.ShowOutputRequested += () => _mainWindowViewModel.ActivateBottomPanelTab(MainWindowViewModel.OutputTabId);
+        TitleBar.ShowVideoInfoRequested += () =>
+        {
+            _mainWindowViewModel.IsRightPanelVisible = true;
+            _mainWindowViewModel.IsRightPanelCollapsed = false;
+        };
 
-        // Sync bottom panel visibility state to title bar for dynamic menu text
+        // Sync panel visibility state to title bar for dynamic menu text
         _mainWindowViewModel.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(MainWindowViewModel.IsBottomPanelVisible))
                 TitleBar.SetBottomPanelVisible(_mainWindowViewModel.IsBottomPanelVisible);
+            else if (e.PropertyName == nameof(MainWindowViewModel.IsRightPanelVisible))
+                TitleBar.SetRightPanelVisible(_mainWindowViewModel.IsRightPanelVisible);
         };
+
+        // Initialize title bar panel visibility state
+        TitleBar.SetBottomPanelVisible(_mainWindowViewModel.IsBottomPanelVisible);
+        TitleBar.SetRightPanelVisible(_mainWindowViewModel.IsRightPanelVisible);
 
         // Wire the "Open Folder" button inside the explorer panel
         _fileExplorerPanel.OpenFolderRequested += ShowOpenFolderDialog;
@@ -382,6 +420,7 @@ public partial class MainWindow : Window
                 BottomPanelSplitterRow.Height = new GridLength(0);
                 BottomPanelRow.Height = new GridLength(29); // Tab strip height only
                 BottomPanelContent.Visibility = Visibility.Collapsed;
+                BottomPanel.BorderThickness = new Thickness(0, 1, 0, 0);
             }
             else
             {
@@ -390,6 +429,7 @@ public partial class MainWindow : Window
                 BottomPanelSplitterRow.Height = GridLength.Auto;
                 BottomPanelRow.Height = new GridLength(_bottomPanelHeight);
                 BottomPanelContent.Visibility = Visibility.Visible;
+                BottomPanel.BorderThickness = new Thickness(0);
             }
         }
         else
@@ -410,16 +450,47 @@ public partial class MainWindow : Window
         if (_mainWindowViewModel.IsRightPanelVisible)
         {
             RightPanel.Visibility = Visibility.Visible;
-            RightPanelSplitter.Visibility = Visibility.Visible;
-            RightPanelColumn.Width = new GridLength(_rightPanelWidth);
-            RightPanelColumn.MinWidth = 170;
-            RightPanelColumn.MaxWidth = 600;
-            RightPanelSplitterColumn.Width = GridLength.Auto;
+
+            if (_mainWindowViewModel.IsRightPanelCollapsed)
+            {
+                // Collapsed: show only the tab strip bar (no splitter, fixed width)
+                if (RightPanelColumn.Width.Value > 50)
+                    _rightPanelWidth = RightPanelColumn.Width.Value;
+
+                RightPanelSplitter.Visibility = Visibility.Collapsed;
+                RightPanelSplitterColumn.Width = new GridLength(0);
+                RightPanelColumn.Width = new GridLength(44); // Tab strip width only (50% wider for chevron spacing)
+                RightPanelColumn.MinWidth = 0;
+                RightPanelColumn.MaxWidth = double.PositiveInfinity;
+                RightPanelContent.Visibility = Visibility.Collapsed;
+                RightPanelTitle.Visibility = Visibility.Collapsed;
+                RightPanel.BorderThickness = new Thickness(1, 0, 0, 0);
+
+                // Single column so chevron centers in full width
+                RightPanelTabStrip.ColumnDefinitions[0].Width = new GridLength(1, GridUnitType.Star);
+                RightPanelTabStrip.ColumnDefinitions[1].Width = new GridLength(0);
+            }
+            else
+            {
+                // Expanded: full panel with splitter
+                RightPanelSplitter.Visibility = Visibility.Visible;
+                RightPanelSplitterColumn.Width = GridLength.Auto;
+                RightPanelColumn.Width = new GridLength(_rightPanelWidth);
+                RightPanelColumn.MinWidth = 170;
+                RightPanelColumn.MaxWidth = 600;
+                RightPanelContent.Visibility = Visibility.Visible;
+                RightPanelTitle.Visibility = Visibility.Visible;
+                RightPanel.BorderThickness = new Thickness(0);
+
+                // Two columns: auto-sized chevron + remaining space for title
+                RightPanelTabStrip.ColumnDefinitions[0].Width = GridLength.Auto;
+                RightPanelTabStrip.ColumnDefinitions[1].Width = new GridLength(1, GridUnitType.Star);
+            }
         }
         else
         {
-            // Remember current width before collapsing
-            if (RightPanelColumn.Width.Value > 0)
+            // Remember current width before hiding
+            if (RightPanelColumn.Width.Value > 40)
                 _rightPanelWidth = RightPanelColumn.Width.Value;
 
             RightPanel.Visibility = Visibility.Collapsed;

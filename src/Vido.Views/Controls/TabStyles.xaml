@@ -170,7 +170,7 @@
                         </Path>
                     </Border>
                     <ControlTemplate.Triggers>
-                        <!-- When checked (collapsed), chevron points right (0°) -->
+                        <!-- When checked (collapsed), chevron points right -->
                         <Trigger Property="IsChecked" Value="True">
                             <Setter TargetName="Arrow" Property="RenderTransform">
                                 <Setter.Value>
@@ -190,20 +190,33 @@
         </Setter>
     </Style>
 
+    <!-- ===== Right panel collapse/expand chevron button ===== -->
+    <Style x:Key="RightPanelCollapseButtonStyle" TargetType="ToggleButton"
+           BasedOn="{StaticResource PanelCollapseButtonStyle}">
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="0" />
+    </Style>
+
     <!-- ===== Horizontal splitter (for bottom panel resize) ===== -->
     <Style x:Key="HorizontalSplitterStyle" TargetType="GridSplitter">
-        <Setter Property="Height" Value="5" />
+        <Setter Property="Height" Value="1" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="VerticalAlignment" Value="Center" />
-        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Background" Value="{DynamicResource PrimaryBorderBrush}" />
         <Setter Property="Cursor" Value="SizeNS" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="GridSplitter">
-                    <Grid Background="Transparent" Height="5">
+                    <Grid Background="Transparent" Margin="0,-5">
+                        <!-- Taller transparent hit area for easier grabbing -->
+                        <Border Background="Transparent"
+                                Height="11"
+                                VerticalAlignment="Center" />
+                        <!-- Visible 1px divider line -->
                         <Border Height="1"
                                 VerticalAlignment="Center"
-                                Background="{DynamicResource PrimaryBorderBrush}" />
+                                Background="{DynamicResource PrimaryBorderBrush}"
+                                IsHitTestVisible="False" />
                     </Grid>
                 </ControlTemplate>
             </Setter.Value>

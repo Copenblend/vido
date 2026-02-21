@@ -29,12 +29,11 @@
         <Border Grid.Column="0"
                 Width="46"
                 Padding="15,0,11,0">
-            <TextBlock Text="&#xE714;"
-                       FontFamily="Segoe Fluent Icons"
-                       FontSize="16"
-                       Foreground="{DynamicResource PrimaryForegroundBrush}"
-                       VerticalAlignment="Center"
-                       HorizontalAlignment="Center" />
+            <Image Source="pack://application:,,,/Vido.Views;component/Assets/Vido.png"
+                   Width="16" Height="16"
+                   RenderOptions.BitmapScalingMode="HighQuality"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Center" />
         </Border>
 
         <!-- Menu Bar -->
@@ -79,12 +78,31 @@
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
                 <MenuItem Header="Toggle S_tatus Bar"
                           Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
+                <MenuItem Header="_Fullscreen" InputGestureText="F11"
+                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
+                <MenuItem Header="Zoom _In" InputGestureText="Ctrl+="
+                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
+                <MenuItem Header="Zoom _Out" InputGestureText="Ctrl+-"
+                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
+                <MenuItem x:Name="RightPanelMenu"
+                          Header="_Right Panel"
+                          Style="{StaticResource SubmenuParentItemStyle}"
+                          SubmenuOpened="OnRightPanelSubmenuOpened">
+                    <MenuItem x:Name="VideoInfoMenuItem"
+                              Header="_Video Info"
+                              Style="{StaticResource DropdownMenuItemStyle}"
+                              Click="OnShowVideoInfoClick" />
+                    <MenuItem x:Name="ShowHideRightPanelMenuItem"
+                              Header="_Show Right Panel"
+                              Style="{StaticResource DropdownMenuItemStyle}"
+                              Click="OnToggleRightPanelClick" />
+                </MenuItem>
                 <MenuItem x:Name="BottomPanelMenu"
                           Header="_Bottom Panel"
                           Style="{StaticResource SubmenuParentItemStyle}"
                           SubmenuOpened="OnBottomPanelSubmenuOpened">
                     <MenuItem x:Name="OutputMenuItem"
-                              Header="_Output"
+                              Header="_Log Output"
                               Style="{StaticResource DropdownMenuItemStyle}"
                               Click="OnShowOutputClick" />
                     <MenuItem x:Name="ShowHideBottomPanelMenuItem"
@@ -92,16 +110,6 @@
                               Style="{StaticResource DropdownMenuItemStyle}"
                               Click="OnToggleBottomPanelClick" />
                 </MenuItem>
-                <MenuItem x:Name="ToggleRightPanelMenuItem"
-                          Header="Toggle _Right Panel"
-                          Style="{StaticResource DropdownMenuItemStyle}"
-                          Click="OnToggleRightPanelClick" />
-                <MenuItem Header="_Fullscreen" InputGestureText="F11"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                <MenuItem Header="Zoom _In" InputGestureText="Ctrl+="
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                <MenuItem Header="Zoom _Out" InputGestureText="Ctrl+-"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
             </MenuItem>
 
             <!-- Playback -->

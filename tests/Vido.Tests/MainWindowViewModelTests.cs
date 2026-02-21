@@ -37,10 +37,12 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
-    public void Constructor_PanelsHiddenByDefault()
+    public void Constructor_PanelsVisibleButCollapsedByDefault()
     {
-        Assert.False(_sut.IsBottomPanelVisible);
-        Assert.False(_sut.IsRightPanelVisible);
+        Assert.True(_sut.IsBottomPanelVisible);
+        Assert.True(_sut.IsBottomPanelCollapsed);
+        Assert.True(_sut.IsRightPanelVisible);
+        Assert.True(_sut.IsRightPanelCollapsed);
     }
 
     // ── OpenTab ──
@@ -257,25 +259,27 @@ public class MainWindowViewModelTests
     [Fact]
     public void ToggleBottomPanel_TogglesVisibility()
     {
-        Assert.False(_sut.IsBottomPanelVisible);
-
-        _sut.ToggleBottomPanel();
+        // Starts visible (collapsed)
         Assert.True(_sut.IsBottomPanelVisible);
 
         _sut.ToggleBottomPanel();
         Assert.False(_sut.IsBottomPanelVisible);
+
+        _sut.ToggleBottomPanel();
+        Assert.True(_sut.IsBottomPanelVisible);
     }
 
     [Fact]
     public void ToggleRightPanel_TogglesVisibility()
     {
-        Assert.False(_sut.IsRightPanelVisible);
-
-        _sut.ToggleRightPanel();
+        // Starts visible (collapsed)
         Assert.True(_sut.IsRightPanelVisible);
 
         _sut.ToggleRightPanel();
         Assert.False(_sut.IsRightPanelVisible);
+
+        _sut.ToggleRightPanel();
+        Assert.True(_sut.IsRightPanelVisible);
     }
 
     // ── FindTab ──
@@ -357,6 +361,61 @@ public class MainWindowViewModelTests
         Assert.True(raised);
     }
 
+    // ── Right Panel Collapse ──
+
+    [Fact]
+    public void ToggleRightPanelCollapse_TogglesState()
+    {
+        _sut.IsRightPanelVisible = true;
+        _sut.IsRightPanelCollapsed = false;
+
+        _sut.ToggleRightPanelCollapse();
+        Assert.True(_sut.IsRightPanelCollapsed);
+
+        _sut.ToggleRightPanelCollapse();
+        Assert.False(_sut.IsRightPanelCollapsed);
+    }
+
+    [Fact]
+    public void ToggleRightPanelCollapse_WhenHidden_ShowsExpanded()
+    {
+        _sut.IsRightPanelVisible = false;
+
+        _sut.ToggleRightPanelCollapse();
+
+        Assert.True(_sut.IsRightPanelVisible);
+        Assert.False(_sut.IsRightPanelCollapsed);
+    }
+
+    [Fact]
+    public void ToggleRightPanel_ShowsExpanded_ClearsCollapsed()
+    {
+        _sut.IsRightPanelVisible = true;
+        _sut.IsRightPanelCollapsed = true;
+
+        _sut.ToggleRightPanel(); // hides
+        _sut.ToggleRightPanel(); // shows — should clear collapsed
+
+        Assert.True(_sut.IsRightPanelVisible);
+        Assert.False(_sut.IsRightPanelCollapsed);
+    }
+
+    [Fact]
+    public void IsRightPanelCollapsed_RaisesPropertyChanged()
+    {
+        var raised = false;
+        _sut.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.IsRightPanelCollapsed))
+                raised = true;
+        };
+
+        _sut.IsRightPanelVisible = true;
+        _sut.ToggleRightPanelCollapse();
+
+        Assert.True(raised);
+    }
+
     // ── Bottom Panel Tabs ──
 
     [Fact]
@@ -384,7 +443,7 @@ public class MainWindowViewModelTests
     [Fact]
     public void ActivateBottomPanelTab_ShowsPanel()
     {
-        Assert.False(_sut.IsBottomPanelVisible);
+        _sut.IsBottomPanelVisible = false; // Hide first
 
         _sut.ActivateBottomPanelTab(MainWindowViewModel.OutputTabId);
 
@@ -421,7 +480,7 @@ public class MainWindowViewModelTests
     [Fact]
     public void ActivateBottomPanelTab_ExistingTab_ShowsPanel()
     {
-        Assert.False(_sut.IsBottomPanelVisible);
+        _sut.IsBottomPanelVisible = false; // Hide first
 
         _sut.ActivateBottomPanelTab(MainWindowViewModel.OutputTabId);
 
@@ -460,7 +519,7 @@ public class MainWindowViewModelTests
     {
         var tab = _sut.FindBottomPanelTab(MainWindowViewModel.OutputTabId);
         Assert.NotNull(tab);
-        Assert.Equal("OUTPUT", tab!.Title);
+        Assert.Equal("LOG OUTPUT", tab!.Title);
     }
 
     [Fact]
@@ -482,7 +541,7 @@ public class MainWindowViewModelTests
     public void ToggleBottomPanelCollapse_TogglesState()
     {
         _sut.IsBottomPanelVisible = true;
-        Assert.False(_sut.IsBottomPanelCollapsed);
+        _sut.IsBottomPanelCollapsed = false;
 
         _sut.ToggleBottomPanelCollapse();
         Assert.True(_sut.IsBottomPanelCollapsed);
@@ -494,7 +553,7 @@ public class MainWindowViewModelTests
     [Fact]
     public void ToggleBottomPanelCollapse_WhenHidden_ShowsExpanded()
     {
-        Assert.False(_sut.IsBottomPanelVisible);
+        _sut.IsBottomPanelVisible = false; // Hide first
 
         _sut.ToggleBottomPanelCollapse();
 
