@@ -121,6 +121,77 @@ public partial class FileExplorerViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Additively inserts files and folders into the explorer tree.
+    /// Folders are added as expandable directory nodes. Only recognized video
+    /// files are added; non-video files are skipped (the caller handles
+    /// the unsupported notification). Duplicate paths are ignored.
+    /// Returns true if any unsupported (non-video) files were encountered.
+    /// </summary>
+    public bool AddItems(IReadOnlyList<string> paths)
+    {
+        bool hasUnsupported = false;
+        bool added = false;
+
+        foreach (var path in paths)
+        {
+            if (string.IsNullOrWhiteSpace(path)) continue;
+
+            if (Directory.Exists(path))
+            {
+                if (!ContainsRootPath(path))
+                {
+                    RootNodes.Add(new FileNode(path, isDirectory: true));
+                    added = true;
+                }
+            }
+            else if (File.Exists(path))
+            {
+                if (FileNode.VideoExtensions.Contains(Path.GetExtension(path)))
+                {
+                    if (!ContainsRootPath(path))
+                    {
+                        RootNodes.Add(new FileNode(path, isDirectory: false));
+                        added = true;
+                    }
+                }
+                else
+                {
+                    hasUnsupported = true;
+                }
+            }
+        }
+
+        if (added)
+        {
+            SortRootNodes();
+
+            if (!HasFolderOpen)
+            {
+                HasFolderOpen = true;
+            }
+
+            // Title becomes "CUSTOM" whenever items are added beyond the
+            // originally opened folder (or when no folder was opened at all).
+            FolderName = "CUSTOM";
+
+            _logService.Info($"Added items to explorer", "Explorer");
+        }
+
+        return hasUnsupported;
+    }
+
+    /// <summary>
+    /// Returns all video file paths currently visible in the tree (root-level only).
+    /// Used to build the skip-navigation list after additive drops.
+    /// </summary>
+    public List<string> GetAllVideoFilePaths()
+    {
+        var paths = new List<string>();
+        CollectVideoFiles(RootNodes, paths);
+        return paths;
+    }
+
+    /// <summary>
     /// Closes the currently open folder and clears the tree.
     /// </summary>
     [RelayCommand]
@@ -204,6 +275,28 @@ public partial class FileExplorerViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Removes a file or folder node from the explorer tree without persisting
+    /// to the hidden-files list. Unlike <see cref="HideFile"/>, this is a
+    /// transient removal — the item will reappear on folder rescan.
+    /// If the last root node is removed, resets the folder-open state.
+    /// </summary>
+    [RelayCommand]
+    public void RemoveFile(FileNode? node)
+    {
+        if (node is null) return;
+
+        RemoveNodeFromTree(RootNodes, node);
+
+        if (RootNodes.Count == 0)
+        {
+            HasFolderOpen = false;
+            FolderName = null;
+        }
+
+        _logService.Info($"Removed from explorer: {node.Name}", "Explorer");
+    }
+
+    /// <summary>
     /// Unhides a previously hidden file or folder, removing it from the hidden list
     /// and clearing the <see cref="FileNode.IsHidden"/> flag.
     /// </summary>
@@ -252,7 +345,7 @@ public partial class FileExplorerViewModel : ObservableObject
         ShowHiddenFiles = !ShowHiddenFiles;
         _settingsService.Current.ShowHiddenFiles = ShowHiddenFiles;
         _settingsService.QueueSave();
-        RefreshTree();
+        RescanFolder();
     }
 
     /// <summary>
@@ -263,26 +356,6 @@ public partial class FileExplorerViewModel : ObservableObject
         var last = _stateService.Current.LastOpenFolder;
         if (!string.IsNullOrEmpty(last) && Directory.Exists(last))
             OpenFolder(last);
-    }
-
-    /// <summary>
-    /// Rebuilds the tree from disk, preserving expanded state.
-    /// Used when the hidden-files visibility toggle changes.
-    /// </summary>
-    private void RefreshTree()
-    {
-        if (FolderPath is null) return;
-
-        var expandedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        CollectExpandedPaths(RootNodes, expandedPaths);
-
-        RootNodes.Clear();
-        var allNodes = _fileSystemService.GetChildren(FolderPath);
-        foreach (var node in ApplyHiddenFilter(allNodes))
-        {
-            RootNodes.Add(node);
-            RestoreExpandedState(node, expandedPaths);
-        }
     }
 
     /// <summary>
@@ -343,5 +416,40 @@ public partial class FileExplorerViewModel : ObservableObject
             }
         }
         return false;
+    }
+
+    /// <summary>
+    /// Checks whether a path already exists at the root level of the tree.
+    /// </summary>
+    private bool ContainsRootPath(string path) =>
+        RootNodes.Any(n => string.Equals(n.FullPath, path, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// Sorts root nodes: directories first, then files, both alphabetically.
+    /// </summary>
+    private void SortRootNodes()
+    {
+        var sorted = RootNodes
+            .OrderByDescending(n => n.IsDirectory)
+            .ThenBy(n => n.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        RootNodes.Clear();
+        foreach (var node in sorted)
+            RootNodes.Add(node);
+    }
+
+    /// <summary>
+    /// Recursively collects all video file paths from the tree.
+    /// </summary>
+    private static void CollectVideoFiles(IEnumerable<FileNode> nodes, List<string> paths)
+    {
+        foreach (var node in nodes)
+        {
+            if (node.IsVideoFile)
+                paths.Add(node.FullPath);
+            else if (node.IsDirectory && !node.NeedsLoading)
+                CollectVideoFiles(node.Children, paths);
+        }
     }
 }

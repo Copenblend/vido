@@ -31,6 +31,11 @@ public partial class FileExplorerPanel : UserControl
     /// </summary>
     public event Action<FileNode>? VideoFileDoubleClicked;
 
+    /// <summary>
+    /// Raised when files or folders are dropped onto the explorer panel.
+    /// </summary>
+    public event Action<string[]>? FilesDroppedOnExplorer;
+
     public FileExplorerPanel()
     {
         InitializeComponent();
@@ -165,6 +170,15 @@ public partial class FileExplorerPanel : UserControl
         }
     }
 
+    private void OnRemoveFileClick(object sender, RoutedEventArgs e)
+    {
+        if (GetNodeFromContextMenu(sender) is { } node
+            && DataContext is FileExplorerViewModel vm)
+        {
+            vm.RemoveFileCommand.Execute(node);
+        }
+    }
+
     private void OnUnhideFileClick(object sender, RoutedEventArgs e)
     {
         if (GetNodeFromContextMenu(sender) is { } node
@@ -267,5 +281,51 @@ public partial class FileExplorerPanel : UserControl
             current = VisualTreeHelper.GetParent(current);
         }
         return null;
+    }
+
+    // ─── Drag and drop ──────────────────────────────────────────────
+
+    private void OnExplorerDragEnter(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            e.Effects = DragDropEffects.Copy;
+            DragOverlay.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            e.Effects = DragDropEffects.None;
+        }
+        e.Handled = true;
+    }
+
+    private void OnExplorerDragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void OnExplorerDragLeave(object sender, DragEventArgs e)
+    {
+        DragOverlay.Visibility = Visibility.Collapsed;
+        e.Handled = true;
+    }
+
+    /// <summary>
+    /// Processes drops on the file explorer panel.
+    /// Passes all paths to the parent for additive insert into the tree.
+    /// </summary>
+    private void OnExplorerDrop(object sender, DragEventArgs e)
+    {
+        DragOverlay.Visibility = Visibility.Collapsed;
+
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+
+        if (e.Data.GetData(DataFormats.FileDrop) is string[] paths && paths.Length > 0)
+            FilesDroppedOnExplorer?.Invoke(paths);
+
+        e.Handled = true;
     }
 }

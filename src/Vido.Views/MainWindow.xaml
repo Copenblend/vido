@@ -7,6 +7,7 @@
         Width="2560"
         Height="720"
         WindowStyle="None"
+        AllowDrop="True"
         Icon="pack://application:,,,/Vido.Views;component/Assets/Vido.png"
         Background="{DynamicResource EditorBackgroundBrush}"
         WindowStartupLocation="CenterScreen">
@@ -117,6 +118,23 @@
                                 <!-- Dynamic tab content host (Settings, etc.) -->
                                 <ContentPresenter x:Name="DynamicTabContent"
                                                   Visibility="Collapsed" />
+
+                                <!-- Unsupported file drop notification (centered on video area) -->
+                                <Border x:Name="UnsupportedDropNotification"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Center"
+                                        CornerRadius="4"
+                                        Padding="16,8"
+                                        Background="#E62f2f2f"
+                                        BorderBrush="{DynamicResource PrimaryBorderBrush}"
+                                        BorderThickness="1"
+                                        IsHitTestVisible="False"
+                                        Visibility="Collapsed">
+                                    <TextBlock Text="File type not supported"
+                                               Foreground="{DynamicResource PrimaryForegroundBrush}"
+                                               FontFamily="Segoe UI"
+                                               FontSize="13" />
+                                </Border>
                             </Grid>
                         </Grid>
 

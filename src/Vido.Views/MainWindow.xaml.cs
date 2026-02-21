@@ -8,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Shell;
 using System.Windows.Threading;
+using Vido.Core.FileSystem;
 using Vido.Core.Keyboard;
 using Vido.Core.Layout;
 using KeyBinding = Vido.Core.Keyboard.KeyBinding;
@@ -108,6 +109,7 @@ public partial class MainWindow : Window
         SetupStatusBar();
         SetupKeyboardShortcuts();
         SetupFileExplorer();
+        SetupDragDrop();
         RestoreWindowState();
         RestoreLayoutState();
 
@@ -254,6 +256,9 @@ public partial class MainWindow : Window
             new KeyBinding("J", ctrl: true), "vido.toggleBottomPanel", () => _mainWindowViewModel.ToggleBottomPanel());
         _keyboardShortcutService.Register(
             new KeyBinding("H", ctrl: true), "vido.toggleRightPanel", () => _mainWindowViewModel.ToggleRightPanel());
+
+        _keyboardShortcutService.Register(
+            new KeyBinding("S", ctrl: true, shift: true), "vido.toggleStatusBar", () => _mainWindowViewModel.ToggleStatusBar());
 
         // File operations
         _keyboardShortcutService.Register(
@@ -785,6 +790,10 @@ public partial class MainWindow : Window
         TitleBar.FolderClosed += OnFolderClosed;
         TitleBar.FolderRescanned += OnFolderRescanned;
 
+        // Wire title bar Add File / Add Folder events
+        TitleBar.FilesAdded += OnFilesAddedFromMenu;
+        TitleBar.FolderAddedToExplorer += OnFilesAddedFromMenu;
+
         // Wire View menu panel toggles
         TitleBar.ToggleBottomPanelRequested += () => _mainWindowViewModel.ToggleBottomPanel();
         TitleBar.ToggleRightPanelRequested += () => _mainWindowViewModel.ToggleRightPanel();
@@ -910,6 +919,19 @@ public partial class MainWindow : Window
     {
         _fileExplorerViewModel.RescanFolder();
         _logService.Info("Folder rescanned", "Explorer");
+    }
+
+    /// <summary>
+    /// Handles files or folders added via File > Add File… / Add Folder… menu items.
+    /// Works the same as dropping files on the explorer panel (additive insert).
+    /// </summary>
+    private void OnFilesAddedFromMenu(string[] paths)
+    {
+        var hasUnsupported = _fileExplorerViewModel.AddItems(paths);
+        if (hasUnsupported)
+            ShowUnsupportedFileNotification();
+
+        EnsureExplorerVisible();
     }
 
     private async Task OnRecentFileSelected(string filePath)
@@ -1136,6 +1158,162 @@ public partial class MainWindow : Window
         await _stateService.SaveAsync();
         await _settingsService.SaveAsync();
         base.OnClosing(e);
+    }
+
+    // ── Drag and drop ──
+
+    /// <summary>Timer for auto-hiding the unsupported file notification.</summary>
+    private DispatcherTimer? _notificationTimer;
+
+    /// <summary>
+    /// Wires drag-and-drop handlers for the video player, file explorer, and main window fallback.
+    /// </summary>
+    private void SetupDragDrop()
+    {
+        // Video player area: dropped items are added to explorer + first video plays
+        VideoPlayer.FilesDropped += OnFilesDroppedOnPlayer;
+
+        // File explorer: dropped items are added additively to the tree
+        if (_fileExplorerPanel is not null)
+            _fileExplorerPanel.FilesDroppedOnExplorer += OnFilesDroppedOnExplorer;
+
+        // Main window fallback: handles drops on title bar, status bar, etc.
+        Drop += OnWindowDrop;
+        DragEnter += OnWindowDragEnter;
+        DragOver += OnWindowDragOver;
+    }
+
+    /// <summary>
+    /// Handles files/folders dropped onto the video player area.
+    /// All items are added to the explorer additively. The first video file plays.
+    /// </summary>
+    private void OnFilesDroppedOnPlayer(string[] paths)
+    {
+        var hasUnsupported = _fileExplorerViewModel.AddItems(paths);
+        if (hasUnsupported)
+            ShowUnsupportedFileNotification();
+
+        // Play the first video file found in the drop
+        var firstVideo = FindFirstVideoFile(paths);
+        if (firstVideo is not null)
+        {
+            _mainWindowViewModel.ActivateTab(MainWindowViewModel.PlayerTabId);
+            SafeFireAndForget(PlayDroppedVideoAsync(firstVideo));
+        }
+
+        EnsureExplorerVisible();
+    }
+
+    /// <summary>
+    /// Handles files/folders dropped onto the file explorer panel.
+    /// All items are added to the tree additively. No video playback is triggered.
+    /// </summary>
+    private void OnFilesDroppedOnExplorer(string[] paths)
+    {
+        var hasUnsupported = _fileExplorerViewModel.AddItems(paths);
+        if (hasUnsupported)
+            ShowUnsupportedFileNotification();
+
+        EnsureExplorerVisible();
+    }
+
+    /// <summary>
+    /// Loads and plays a dropped video file.
+    /// </summary>
+    private async Task PlayDroppedVideoAsync(string filePath)
+    {
+        try
+        {
+            await _videoPlayerViewModel.LoadAndPlayAsync(filePath);
+            _logService.Info($"Playing dropped file: {Path.GetFileName(filePath)}", "DragDrop");
+        }
+        catch (Exception ex)
+        {
+            _logService.Error($"Failed to play dropped file: {ex.Message}", "DragDrop");
+        }
+    }
+
+    /// <summary>
+    /// Returns the first recognized video file path from an array, or null.
+    /// </summary>
+    private static string? FindFirstVideoFile(string[] paths)
+    {
+        foreach (var path in paths)
+        {
+            if (File.Exists(path) && FileNode.VideoExtensions.Contains(Path.GetExtension(path)))
+                return path;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Ensures the sidebar is visible and the Explorer panel is active.
+    /// </summary>
+    private void EnsureExplorerVisible()
+    {
+        if (_activityBarViewModel is not null)
+        {
+            _activityBarViewModel.ActivePanel = SidebarPanelKind.Explorer;
+            _activityBarViewModel.IsSidebarVisible = true;
+            OnPanelChanged(this, new RoutedEventArgs());
+        }
+    }
+
+    /// <summary>
+    /// Shows a brief notification when an unsupported file type is dropped.
+    /// The notification auto-hides after 3 seconds.
+    /// </summary>
+    private void ShowUnsupportedFileNotification()
+    {
+        UnsupportedDropNotification.Visibility = Visibility.Visible;
+        _logService.Warning("Dropped file type is not supported", "DragDrop");
+
+        // Dispose existing timer if any
+        _notificationTimer?.Stop();
+        _notificationTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromSeconds(3)
+        };
+        _notificationTimer.Tick += (_, _) =>
+        {
+            UnsupportedDropNotification.Visibility = Visibility.Collapsed;
+            _notificationTimer.Stop();
+        };
+        _notificationTimer.Start();
+    }
+
+    /// <summary>
+    /// Fallback handler: processes drops on the main window that were not
+    /// caught by the video player or file explorer (e.g., title bar, status bar).
+    /// Behaves the same as a drop on the player area.
+    /// </summary>
+    private void OnWindowDrop(object sender, DragEventArgs e)
+    {
+        // Already handled by child controls
+        if (e.Handled) return;
+
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+
+        if (e.Data.GetData(DataFormats.FileDrop) is string[] paths && paths.Length > 0)
+            OnFilesDroppedOnPlayer(paths);
+
+        e.Handled = true;
+    }
+
+    private void OnWindowDragEnter(object sender, DragEventArgs e)
+    {
+        if (e.Handled) return;
+        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
+    }
+
+    private void OnWindowDragOver(object sender, DragEventArgs e)
+    {
+        if (e.Handled) return;
+        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
     }
 
     #region Window State Persistence

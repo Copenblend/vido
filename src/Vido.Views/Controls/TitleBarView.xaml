@@ -56,6 +56,14 @@
                           Style="{StaticResource DropdownMenuItemStyle}"
                           IsEnabled="False"
                           Click="OnRescanFolderClick" />
+                <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                <MenuItem Header="_Add File..."
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnAddFileClick" />
+                <MenuItem Header="Add F_older..."
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnAddFolderClick" />
+                <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem x:Name="RecentFilesMenu" Header="_Recent Files"
                           Style="{StaticResource SubmenuParentItemStyle}"
                           SubmenuOpened="OnRecentFilesSubmenuOpened">
@@ -82,7 +90,7 @@
                           Style="{StaticResource DropdownMenuItemStyle}"
                           Click="OnToggleSidebarClick" />
                 <MenuItem x:Name="ShowHideStatusBarMenuItem"
-                          Header="Show S_tatus Bar"
+                          Header="Show S_tatus Bar" InputGestureText="Ctrl+Shift+S"
                           Style="{StaticResource DropdownMenuItemStyle}"
                           Click="OnToggleStatusBarClick" />
                 <MenuItem Header="_Fullscreen" InputGestureText="F11"

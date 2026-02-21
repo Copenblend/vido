@@ -49,4 +49,23 @@ public sealed class AppState
         if (RecentFiles.Count > MaxRecentFiles)
             RecentFiles.RemoveRange(MaxRecentFiles, RecentFiles.Count - MaxRecentFiles);
     }
+
+    /// <summary>
+    /// Resets every property to its default value.
+    /// Call after tests that mutate state to prevent pollution.
+    /// </summary>
+    public void ResetToDefaults()
+    {
+        WindowLeft = double.NaN;
+        WindowTop = double.NaN;
+        WindowWidth = 1280;
+        WindowHeight = 720;
+        IsMaximized = false;
+        LastOpenFolder = null;
+        LastVideoPath = null;
+        LastVideoPosition = 0;
+        ActiveSidebarPanel = "Explorer";
+        HiddenFiles = [];
+        RecentFiles = [];
+    }
 }

@@ -14,7 +14,10 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Grid x:Name="RootGrid" Background="Transparent">
+    <Grid x:Name="RootGrid" Background="Transparent"
+          AllowDrop="True"
+          DragEnter="OnDragEnter" DragOver="OnDragOver"
+          DragLeave="OnDragLeave" Drop="OnDrop">
         <!-- Video display area fills entire control -->
 
         <!-- Empty state: no video loaded -->
@@ -308,6 +311,22 @@
                     </StackPanel>
                 </Grid>
             </Grid>
+        </Border>
+        <!-- Drag-over overlay -->
+        <Border x:Name="DragOverlay"
+                BorderBrush="{DynamicResource FocusBorderBrush}"
+                BorderThickness="2"
+                Background="#180078D4"
+                CornerRadius="0"
+                IsHitTestVisible="False"
+                Visibility="Collapsed">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="Drop video file to play"
+                           Foreground="{DynamicResource PrimaryForegroundBrush}"
+                           FontSize="16"
+                           FontFamily="Segoe UI"
+                           HorizontalAlignment="Center" />
+            </StackPanel>
         </Border>
     </Grid>
 </UserControl>

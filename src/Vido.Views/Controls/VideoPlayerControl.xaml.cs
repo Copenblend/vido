@@ -39,6 +39,9 @@ public partial class VideoPlayerControl : UserControl
     /// <summary>Raised when the user double-clicks the video area to toggle fullscreen.</summary>
     public event Action? FullscreenToggleRequested;
 
+    /// <summary>Raised when files or folders are dropped onto the player area.</summary>
+    public event Action<string[]>? FilesDropped;
+
     public VideoPlayerControl()
     {
         InitializeComponent();
@@ -320,6 +323,55 @@ public partial class VideoPlayerControl : UserControl
         {
             vm.SetPlaybackSpeed(speed);
         }
+    }
+
+    // ── Drag and drop ──
+
+    /// <summary>
+    /// Checks if the dragged data contains files or folders and sets the appropriate effect.
+    /// Shows the drag overlay when valid data is detected.
+    /// </summary>
+    private void OnDragEnter(object sender, DragEventArgs e)
+    {
+        if (e.Data.GetDataPresent(DataFormats.FileDrop))
+        {
+            e.Effects = DragDropEffects.Copy;
+            DragOverlay.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            e.Effects = DragDropEffects.None;
+        }
+        e.Handled = true;
+    }
+
+    private void OnDragOver(object sender, DragEventArgs e)
+    {
+        e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
+            ? DragDropEffects.Copy
+            : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private void OnDragLeave(object sender, DragEventArgs e)
+    {
+        DragOverlay.Visibility = Visibility.Collapsed;
+        e.Handled = true;
+    }
+
+    /// <summary>
+    /// Processes dropped files. Passes all paths to the parent for classification and handling.
+    /// </summary>
+    private void OnDrop(object sender, DragEventArgs e)
+    {
+        DragOverlay.Visibility = Visibility.Collapsed;
+
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+
+        if (e.Data.GetData(DataFormats.FileDrop) is string[] paths && paths.Length > 0)
+            FilesDropped?.Invoke(paths);
+
+        e.Handled = true;
     }
 
     // ── Fullscreen overlay mode ──

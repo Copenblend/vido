@@ -158,18 +158,30 @@ public sealed class StatePersistenceTests
     [Fact]
     public async Task StateService_SaveAndLoad_RoundTripsRecentFiles()
     {
-        var svc = new Vido.Services.State.StateService();
+        var tempDir = Path.Combine(Path.GetTempPath(), "VidoTest_State_" + Guid.NewGuid().ToString("N"));
+        try
+        {
+        var svc = new Vido.Services.State.StateService(tempDir);
         svc.Current.AddRecentFile(@"C:\a.mp4");
         svc.Current.AddRecentFile(@"C:\b.mp4");
 
         await svc.SaveAsync();
 
-        var svc2 = new Vido.Services.State.StateService();
+        var svc2 = new Vido.Services.State.StateService(tempDir);
         await svc2.LoadAsync();
 
         Assert.Equal(2, svc2.Current.RecentFiles.Count);
         Assert.Equal(@"C:\b.mp4", svc2.Current.RecentFiles[0]);
         Assert.Equal(@"C:\a.mp4", svc2.Current.RecentFiles[1]);
+
+        // Reset to defaults to prevent pollution
+        svc.Current.ResetToDefaults();
+        await svc.SaveAsync();
+        }
+        finally
+        {
+            try { Directory.Delete(tempDir, recursive: true); } catch { }
+        }
     }
 
     // ── Settings round-trip ──

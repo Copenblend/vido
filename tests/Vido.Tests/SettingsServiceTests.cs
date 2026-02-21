@@ -27,18 +27,12 @@ public sealed class SettingsServiceTests : IDisposable
         catch { /* best-effort cleanup */ }
     }
 
-    private SettingsService CreateService()
-    {
-        // Use reflection to set the private static fields for test isolation
-        // Instead, we test the public interface via round-trip with the real paths.
-        // For unit tests we rely on the fact that a fresh service starts with defaults.
-        return new SettingsService();
-    }
+    private SettingsService CreateService() => new SettingsService(_tempDir);
 
     [Fact]
     public void Current_HasSensibleDefaults()
     {
-        var svc = new SettingsService();
+        using var svc = CreateService();
 
         Assert.Equal(0.50, svc.Current.Volume);
         Assert.False(svc.Current.IsMuted);
@@ -55,7 +49,7 @@ public sealed class SettingsServiceTests : IDisposable
     [Fact]
     public async Task SaveAndLoad_RoundTrips()
     {
-        var svc = new SettingsService();
+        using var svc = CreateService();
         svc.Current.Volume = 0.5;
         svc.Current.IsMuted = true;
         svc.Current.PlaybackSpeed = 1.5;
@@ -63,38 +57,43 @@ public sealed class SettingsServiceTests : IDisposable
         await svc.SaveAsync();
 
         // Create a new instance and load — should pick up what was saved
-        var svc2 = new SettingsService();
+        using var svc2 = CreateService();
         await svc2.LoadAsync();
 
         Assert.Equal(0.5, svc2.Current.Volume);
         Assert.True(svc2.Current.IsMuted);
         Assert.Equal(1.5, svc2.Current.PlaybackSpeed);
+
+        // Reset to defaults to prevent pollution
+        svc.Current.ResetToDefaults();
+        await svc.SaveAsync();
     }
 
     [Fact]
     public async Task LoadAsync_WithMissingFile_KeepsDefaults()
     {
-        // Delete the settings file if it exists (from a previous test run)
-        var svc = new SettingsService();
-        // A fresh install scenario — LoadAsync should succeed with defaults
-        // (We can't control the path without refactoring, but we verify no exception)
+        // Use a fresh temp subdir with no settings.json
+        var emptyDir = Path.Combine(_tempDir, "empty");
+        using var svc = new SettingsService(emptyDir);
         var ex = await Record.ExceptionAsync(() => svc.LoadAsync());
         Assert.Null(ex);
+        Assert.Equal(0.50, svc.Current.Volume); // still defaults
     }
 
     [Fact]
     public async Task SaveAsync_CreatesDirectoryIfMissing()
     {
-        var svc = new SettingsService();
-        // SaveAsync should create %APPDATA%/Vido if it doesn't exist
+        var newDir = Path.Combine(_tempDir, "new_subdir");
+        using var svc = new SettingsService(newDir);
         var ex = await Record.ExceptionAsync(() => svc.SaveAsync());
         Assert.Null(ex);
+        Assert.True(Directory.Exists(newDir));
     }
 
     [Fact]
     public void QueueSave_DoesNotThrow()
     {
-        var svc = new SettingsService();
+        using var svc = CreateService();
         var ex = Record.Exception(() => svc.QueueSave());
         Assert.Null(ex);
     }
@@ -102,7 +101,7 @@ public sealed class SettingsServiceTests : IDisposable
     [Fact]
     public void Dispose_DoesNotThrow()
     {
-        var svc = new SettingsService();
+        var svc = CreateService();
         svc.QueueSave();
         var ex = Record.Exception(() => svc.Dispose());
         Assert.Null(ex);
