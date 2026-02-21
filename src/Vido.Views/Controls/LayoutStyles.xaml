@@ -52,15 +52,15 @@
 
     <!-- GridSplitter style for panel resizing -->
     <Style x:Key="VerticalSplitterStyle" TargetType="GridSplitter">
-        <Setter Property="Width" Value="5" />
-        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Width" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource PrimaryBorderBrush}" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="VerticalAlignment" Value="Stretch" />
         <Setter Property="Cursor" Value="SizeWE" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="GridSplitter">
-                    <Grid>
+                    <Grid Margin="-5,0">
                         <!-- Wider transparent hit area for easier grabbing -->
                         <Border Background="Transparent"
                                 Width="11"

@@ -7,6 +7,7 @@
         Width="2560"
         Height="720"
         WindowStyle="None"
+        Icon="pack://application:,,,/Vido.Views;component/Assets/Vido.png"
         Background="{DynamicResource EditorBackgroundBrush}"
         WindowStartupLocation="CenterScreen">
 
@@ -108,7 +109,7 @@
                             <controls:TabWell x:Name="TabWell" Grid.Row="0" />
 
                             <!-- Tab content area — shows the active tab's content -->
-                            <Grid x:Name="TabContentArea" Grid.Row="1">
+                            <Grid Grid.Row="1">
                                 <!-- Video player (always present, visibility toggled) -->
                                 <controls:VideoPlayerControl x:Name="VideoPlayer" />
 
@@ -128,6 +129,8 @@
                         <Border x:Name="BottomPanel"
                                 Grid.Row="2"
                                 Background="{DynamicResource PanelBackgroundBrush}"
+                                BorderBrush="{DynamicResource PrimaryBorderBrush}"
+                                BorderThickness="0"
                                 Visibility="Collapsed">
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -143,8 +146,7 @@
                                         BorderThickness="0">
                                     <DockPanel>
                                         <!-- Collapse/expand chevron (left-aligned) -->
-                                        <ToggleButton x:Name="BottomPanelCollapseButton"
-                                                      DockPanel.Dock="Left"
+                                        <ToggleButton DockPanel.Dock="Left"
                                                       Style="{StaticResource PanelCollapseButtonStyle}"
                                                       IsChecked="{Binding IsBottomPanelCollapsed, Mode=OneWay}"
                                                       Margin="4,0,0,0"
@@ -203,6 +205,8 @@
                     <Border x:Name="RightPanel"
                             Grid.Column="2"
                             Background="{DynamicResource PanelBackgroundBrush}"
+                            BorderBrush="{DynamicResource PrimaryBorderBrush}"
+                            BorderThickness="0"
                             Visibility="Collapsed">
                         <Grid>
                             <Grid.RowDefinitions>
@@ -215,24 +219,34 @@
                             <!-- Right panel tab strip -->
                             <Border Grid.Row="0"
                                     Style="{StaticResource PanelTabStripStyle}"
-                                    BorderThickness="0,0,0,1">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="VIDEO INFO"
+                                    Height="36"
+                                    BorderThickness="0">
+                                <Grid x:Name="RightPanelTabStrip">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <!-- Collapse/expand chevron -->
+                                    <ToggleButton Grid.Column="0"
+                                                  Style="{StaticResource RightPanelCollapseButtonStyle}"
+                                                  IsChecked="{Binding IsRightPanelCollapsed, Mode=OneWay}"
+                                                  Margin="0"
+                                                  ToolTip="Collapse Panel"
+                                                  Click="OnRightPanelCollapseClick" />
+                                    <!-- Tab title (hidden when collapsed) -->
+                                    <TextBlock x:Name="RightPanelTitle"
+                                               Grid.Column="1"
+                                               Text="VIDEO INFO"
                                                Style="{StaticResource PanelTabItemStyle}"
-                                               Foreground="{DynamicResource PrimaryForegroundBrush}" />
-                                </StackPanel>
+                                               Padding="0"
+                                               Foreground="{DynamicResource PrimaryForegroundBrush}"
+                                               VerticalAlignment="Center" />
+                                </Grid>
                             </Border>
 
-                            <!-- Right panel content (stub) -->
-                            <Border Grid.Row="1"
-                                    Padding="12,8">
-                                <TextBlock Text="Video details will be available in a future update."
-                                           Foreground="{DynamicResource DisabledForegroundBrush}"
-                                           FontFamily="Segoe UI"
-                                           FontSize="12"
-                                           VerticalAlignment="Center"
-                                           HorizontalAlignment="Center" />
-                            </Border>
+                            <!-- Right panel content -->
+                            <ContentPresenter x:Name="RightPanelContent"
+                                    Grid.Row="1" />
                         </Grid>
                     </Border>
                 </Grid>

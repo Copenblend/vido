@@ -18,7 +18,7 @@ public partial class MainWindowViewModel : ObservableObject
     public const string SettingsTabId = "Settings";
 
     // ── Bottom Panel Tab IDs ──
-    public const string OutputTabId = "Output";
+    public const string OutputTabId = "LogOutput";
 
     /// <summary>Material Design gear icon geometry for the Settings tab.</summary>
     private const string SettingsIconGeometry =
@@ -63,6 +63,10 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private bool _isRightPanelVisible;
 
+    /// <summary>Whether the right panel is collapsed (showing only tab strip).</summary>
+    [ObservableProperty]
+    private bool _isRightPanelCollapsed;
+
     // ── Bottom Panel Tabs ──
 
     /// <summary>All open bottom panel tabs.</summary>
@@ -92,9 +96,15 @@ public partial class MainWindowViewModel : ObservableObject
         ActiveTab = playerTab;
 
         // Initialize bottom panel tabs
-        var outputTab = new BottomPanelTabItem(OutputTabId, "OUTPUT") { IsClosable = false };
+        var outputTab = new BottomPanelTabItem(OutputTabId, "LOG OUTPUT") { IsClosable = false };
         BottomPanelTabs.Add(outputTab);
         ActiveBottomPanelTab = outputTab;
+
+        // Both panels start visible but collapsed
+        IsBottomPanelVisible = true;
+        IsBottomPanelCollapsed = true;
+        IsRightPanelVisible = true;
+        IsRightPanelCollapsed = true;
     }
 
     // ── Tab Commands ──
@@ -217,6 +227,23 @@ public partial class MainWindowViewModel : ObservableObject
     public void ToggleRightPanel()
     {
         IsRightPanelVisible = !IsRightPanelVisible;
+        if (IsRightPanelVisible)
+            IsRightPanelCollapsed = false;
+    }
+
+    /// <summary>Toggles the right panel between collapsed (tab strip only) and expanded.</summary>
+    [RelayCommand]
+    public void ToggleRightPanelCollapse()
+    {
+        if (!IsRightPanelVisible)
+        {
+            // If panel is hidden entirely, show it expanded
+            IsRightPanelVisible = true;
+            IsRightPanelCollapsed = false;
+            return;
+        }
+
+        IsRightPanelCollapsed = !IsRightPanelCollapsed;
     }
 
     // ── Bottom Panel Tab Commands ──
@@ -256,7 +283,7 @@ public partial class MainWindowViewModel : ObservableObject
 
         var (title, canonicalIndex) = tabId switch
         {
-            OutputTabId => ("OUTPUT", 0),
+            OutputTabId => ("LOG OUTPUT", 0),
             _ => (tabId.ToUpperInvariant(), BottomPanelTabs.Count)
         };
 

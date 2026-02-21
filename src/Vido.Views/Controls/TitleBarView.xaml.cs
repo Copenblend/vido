@@ -135,14 +135,20 @@ public partial class TitleBarView : UserControl
     /// <summary>Raised when View > Bottom Panel > Show/Hide is clicked.</summary>
     public event Action? ToggleBottomPanelRequested;
 
-    /// <summary>Raised when View > Bottom Panel > Output is clicked to show the output panel.</summary>
+    /// <summary>Raised when View > Bottom Panel > Log Output is clicked to show the output panel.</summary>
     public event Action? ShowOutputRequested;
 
-    /// <summary>Raised when View > Toggle Right Panel is clicked.</summary>
+    /// <summary>Raised when View > Right Panel > Show/Hide is clicked.</summary>
     public event Action? ToggleRightPanelRequested;
+
+    /// <summary>Raised when View > Right Panel > Video Info is clicked.</summary>
+    public event Action? ShowVideoInfoRequested;
 
     /// <summary>Whether the bottom panel is currently visible. Used to update the submenu text.</summary>
     private bool _isBottomPanelVisible;
+
+    /// <summary>Whether the right panel is currently visible. Used to update the submenu text.</summary>
+    private bool _isRightPanelVisible;
 
     /// <summary>
     /// Updates the Bottom Panel submenu state based on current panel visibility.
@@ -153,11 +159,27 @@ public partial class TitleBarView : UserControl
         _isBottomPanelVisible = visible;
     }
 
+    /// <summary>
+    /// Updates the Right Panel submenu state based on current panel visibility.
+    /// Called by MainWindow when the panel visibility changes.
+    /// </summary>
+    public void SetRightPanelVisible(bool visible)
+    {
+        _isRightPanelVisible = visible;
+    }
+
     private void OnBottomPanelSubmenuOpened(object sender, RoutedEventArgs e)
     {
         ShowHideBottomPanelMenuItem.Header = _isBottomPanelVisible
             ? "_Hide Bottom Panel"
             : "_Show Bottom Panel";
+    }
+
+    private void OnRightPanelSubmenuOpened(object sender, RoutedEventArgs e)
+    {
+        ShowHideRightPanelMenuItem.Header = _isRightPanelVisible
+            ? "_Hide Right Panel"
+            : "_Show Right Panel";
     }
 
     private void OnToggleBottomPanelClick(object sender, RoutedEventArgs e)
@@ -173,5 +195,10 @@ public partial class TitleBarView : UserControl
     private void OnToggleRightPanelClick(object sender, RoutedEventArgs e)
     {
         ToggleRightPanelRequested?.Invoke();
+    }
+
+    private void OnShowVideoInfoClick(object sender, RoutedEventArgs e)
+    {
+        ShowVideoInfoRequested?.Invoke();
     }
 }

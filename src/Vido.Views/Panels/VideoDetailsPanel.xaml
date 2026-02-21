@@ -1,0 +1,122 @@
+<UserControl x:Class="Vido.Views.Panels.VideoDetailsPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             Background="{DynamicResource PanelBackgroundBrush}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="../Themes/Brushes.xaml" />
+                <ResourceDictionary Source="../Themes/ScrollBarStyles.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+
+            <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+            <!-- Label style for property names -->
+            <Style x:Key="MetadataLabelStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="Segoe UI" />
+                <Setter Property="FontSize" Value="11" />
+                <Setter Property="Foreground" Value="{DynamicResource SecondaryForegroundBrush}" />
+                <Setter Property="Margin" Value="0,0,0,2" />
+            </Style>
+
+            <!-- Value style for property values -->
+            <Style x:Key="MetadataValueStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="Segoe UI" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryForegroundBrush}" />
+                <Setter Property="Margin" Value="0,0,0,10" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+
+            <!-- Section header style -->
+            <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="Segoe UI" />
+                <Setter Property="FontSize" Value="11" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Foreground" Value="{DynamicResource PrimaryForegroundBrush}" />
+                <Setter Property="Margin" Value="0,8,0,8" />
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid>
+        <!-- Empty state -->
+        <TextBlock Text="No video loaded"
+                   Foreground="{DynamicResource DisabledForegroundBrush}"
+                   FontFamily="Segoe UI"
+                   FontSize="12"
+                   VerticalAlignment="Center"
+                   HorizontalAlignment="Center">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Visibility" Value="Visible" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding HasMetadata}" Value="True">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+
+        <!-- Metadata content -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Visibility="{Binding HasMetadata, Converter={StaticResource BoolToVis}}">
+            <StackPanel Margin="12,4,12,12">
+
+                <!-- Video Information section -->
+                <TextBlock Text="VIDEO INFORMATION" Style="{StaticResource SectionHeaderStyle}" />
+
+                <TextBlock Text="File Name" Style="{StaticResource MetadataLabelStyle}" />
+                <TextBlock Text="{Binding FileName}" Style="{StaticResource MetadataValueStyle}" />
+
+                <TextBlock Text="File Path" Style="{StaticResource MetadataLabelStyle}" />
+                <TextBlock Text="{Binding FilePath}" Style="{StaticResource MetadataValueStyle}"
+                           FontSize="11" />
+
+                <TextBlock Text="File Size" Style="{StaticResource MetadataLabelStyle}" />
+                <TextBlock Text="{Binding FileSize}" Style="{StaticResource MetadataValueStyle}" />
+
+                <TextBlock Text="Duration" Style="{StaticResource MetadataLabelStyle}" />
+                <TextBlock Text="{Binding FormattedDuration}" Style="{StaticResource MetadataValueStyle}" />
+
+                <TextBlock Text="Container" Style="{StaticResource MetadataLabelStyle}" />
+                <TextBlock Text="{Binding ContainerFormat}" Style="{StaticResource MetadataValueStyle}" />
+
+                <!-- Video section -->
+                <Border Height="1"
+                        Background="{DynamicResource PrimaryBorderBrush}"
+                        Margin="0,4,0,4" />
+
+                <TextBlock Text="VIDEO" Style="{StaticResource SectionHeaderStyle}" />
+
+                <TextBlock Text="Resolution" Style="{StaticResource MetadataLabelStyle}" />
+                <TextBlock Text="{Binding Resolution}" Style="{StaticResource MetadataValueStyle}" />
+
+                <TextBlock Text="Codec" Style="{StaticResource MetadataLabelStyle}" />
+                <TextBlock Text="{Binding VideoCodec}" Style="{StaticResource MetadataValueStyle}" />
+
+                <TextBlock Text="Frame Rate" Style="{StaticResource MetadataLabelStyle}" />
+                <TextBlock Text="{Binding FrameRate}" Style="{StaticResource MetadataValueStyle}" />
+
+                <TextBlock Text="Bitrate" Style="{StaticResource MetadataLabelStyle}" />
+                <TextBlock Text="{Binding Bitrate}" Style="{StaticResource MetadataValueStyle}" />
+
+                <!-- Audio section -->
+                <Border Height="1"
+                        Background="{DynamicResource PrimaryBorderBrush}"
+                        Margin="0,4,0,4" />
+
+                <TextBlock Text="AUDIO" Style="{StaticResource SectionHeaderStyle}" />
+
+                <TextBlock Text="Codec" Style="{StaticResource MetadataLabelStyle}" />
+                <TextBlock Text="{Binding AudioCodec}" Style="{StaticResource MetadataValueStyle}" />
+
+                <TextBlock Text="Details" Style="{StaticResource MetadataLabelStyle}" />
+                <TextBlock Text="{Binding AudioInfo}" Style="{StaticResource MetadataValueStyle}" />
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
