@@ -73,12 +73,59 @@
                 <!-- Editor Area -->
                 <Grid Grid.Column="3"
                       Background="{DynamicResource EditorBackgroundBrush}">
-                    <TextBlock Text="Open a video file to begin"
-                               Foreground="{DynamicResource DisabledForegroundBrush}"
-                               FontSize="16"
-                               FontFamily="Segoe UI"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center" />
+                    <Grid.RowDefinitions>
+                        <!-- Tab strip -->
+                        <RowDefinition Height="Auto" />
+                        <!-- Tab content -->
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Tab strip -->
+                    <Border Grid.Row="0"
+                            Background="{DynamicResource TabInactiveBackgroundBrush}"
+                            BorderBrush="{DynamicResource PrimaryBorderBrush}"
+                            BorderThickness="0,0,0,1">
+                        <StackPanel Orientation="Horizontal">
+                            <!-- Player tab — always leftmost, no close button -->
+                            <Border x:Name="PlayerTab"
+                                    Height="35"
+                                    Padding="12,0"
+                                    Background="{DynamicResource EditorBackgroundBrush}"
+                                    Cursor="Hand"
+                                    MouseLeftButtonDown="OnPlayerTabClick">
+                                <StackPanel Orientation="Horizontal"
+                                            VerticalAlignment="Center">
+                                    <Path Data="M 4,2 L 4,18 L 18,10 Z"
+                                          Fill="{DynamicResource SecondaryForegroundBrush}"
+                                          Stretch="Uniform"
+                                          Width="10" Height="10"
+                                          Margin="0,0,6,0"
+                                          VerticalAlignment="Center" />
+                                    <TextBlock Text="Player"
+                                               Foreground="{DynamicResource PrimaryForegroundBrush}"
+                                               FontFamily="Segoe UI"
+                                               FontSize="13"
+                                               VerticalAlignment="Center" />
+                                </StackPanel>
+                                <!-- Active tab bottom accent line -->
+                                <Border.Effect>
+                                    <DropShadowEffect ShadowDepth="0" BlurRadius="0" />
+                                </Border.Effect>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Active tab bottom border (accent line under active tab) -->
+                    <Border Grid.Row="0"
+                            VerticalAlignment="Bottom"
+                            Height="1"
+                            Width="{Binding ActualWidth, ElementName=PlayerTab}"
+                            HorizontalAlignment="Left"
+                            Background="{DynamicResource AccentBrush}" />
+
+                    <!-- Tab content area -->
+                    <controls:VideoPlayerControl x:Name="VideoPlayer"
+                                                 Grid.Row="1" />
                 </Grid>
             </Grid>
 

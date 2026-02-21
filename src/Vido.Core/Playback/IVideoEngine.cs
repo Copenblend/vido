@@ -61,4 +61,7 @@ public interface IVideoEngine : IDisposable
 
     /// <summary>Fires when the media reaches the end (before looping, if enabled).</summary>
     event Action? MediaEnded;
+
+    /// <summary>Fires after a seek operation has completed on the decode thread.</summary>
+    event Action? SeekCompleted;
 }

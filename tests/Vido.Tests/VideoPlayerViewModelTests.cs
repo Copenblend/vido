@@ -1,0 +1,617 @@
+using NSubstitute;
+using Vido.Core.Playback;
+using Vido.ViewModels;
+using Xunit;
+
+namespace Vido.Tests;
+
+/// <summary>
+/// Tests for VideoPlayerViewModel.
+/// Uses a mock IVideoEngine to verify ViewModel behavior without FFmpeg DLLs.
+/// </summary>
+public class VideoPlayerViewModelTests : IDisposable
+{
+    private readonly IVideoEngine _engine;
+    private readonly VideoPlayerViewModel _sut;
+
+    public VideoPlayerViewModelTests()
+    {
+        _engine = Substitute.For<IVideoEngine>();
+        _engine.Volume.Returns(75);
+        _engine.IsMuted.Returns(false);
+        _engine.IsLooping.Returns(false);
+        _sut = new VideoPlayerViewModel(_engine);
+    }
+
+    // ── Initial State ──
+
+    [Fact]
+    public void InitialState_IsNone()
+    {
+        Assert.Equal(PlaybackState.None, _sut.State);
+    }
+
+    [Fact]
+    public void InitialPosition_IsZero()
+    {
+        Assert.Equal(TimeSpan.Zero, _sut.Position);
+    }
+
+    [Fact]
+    public void InitialDuration_IsZero()
+    {
+        Assert.Equal(TimeSpan.Zero, _sut.Duration);
+    }
+
+    [Fact]
+    public void InitialVolume_InheritsFromEngine()
+    {
+        Assert.Equal(75, _sut.Volume);
+    }
+
+    [Fact]
+    public void InitialIsMuted_InheritsFromEngine()
+    {
+        Assert.False(_sut.IsMuted);
+    }
+
+    [Fact]
+    public void InitialIsLooping_InheritsFromEngine()
+    {
+        Assert.False(_sut.IsLooping);
+    }
+
+    [Fact]
+    public void InitialHasMedia_IsFalse()
+    {
+        Assert.False(_sut.HasMedia);
+    }
+
+    [Fact]
+    public void InitialShowPlayIcon_IsTrue()
+    {
+        Assert.True(_sut.ShowPlayIcon);
+    }
+
+    [Fact]
+    public void InitialPositionText_IsZero()
+    {
+        Assert.Equal("00:00", _sut.PositionText);
+    }
+
+    [Fact]
+    public void InitialDurationText_IsZero()
+    {
+        Assert.Equal("00:00", _sut.DurationText);
+    }
+
+    [Fact]
+    public void InitialCurrentFilePath_IsNull()
+    {
+        Assert.Null(_sut.CurrentFilePath);
+    }
+
+    [Fact]
+    public void InitialCurrentMetadata_IsNull()
+    {
+        Assert.Null(_sut.CurrentMetadata);
+    }
+
+    // ── Volume ──
+
+    [Fact]
+    public void SetVolume_ForwardsToEngine()
+    {
+        _sut.Volume = 50;
+        _engine.Volume = 50;
+    }
+
+    [Theory]
+    [InlineData(-10, 0)]
+    [InlineData(0, 0)]
+    [InlineData(50, 50)]
+    [InlineData(100, 100)]
+    [InlineData(150, 100)]
+    public void SetVolume_ClampsValue(int input, int expected)
+    {
+        _sut.Volume = input;
+        _engine.Received().Volume = expected;
+    }
+
+    // ── Mute / Loop toggles ──
+
+    [Fact]
+    public void ToggleMute_SetsIsMutedTrue()
+    {
+        _sut.ToggleMute();
+        Assert.True(_sut.IsMuted);
+    }
+
+    [Fact]
+    public void ToggleMute_ForwardsToEngine()
+    {
+        _sut.ToggleMute();
+        _engine.Received().IsMuted = true;
+    }
+
+    [Fact]
+    public void ToggleLoop_SetsIsLoopingTrue()
+    {
+        _sut.ToggleLoop();
+        Assert.True(_sut.IsLooping);
+    }
+
+    [Fact]
+    public void ToggleLoop_ForwardsToEngine()
+    {
+        _sut.ToggleLoop();
+        _engine.Received().IsLooping = true;
+    }
+
+    // ── PlayPause / Stop without media ──
+
+    [Fact]
+    public void PlayPause_DoesNothing_WhenNoMedia()
+    {
+        _sut.PlayPause();
+        _engine.DidNotReceive().Play();
+        _engine.DidNotReceive().Pause();
+    }
+
+    [Fact]
+    public void Stop_DoesNothing_WhenNoMedia()
+    {
+        _sut.Stop();
+        _engine.DidNotReceive().Stop();
+    }
+
+    // ── Engine event handling ──
+
+    [Fact]
+    public void StateChanged_UpdatesViewModelState()
+    {
+        _engine.StateChanged += Raise.Event<Action<PlaybackState>>(PlaybackState.Playing);
+
+        Assert.Equal(PlaybackState.Playing, _sut.State);
+        Assert.False(_sut.ShowPlayIcon);
+    }
+
+    [Fact]
+    public void StateChanged_ToPaused_ShowsPlayIcon()
+    {
+        _engine.StateChanged += Raise.Event<Action<PlaybackState>>(PlaybackState.Paused);
+
+        Assert.Equal(PlaybackState.Paused, _sut.State);
+        Assert.True(_sut.ShowPlayIcon);
+    }
+
+    [Fact]
+    public void PositionChanged_UpdatesPositionAndText()
+    {
+        var pos = TimeSpan.FromMinutes(2) + TimeSpan.FromSeconds(30);
+        _engine.PositionChanged += Raise.Event<Action<TimeSpan>>(pos);
+
+        Assert.Equal(pos, _sut.Position);
+        Assert.Equal("02:30", _sut.PositionText);
+    }
+
+    [Fact]
+    public void FrameReady_RaisesViewModelEvent()
+    {
+        FrameData? received = null;
+        _sut.FrameReady += f => received = f;
+
+        var frame = new FrameData
+        {
+            PixelData = new byte[100],
+            Width = 10,
+            Height = 10,
+            Stride = 40
+        };
+
+        _engine.FrameReady += Raise.Event<Action<FrameData>>(frame);
+
+        Assert.Same(frame, received);
+    }
+
+    // ── FormatTime ──
+
+    [Theory]
+    [InlineData(0, "00:00")]
+    [InlineData(65, "01:05")]
+    [InlineData(3599, "59:59")]
+    [InlineData(3600, "1:00:00")]
+    [InlineData(7261, "2:01:01")]
+    public void FormatTime_FormatsCorrectly(int totalSeconds, string expected)
+    {
+        var result = VideoPlayerViewModel.FormatTime(TimeSpan.FromSeconds(totalSeconds));
+        Assert.Equal(expected, result);
+    }
+
+    // ── GetAdjacentVideoFile ──
+
+    [Fact]
+    public void GetAdjacentVideoFile_ReturnsNull_WhenNoCurrentFile()
+    {
+        var result = _sut.GetAdjacentVideoFile(1);
+        Assert.Null(result);
+    }
+
+    // ── Skip wrapping with temp files ──
+
+    [Fact]
+    public async Task SkipNext_WrapsToFirstFile_WhenAtEnd()
+    {
+        var dir = CreateTempVideoDir("a.mp4", "b.mp4", "c.mp4");
+        try
+        {
+            var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            // Load the last file
+            await _sut.LoadAndPlayAsync(files[2]);
+
+            // GetAdjacentVideoFile should wrap to first
+            var next = _sut.GetAdjacentVideoFile(1);
+            Assert.Equal(files[0], next);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task SkipPrevious_WrapsToLastFile_WhenAtBeginning()
+    {
+        var dir = CreateTempVideoDir("a.mp4", "b.mp4", "c.mp4");
+        try
+        {
+            var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            // Load the first file
+            await _sut.LoadAndPlayAsync(files[0]);
+
+            // GetAdjacentVideoFile(-1) should wrap to last
+            var prev = _sut.GetAdjacentVideoFile(-1);
+            Assert.Equal(files[2], prev);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task GetAdjacentVideoFile_ReturnsMiddleFile_Normal()
+    {
+        var dir = CreateTempVideoDir("a.mp4", "b.mp4", "c.mp4");
+        try
+        {
+            var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            await _sut.LoadAndPlayAsync(files[0]);
+
+            var next = _sut.GetAdjacentVideoFile(1);
+            Assert.Equal(files[1], next);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    // ── Shuffle ──
+
+    [Fact]
+    public void InitialIsShuffling_IsFalse()
+    {
+        Assert.False(_sut.IsShuffling);
+    }
+
+    [Fact]
+    public void ToggleShuffle_SetsIsShufflingTrue()
+    {
+        _sut.ToggleShuffle();
+        Assert.True(_sut.IsShuffling);
+    }
+
+    [Fact]
+    public void ToggleShuffle_Twice_SetsIsShufflingFalse()
+    {
+        _sut.ToggleShuffle();
+        _sut.ToggleShuffle();
+        Assert.False(_sut.IsShuffling);
+    }
+
+    [Fact]
+    public async Task BuildShufflePlaylist_ContainsAllSiblings()
+    {
+        var dir = CreateTempVideoDir("a.mp4", "b.mp4", "c.mp4");
+        try
+        {
+            var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            await _sut.LoadAndPlayAsync(files[0]);
+            _sut.ToggleShuffle(); // builds the shuffle playlist
+
+            // BuildShufflePlaylist is internal, but we can verify via GetShuffleFile
+            // The playlist should contain all 3 files, no duplicates
+            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            // Walk through the shuffle playlist using GetShuffleFile
+            for (int i = 0; i < files.Length; i++)
+            {
+                var f = _sut.GetShuffleFile(i);
+                Assert.NotNull(f);
+                Assert.True(visited.Add(f!), $"Duplicate in shuffle playlist: {f}");
+            }
+            Assert.Equal(files.Length, visited.Count);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task BuildShufflePlaylist_CurrentFileIsFirst()
+    {
+        var dir = CreateTempVideoDir("a.mp4", "b.mp4", "c.mp4");
+        try
+        {
+            var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            await _sut.LoadAndPlayAsync(files[1]); // load middle file
+            _sut.ToggleShuffle();
+
+            var first = _sut.GetShuffleFile(0);
+            Assert.Equal(files[1], first);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task GetShuffleFile_WrapsAround()
+    {
+        var dir = CreateTempVideoDir("a.mp4", "b.mp4", "c.mp4");
+        try
+        {
+            var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            await _sut.LoadAndPlayAsync(files[0]);
+            _sut.ToggleShuffle();
+
+            // Going past the end should wrap around
+            var wrapped = _sut.GetShuffleFile(3);
+            var first = _sut.GetShuffleFile(0);
+            Assert.Equal(first, wrapped);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task GetShuffleFile_WrapsBackward()
+    {
+        var dir = CreateTempVideoDir("a.mp4", "b.mp4", "c.mp4");
+        try
+        {
+            var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            await _sut.LoadAndPlayAsync(files[0]);
+            _sut.ToggleShuffle();
+
+            // Going before the beginning should wrap to end
+            var wrapBack = _sut.GetShuffleFile(-1);
+            var last = _sut.GetShuffleFile(2);
+            Assert.Equal(last, wrapBack);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task ClearShufflePlaylist_OnToggleOff()
+    {
+        var dir = CreateTempVideoDir("a.mp4", "b.mp4");
+        try
+        {
+            var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            await _sut.LoadAndPlayAsync(files[0]);
+            _sut.ToggleShuffle(); // on
+            _sut.ToggleShuffle(); // off — clears the list
+
+            var result = _sut.GetShuffleFile(0);
+            Assert.Null(result);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task GetNextFile_UsesShuffle_WhenShuffling()
+    {
+        var dir = CreateTempVideoDir("a.mp4", "b.mp4", "c.mp4");
+        try
+        {
+            var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            await _sut.LoadAndPlayAsync(files[0]);
+            _sut.ToggleShuffle();
+
+            var next = _sut.GetNextFile();
+            Assert.NotNull(next);
+            // In shuffle mode, next should be the file at shuffle index 1
+            var expectedShuffle = _sut.GetShuffleFile(1);
+            Assert.Equal(expectedShuffle, next);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task GetNextFile_UsesAlphabetical_WhenNotShuffling()
+    {
+        var dir = CreateTempVideoDir("a.mp4", "b.mp4", "c.mp4");
+        try
+        {
+            var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            await _sut.LoadAndPlayAsync(files[0]);
+
+            var next = _sut.GetNextFile();
+            Assert.Equal(files[1], next);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    // ── ApplySeek ──
+
+    [Fact]
+    public void ApplySeek_SeeksEngine_WhenHasDuration()
+    {
+        // Simulate having media loaded with a known duration
+        _engine.Duration.Returns(TimeSpan.FromSeconds(100));
+        _engine.StateChanged += Raise.Event<Action<PlaybackState>>(PlaybackState.Playing);
+
+        // Set up state as if media was loaded
+        _sut.GetType().GetProperty("Duration")!.SetValue(_sut, TimeSpan.FromSeconds(100));
+        _sut.GetType().GetProperty("HasMedia")!.SetValue(_sut, true);
+
+        // Simulate click at 50% position
+        _sut.GetType().GetProperty("SeekPosition")!.SetValue(_sut, 500.0);
+        _sut.ApplySeek();
+
+        _engine.Received().Seek(Arg.Is<TimeSpan>(t => Math.Abs(t.TotalSeconds - 50) < 0.1));
+    }
+
+    // ── Seek ──
+
+    [Fact]
+    public void BeginSeek_SuppressesPositionUpdates()
+    {
+        _sut.BeginSeek();
+
+        var pos = TimeSpan.FromSeconds(10);
+        _engine.PositionChanged += Raise.Event<Action<TimeSpan>>(pos);
+
+        // Position should not update during seeking
+        Assert.Equal(TimeSpan.Zero, _sut.Position);
+    }
+
+    [Fact]
+    public void EndSeek_ResumesPositionUpdates()
+    {
+        _sut.BeginSeek();
+        _sut.EndSeek();
+
+        var pos = TimeSpan.FromSeconds(10);
+        _engine.PositionChanged += Raise.Event<Action<TimeSpan>>(pos);
+
+        Assert.Equal(pos, _sut.Position);
+    }
+
+    // ── Helpers ──
+
+    /// <summary>Creates a temp directory with empty video stub files.</summary>
+    private static string CreateTempVideoDir(params string[] fileNames)
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "vido_test_" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(dir);
+        foreach (var name in fileNames)
+            File.WriteAllBytes(Path.Combine(dir, name), []);
+        return dir;
+    }
+
+    /// <summary>Creates a temp directory with nested subfolders and empty video stub files.</summary>
+    private static string CreateTempNestedVideoDir(params string[] relativePaths)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "vido_test_" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(root);
+        foreach (var rel in relativePaths)
+        {
+            var full = Path.Combine(root, rel);
+            Directory.CreateDirectory(Path.GetDirectoryName(full)!);
+            File.WriteAllBytes(full, []);
+        }
+        return root;
+    }
+
+    // ── SetExplorerRoot + nested folder scanning ──
+
+    [Fact]
+    public async Task SetExplorerRoot_ScansNestedFolders()
+    {
+        var root = CreateTempNestedVideoDir(
+            "a.mp4",
+            Path.Combine("sub1", "b.mp4"),
+            Path.Combine("sub2", "c.mp4"));
+        try
+        {
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            _sut.SetExplorerRoot(root);
+            await _sut.LoadAndPlayAsync(Path.Combine(root, "a.mp4"));
+
+            // Should find all 3 files across nested folders
+            var next = _sut.GetAdjacentVideoFile(1);
+            Assert.NotNull(next);
+
+            // Collect all reachable files via wrapping
+            var files = new List<string>();
+            var current = Path.Combine(root, "a.mp4");
+            for (int i = 0; i < 3; i++)
+            {
+                files.Add(_sut.GetAdjacentVideoFile(i)!);
+            }
+            Assert.Equal(3, files.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public async Task SkipNext_CrossesFolderBoundary()
+    {
+        var root = CreateTempNestedVideoDir(
+            "a.mp4",
+            Path.Combine("sub", "b.mp4"));
+        try
+        {
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            _sut.SetExplorerRoot(root);
+            await _sut.LoadAndPlayAsync(Path.Combine(root, "a.mp4"));
+
+            var next = _sut.GetAdjacentVideoFile(1);
+            Assert.NotNull(next);
+            Assert.Contains("sub", next!);
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    [Fact]
+    public void SetExplorerRoot_Null_ClearsList()
+    {
+        _sut.SetExplorerRoot(null);
+        var result = _sut.GetAdjacentVideoFile(1);
+        Assert.Null(result);
+    }
+
+    // ── Dispose ──
+
+    [Fact]
+    public void Dispose_CanBeCalledMultipleTimes()
+    {
+        _sut.Dispose();
+        _sut.Dispose(); // should not throw
+    }
+
+    [Fact]
+    public void Dispose_UnsubscribesFromEngineEvents()
+    {
+        _sut.Dispose();
+
+        // After dispose, engine events should not update ViewModel state
+        _engine.StateChanged += Raise.Event<Action<PlaybackState>>(PlaybackState.Playing);
+        Assert.Equal(PlaybackState.None, _sut.State);
+    }
+
+    public void Dispose()
+    {
+        _sut.Dispose();
+    }
+}

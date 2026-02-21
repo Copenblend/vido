@@ -25,6 +25,11 @@ public partial class FileExplorerPanel : UserControl
     /// </summary>
     public event Action<FileNode>? PlayFileRequested;
 
+    /// <summary>
+    /// Raised when the user double-clicks a video file in the tree.
+    /// </summary>
+    public event Action<FileNode>? VideoFileDoubleClicked;
+
     public FileExplorerPanel()
     {
         InitializeComponent();
@@ -118,6 +123,27 @@ public partial class FileExplorerPanel : UserControl
 
         menu.Tag = node;
         item.ContextMenu = menu;
+    }
+
+    /// <summary>
+    /// Handles double-click on a TreeViewItem. If the item is a non-hidden video file,
+    /// raises <see cref="VideoFileDoubleClicked"/> to trigger playback.
+    /// </summary>
+    private void OnTreeItemDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not TreeViewItem item || item.DataContext is not FileNode node)
+            return;
+
+        // Only handle for the directly-clicked item
+        var nearestItem = FindVisualParent<TreeViewItem>(e.OriginalSource as DependencyObject);
+        if (nearestItem != item)
+            return;
+
+        if (node.IsVideoFile && !node.IsHidden)
+        {
+            VideoFileDoubleClicked?.Invoke(node);
+            e.Handled = true;
+        }
     }
 
     // ─── Context menu click handlers ────────────────────────────────

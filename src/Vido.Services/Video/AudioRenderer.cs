@@ -10,7 +10,6 @@ internal sealed class AudioRenderer : IDisposable
 {
     private WasapiOut? _waveOut;
     private BufferedWaveProvider? _waveProvider;
-    private WaveFormat? _waveFormat;
     private bool _disposed;
     private float _volume = 1.0f;
     private bool _isMuted;
@@ -52,8 +51,8 @@ internal sealed class AudioRenderer : IDisposable
         Cleanup();
 
         // Use IEEE float samples (32-bit) — this is what swresample outputs
-        _waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
-        _waveProvider = new BufferedWaveProvider(_waveFormat)
+        var waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
+        _waveProvider = new BufferedWaveProvider(waveFormat)
         {
             // Buffer up to 1 second of audio — prevents underruns while limiting latency
             BufferLength = sampleRate * channels * sizeof(float),
@@ -148,7 +147,6 @@ internal sealed class AudioRenderer : IDisposable
         _waveOut?.Dispose();
         _waveOut = null;
         _waveProvider = null;
-        _waveFormat = null;
     }
 
     public void Dispose()

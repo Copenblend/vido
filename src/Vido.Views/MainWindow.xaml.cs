@@ -1,9 +1,11 @@
 using System.Runtime.InteropServices;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shell;
 using Vido.Core.Layout;
+using Vido.Core.Playback;
 using Vido.Core.Settings;
 using Vido.Core.State;
 using Vido.Core.Windowing;
@@ -25,6 +27,7 @@ public partial class MainWindow : Window
     private readonly IStateService _stateService;
     private readonly ISettingsService _settingsService;
     private readonly FileExplorerViewModel _fileExplorerViewModel;
+    private readonly VideoPlayerViewModel _videoPlayerViewModel;
 
     private TitleBarViewModel? _titleBarViewModel;
     private ActivityBarViewModel? _activityBarViewModel;
@@ -34,16 +37,19 @@ public partial class MainWindow : Window
     public MainWindow(
         IStateService stateService,
         ISettingsService settingsService,
-        FileExplorerViewModel fileExplorerViewModel)
+        FileExplorerViewModel fileExplorerViewModel,
+        VideoPlayerViewModel videoPlayerViewModel)
     {
         _stateService = stateService;
         _settingsService = settingsService;
         _fileExplorerViewModel = fileExplorerViewModel;
+        _videoPlayerViewModel = videoPlayerViewModel;
 
         InitializeComponent();
         SetupWindowChrome();
         SetupTitleBar();
         SetupLayout();
+        SetupVideoPlayer();
         SetupFileExplorer();
         RestoreWindowState();
     }
@@ -98,6 +104,11 @@ public partial class MainWindow : Window
         ActivityBar.UpdateActiveStates();
     }
 
+    private void SetupVideoPlayer()
+    {
+        VideoPlayer.DataContext = _videoPlayerViewModel;
+    }
+
     private void SetupFileExplorer()
     {
         _fileExplorerPanel = new FileExplorerPanel
@@ -113,6 +124,12 @@ public partial class MainWindow : Window
         // Wire the "Open Folder" button inside the explorer panel
         _fileExplorerPanel.OpenFolderRequested += ShowOpenFolderDialog;
 
+        // Wire play file from context menu
+        _fileExplorerPanel.PlayFileRequested += OnPlayFileRequested;
+
+        // Wire double-click on video file to play
+        _fileExplorerPanel.VideoFileDoubleClicked += OnPlayFileRequested;
+
         // Subscribe to VM changes to update Close Folder menu state
         _fileExplorerViewModel.PropertyChanged += (_, e) =>
         {
@@ -126,6 +143,10 @@ public partial class MainWindow : Window
         // Restore last opened folder from state
         _fileExplorerViewModel.RestoreLastFolder();
         TitleBar.SetCloseFolderEnabled(_fileExplorerViewModel.HasFolderOpen);
+
+        // Sync explorer root to video player for skip prev/next across all folders
+        if (_fileExplorerViewModel.FolderPath is not null)
+            _videoPlayerViewModel.SetExplorerRoot(_fileExplorerViewModel.FolderPath);
     }
 
     private void ShowOpenFolderDialog()
@@ -144,6 +165,7 @@ public partial class MainWindow : Window
     private void OnFolderOpened(string path)
     {
         _fileExplorerViewModel.OpenFolder(path);
+        _videoPlayerViewModel.SetExplorerRoot(path);
 
         // Ensure sidebar is visible and Explorer panel is active
         if (_activityBarViewModel is not null)
@@ -157,11 +179,31 @@ public partial class MainWindow : Window
     private void OnFolderClosed()
     {
         _fileExplorerViewModel.CloseFolder();
+        _videoPlayerViewModel.SetExplorerRoot(null);
     }
 
     private void OnFolderRescanned()
     {
         _fileExplorerViewModel.RescanFolder();
+    }
+
+    private async void OnPlayFileRequested(Core.FileSystem.FileNode node)
+    {
+        if (!node.IsVideoFile || node.IsHidden) return;
+
+        try
+        {
+            await _videoPlayerViewModel.LoadAndPlayAsync(node.FullPath);
+        }
+        catch
+        {
+            // Playback errors are handled gracefully — video just won't play
+        }
+    }
+
+    private void OnPlayerTabClick(object sender, MouseButtonEventArgs e)
+    {
+        // Player tab is always active — no-op for now; future tabs will switch here.
     }
 
     private void OnPanelChanged(object sender, RoutedEventArgs e)
