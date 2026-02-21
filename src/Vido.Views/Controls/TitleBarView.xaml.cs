@@ -147,6 +147,26 @@ public partial class TitleBarView : UserControl
     /// <summary>Raised when View > Toggle Status Bar is clicked.</summary>
     public event Action? ToggleStatusBarRequested;
 
+    /// <summary>Raised when View > Toggle Sidebar is clicked.</summary>
+    public event Action? ToggleSidebarRequested;
+
+    // ── Playback menu events ──
+
+    /// <summary>Raised when Playback > Play/Pause is clicked.</summary>
+    public event Action? PlayPauseRequested;
+
+    /// <summary>Raised when Playback > Stop is clicked.</summary>
+    public event Action? StopRequested;
+
+    /// <summary>Raised when Playback > Skip Forward is clicked.</summary>
+    public event Action? SkipForwardRequested;
+
+    /// <summary>Raised when Playback > Skip Backward is clicked.</summary>
+    public event Action? SkipBackwardRequested;
+
+    /// <summary>Raised when Playback > Loop is clicked.</summary>
+    public event Action? LoopRequested;
+
     /// <summary>Whether the bottom panel is currently visible. Used to update the submenu text.</summary>
     private bool _isBottomPanelVisible;
 
@@ -208,5 +228,35 @@ public partial class TitleBarView : UserControl
     private void OnToggleStatusBarClick(object sender, RoutedEventArgs e)
     {
         ToggleStatusBarRequested?.Invoke();
+    }
+
+    private void OnToggleSidebarClick(object sender, RoutedEventArgs e)
+    {
+        ToggleSidebarRequested?.Invoke();
+    }
+
+    private void OnPlayPauseClick(object sender, RoutedEventArgs e)
+    {
+        PlayPauseRequested?.Invoke();
+    }
+
+    private void OnStopClick(object sender, RoutedEventArgs e)
+    {
+        StopRequested?.Invoke();
+    }
+
+    private void OnSkipForwardClick(object sender, RoutedEventArgs e)
+    {
+        SkipForwardRequested?.Invoke();
+    }
+
+    private void OnSkipBackwardClick(object sender, RoutedEventArgs e)
+    {
+        SkipBackwardRequested?.Invoke();
+    }
+
+    private void OnLoopClick(object sender, RoutedEventArgs e)
+    {
+        LoopRequested?.Invoke();
     }
 }

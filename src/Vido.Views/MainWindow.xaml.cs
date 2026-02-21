@@ -5,7 +5,9 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Shell;
+using Vido.Core.Keyboard;
 using Vido.Core.Layout;
+using KeyBinding = Vido.Core.Keyboard.KeyBinding;
 using Vido.Core.Settings;
 using Vido.Core.State;
 using Vido.Core.Windowing;
@@ -34,6 +36,7 @@ public partial class MainWindow : Window
     private readonly OutputLogViewModel _outputLogViewModel;
     private readonly VideoDetailsViewModel _videoDetailsViewModel;
     private readonly StatusBarViewModel _statusBarViewModel;
+    private readonly IKeyboardShortcutService _keyboardShortcutService;
 
     private TitleBarViewModel? _titleBarViewModel;
     private ActivityBarViewModel? _activityBarViewModel;
@@ -48,6 +51,7 @@ public partial class MainWindow : Window
         IStateService stateService,
         ISettingsService settingsService,
         ILogService logService,
+        IKeyboardShortcutService keyboardShortcutService,
         FileExplorerViewModel fileExplorerViewModel,
         VideoPlayerViewModel videoPlayerViewModel,
         MainWindowViewModel mainWindowViewModel,
@@ -58,6 +62,7 @@ public partial class MainWindow : Window
         _stateService = stateService;
         _settingsService = settingsService;
         _logService = logService;
+        _keyboardShortcutService = keyboardShortcutService;
         _fileExplorerViewModel = fileExplorerViewModel;
         _videoPlayerViewModel = videoPlayerViewModel;
         _mainWindowViewModel = mainWindowViewModel;
@@ -74,6 +79,7 @@ public partial class MainWindow : Window
         SetupOutputLog();
         SetupVideoDetails();
         SetupStatusBar();
+        SetupKeyboardShortcuts();
         SetupFileExplorer();
         RestoreWindowState();
 
@@ -174,6 +180,171 @@ public partial class MainWindow : Window
     private void SetupStatusBar()
     {
         StatusBar.DataContext = _statusBarViewModel;
+    }
+
+    // ── Keyboard Shortcuts ──
+
+    /// <summary>
+    /// Registers all default keyboard shortcuts and hooks PreviewKeyDown.
+    /// </summary>
+    private void SetupKeyboardShortcuts()
+    {
+        // Playback
+        _keyboardShortcutService.Register(
+            new KeyBinding("Space"), "vido.playPause", () => _videoPlayerViewModel.PlayPause());
+        _keyboardShortcutService.Register(
+            new KeyBinding("S"), "vido.stop", () => _videoPlayerViewModel.Stop());
+        _keyboardShortcutService.Register(
+            new KeyBinding("M"), "vido.toggleMute", () => _videoPlayerViewModel.ToggleMute());
+
+        // Volume
+        _keyboardShortcutService.Register(
+            new KeyBinding("Up"), "vido.volumeUp", () =>
+            {
+                _videoPlayerViewModel.Volume = Math.Min(100, _videoPlayerViewModel.Volume + 5);
+            });
+        _keyboardShortcutService.Register(
+            new KeyBinding("Down"), "vido.volumeDown", () =>
+            {
+                _videoPlayerViewModel.Volume = Math.Max(0, _videoPlayerViewModel.Volume - 5);
+            });
+
+        // Navigation
+        _keyboardShortcutService.Register(
+            new KeyBinding("PageUp"), "vido.skipPrevious", () => SafeFireAndForget(_videoPlayerViewModel.SkipPrevious()));
+        _keyboardShortcutService.Register(
+            new KeyBinding("PageDown"), "vido.skipNext", () => SafeFireAndForget(_videoPlayerViewModel.SkipNext()));
+
+        // Panels & layout
+        _keyboardShortcutService.Register(
+            new KeyBinding("B", ctrl: true), "vido.toggleSidebar", ToggleSidebar);
+        _keyboardShortcutService.Register(
+            new KeyBinding("J", ctrl: true), "vido.toggleBottomPanel", () => _mainWindowViewModel.ToggleBottomPanel());
+        _keyboardShortcutService.Register(
+            new KeyBinding("H", ctrl: true), "vido.toggleRightPanel", () => _mainWindowViewModel.ToggleRightPanel());
+
+        // File operations
+        _keyboardShortcutService.Register(
+            new KeyBinding("O", ctrl: true, shift: true), "vido.openFolder", ShowOpenFolderDialog);
+
+        // Wire PreviewKeyDown
+        PreviewKeyDown += OnPreviewKeyDown;
+    }
+
+    /// <summary>
+    /// Routes keyboard input through the shortcut service.
+    /// Suppresses shortcuts when focus is inside a text input control.
+    /// </summary>
+    private void OnPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        // Don't intercept shortcuts when the user is typing in a text input
+        if (IsTextInputFocused())
+            return;
+
+        // Don't intercept system keys like Alt+F4 (they arrive as Key.System)
+        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+
+        // Map WPF Key to our string representation
+        var keyString = MapWpfKey(key);
+        if (keyString is null) return;
+
+        var ctrl = (Keyboard.Modifiers & ModifierKeys.Control) != 0;
+        var shift = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
+        var alt = (Keyboard.Modifiers & ModifierKeys.Alt) != 0;
+
+        var binding = new KeyBinding(keyString, ctrl, shift, alt);
+
+        if (_keyboardShortcutService.TryExecute(binding))
+        {
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>
+    /// Checks if the currently focused element is a text input control.
+    /// Shortcuts should not fire when the user is typing.
+    /// </summary>
+    private static bool IsTextInputFocused()
+    {
+        var focused = System.Windows.Input.Keyboard.FocusedElement;
+        return focused is TextBox or System.Windows.Controls.Primitives.TextBoxBase;
+    }
+
+    /// <summary>
+    /// Safely fires and forgets an async task, logging any exceptions.
+    /// Avoids unobserved async void delegates.
+    /// </summary>
+    private async void SafeFireAndForget(Task task)
+    {
+        try
+        {
+            await task;
+        }
+        catch (Exception ex)
+        {
+            _logService.Error($"Async shortcut handler failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Maps a WPF <see cref=\"Key\"/> to the string representation used by <see cref=\"KeyBinding\"/>.
+    /// Returns null for keys we don't handle.
+    /// </summary>
+    private static string? MapWpfKey(Key key)
+    {
+        return key switch
+        {
+            // Letters
+            >= Key.A and <= Key.Z => key.ToString(),
+
+            // Function keys
+            Key.F1 => "F1",
+            Key.F2 => "F2",
+            Key.F3 => "F3",
+            Key.F4 => "F4",
+            Key.F5 => "F5",
+            Key.F6 => "F6",
+            Key.F7 => "F7",
+            Key.F8 => "F8",
+            Key.F9 => "F9",
+            Key.F10 => "F10",
+            Key.F11 => "F11",
+            Key.F12 => "F12",
+
+            // Navigation
+            Key.Space => "Space",
+            Key.Escape => "Escape",
+            Key.Up => "Up",
+            Key.Down => "Down",
+            Key.Left => "Left",
+            Key.Right => "Right",
+            Key.PageUp => "PageUp",
+            Key.PageDown => "PageDown",
+            Key.Home => "Home",
+            Key.End => "End",
+
+            // Special
+            Key.OemPlus => "=",
+            Key.OemMinus => "-",
+            Key.Add => "=",
+            Key.Subtract => "-",
+            Key.Enter => "Enter",
+            Key.Tab => "Tab",
+            Key.Back => "Backspace",
+            Key.Delete => "Delete",
+
+            _ => null
+        };
+    }
+
+    /// <summary>
+    /// Toggles sidebar visibility via the activity bar view model.
+    /// </summary>
+    private void ToggleSidebar()
+    {
+        if (_activityBarViewModel is null) return;
+        _activityBarViewModel.IsSidebarVisible = !_activityBarViewModel.IsSidebarVisible;
+        OnPanelChanged(this, new RoutedEventArgs());
     }
 
     /// <summary>
@@ -293,6 +464,14 @@ public partial class MainWindow : Window
             _mainWindowViewModel.IsRightPanelCollapsed = false;
         };
         TitleBar.ToggleStatusBarRequested += () => _mainWindowViewModel.ToggleStatusBar();
+        TitleBar.ToggleSidebarRequested += ToggleSidebar;
+
+        // Wire playback menu events
+        TitleBar.PlayPauseRequested += () => _videoPlayerViewModel.PlayPause();
+        TitleBar.StopRequested += () => _videoPlayerViewModel.Stop();
+        TitleBar.SkipForwardRequested += () => SafeFireAndForget(_videoPlayerViewModel.SkipNext());
+        TitleBar.SkipBackwardRequested += () => SafeFireAndForget(_videoPlayerViewModel.SkipPrevious());
+        TitleBar.LoopRequested += () => _videoPlayerViewModel.ToggleLoop();
 
         // Sync panel visibility state to title bar for dynamic menu text
         _mainWindowViewModel.PropertyChanged += (_, e) =>

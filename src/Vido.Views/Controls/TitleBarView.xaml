@@ -75,7 +75,8 @@
             <!-- View -->
             <MenuItem Header="_View" Style="{StaticResource TitleBarMenuItemStyle}">
                 <MenuItem Header="Toggle _Sidebar" InputGestureText="Ctrl+B"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnToggleSidebarClick" />
                 <MenuItem Header="Toggle S_tatus Bar"
                           Style="{StaticResource DropdownMenuItemStyle}"
                           Click="OnToggleStatusBarClick" />
@@ -94,7 +95,7 @@
                               Style="{StaticResource DropdownMenuItemStyle}"
                               Click="OnShowVideoInfoClick" />
                     <MenuItem x:Name="ShowHideRightPanelMenuItem"
-                              Header="_Show Right Panel"
+                              Header="_Show Right Panel" InputGestureText="Ctrl+H"
                               Style="{StaticResource DropdownMenuItemStyle}"
                               Click="OnToggleRightPanelClick" />
                 </MenuItem>
@@ -116,15 +117,20 @@
             <!-- Playback -->
             <MenuItem Header="_Playback" Style="{StaticResource TitleBarMenuItemStyle}">
                 <MenuItem Header="_Play/Pause" InputGestureText="Space"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                <MenuItem Header="_Stop"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                <MenuItem Header="Skip _Forward"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
-                <MenuItem Header="Skip _Backward"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnPlayPauseClick" />
+                <MenuItem Header="_Stop" InputGestureText="S"
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnStopClick" />
+                <MenuItem Header="Skip _Forward" InputGestureText="Page Down"
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnSkipForwardClick" />
+                <MenuItem Header="Skip _Backward" InputGestureText="Page Up"
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnSkipBackwardClick" />
                 <MenuItem Header="_Loop"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnLoopClick" />
                 <MenuItem Header="Playback _Speed" Style="{StaticResource SubmenuParentItemStyle}">
                     <MenuItem Header="0.25x" Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
                     <MenuItem Header="0.5x" Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />

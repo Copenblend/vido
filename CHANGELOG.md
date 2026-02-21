@@ -4,6 +4,18 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-014
+- Created KeyBinding model in Vido.Core/Keyboard — sealed value-equality class (Key, Ctrl, Shift, Alt); case-insensitive key comparison; DisplayString property (e.g. "Ctrl+Shift+O"); IEquatable\<KeyBinding\>, GetHashCode, ToString; zero external dependencies
+- Created IKeyboardShortcutService interface in Vido.Core/Keyboard — Register (conflict detection), Unregister, TryExecute, FindBinding (by commandId), GetAllCommandIds, GetCommandId (by KeyBinding)
+- Created KeyboardShortcutService in Vido.Services/Keyboard — dictionary-based registry with bidirectional lookup (key→command, command→key); conflict detection with logging; re-binding a command frees the old key; overriding a key with a new command removes old command's binding
+- Wired PreviewKeyDown on MainWindow — routes keyboard input through IKeyboardShortcutService; suppresses shortcuts when TextBox/TextBoxBase is focused; handles Key.System for Alt combos; MapWpfKey translates WPF Key enum to string
+- Registered 11 default keyboard shortcuts: Space (Play/Pause), S (Stop), M (Toggle Mute), Up/Down (Volume ±5%), PageUp/PageDown (Skip Previous/Next), Ctrl+B (Toggle Sidebar), Ctrl+J (Toggle Bottom Panel), Ctrl+H (Toggle Right Panel), Ctrl+Shift+O (Open Folder)
+- Enabled TitleBar menu items: Toggle Sidebar (Ctrl+B), all Playback items (Play/Pause, Stop, Skip Forward/Backward, Loop) with click handlers and events; added Ctrl+H InputGestureText to Right Panel Show/Hide
+- Added SafeFireAndForget helper for async shortcut handlers — prevents unobserved async void exceptions
+- Registered IKeyboardShortcutService → KeyboardShortcutService as singleton in DI container
+- Added tests: KeyBindingTests (20) — equality (7), GetHashCode (3), DisplayString (5), ToString (1), constructor (3), dictionary key behavior (2); KeyboardShortcutServiceTests (28) — registration (9), execution (4), unregistration (4), lookup (6), case insensitivity (2), re-binding (1)
+- Total test count: 418 (all passing)
+
 ### vi-013
 - Created StatusBarAlignment enum (Left/Right) in Vido.Core — no external dependencies
 - Created StatusBarItem model in Vido.Core — manual INotifyPropertyChanged implementation (Id, Alignment, Priority readonly; Text, Tooltip, IsVisible observable); no CommunityToolkit dependency per Vido.Core zero-NuGet-deps rule
