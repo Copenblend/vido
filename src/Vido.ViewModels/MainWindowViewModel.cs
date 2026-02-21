@@ -67,6 +67,10 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private bool _isRightPanelCollapsed;
 
+    /// <summary>Whether the status bar is visible.</summary>
+    [ObservableProperty]
+    private bool _isStatusBarVisible = true;
+
     // ── Bottom Panel Tabs ──
 
     /// <summary>All open bottom panel tabs.</summary>
@@ -244,6 +248,13 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         IsRightPanelCollapsed = !IsRightPanelCollapsed;
+    }
+
+    /// <summary>Toggles the status bar visibility.</summary>
+    [RelayCommand]
+    public void ToggleStatusBar()
+    {
+        IsStatusBarVisible = !IsStatusBarVisible;
     }
 
     // ── Bottom Panel Tab Commands ──

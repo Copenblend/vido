@@ -253,7 +253,7 @@
             </Grid>
 
             <!-- Status Bar -->
-            <controls:StatusBarView Grid.Row="2" />
+            <controls:StatusBarView x:Name="StatusBar" Grid.Row="2" />
         </Grid>
     </Border>
 </Window>

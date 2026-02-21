@@ -589,4 +589,39 @@ public class MainWindowViewModelTests
 
         Assert.True(raised);
     }
+
+    // ── Status Bar Visibility ──
+
+    [Fact]
+    public void Constructor_StatusBarVisibleByDefault()
+    {
+        Assert.True(_sut.IsStatusBarVisible);
+    }
+
+    [Fact]
+    public void ToggleStatusBar_TogglesVisibility()
+    {
+        Assert.True(_sut.IsStatusBarVisible);
+
+        _sut.ToggleStatusBar();
+        Assert.False(_sut.IsStatusBarVisible);
+
+        _sut.ToggleStatusBar();
+        Assert.True(_sut.IsStatusBarVisible);
+    }
+
+    [Fact]
+    public void IsStatusBarVisible_RaisesPropertyChanged()
+    {
+        var raised = false;
+        _sut.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.IsStatusBarVisible))
+                raised = true;
+        };
+
+        _sut.ToggleStatusBar();
+
+        Assert.True(raised);
+    }
 }

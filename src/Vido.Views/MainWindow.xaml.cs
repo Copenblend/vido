@@ -33,6 +33,7 @@ public partial class MainWindow : Window
     private readonly MainWindowViewModel _mainWindowViewModel;
     private readonly OutputLogViewModel _outputLogViewModel;
     private readonly VideoDetailsViewModel _videoDetailsViewModel;
+    private readonly StatusBarViewModel _statusBarViewModel;
 
     private TitleBarViewModel? _titleBarViewModel;
     private ActivityBarViewModel? _activityBarViewModel;
@@ -51,7 +52,8 @@ public partial class MainWindow : Window
         VideoPlayerViewModel videoPlayerViewModel,
         MainWindowViewModel mainWindowViewModel,
         OutputLogViewModel outputLogViewModel,
-        VideoDetailsViewModel videoDetailsViewModel)
+        VideoDetailsViewModel videoDetailsViewModel,
+        StatusBarViewModel statusBarViewModel)
     {
         _stateService = stateService;
         _settingsService = settingsService;
@@ -61,6 +63,7 @@ public partial class MainWindow : Window
         _mainWindowViewModel = mainWindowViewModel;
         _outputLogViewModel = outputLogViewModel;
         _videoDetailsViewModel = videoDetailsViewModel;
+        _statusBarViewModel = statusBarViewModel;
 
         InitializeComponent();
         SetupWindowChrome();
@@ -70,6 +73,7 @@ public partial class MainWindow : Window
         SetupVideoPlayer();
         SetupOutputLog();
         SetupVideoDetails();
+        SetupStatusBar();
         SetupFileExplorer();
         RestoreWindowState();
 
@@ -167,6 +171,21 @@ public partial class MainWindow : Window
         RightPanelContent.Content = videoDetailsPanel;
     }
 
+    private void SetupStatusBar()
+    {
+        StatusBar.DataContext = _statusBarViewModel;
+    }
+
+    /// <summary>
+    /// Shows or hides the status bar based on the ViewModel state.
+    /// </summary>
+    private void UpdateStatusBarVisibility()
+    {
+        StatusBar.Visibility = _mainWindowViewModel.IsStatusBarVisible
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+    }
+
     /// <summary>Creates a placeholder panel for tabs without real content yet.</summary>
     private static Border CreatePlaceholderPanel(string tabTitle)
     {
@@ -242,11 +261,14 @@ public partial class MainWindow : Window
                 UpdateRightPanelVisibility();
             else if (e.PropertyName == nameof(MainWindowViewModel.IsRightPanelCollapsed))
                 UpdateRightPanelVisibility();
+            else if (e.PropertyName == nameof(MainWindowViewModel.IsStatusBarVisible))
+                UpdateStatusBarVisibility();
         };
 
         // Apply initial panel states (both panels start visible+collapsed)
         UpdateBottomPanelVisibility();
         UpdateRightPanelVisibility();
+        UpdateStatusBarVisibility();
     }
 
     private void SetupFileExplorer()
@@ -270,6 +292,7 @@ public partial class MainWindow : Window
             _mainWindowViewModel.IsRightPanelVisible = true;
             _mainWindowViewModel.IsRightPanelCollapsed = false;
         };
+        TitleBar.ToggleStatusBarRequested += () => _mainWindowViewModel.ToggleStatusBar();
 
         // Sync panel visibility state to title bar for dynamic menu text
         _mainWindowViewModel.PropertyChanged += (_, e) =>
