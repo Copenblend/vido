@@ -7,4 +7,13 @@
     <RootNamespace>Vido.Core</RootNamespace>
   </PropertyGroup>
 
+    <!-- NuGet package metadata -->
+    <PackageId>Vido.Core</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Vido</Authors>
+    <Description>Core plugin API for the Vido media player.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
 </Project>
