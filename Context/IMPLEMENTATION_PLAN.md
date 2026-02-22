@@ -1750,29 +1750,9 @@ Write comprehensive unit tests covering:
 
 ---
 
-### vi-022: Zoom In/Out
 
-**Goal**: Implement zoom in/out functionality for the video display.
 
-**Tasks**:
-1. Implement zoom levels: 50%, 75%, 100%, 125%, 150%, 200%, Fit (default)
-2. "Fit" mode scales the video to fit the available area while maintaining aspect ratio (default)
-3. When zoomed beyond fit, show scrollbars to pan around the video
-4. Ctrl+= zooms in, Ctrl+- zooms out, Ctrl+0 resets to Fit
-5. Wire `View > Zoom In` and `View > Zoom Out` menu items
-6. Show current zoom level in status bar (optional)
-
-**Acceptance Criteria**:
-- Zoom in/out works via keyboard shortcuts and menu
-- Video scales correctly at all zoom levels
-- Aspect ratio is maintained
-- Scrollbars appear when zoomed beyond fit
-- Fit mode correctly fills available space
-- Ctrl+0 resets to Fit
-
----
-
-### vi-023: About Dialog & Help Menu
+### vi-022: About Dialog & Help Menu
 
 **Goal**: Implement the Help menu items including an About dialog.
 
@@ -1800,7 +1780,7 @@ Write comprehensive unit tests covering:
 
 ---
 
-### vi-024: Performance Optimization Pass
+### vi-023: Performance Optimization Pass
 
 **Goal**: Profile and optimize the application for ultra-performance.
 
@@ -1836,7 +1816,7 @@ Write comprehensive unit tests covering:
 
 ---
 
-### vi-025: Installer & Portable Distribution
+### vi-024: Installer & Portable Distribution
 
 **Goal**: Create both a portable zip distribution and an MSI installer.
 
@@ -1870,7 +1850,7 @@ Write comprehensive unit tests covering:
 
 ---
 
-### vi-026: Final Review & Polish
+### vi-025: Final Review & Polish
 
 **Goal**: Final pass over the entire codebase for quality, consistency, and completeness.
 

@@ -22,6 +22,7 @@ using Vido.ViewModels;
 using Vido.Views.Panels;
 using Vido.Views.Services;
 using Vido.Core.Logging;
+using Vido.Views.Controls;
 
 namespace Vido.Views;
 
@@ -50,6 +51,12 @@ public partial class MainWindow : Window
     private readonly IPluginHost _pluginHost;
 
     private string[]? _pendingCommandLineArgs;
+
+    /// <summary>
+    /// FFmpeg version string, set by App.xaml.cs after initialization.
+    /// Used by the About dialog.
+    /// </summary>
+    public string? FFmpegVersion { get; set; }
 
     private TitleBarViewModel? _titleBarViewModel;
     private ActivityBarViewModel? _activityBarViewModel;
@@ -890,6 +897,10 @@ public partial class MainWindow : Window
 
         // Wire fullscreen menu event
         TitleBar.FullscreenRequested += ToggleFullscreen;
+
+        // Wire Help menu events
+        TitleBar.AboutRequested += ShowAboutDialog;
+        TitleBar.CheckForUpdatesRequested += ShowCheckForUpdatesMessage;
 
         // Wire recent files
         TitleBar.GetRecentFiles = () => _stateService.Current.RecentFiles;
@@ -2372,4 +2383,25 @@ public partial class MainWindow : Window
     }
 
     #endregion
+
+    // ── Help Menu ───────────────────────────────────────────────────
+
+    private void ShowAboutDialog()
+    {
+        var dialog = new AboutDialog(FFmpegVersion)
+        {
+            Owner = this
+        };
+        dialog.ShowDialog();
+    }
+
+    private void ShowCheckForUpdatesMessage()
+    {
+        MessageBox.Show(
+            this,
+            "You are running the latest version of Vido.",
+            "Check for Updates",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+    }
 }

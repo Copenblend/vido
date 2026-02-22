@@ -174,9 +174,11 @@
             <!-- Help -->
             <MenuItem Header="_Help" Style="{StaticResource TitleBarMenuItemStyle}">
                 <MenuItem Header="_About Vido"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnAboutClick" />
                 <MenuItem Header="_Check for Updates"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnCheckForUpdatesClick" />
             </MenuItem>
         </Menu>
 

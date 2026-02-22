@@ -1,3 +1,4 @@
+using FFmpeg.AutoGen.Abstractions;
 using FFmpeg.AutoGen.Bindings.DynamicallyLoaded;
 using Vido.Core.Logging;
 
@@ -10,6 +11,7 @@ namespace Vido.Services.Video;
 public static class FFmpegInitializer
 {
     private static bool _isInitialized;
+    private static string? _versionString;
     private static readonly object _lock = new();
 
     /// <summary>
@@ -18,6 +20,14 @@ public static class FFmpegInitializer
     public static bool IsInitialized
     {
         get { lock (_lock) return _isInitialized; }
+    }
+
+    /// <summary>
+    /// The FFmpeg version string (e.g. "7.1"), or null if not yet initialized.
+    /// </summary>
+    public static string? VersionString
+    {
+        get { lock (_lock) return _versionString; }
     }
 
     /// <summary>
@@ -48,7 +58,17 @@ public static class FFmpegInitializer
                 DynamicallyLoadedBindings.Initialize();
                 _isInitialized = true;
 
-                logService?.Info($"FFmpeg initialized from: {ffmpegPath}");
+                // Capture FFmpeg version string
+                try
+                {
+                    _versionString = ffmpeg.av_version_info();
+                }
+                catch
+                {
+                    _versionString = "Unknown";
+                }
+
+                logService?.Info($"FFmpeg initialized from: {ffmpegPath} (version: {_versionString})");
                 return true;
             }
             catch (Exception ex)
