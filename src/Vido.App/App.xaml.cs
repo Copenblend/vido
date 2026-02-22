@@ -113,6 +113,7 @@ public partial class App : Application
         services.AddSingleton<PluginHost.ContributionRegistry>();
         services.AddSingleton<IContributionRegistry>(sp => sp.GetRequiredService<PluginHost.ContributionRegistry>());
         services.AddSingleton<IPluginHost, PluginHost.PluginHost>();
+        services.AddSingleton<IPluginInstaller, Vido.Services.Plugin.PluginInstaller>();
 
         // ViewModels
         services.AddSingleton<FileExplorerViewModel>();

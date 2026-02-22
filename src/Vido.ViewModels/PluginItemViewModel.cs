@@ -1,0 +1,206 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+using Vido.Core.Plugin;
+
+namespace Vido.ViewModels;
+
+/// <summary>
+/// Represents a single plugin in the Plugin Manager sidebar.
+/// Tracks installed/available state, enabled/disabled state, and provides
+/// command targets for install/uninstall/enable/disable actions.
+/// </summary>
+public partial class PluginItemViewModel : ObservableObject
+{
+    /// <summary>Unique plugin identifier.</summary>
+    public string Id { get; }
+
+    /// <summary>Display name of the plugin.</summary>
+    public string DisplayName { get; }
+
+    /// <summary>Short description of the plugin.</summary>
+    public string Description { get; }
+
+    /// <summary>Publisher / author name.</summary>
+    public string Publisher { get; }
+
+    /// <summary>Plugin version string.</summary>
+    public string Version { get; }
+
+    /// <summary>License identifier.</summary>
+    public string License { get; }
+
+    /// <summary>Tags for search.</summary>
+    public IReadOnlyList<string> Tags { get; }
+
+    /// <summary>Icon URL (may be null).</summary>
+    public string? IconUrl { get; }
+
+    /// <summary>Download URL for installation.</summary>
+    public string DownloadUrl { get; }
+
+    /// <summary>Repository URL.</summary>
+    public string? Repository { get; }
+
+    /// <summary>Last updated date string.</summary>
+    public string? LastUpdated { get; }
+
+    /// <summary>Which registry this plugin came from.</summary>
+    public string RegistryName { get; }
+
+    /// <summary>The registry URL this plugin came from.</summary>
+    public string RegistryUrl { get; }
+
+    /// <summary>Whether this plugin is from the official Vido registry (shows verified badge).</summary>
+    [ObservableProperty]
+    private bool _isOfficial;
+
+    /// <summary>Whether the plugin is currently installed locally.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StatusText))]
+    [NotifyPropertyChangedFor(nameof(ShowInstallButton))]
+    [NotifyPropertyChangedFor(nameof(ShowUninstallButton))]
+    [NotifyPropertyChangedFor(nameof(ShowSettingsCog))]
+    [NotifyPropertyChangedFor(nameof(ShowEnableDisableToggle))]
+    private bool _isInstalled;
+
+    /// <summary>Whether the plugin is enabled (only relevant when installed).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StatusText))]
+    private bool _isEnabled = true;
+
+    /// <summary>Whether an install/uninstall operation is in progress.</summary>
+    [ObservableProperty]
+    private bool _isBusy;
+
+    /// <summary>Status text: "Enabled", "Disabled", or empty for available plugins.</summary>
+    public string StatusText => IsInstalled ? (IsEnabled ? "Enabled" : "Disabled") : string.Empty;
+
+    /// <summary>Show the Install button (available plugins only).</summary>
+    public bool ShowInstallButton => !IsInstalled;
+
+    /// <summary>Show the Uninstall button (installed plugins only).</summary>
+    public bool ShowUninstallButton => IsInstalled;
+
+    /// <summary>Show the settings cog (installed plugins only).</summary>
+    public bool ShowSettingsCog => IsInstalled;
+
+    /// <summary>Show the enable/disable toggle (installed plugins only).</summary>
+    public bool ShowEnableDisableToggle => IsInstalled;
+
+    /// <summary>The PluginInfo from the host (set when installed, null when only in registry).</summary>
+    public PluginInfo? PluginInfo { get; set; }
+
+    /// <summary>The registry entry (set when the plugin is known in a registry).</summary>
+    public PluginRegistryEntry? RegistryEntry { get; set; }
+
+    /// <summary>
+    /// Creates a PluginItemViewModel from a registry entry (available plugin).
+    /// </summary>
+    public static PluginItemViewModel FromRegistryEntry(PluginRegistryEntry entry)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        return new PluginItemViewModel(
+            id: entry.Id,
+            displayName: entry.DisplayName,
+            description: entry.Description,
+            publisher: entry.Author,
+            version: entry.Version,
+            license: entry.License,
+            tags: entry.Tags,
+            iconUrl: entry.IconUrl,
+            downloadUrl: entry.DownloadUrl,
+            repository: entry.Repository,
+            lastUpdated: entry.LastUpdated,
+            registryName: entry.RegistryName,
+            registryUrl: entry.RegistryUrl,
+            isOfficial: entry.IsOfficial,
+            isInstalled: false)
+        {
+            RegistryEntry = entry
+        };
+    }
+
+    /// <summary>
+    /// Creates a PluginItemViewModel from an installed PluginInfo.
+    /// </summary>
+    public static PluginItemViewModel FromPluginInfo(PluginInfo info, PluginRegistryEntry? registryEntry = null)
+    {
+        ArgumentNullException.ThrowIfNull(info);
+        var manifest = info.Manifest;
+        var vm = new PluginItemViewModel(
+            id: manifest.Id,
+            displayName: manifest.DisplayName,
+            description: manifest.Description,
+            publisher: manifest.Author,
+            version: manifest.Version,
+            license: manifest.License,
+            tags: manifest.Tags,
+            iconUrl: registryEntry?.IconUrl,
+            downloadUrl: registryEntry?.DownloadUrl ?? string.Empty,
+            repository: manifest.Repository,
+            lastUpdated: registryEntry?.LastUpdated,
+            registryName: registryEntry?.RegistryName ?? string.Empty,
+            registryUrl: registryEntry?.RegistryUrl ?? string.Empty,
+            isOfficial: registryEntry?.IsOfficial ?? false,
+            isInstalled: true)
+        {
+            PluginInfo = info,
+            RegistryEntry = registryEntry,
+            IsEnabled = info.State != PluginState.Disabled && info.State != PluginState.Error,
+        };
+
+        return vm;
+    }
+
+    private PluginItemViewModel(
+        string id,
+        string displayName,
+        string description,
+        string publisher,
+        string version,
+        string license,
+        IReadOnlyList<string> tags,
+        string? iconUrl,
+        string downloadUrl,
+        string? repository,
+        string? lastUpdated,
+        string registryName,
+        string registryUrl,
+        bool isOfficial,
+        bool isInstalled)
+    {
+        Id = id;
+        DisplayName = string.IsNullOrWhiteSpace(displayName) ? id : displayName;
+        Description = description;
+        Publisher = publisher;
+        Version = version;
+        License = license;
+        Tags = tags;
+        IconUrl = iconUrl;
+        DownloadUrl = downloadUrl;
+        Repository = repository;
+        LastUpdated = lastUpdated;
+        RegistryName = registryName;
+        RegistryUrl = registryUrl;
+        _isOfficial = isOfficial;
+        _isInstalled = isInstalled;
+    }
+
+    /// <summary>
+    /// Returns true if this item matches the given search query (title or tags).
+    /// </summary>
+    public bool MatchesSearch(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query)) return true;
+
+        if (DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        foreach (var tag in Tags)
+        {
+            if (tag.Contains(query, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+}

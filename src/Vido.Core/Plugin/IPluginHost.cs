@@ -35,4 +35,10 @@ public interface IPluginHost
     /// Returns the list of disabled plugin IDs from persisted settings.
     /// </summary>
     IReadOnlyList<string> GetDisabledPluginIds();
+
+    /// <summary>
+    /// Gets or creates a settings store for the specified plugin.
+    /// Used by the Plugin Manager UI to display and edit plugin settings.
+    /// </summary>
+    IPluginSettingsStore GetSettingsStore(string pluginId);
 }

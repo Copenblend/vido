@@ -25,6 +25,7 @@ public sealed class PluginHost : IPluginHost
 
     private readonly List<PluginInfo> _plugins = [];
     private readonly Dictionary<string, PluginContext> _contexts = [];
+    private readonly Dictionary<string, PluginSettingsStore> _settingsStores = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>List of directories to scan for plugins.</summary>
     private readonly List<string> _scanDirectories = [];
@@ -33,14 +34,7 @@ public sealed class PluginHost : IPluginHost
     /// Default plugin directory: <c>%APPDATA%/Vido/plugins/</c>.
     /// Always scanned regardless of custom directories.
     /// </summary>
-    public static string DefaultPluginDirectory
-    {
-        get
-        {
-            var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            return Path.Combine(appData, "Vido", "plugins");
-        }
-    }
+    public static string DefaultPluginDirectory => PluginPaths.DefaultPluginDirectory;
 
     public IReadOnlyList<PluginInfo> Plugins => _plugins.AsReadOnly();
 
@@ -293,6 +287,7 @@ public sealed class PluginHost : IPluginHost
         try
         {
             var settingsStore = new PluginSettingsStore(info.Manifest.Id);
+            _settingsStores[info.Manifest.Id] = settingsStore;
 
             // Apply forceOverride settings — developer-specified values that always win
             ApplyForceOverrides(info.Manifest, settingsStore);
@@ -350,6 +345,22 @@ public sealed class PluginHost : IPluginHost
 
         info.State = PluginState.Deactivated;
         _logService.Info($"Plugin '{info.Manifest.Id}' deactivated", "PluginHost");
+    }
+
+    // ── Settings Store Access ──
+
+    /// <inheritdoc/>
+    public IPluginSettingsStore GetSettingsStore(string pluginId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
+
+        if (_settingsStores.TryGetValue(pluginId, out var existing))
+            return existing;
+
+        // Create a new store for plugins that are installed but not yet activated
+        var store = new PluginSettingsStore(pluginId);
+        _settingsStores[pluginId] = store;
+        return store;
     }
 
     // ── Force Override ──
