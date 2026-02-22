@@ -95,6 +95,15 @@ jobs:
           Write-Host "Portable zip: $zipSize MB"
           Write-Host "MSI installer: $msiSize MB"
 
+      # ─── Publish Vido.Core NuGet Package ─────────────────────
+      - name: Pack and publish Vido.Core to NuGet
+        shell: pwsh
+        run: |
+          dotnet pack src/Vido.Core/Vido.Core.csproj -c Release --no-build -o nupkg/
+          $pkg = Get-ChildItem nupkg/*.nupkg | Select-Object -First 1
+          Write-Host "Publishing $($pkg.Name) to NuGet..."
+          dotnet nuget push $pkg.FullName --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
       # ─── Create GitHub Release ──────────────────────────────
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
