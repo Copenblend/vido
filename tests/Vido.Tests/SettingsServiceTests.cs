@@ -106,4 +106,42 @@ public sealed class SettingsServiceTests : IDisposable
         var ex = Record.Exception(() => svc.Dispose());
         Assert.Null(ex);
     }
+
+    [Fact]
+    public async Task LoadAsync_EnsuresOfficialRegistryUrl_WhenMissing()
+    {
+        // Write a settings file where the official URL is missing
+        var json = JsonSerializer.Serialize(new
+        {
+            volume = 0.5,
+            pluginRegistryUrls = new[] { "file:///C:/custom/registry.json" }
+        }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = true });
+        await File.WriteAllTextAsync(_settingsPath, json);
+
+        using var svc = CreateService();
+        await svc.LoadAsync();
+
+        // Official URL should be inserted at index 0
+        Assert.True(svc.Current.PluginRegistryUrls.Count >= 2);
+        Assert.Equal(AppSettings.OfficialRegistryUrl, svc.Current.PluginRegistryUrls[0]);
+        Assert.Equal("file:///C:/custom/registry.json", svc.Current.PluginRegistryUrls[1]);
+    }
+
+    [Fact]
+    public async Task LoadAsync_DoesNotDuplicateOfficialUrl_WhenPresent()
+    {
+        // Write a settings file where the official URL is already present
+        var json = JsonSerializer.Serialize(new
+        {
+            volume = 0.5,
+            pluginRegistryUrls = new[] { AppSettings.OfficialRegistryUrl, "https://custom.com" }
+        }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = true });
+        await File.WriteAllTextAsync(_settingsPath, json);
+
+        using var svc = CreateService();
+        await svc.LoadAsync();
+
+        Assert.Equal(2, svc.Current.PluginRegistryUrls.Count);
+        Assert.Equal(AppSettings.OfficialRegistryUrl, svc.Current.PluginRegistryUrls[0]);
+    }
 }

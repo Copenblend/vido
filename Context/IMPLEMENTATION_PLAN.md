@@ -1710,7 +1710,6 @@ Write comprehensive unit tests covering:
 5. Plugin settings: when a plugin declares settings in its manifest, they appear under a "[Plugin Name]" section in the Settings tab
 6. Settings search filters visible settings by matching against label and description text
 7. Make sure everything that is configurable is configurable via settings
-8. Make sure it is possible for plugins to have their own settings tabs if not already done
 
 **Acceptance Criteria**:
 - Clicking Settings gear in activity bar opens a Settings tab
@@ -1723,7 +1722,7 @@ Write comprehensive unit tests covering:
 
 ---
 
-### vi-022: File Associations & Open File Command
+### vi-021: File Associations & Open File Command
 
 **Goal**: Implement opening files from the command line, File > Open File, and prepare for installer file associations.
 
@@ -1751,7 +1750,7 @@ Write comprehensive unit tests covering:
 
 ---
 
-### vi-024: Zoom In/Out
+### vi-022: Zoom In/Out
 
 **Goal**: Implement zoom in/out functionality for the video display.
 
@@ -1773,7 +1772,7 @@ Write comprehensive unit tests covering:
 
 ---
 
-### vi-025: About Dialog & Help Menu
+### vi-023: About Dialog & Help Menu
 
 **Goal**: Implement the Help menu items including an About dialog.
 
@@ -1801,7 +1800,7 @@ Write comprehensive unit tests covering:
 
 ---
 
-### vi-026: Performance Optimization Pass
+### vi-024: Performance Optimization Pass
 
 **Goal**: Profile and optimize the application for ultra-performance.
 
@@ -1837,7 +1836,7 @@ Write comprehensive unit tests covering:
 
 ---
 
-### vi-027: Installer & Portable Distribution
+### vi-025: Installer & Portable Distribution
 
 **Goal**: Create both a portable zip distribution and an MSI installer.
 
@@ -1871,7 +1870,7 @@ Write comprehensive unit tests covering:
 
 ---
 
-### vi-028: Final Review & Polish
+### vi-026: Final Review & Polish
 
 **Goal**: Final pass over the entire codebase for quality, consistency, and completeness.
 

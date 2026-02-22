@@ -1,5 +1,7 @@
+using System.Collections.ObjectModel;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Vido.Core.Plugin;
 
 namespace Vido.ViewModels;
@@ -24,7 +26,7 @@ public partial class SettingDisplayItem : ObservableObject
     /// <summary>Description text shown below the control.</summary>
     public string Description => _definition.Description;
 
-    /// <summary>Setting type: boolean, string, number, enum.</summary>
+    /// <summary>Setting type: boolean, string, number, enum, stringList.</summary>
     public string SettingType => _definition.Type;
 
     /// <summary>Section name for grouping (may be null).</summary>
@@ -44,6 +46,9 @@ public partial class SettingDisplayItem : ObservableObject
 
     /// <summary>Whether this is an enum setting.</summary>
     public bool IsEnum => SettingType.Equals("enum", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Whether this is a string list setting (e.g., multiple URLs).</summary>
+    public bool IsStringList => SettingType.Equals("stringList", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Boolean value options for the ComboBox.</summary>
     public static IReadOnlyList<string> BooleanOptions { get; } = ["True", "False"];
@@ -85,6 +90,40 @@ public partial class SettingDisplayItem : ObservableObject
         if (_suppressSave) return;
         if (!string.IsNullOrEmpty(value))
             _store.Set(Id, value);
+    }
+
+    /// <summary>Items for stringList-type settings.</summary>
+    public ObservableCollection<string> ListItems { get; } = [];
+
+    /// <summary>Text for the "add new item" input field.</summary>
+    [ObservableProperty]
+    private string _newListItemText = string.Empty;
+
+    /// <summary>Adds a new item to the string list and persists.</summary>
+    [RelayCommand]
+    public void AddListItem()
+    {
+        var text = NewListItemText?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(text)) return;
+        if (ListItems.Contains(text)) return; // no duplicates
+
+        ListItems.Add(text);
+        NewListItemText = string.Empty;
+        SaveListToStore();
+    }
+
+    /// <summary>Removes an item from the string list and persists.</summary>
+    [RelayCommand]
+    public void RemoveListItem(string item)
+    {
+        if (ListItems.Remove(item))
+            SaveListToStore();
+    }
+
+    /// <summary>Persists the current list items to the store.</summary>
+    private void SaveListToStore()
+    {
+        _store.Set(Id, ListItems.ToList());
     }
 
     public SettingDisplayItem(SettingContribution definition, IPluginSettingsStore store)
@@ -132,6 +171,14 @@ public partial class SettingDisplayItem : ObservableObject
                 ?? _definition.EnumValues.FirstOrDefault() ?? string.Empty;
             var val = _store.Get(Id, defaultVal);
             SelectedEnumValue = val;
+        }
+        else if (IsStringList)
+        {
+            var defaultList = new List<string>();
+            var val = _store.Get(Id, defaultList);
+            ListItems.Clear();
+            foreach (var item in val)
+                ListItems.Add(item);
         }
     }
 

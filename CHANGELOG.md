@@ -4,6 +4,24 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-020
+- Implemented the Settings panel as a tab-based page (opens from activity bar gear icon)
+- Created SettingsViewModel with categorized app settings and plugin settings integration
+- Created AppSettingsStore adapter: maps typed AppSettings properties to IPluginSettingsStore interface for reuse of SettingDisplayItem
+- App settings organized into three categories:
+  - **Playback**: Default Volume (number), Default Playback Speed (enum dropdown), Loop Playback (checkbox)
+  - **File Explorer**: Show Hidden Files (checkbox)
+  - **Plugins**: Custom Plugin Registry URL (text input)
+- Plugin settings from active plugins appear as additional categories with puzzle piece icon
+- Search filtering matches against setting title, description, and category name (case-insensitive)
+- Settings save immediately on change via debounced persistence
+- Settings tab is cached to preserve state across tab switches
+- Extracted shared settings control styles (ComboBox, TextBox, CheckBox) from PluginDetailPanel into Themes/SettingsControlStyles.xaml
+- Search bar has integrated magnifying glass icon and placeholder text
+- Number inputs reject non-numeric character input
+- 45 new unit tests: 25 for AppSettingsStore, 20 for SettingsViewModel
+- Total tests: 779 passed, 0 failures
+
 ### vi-b-002
 - Refactored plugin system infrastructure to align with PLUGIN_REQUIREMENTS.md
 - Enhanced SettingContribution model: added `EnumValues` (List<string>), `Section` (optional string), `ForceOverride` (bool), and `ValidTypes` static set (boolean, string, number, enum)
