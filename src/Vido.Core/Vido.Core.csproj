@@ -13,6 +13,7 @@
     <Description>Core plugin API for the Vido media player.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IncludeSymbols>false</IncludeSymbols>
   </PropertyGroup>
 
 </Project>
