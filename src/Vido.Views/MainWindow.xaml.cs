@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -836,6 +837,20 @@ public partial class MainWindow : Window
         TitleBar.GetShowHiddenFiles = () => _fileExplorerViewModel.ShowHiddenFiles;
         TitleBar.ToggleShowHiddenFilesRequested += () => _fileExplorerViewModel.ToggleShowHiddenFiles();
 
+        // Wire status bar item and bottom panel tab show/hide toggles
+        TitleBar.ToggleStatusBarItemRequested += (registrationId, visible) =>
+        {
+            var item = _statusBarViewModel.FindItem(registrationId);
+            if (item is not null) item.IsVisible = visible;
+        };
+        TitleBar.ToggleBottomPanelTabRequested += (tabId, visible) =>
+        {
+            if (visible)
+                _mainWindowViewModel.OpenBottomPanelTab(tabId, null);
+            else
+                _mainWindowViewModel.CloseBottomPanelTab(tabId);
+        };
+
         // Wire playback menu events
         TitleBar.PlayPauseRequested += () => _videoPlayerViewModel.PlayPause();
         TitleBar.StopRequested += () => _videoPlayerViewModel.Stop();
@@ -1317,6 +1332,30 @@ public partial class MainWindow : Window
             // Scroll to settings tab
             panel.SwitchToSettings();
         };
+
+        _pluginManagerViewModel.RestartRequired += message =>
+        {
+            Dispatcher.Invoke(() =>
+            {
+                var result = MessageBox.Show(
+                    this,
+                    $"{message}\n\nWould you like to restart Vido now?",
+                    "Restart Required",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Information);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    // Restart the application
+                    var exePath = Environment.ProcessPath;
+                    if (exePath is not null)
+                    {
+                        System.Diagnostics.Process.Start(exePath);
+                        Application.Current.Shutdown();
+                    }
+                }
+            });
+        };
     }
 
     // ── Plugin contribution wiring ──
@@ -1349,15 +1388,103 @@ public partial class MainWindow : Window
     /// <summary>
     /// Applies all current plugin contributions to the UI. Idempotent — safe to call
     /// multiple times. Only adds contributions that aren't already wired.
+    /// Also removes contributions that are no longer registered (e.g. after disable/uninstall).
     /// </summary>
     private void WirePluginContributions()
     {
+        UnwireStaleContributions();
         WirePluginBottomPanels();
         WirePluginStatusBarItems();
         WirePluginSidebarPanels();
         WirePluginToolbarButtons();
         WirePluginRightPanels();
         WirePluginFileHandlers();
+    }
+
+    /// <summary>
+    /// Removes UI elements for contributions that are no longer in the registry.
+    /// This handles live removal when a plugin is disabled or uninstalled.
+    /// </summary>
+    private void UnwireStaleContributions()
+    {
+        // Build sets of currently registered full IDs
+        var currentBottomPanels = new HashSet<string>(
+            _contributionRegistry.GetBottomPanels().Select(p => $"plugin.{p.PluginId}.{p.ContributionId}"));
+        var currentStatusBars = new HashSet<string>(
+            _contributionRegistry.GetStatusBarItems().Select(i => $"plugin.{i.PluginId}.{i.ContributionId}"));
+        var currentSidebars = new HashSet<string>(
+            _contributionRegistry.GetSidebarPanels().Select(p => $"plugin.{p.PluginId}.{p.ContributionId}"));
+        var currentToolbars = new HashSet<string>(
+            _contributionRegistry.GetToolbarButtons().Select(b => $"plugin.{b.PluginId}.{b.ContributionId}"));
+        var currentRightPanels = new HashSet<string>(
+            _contributionRegistry.GetRightPanels().Select(p => $"plugin.{p.PluginId}.{p.ContributionId}"));
+        var currentFileHandlers = new HashSet<string>(
+            _contributionRegistry.GetFileHandlers().Select(h => $"plugin.{h.PluginId}.fileHandler"));
+
+        // Remove stale bottom panels
+        foreach (var id in _wiredBottomPanelIds.Where(id => !currentBottomPanels.Contains(id)).ToList())
+        {
+            _mainWindowViewModel.CloseBottomPanelTab(id);
+            _bottomPanelContents.Remove(id);
+            _wiredBottomPanelIds.Remove(id);
+            TitleBar.RemoveBottomPanelTabMenuItem(id);
+        }
+
+        // Remove stale status bar items
+        foreach (var id in _wiredStatusBarIds.Where(id => !currentStatusBars.Contains(id)).ToList())
+        {
+            _statusBarViewModel.UnregisterItem(id);
+            _wiredStatusBarIds.Remove(id);
+            TitleBar.RemoveStatusBarMenuItem(id);
+        }
+
+        // Remove stale sidebar panels
+        foreach (var id in _wiredSidebarPanelIds.Where(id => !currentSidebars.Contains(id)).ToList())
+        {
+            if (_pluginSidebarButtons.TryGetValue(id, out var button))
+            {
+                ActivityBar.RemovePluginButton(button);
+                _pluginSidebarButtons.Remove(id);
+            }
+            _pluginSidebarContents.Remove(id);
+            if (_activePluginSidebarId == id)
+            {
+                _activePluginSidebarId = null;
+                // Switch sidebar back to explorer if it was showing this plugin panel
+                if (_activityBarViewModel is not null)
+                {
+                    _activityBarViewModel.ActivePanel = Core.Layout.SidebarPanelKind.Explorer;
+                    OnPanelChanged(this, new RoutedEventArgs());
+                }
+            }
+            _wiredSidebarPanelIds.Remove(id);
+        }
+
+        // Remove stale toolbar buttons
+        foreach (var id in _wiredToolbarButtonIds.Where(id => !currentToolbars.Contains(id)).ToList())
+        {
+            if (_pluginToolbarButtons.TryGetValue(id, out var button))
+            {
+                TitleBar.RemovePluginToolbarButton(button);
+                _pluginToolbarButtons.Remove(id);
+            }
+            _wiredToolbarButtonIds.Remove(id);
+        }
+
+        // Remove stale right panels
+        foreach (var id in _wiredRightPanelIds.Where(id => !currentRightPanels.Contains(id)).ToList())
+        {
+            TitleBar.RemoveRightPanelMenuItem(id);
+            _rightPanelContents.Remove(id);
+            _rightPanelTitles.Remove(id);
+            _wiredRightPanelIds.Remove(id);
+        }
+
+        // Remove stale file handlers
+        foreach (var id in _wiredFileHandlerIds.Where(id => !currentFileHandlers.Contains(id)).ToList())
+        {
+            _wiredFileHandlerIds.Remove(id);
+        }
     }
 
     /// <summary>Tracking sets for idempotent wiring — prevent re-adding contributions.</summary>
@@ -1430,6 +1557,9 @@ public partial class MainWindow : Window
                 var uiElement = WrapAsUIElement(view, $"Plugin: {panel.Title}");
                 _bottomPanelContents[fullId] = uiElement;
                 _mainWindowViewModel.OpenBottomPanelTab(fullId, panel.Title.ToUpperInvariant());
+
+                // Add show/hide menu item for this tab
+                TitleBar.AddBottomPanelTabMenuItem(fullId, panel.Title);
             });
         }
     }
@@ -1461,6 +1591,9 @@ public partial class MainWindow : Window
                 };
                 statusBarItem.Tooltip = $"Plugin: {item.PluginId}";
                 statusBarItem.IsVisible = true;
+
+                // Add show/hide menu item under Status Bar submenu
+                TitleBar.AddStatusBarMenuItem(fullId, item.Name);
             });
         }
     }
@@ -1584,6 +1717,9 @@ public partial class MainWindow : Window
 
     // ── Toolbar Button wiring ──
 
+    /// <summary>Map of toolbar button ID → Button element for removal.</summary>
+    private readonly Dictionary<string, Button> _pluginToolbarButtons = [];
+
     private void WirePluginToolbarButtons()
     {
         foreach (var toolbarBtn in _contributionRegistry.GetToolbarButtons())
@@ -1595,6 +1731,7 @@ public partial class MainWindow : Window
             {
                 var handler = toolbarBtn.ClickHandler; // capture for closure
                 var button = CreatePluginToolbarButton(toolbarBtn.Tooltip, toolbarBtn.IconPath, handler);
+                _pluginToolbarButtons[fullId] = button;
                 TitleBar.AddPluginToolbarButton(button);
             });
         }
@@ -1669,7 +1806,7 @@ public partial class MainWindow : Window
                 _rightPanelTitles[fullId] = panel.Title;
 
                 // Add menu item to View → Right Panel submenu
-                TitleBar.AddRightPanelMenuItem(panel.Title, () => SwitchRightPanel(fullId));
+                TitleBar.AddRightPanelMenuItem(fullId, panel.Title, () => SwitchRightPanel(fullId));
             });
         }
     }

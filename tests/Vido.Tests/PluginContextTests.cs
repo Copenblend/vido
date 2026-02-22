@@ -36,7 +36,7 @@ public class PluginContextTests
                 Sidebar = [new SidebarContribution { Id = "sidebar1", Title = "Test Sidebar", Icon = "icons/panel.png", Order = 50 }],
                 BottomPanel = [new PanelContribution { Id = "bottom1", Title = "Test Bottom", Order = 30 }],
                 RightPanel = [new PanelContribution { Id = "right1", Title = "Test Right", Order = 40 }],
-                StatusBar = [new StatusBarContribution { Id = "status1", Position = "left", Order = 10 }],
+                StatusBar = [new StatusBarContribution { Id = "status1", Name = "Test Status", Position = "left", Order = 10 }],
                 ToolbarButtons = [new ToolbarButtonContribution { Id = "btn1", Tooltip = "Test Btn", Icon = "icons/btn.png", Order = 20 }],
                 ContextMenu = [new ContextMenuContribution { Id = "ctx1", Label = "Test Action", FileExtensions = [".mp4"], Order = 60 }]
             }

@@ -70,12 +70,12 @@ public sealed class ContributionRegistry : IContributionRegistry
             (a, b) => a.Order.CompareTo(b.Order));
     }
 
-    public void RegisterStatusBarItem(string pluginId, string contributionId, string position,
+    public void RegisterStatusBarItem(string pluginId, string contributionId, string name, string position,
         int order, Func<object> viewFactory)
     {
         lock (_lock)
         {
-            _statusBarItems.Add(new StatusBarRegistration(pluginId, contributionId, position, order, viewFactory));
+            _statusBarItems.Add(new StatusBarRegistration(pluginId, contributionId, name, position, order, viewFactory));
         }
         ContributionsChanged?.Invoke();
     }

@@ -292,6 +292,13 @@ public partial class TitleBarView : UserControl
             : "_Show Bottom Panel";
     }
 
+    private void OnStatusBarSubmenuOpened(object sender, RoutedEventArgs e)
+    {
+        ShowHideStatusBarMenuItem.Header = _isStatusBarVisible
+            ? "Hide S_tatus Bar"
+            : "Show S_tatus Bar";
+    }
+
     private void OnRightPanelSubmenuOpened(object sender, RoutedEventArgs e)
     {
         ShowHideRightPanelMenuItem.Header = _isRightPanelVisible
@@ -333,7 +340,6 @@ public partial class TitleBarView : UserControl
     {
         ShowHiddenFilesMenuItem.IsChecked = GetShowHiddenFiles?.Invoke() ?? false;
         ShowHideSidebarMenuItem.Header = _isSidebarVisible ? "_Hide Sidebar" : "_Show Sidebar";
-        ShowHideStatusBarMenuItem.Header = _isStatusBarVisible ? "Hide S_tatus Bar" : "Show S_tatus Bar";
     }
 
     private void OnToggleShowHiddenFilesClick(object sender, RoutedEventArgs e)
@@ -444,12 +450,108 @@ public partial class TitleBarView : UserControl
 
     // ── Plugin toolbar buttons ──
 
+    // ── Status bar plugin items submenu ──
+
+    /// <summary>Map of status bar registration ID → menu item for removal.</summary>
+    private readonly Dictionary<string, MenuItem> _statusBarMenuItems = [];
+
+    /// <summary>Raised when a plugin status bar item's show/hide is toggled.</summary>
+    public event Action<string, bool>? ToggleStatusBarItemRequested;
+
+    /// <summary>
+    /// Adds a "Show/Hide {name}" menu item to View > Bottom Panel > Status Bar submenu.
+    /// </summary>
+    public void AddStatusBarMenuItem(string registrationId, string name)
+    {
+        var menuItem = new MenuItem
+        {
+            Header = $"Hide {name}",
+            Tag = registrationId,
+            IsCheckable = false,
+        };
+        menuItem.SetResourceReference(StyleProperty, "DropdownMenuItemStyle");
+
+        bool visible = true;
+        menuItem.Click += (_, _) =>
+        {
+            visible = !visible;
+            menuItem.Header = visible ? $"Hide {name}" : $"Show {name}";
+            ToggleStatusBarItemRequested?.Invoke(registrationId, visible);
+        };
+
+        StatusBarMenu.Items.Add(menuItem);
+        _statusBarMenuItems[registrationId] = menuItem;
+    }
+
+    /// <summary>
+    /// Removes a plugin's status bar menu item by registration ID.
+    /// </summary>
+    public void RemoveStatusBarMenuItem(string registrationId)
+    {
+        if (_statusBarMenuItems.TryGetValue(registrationId, out var menuItem))
+        {
+            StatusBarMenu.Items.Remove(menuItem);
+            _statusBarMenuItems.Remove(registrationId);
+        }
+    }
+
+    // ── Bottom panel tab show/hide items ──
+
+    /// <summary>Map of bottom panel tab ID → menu item for removal.</summary>
+    private readonly Dictionary<string, MenuItem> _bottomPanelTabMenuItems = [];
+
+    /// <summary>Raised when a bottom panel tab's show/hide is toggled. Params: tabId, visible.</summary>
+    public event Action<string, bool>? ToggleBottomPanelTabRequested;
+
+    /// <summary>
+    /// Adds a "Hide/Show {name}" menu item to View > Bottom Panel submenu for a plugin tab.
+    /// Inserted before the Show/Hide Bottom Panel toggle (last item).
+    /// </summary>
+    public void AddBottomPanelTabMenuItem(string tabId, string name)
+    {
+        var menuItem = new MenuItem
+        {
+            Header = $"Hide {name}",
+            Tag = tabId,
+        };
+        menuItem.SetResourceReference(StyleProperty, "DropdownMenuItemStyle");
+
+        bool visible = true;
+        menuItem.Click += (_, _) =>
+        {
+            visible = !visible;
+            menuItem.Header = visible ? $"Hide {name}" : $"Show {name}";
+            ToggleBottomPanelTabRequested?.Invoke(tabId, visible);
+        };
+
+        // Insert before the last item (Show/Hide Bottom Panel)
+        var insertIndex = BottomPanelMenu.Items.Count - 1;
+        if (insertIndex < 0) insertIndex = 0;
+        BottomPanelMenu.Items.Insert(insertIndex, menuItem);
+        _bottomPanelTabMenuItems[tabId] = menuItem;
+    }
+
+    /// <summary>
+    /// Removes a plugin's bottom panel tab menu item by tab ID.
+    /// </summary>
+    public void RemoveBottomPanelTabMenuItem(string tabId)
+    {
+        if (_bottomPanelTabMenuItems.TryGetValue(tabId, out var menuItem))
+        {
+            BottomPanelMenu.Items.Remove(menuItem);
+            _bottomPanelTabMenuItems.Remove(tabId);
+        }
+    }
+
     /// <summary>Lazy-initialized container panel for plugin toolbar buttons.</summary>
     private StackPanel? _pluginToolbarPanel;
 
+    /// <summary>Styled border wrapping the plugin toolbar panel.</summary>
+    private Border? _pluginToolbarBorder;
+
     /// <summary>
-    /// Adds a plugin toolbar button to the title bar. Creates a horizontal
-    /// StackPanel between the menu bar and window controls if needed.
+    /// Adds a plugin toolbar button to the title bar. Creates a styled, bordered
+    /// container panel in the drag area (column 2) if needed.
     /// </summary>
     public void AddPluginToolbarButton(Button button)
     {
@@ -459,31 +561,75 @@ public partial class TitleBarView : UserControl
             {
                 Orientation = Orientation.Horizontal,
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(4, 0, 0, 0)
             };
 
-            // Insert into grid column 2 (the draggable area)
-            // with HorizontalAlignment=Left so it sits after the menu
-            _pluginToolbarPanel.HorizontalAlignment = HorizontalAlignment.Left;
-            Grid.SetColumn(_pluginToolbarPanel, 2);
-            WindowChrome.SetIsHitTestVisibleInChrome(_pluginToolbarPanel, true);
+            _pluginToolbarBorder = new Border
+            {
+                CornerRadius = new CornerRadius(4),
+                BorderThickness = new Thickness(1),
+                Padding = new Thickness(2, 0, 2, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin = new Thickness(8, 2, 0, 2),
+                Child = _pluginToolbarPanel,
+            };
+            _pluginToolbarBorder.SetResourceReference(Border.BackgroundProperty, "EditorBackgroundBrush");
+            _pluginToolbarBorder.SetResourceReference(Border.BorderBrushProperty, "PrimaryBorderBrush");
+
+            Grid.SetColumn(_pluginToolbarBorder, 2);
+            WindowChrome.SetIsHitTestVisibleInChrome(_pluginToolbarBorder, true);
 
             if (Content is Grid grid)
             {
-                grid.Children.Add(_pluginToolbarPanel);
+                grid.Children.Add(_pluginToolbarBorder);
             }
         }
 
         _pluginToolbarPanel.Children.Add(button);
+        UpdatePluginToolbarVisibility();
+    }
+
+    /// <summary>
+    /// Removes a plugin toolbar button from the title bar.
+    /// </summary>
+    public void RemovePluginToolbarButton(Button button)
+    {
+        _pluginToolbarPanel?.Children.Remove(button);
+        UpdatePluginToolbarVisibility();
+    }
+
+    /// <summary>
+    /// Shows/hides the plugin toolbar border based on whether any buttons remain.
+    /// </summary>
+    private void UpdatePluginToolbarVisibility()
+    {
+        if (_pluginToolbarBorder is not null)
+        {
+            _pluginToolbarBorder.Visibility = _pluginToolbarPanel?.Children.Count > 0
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
     }
 
     // ── Plugin right panel menu items ──
+
+    /// <summary>Map of panel ID → menu item for removal.</summary>
+    private readonly Dictionary<string, MenuItem> _rightPanelMenuItems = [];
 
     /// <summary>
     /// Adds a menu item to the View → Right Panel submenu for a plugin-contributed panel.
     /// Inserted before the Show/Hide toggle item.
     /// </summary>
     public void AddRightPanelMenuItem(string title, Action onSelected)
+    {
+        AddRightPanelMenuItem(null, title, onSelected);
+    }
+
+    /// <summary>
+    /// Adds a menu item to the View → Right Panel submenu for a plugin-contributed panel.
+    /// Inserted before the Show/Hide toggle item. Optionally tracked by panelId for removal.
+    /// </summary>
+    public void AddRightPanelMenuItem(string? panelId, string title, Action onSelected)
     {
         var menuItem = new MenuItem
         {
@@ -496,5 +642,20 @@ public partial class TitleBarView : UserControl
         var insertIndex = RightPanelMenu.Items.Count - 1;
         if (insertIndex < 0) insertIndex = 0;
         RightPanelMenu.Items.Insert(insertIndex, menuItem);
+
+        if (panelId is not null)
+            _rightPanelMenuItems[panelId] = menuItem;
+    }
+
+    /// <summary>
+    /// Removes a plugin's right panel menu item by panel ID.
+    /// </summary>
+    public void RemoveRightPanelMenuItem(string panelId)
+    {
+        if (_rightPanelMenuItems.TryGetValue(panelId, out var menuItem))
+        {
+            RightPanelMenu.Items.Remove(menuItem);
+            _rightPanelMenuItems.Remove(panelId);
+        }
     }
 }

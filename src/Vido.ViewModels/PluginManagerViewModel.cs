@@ -77,6 +77,12 @@ public partial class PluginManagerViewModel : ObservableObject
     /// </summary>
     public event Action<PluginItemViewModel>? OpenSettingsRequested;
 
+    /// <summary>
+    /// Fired when a plugin operation cannot complete immediately and a restart is needed.
+    /// The parameter is a user-facing message describing why.
+    /// </summary>
+    public event Action<string>? RestartRequired;
+
     public PluginManagerViewModel(
         IPluginHost pluginHost,
         IPluginInstaller pluginInstaller,
@@ -248,6 +254,7 @@ public partial class PluginManagerViewModel : ObservableObject
                 catch (Exception ex)
                 {
                     _logService.Warning($"Plugin '{item.Id}' installed but could not be activated: {ex.Message}", "PluginManager");
+                    RestartRequired?.Invoke($"Plugin '{item.DisplayName}' was installed but could not be activated immediately. A restart is required.");
                 }
 
                 ApplyFilter();
@@ -287,6 +294,9 @@ public partial class PluginManagerViewModel : ObservableObject
                 ? $"Plugin '{item.DisplayName}' uninstalled."
                 : $"Plugin '{item.DisplayName}' marked for removal on next restart.";
             _logService.Info(msg, "PluginManager");
+
+            if (!fullyRemoved)
+                RestartRequired?.Invoke($"Plugin '{item.DisplayName}' could not be fully removed. A restart is required to complete the uninstall.");
         }
         finally
         {

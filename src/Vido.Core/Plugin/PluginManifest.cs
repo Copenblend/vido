@@ -141,6 +141,10 @@ public sealed class StatusBarContribution
     [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
 
+    /// <summary>Mandatory display name shown in the View menu for show/hide toggle.</summary>
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
     /// <summary>"left" or "right".</summary>
     [JsonPropertyName("position")]
     public string Position { get; set; } = "right";

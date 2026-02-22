@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Vido.Views.Services;
 using Vido.Core.Logging;
 using Vido.Core.Plugin;
 using Vido.ViewModels;
@@ -74,17 +75,15 @@ public partial class PluginDetailPanel : UserControl
 
             EnableDisableButton.Content = _item.IsEnabled ? "Disable" : "Enable";
             EnableDisableButton.Style = _item.IsEnabled
-                ? (Style)FindResource("ActionButtonRedStyle")
-                : (Style)FindResource("ActionButtonBlueStyle");
+                ? (Style)FindResource("ActionButtonDisableStyle")
+                : (Style)FindResource("ActionButtonEnableStyle");
             EnableDisableButton.Visibility = Visibility.Visible;
-            SettingsGearButton.Visibility = Visibility.Visible;
         }
         else
         {
             InstallUninstallButton.Content = "Install";
             InstallUninstallButton.Style = (Style)FindResource("ActionButtonBlueStyle");
             EnableDisableButton.Visibility = Visibility.Collapsed;
-            SettingsGearButton.Visibility = Visibility.Collapsed;
         }
     }
 
@@ -119,15 +118,13 @@ public partial class PluginDetailPanel : UserControl
         var readme = TryReadPluginFile("README.md");
         if (string.IsNullOrWhiteSpace(readme))
             readme = _item.Description;
-        DetailsText.Text = !string.IsNullOrWhiteSpace(readme)
-            ? readme
-            : "No details available.";
+        DetailsContentHost.Content = MarkdownRenderer.Render(
+            !string.IsNullOrWhiteSpace(readme) ? readme : "No details available.");
 
         // Load CHANGELOG.md
         var changelog = TryReadPluginFile("CHANGELOG.md");
-        ChangelogText.Text = !string.IsNullOrWhiteSpace(changelog)
-            ? changelog
-            : "No changelog available.";
+        ChangelogContentHost.Content = MarkdownRenderer.Render(
+            !string.IsNullOrWhiteSpace(changelog) ? changelog : "No changelog available.");
 
         // Load settings
         LoadSettings();
@@ -348,11 +345,6 @@ public partial class PluginDetailPanel : UserControl
     {
         if (_item is null || _managerVm is null) return;
         _managerVm.ToggleEnabled(_item);
-    }
-
-    private void OnHeaderSettingsClick(object sender, RoutedEventArgs e)
-    {
-        SwitchToSettings();
     }
 
     /// <summary>

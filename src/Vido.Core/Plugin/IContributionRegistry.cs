@@ -15,7 +15,7 @@ public interface IContributionRegistry
     void RegisterSidebarPanel(string pluginId, string contributionId, string title, string? iconPath, int order, Func<object> viewFactory);
     void RegisterBottomPanel(string pluginId, string contributionId, string title, int order, Func<object> viewFactory);
     void RegisterRightPanel(string pluginId, string contributionId, string title, int order, Func<object> viewFactory);
-    void RegisterStatusBarItem(string pluginId, string contributionId, string position, int order, Func<object> viewFactory);
+    void RegisterStatusBarItem(string pluginId, string contributionId, string name, string position, int order, Func<object> viewFactory);
     void RegisterToolbarButton(string pluginId, string contributionId, string tooltip, string? iconPath, int order, Action clickHandler);
     void RegisterContextMenuHandler(string pluginId, string contributionId, string label, string[] fileExtensions, int order, Action<FileNode> handler);
     void RegisterFileHandler(string pluginId, string[] extensions, Action<FileNode> handler);
@@ -66,6 +66,7 @@ public sealed record PanelRegistration(
 public sealed record StatusBarRegistration(
     string PluginId,
     string ContributionId,
+    string Name,
     string Position,
     int Order,
     Func<object> ViewFactory);
