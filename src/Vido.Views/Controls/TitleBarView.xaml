@@ -44,7 +44,8 @@
             <!-- File -->
             <MenuItem Header="_File" Style="{StaticResource TitleBarMenuItemStyle}">
                 <MenuItem Header="_Open File..." InputGestureText="Ctrl+O"
-                          Style="{StaticResource DropdownMenuItemStyle}" IsEnabled="False" />
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnOpenFileClick" />
                 <MenuItem Header="Open _Folder..." InputGestureText="Ctrl+Shift+O"
                           Style="{StaticResource DropdownMenuItemStyle}"
                           Click="OnOpenFolderClick" />
