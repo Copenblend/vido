@@ -102,6 +102,7 @@ public sealed class PluginContext : IPluginContext
         var contrib = FindStatusBarContribution(contributionId);
         _contributions.RegisterStatusBarItem(
             Manifest.Id, contributionId,
+            contrib?.Name ?? contributionId,
             contrib?.Position ?? "right",
             contrib?.Order ?? 100,
             viewFactory);

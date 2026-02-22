@@ -165,6 +165,24 @@ public partial class ActivityBarView : UserControl
     }
 
     /// <summary>
+    /// Removes a plugin button from the activity bar.
+    /// </summary>
+    public void RemovePluginButton(Button button)
+    {
+        if (Content is DockPanel dock)
+        {
+            foreach (var child in dock.Children)
+            {
+                if (child is StackPanel panel && DockPanel.GetDock(panel) == Dock.Top)
+                {
+                    panel.Children.Remove(button);
+                    return;
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// Sets the visual active/inactive state of a plugin sidebar button.
     /// Uses the same icon coloring approach as built-in buttons.
     /// </summary>

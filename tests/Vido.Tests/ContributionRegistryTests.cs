@@ -71,7 +71,7 @@ public class ContributionRegistryTests
     [Fact]
     public void RegisterStatusBarItem_AddsEntry()
     {
-        _registry.RegisterStatusBarItem("p1", "status1", "left", 10, () => "item");
+        _registry.RegisterStatusBarItem("p1", "status1", "Test Status", "left", 10, () => "item");
 
         var items = _registry.GetStatusBarItems();
 
@@ -159,7 +159,7 @@ public class ContributionRegistryTests
         _registry.RegisterSidebarPanel("p1", "s1", "S", null, 10, () => "v");
         _registry.RegisterBottomPanel("p1", "b1", "B", 10, () => "v");
         _registry.RegisterRightPanel("p1", "r1", "R", 10, () => "v");
-        _registry.RegisterStatusBarItem("p1", "sb1", "right", 10, () => "v");
+        _registry.RegisterStatusBarItem("p1", "sb1", "SB", "right", 10, () => "v");
         _registry.RegisterToolbarButton("p1", "btn1", "T", null, 10, () => { });
         _registry.RegisterContextMenuHandler("p1", "ctx1", "C", [], 10, _ => { });
         _registry.RegisterFileHandler("p1", [".ext"], _ => { });

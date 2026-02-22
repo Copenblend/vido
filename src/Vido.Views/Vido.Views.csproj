@@ -17,4 +17,8 @@
     <ProjectReference Include="..\Vido.ViewModels\Vido.ViewModels.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Markdig" Version="0.38.0" />
+  </ItemGroup>
+
 </Project>

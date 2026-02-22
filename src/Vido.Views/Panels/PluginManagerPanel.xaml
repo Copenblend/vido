@@ -135,8 +135,9 @@
             <!-- Status pill style -->
             <Style x:Key="StatusPillStyle" TargetType="Border">
                 <Setter Property="CornerRadius" Value="3" />
-                <Setter Property="Padding" Value="5,1" />
+                <Setter Property="Padding" Value="6,1" />
                 <Setter Property="Margin" Value="4,0,0,0" />
+                <Setter Property="Width" Value="58" />
                 <Setter Property="VerticalAlignment" Value="Center" />
             </Style>
 
@@ -424,18 +425,13 @@
                                                         </TextBlock>
                                                     </Border>
 
-                                                    <!-- Settings cog + Uninstall row -->
+                                                    <!-- Settings cog -->
                                                     <StackPanel Orientation="Horizontal"
                                                                 HorizontalAlignment="Right"
                                                                 Margin="0,4,0,0">
                                                         <Button Style="{StaticResource SettingsCogStyle}"
                                                                 Click="OnSettingsCogClick"
-                                                                ToolTip="Plugin Settings"
-                                                                Margin="0,0,6,0" />
-                                                        <Button Style="{StaticResource UninstallButtonStyle}"
-                                                                Content="Uninstall"
-                                                                Click="OnUninstallClick"
-                                                                ToolTip="Uninstall plugin" />
+                                                                ToolTip="Plugin Settings" />
                                                     </StackPanel>
                                                 </StackPanel>
                                             </Grid>
