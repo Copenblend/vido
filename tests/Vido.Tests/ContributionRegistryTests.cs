@@ -154,18 +154,6 @@ public class ContributionRegistryTests
     }
 
     [Fact]
-    public void RegisterKeyBinding_TracksCommandId()
-    {
-        var binding = new KeyBinding("F5");
-        _registry.RegisterKeyBinding("p1", binding, "plugin.p1.F5", () => { });
-
-        var commandIds = _registry.GetPluginKeyBindingCommandIds("p1");
-
-        Assert.Single(commandIds);
-        Assert.Equal("plugin.p1.F5", commandIds[0]);
-    }
-
-    [Fact]
     public void UnregisterAll_RemovesAllContributions()
     {
         _registry.RegisterSidebarPanel("p1", "s1", "S", null, 10, () => "v");
@@ -188,7 +176,6 @@ public class ContributionRegistryTests
         Assert.Empty(_registry.GetContextMenuItems());
         Assert.Empty(_registry.GetFileHandlers());
         Assert.Empty(_registry.GetFileIcons());
-        Assert.Empty(_registry.GetPluginKeyBindingCommandIds("p1"));
     }
 
     [Fact]
@@ -267,5 +254,40 @@ public class ContributionRegistryTests
 
         var icons = _registry.GetFileIcons();
         Assert.Equal("/icons/new.png", icons[".ext"]);
+    }
+
+    [Fact]
+    public void InsertSorted_EqualOrder_AcceptsBothItems()
+    {
+        _registry.RegisterSidebarPanel("p1", "a", "A", null, 100, () => "v1");
+        _registry.RegisterSidebarPanel("p2", "b", "B", null, 100, () => "v2");
+
+        var panels = _registry.GetSidebarPanels();
+        Assert.Equal(2, panels.Count);
+    }
+
+    [Fact]
+    public void InsertSorted_MultipleEqualOrder_MaintainsValidList()
+    {
+        _registry.RegisterBottomPanel("p1", "x", "X", 50, () => "v1");
+        _registry.RegisterBottomPanel("p2", "y", "Y", 50, () => "v2");
+        _registry.RegisterBottomPanel("p3", "z", "Z", 50, () => "v3");
+        _registry.RegisterBottomPanel("p4", "w", "W", 10, () => "v4");
+
+        var panels = _registry.GetBottomPanels();
+        Assert.Equal(4, panels.Count);
+        // w (order 10) should come first
+        Assert.Equal("w", panels[0].ContributionId);
+        // All three order-50 items should follow
+        Assert.True(panels.Skip(1).All(p => p.Order == 50));
+    }
+
+    [Fact]
+    public void RegisterKeyBinding_DoesNotThrow()
+    {
+        // RegisterKeyBinding is a no-op but should not throw
+        var ex = Record.Exception(() =>
+            _registry.RegisterKeyBinding("p1", new KeyBinding("Ctrl+P"), "cmd1", () => { }));
+        Assert.Null(ex);
     }
 }

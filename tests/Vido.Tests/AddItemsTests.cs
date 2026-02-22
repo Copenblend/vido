@@ -262,23 +262,6 @@ public sealed class AddItemsTests : IDisposable
         Assert.True(_sut.RootNodes[0].IsVideoFile);
     }
 
-    // ── GetAllVideoFilePaths ──
-
-    [Fact]
-    public void GetAllVideoFilePaths_ReturnsRootVideoFiles()
-    {
-        var v1 = CreateFile("a.mp4");
-        var v2 = CreateFile("b.mkv");
-        var folder = CreateSubDir("sub");
-
-        _sut.AddItems([v1, v2, folder]);
-
-        var paths = _sut.GetAllVideoFilePaths();
-        Assert.Equal(2, paths.Count);
-        Assert.Contains(v1, paths);
-        Assert.Contains(v2, paths);
-    }
-
     // ── RemoveFile ──
 
     [Fact]

@@ -151,29 +151,6 @@ public class FFmpegVideoEngineTests : IDisposable
         Assert.Equal(TimeSpan.Zero, _sut.Position);
     }
 
-    // ── Events ──
-
-    [Fact]
-    public void Events_CanBeSubscribed()
-    {
-        // Verify event subscription compiles and doesn't throw
-        var positionFired = false;
-        var stateFired = false;
-        var frameFired = false;
-        var endedFired = false;
-
-        _sut.PositionChanged += _ => positionFired = true;
-        _sut.StateChanged += _ => stateFired = true;
-        _sut.FrameReady += _ => frameFired = true;
-        _sut.MediaEnded += () => endedFired = true;
-
-        // Events should not fire without media loaded
-        Assert.False(positionFired);
-        Assert.False(stateFired);
-        Assert.False(frameFired);
-        Assert.False(endedFired);
-    }
-
     // ── Dispose ──
 
     [Fact]

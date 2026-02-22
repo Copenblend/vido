@@ -213,25 +213,32 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     // ── Commands ──
 
     /// <summary>
+    /// Shared media loading pipeline used by both <see cref="LoadAndPlayAsync"/>
+    /// and <see cref="RestoreLastVideoAsync"/>. Loads the file into the engine,
+    /// updates duration/metadata/sibling list, and sets <see cref="HasMedia"/>.
+    /// </summary>
+    private async Task LoadMediaCoreAsync(string filePath)
+    {
+        await _engine.LoadAsync(filePath);
+        CurrentFilePath = filePath;
+        Duration = _engine.Duration;
+        DurationText = FormatTime(Duration);
+        CurrentMetadata = _engine.CurrentMetadata;
+        HasMedia = true;
+        BuildSiblingList(filePath);
+    }
+
+    /// <summary>
     /// Loads a video file and begins playback.
     /// </summary>
     public async Task LoadAndPlayAsync(string filePath)
     {
         ShowResumeBar = false;
         _logService.Info($"Loading video: {Path.GetFileName(filePath)}", "Player");
-        await _engine.LoadAsync(filePath);
-
-        CurrentFilePath = filePath;
-        Duration = _engine.Duration;
-        DurationText = FormatTime(Duration);
-        CurrentMetadata = _engine.CurrentMetadata;
-        HasMedia = true;
+        await LoadMediaCoreAsync(filePath);
         Position = TimeSpan.Zero;
         PositionText = "00:00";
         SeekPosition = 0;
-
-        // Build sibling video file list for skip prev/next
-        BuildSiblingList(filePath);
 
         // Sync shuffle index to the file we just loaded
         if (IsShuffling && _shufflePlaylist.Count > 0)
@@ -262,15 +269,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
             return;
 
         _logService.Info($"Restoring last video: {Path.GetFileName(lastPath)}", "Player");
-        await _engine.LoadAsync(lastPath);
-
-        CurrentFilePath = lastPath;
-        Duration = _engine.Duration;
-        DurationText = FormatTime(Duration);
-        CurrentMetadata = _engine.CurrentMetadata;
-        HasMedia = true;
-
-        BuildSiblingList(lastPath);
+        await LoadMediaCoreAsync(lastPath);
 
         // Start playback so the decode thread renders a frame, then seek and pause.
         // Without Play(), the decode thread never starts and Seek is a no-op,

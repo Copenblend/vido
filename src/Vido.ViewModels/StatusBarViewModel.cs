@@ -111,7 +111,7 @@ public partial class StatusBarViewModel : ObservableObject, IDisposable
         _resolutionItem.Text = metadata.Resolution;
         _resolutionItem.IsVisible = true;
 
-        _durationItem.Text = FormatDuration(metadata.Duration);
+        _durationItem.Text = TimeFormatter.FormatPadded(metadata.Duration);
         _durationItem.IsVisible = true;
 
         _codecItem.Text = (metadata.VideoCodec ?? "Unknown").ToUpperInvariant();
@@ -177,8 +177,6 @@ public partial class StatusBarViewModel : ObservableObject, IDisposable
 
         collection.Add(item);
     }
-
-    internal static string FormatDuration(TimeSpan duration) => TimeFormatter.FormatPadded(duration);
 
     public void Dispose()
     {

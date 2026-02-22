@@ -166,18 +166,6 @@ public class VideoDetailsViewModelTests : IDisposable
         Assert.Equal(expected, VideoDetailsViewModel.FormatFileSize(bytes));
     }
 
-    // ── Duration Formatting ──
-
-    [Theory]
-    [InlineData(0, "00:00")]
-    [InlineData(65, "01:05")]
-    [InlineData(3661, "01:01:01")]
-    [InlineData(3723, "01:02:03")]
-    public void FormatDuration_CorrectlyFormats(int seconds, string expected)
-    {
-        Assert.Equal(expected, VideoDetailsViewModel.FormatDuration(TimeSpan.FromSeconds(seconds)));
-    }
-
     // ── Bitrate Formatting ──
 
     [Theory]

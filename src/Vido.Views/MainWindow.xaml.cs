@@ -1357,9 +1357,7 @@ public partial class MainWindow : Window
         WirePluginSidebarPanels();
         WirePluginToolbarButtons();
         WirePluginRightPanels();
-        WirePluginContextMenuItems();
         WirePluginFileHandlers();
-        WirePluginFileIcons();
     }
 
     /// <summary>Tracking sets for idempotent wiring — prevent re-adding contributions.</summary>
@@ -1368,9 +1366,7 @@ public partial class MainWindow : Window
     private readonly HashSet<string> _wiredSidebarPanelIds = [];
     private readonly HashSet<string> _wiredToolbarButtonIds = [];
     private readonly HashSet<string> _wiredRightPanelIds = [];
-    private readonly HashSet<string> _wiredContextMenuIds = [];
     private readonly HashSet<string> _wiredFileHandlerIds = [];
-    private readonly HashSet<string> _wiredFileIconExts = [];
 
     /// <summary>
     /// Wraps an object returned by a plugin's view factory into a UIElement.
@@ -1403,6 +1399,24 @@ public partial class MainWindow : Window
 
     // ── Bottom Panel wiring ──
 
+    /// <summary>
+    /// Invokes a plugin wiring action inside a try/catch that logs errors in a consistent format.
+    /// Prevents a single plugin contribution from crashing the whole wiring process.
+    /// </summary>
+    private void SafeWireContribution(string pluginId, string contributionId, string area, Action wireAction)
+    {
+        try
+        {
+            wireAction();
+        }
+        catch (Exception ex)
+        {
+            _logService.Error(
+                $"Plugin '{pluginId}' {area} '{contributionId}' failed: {ex.Message}",
+                "PluginHost");
+        }
+    }
+
     private void WirePluginBottomPanels()
     {
         foreach (var panel in _contributionRegistry.GetBottomPanels())
@@ -1410,20 +1424,13 @@ public partial class MainWindow : Window
             var fullId = $"plugin.{panel.PluginId}.{panel.ContributionId}";
             if (!_wiredBottomPanelIds.Add(fullId)) continue;
 
-            try
+            SafeWireContribution(panel.PluginId, panel.ContributionId, "bottom panel", () =>
             {
                 var view = panel.ViewFactory();
                 var uiElement = WrapAsUIElement(view, $"Plugin: {panel.Title}");
                 _bottomPanelContents[fullId] = uiElement;
                 _mainWindowViewModel.OpenBottomPanelTab(fullId, panel.Title.ToUpperInvariant());
-            }
-            catch (Exception ex)
-            {
-                _logService.Error(
-                    $"Plugin '{panel.PluginId}' bottom panel '{panel.ContributionId}' " +
-                    $"view factory threw: {ex.Message}",
-                    "PluginHost");
-            }
+            });
         }
     }
 
@@ -1436,7 +1443,7 @@ public partial class MainWindow : Window
             var fullId = $"plugin.{item.PluginId}.{item.ContributionId}";
             if (!_wiredStatusBarIds.Add(fullId)) continue;
 
-            try
+            SafeWireContribution(item.PluginId, item.ContributionId, "status bar item", () =>
             {
                 var alignment = item.Position.Equals("left", StringComparison.OrdinalIgnoreCase)
                     ? Core.Layout.StatusBarAlignment.Left
@@ -1454,14 +1461,7 @@ public partial class MainWindow : Window
                 };
                 statusBarItem.Tooltip = $"Plugin: {item.PluginId}";
                 statusBarItem.IsVisible = true;
-            }
-            catch (Exception ex)
-            {
-                _logService.Error(
-                    $"Plugin '{item.PluginId}' status bar item '{item.ContributionId}' " +
-                    $"registration failed: {ex.Message}",
-                    "PluginHost");
-            }
+            });
         }
     }
 
@@ -1483,7 +1483,7 @@ public partial class MainWindow : Window
             var fullId = $"plugin.{panel.PluginId}.{panel.ContributionId}";
             if (!_wiredSidebarPanelIds.Add(fullId)) continue;
 
-            try
+            SafeWireContribution(panel.PluginId, panel.ContributionId, "sidebar panel", () =>
             {
                 var view = panel.ViewFactory();
                 var uiElement = WrapAsUIElement(view, $"Plugin: {panel.Title}");
@@ -1499,14 +1499,7 @@ public partial class MainWindow : Window
 
                 // Add to activity bar top section
                 ActivityBar.AddPluginButton(button);
-            }
-            catch (Exception ex)
-            {
-                _logService.Error(
-                    $"Plugin '{panel.PluginId}' sidebar panel '{panel.ContributionId}' " +
-                    $"view factory threw: {ex.Message}",
-                    "PluginHost");
-            }
+            });
         }
     }
 
@@ -1569,7 +1562,7 @@ public partial class MainWindow : Window
         SidebarColumn.MinWidth = 170;
         SidebarColumn.MaxWidth = 600;
 
-        _sidebarViewModel!.SetPanel(null, title.ToUpperInvariant());
+        _sidebarViewModel!.SetPanel(title.ToUpperInvariant());
 
         if (_pluginSidebarContents.TryGetValue(panelId, out var content))
             Sidebar.SetPanelContent(content);
@@ -1591,9 +1584,6 @@ public partial class MainWindow : Window
 
     // ── Toolbar Button wiring ──
 
-    /// <summary>Map of plugin toolbar button ID → Button element in title bar.</summary>
-    private readonly Dictionary<string, Button> _pluginToolbarButtons = [];
-
     private void WirePluginToolbarButtons()
     {
         foreach (var toolbarBtn in _contributionRegistry.GetToolbarButtons())
@@ -1601,20 +1591,12 @@ public partial class MainWindow : Window
             var fullId = $"plugin.{toolbarBtn.PluginId}.{toolbarBtn.ContributionId}";
             if (!_wiredToolbarButtonIds.Add(fullId)) continue;
 
-            try
+            SafeWireContribution(toolbarBtn.PluginId, toolbarBtn.ContributionId, "toolbar button", () =>
             {
                 var handler = toolbarBtn.ClickHandler; // capture for closure
                 var button = CreatePluginToolbarButton(toolbarBtn.Tooltip, toolbarBtn.IconPath, handler);
-                _pluginToolbarButtons[fullId] = button;
                 TitleBar.AddPluginToolbarButton(button);
-            }
-            catch (Exception ex)
-            {
-                _logService.Error(
-                    $"Plugin '{toolbarBtn.PluginId}' toolbar button '{toolbarBtn.ContributionId}' " +
-                    $"creation failed: {ex.Message}",
-                    "PluginHost");
-            }
+            });
         }
     }
 
@@ -1672,9 +1654,6 @@ public partial class MainWindow : Window
     /// <summary>Map of right panel ID → display title.</summary>
     private readonly Dictionary<string, string> _rightPanelTitles = [];
 
-    /// <summary>ID of the active right panel. Default is the built-in video info.</summary>
-    private string _activeRightPanelId = "vido.videoInfo";
-
     private void WirePluginRightPanels()
     {
         foreach (var panel in _contributionRegistry.GetRightPanels())
@@ -1682,7 +1661,7 @@ public partial class MainWindow : Window
             var fullId = $"plugin.{panel.PluginId}.{panel.ContributionId}";
             if (!_wiredRightPanelIds.Add(fullId)) continue;
 
-            try
+            SafeWireContribution(panel.PluginId, panel.ContributionId, "right panel", () =>
             {
                 var view = panel.ViewFactory();
                 var uiElement = WrapAsUIElement(view, $"Plugin: {panel.Title}");
@@ -1691,21 +1670,13 @@ public partial class MainWindow : Window
 
                 // Add menu item to View → Right Panel submenu
                 TitleBar.AddRightPanelMenuItem(panel.Title, () => SwitchRightPanel(fullId));
-            }
-            catch (Exception ex)
-            {
-                _logService.Error(
-                    $"Plugin '{panel.PluginId}' right panel '{panel.ContributionId}' " +
-                    $"view factory threw: {ex.Message}",
-                    "PluginHost");
-            }
+            });
         }
     }
 
     /// <summary>Switches the right panel to show the specified panel's content.</summary>
     private void SwitchRightPanel(string panelId)
     {
-        _activeRightPanelId = panelId;
         _mainWindowViewModel.IsRightPanelVisible = true;
         _mainWindowViewModel.IsRightPanelCollapsed = false;
 
@@ -1721,21 +1692,6 @@ public partial class MainWindow : Window
             RightPanelTitle.Text = _rightPanelTitles.TryGetValue(panelId, out var title)
                 ? title.ToUpperInvariant()
                 : "PLUGIN";
-        }
-    }
-
-    // ── Context Menu wiring ──
-
-    private void WirePluginContextMenuItems()
-    {
-        // Context menu items are registered in IContextMenuRegistry by PluginContext.
-        // We track them here to avoid log noise, but the actual injection into the
-        // file explorer context menus happens in FileExplorerPanel.OnTreeItemPreviewRightClick
-        // by querying the registry at display time.
-        foreach (var item in _contributionRegistry.GetContextMenuItems())
-        {
-            var fullId = $"plugin.{item.PluginId}.{item.ContributionId}";
-            _wiredContextMenuIds.Add(fullId);
         }
     }
 
@@ -1757,19 +1713,6 @@ public partial class MainWindow : Window
                 _pluginFileHandlers[normalizedExt] = handler.Handler;
                 _fileExplorerViewModel.AdditionalAcceptedExtensions.Add(normalizedExt);
             }
-        }
-    }
-
-    // ── File Icon wiring ──
-
-    private void WirePluginFileIcons()
-    {
-        // File icon overrides are stored in the ContributionRegistry.
-        // The FileExplorerPanel can query them at render time.
-        // Track wired extensions to avoid re-processing.
-        foreach (var (ext, iconPath) in _contributionRegistry.GetFileIcons())
-        {
-            _wiredFileIconExts.Add(ext);
         }
     }
 

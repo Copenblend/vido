@@ -55,7 +55,7 @@ public class VideoPlayerViewModelTests : IDisposable
     }
 
     [Fact]
-    public void InitialVolume_InheritsFromEngine()
+    public void InitialVolume_MatchesSettings()
     {
         Assert.Equal(50, _sut.Volume);
     }
@@ -114,7 +114,7 @@ public class VideoPlayerViewModelTests : IDisposable
     public void SetVolume_ForwardsToEngine()
     {
         _sut.Volume = 50;
-        _engine.Volume = 50;
+        _engine.Received().Volume = 50;
     }
 
     [Theory]
@@ -619,6 +619,271 @@ public class VideoPlayerViewModelTests : IDisposable
         // After dispose, engine events should not update ViewModel state
         _engine.StateChanged += Raise.Event<Action<PlaybackState>>(PlaybackState.Playing);
         Assert.Equal(PlaybackState.None, _sut.State);
+    }
+
+    // ── Stop with media ──
+
+    [Fact]
+    public async Task Stop_WithMedia_ResetsState()
+    {
+        var dir = CreateTempVideoDir("test.mp4");
+        try
+        {
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+            await _sut.LoadAndPlayAsync(Path.Combine(dir, "test.mp4"));
+
+            _sut.Stop();
+
+            Assert.False(_sut.HasMedia);
+            Assert.Null(_sut.CurrentFilePath);
+            Assert.Null(_sut.CurrentMetadata);
+            Assert.Equal(TimeSpan.Zero, _sut.Position);
+            Assert.Equal(TimeSpan.Zero, _sut.Duration);
+            Assert.Equal("00:00", _sut.PositionText);
+            Assert.Equal("00:00", _sut.DurationText);
+            Assert.Equal(0, _sut.SeekPosition);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task Stop_WithMedia_CallsEngineStop()
+    {
+        var dir = CreateTempVideoDir("test.mp4");
+        try
+        {
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+            await _sut.LoadAndPlayAsync(Path.Combine(dir, "test.mp4"));
+
+            _sut.Stop();
+
+            _engine.Received().Stop();
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task Stop_WithMedia_ClearsStateService()
+    {
+        var dir = CreateTempVideoDir("test.mp4");
+        try
+        {
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+            await _sut.LoadAndPlayAsync(Path.Combine(dir, "test.mp4"));
+
+            _sut.Stop();
+
+            Assert.Null(_stateService.Current.LastVideoPath);
+            Assert.Equal(0, _stateService.Current.LastVideoPosition);
+            _stateService.Received().QueueSave();
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    // ── PlayPause with media ──
+
+    [Fact]
+    public async Task PlayPause_WhenPlaying_Pauses()
+    {
+        var dir = CreateTempVideoDir("test.mp4");
+        try
+        {
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+            await _sut.LoadAndPlayAsync(Path.Combine(dir, "test.mp4"));
+
+            // Simulate engine reports Playing state
+            _engine.StateChanged += Raise.Event<Action<PlaybackState>>(PlaybackState.Playing);
+
+            _sut.PlayPause();
+
+            _engine.Received().Pause();
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task PlayPause_WhenPaused_Plays()
+    {
+        var dir = CreateTempVideoDir("test.mp4");
+        try
+        {
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+            await _sut.LoadAndPlayAsync(Path.Combine(dir, "test.mp4"));
+
+            // Simulate engine reports Paused state
+            _engine.StateChanged += Raise.Event<Action<PlaybackState>>(PlaybackState.Paused);
+
+            _engine.ClearReceivedCalls();
+            _sut.PlayPause();
+
+            _engine.Received().Play();
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task PlayPause_WithResumeBar_AcceptsResume()
+    {
+        var dir = CreateTempVideoDir("test.mp4");
+        try
+        {
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+            await _sut.LoadAndPlayAsync(Path.Combine(dir, "test.mp4"));
+
+            // Manually set resume bar visible
+            _sut.ShowResumeBar = true;
+            _engine.ClearReceivedCalls();
+
+            _sut.PlayPause();
+
+            Assert.False(_sut.ShowResumeBar);
+            _engine.Received().Play();
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    // ── Resume / Dismiss ──
+
+    [Fact]
+    public async Task ResumePlayback_HidesBarAndPlays()
+    {
+        var dir = CreateTempVideoDir("test.mp4");
+        try
+        {
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+            await _sut.LoadAndPlayAsync(Path.Combine(dir, "test.mp4"));
+            _sut.ShowResumeBar = true;
+            _engine.ClearReceivedCalls();
+
+            _sut.ResumePlayback();
+
+            Assert.False(_sut.ShowResumeBar);
+            _engine.Received().Play();
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task DismissResume_HidesBarAndStops()
+    {
+        var dir = CreateTempVideoDir("test.mp4");
+        try
+        {
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+            await _sut.LoadAndPlayAsync(Path.Combine(dir, "test.mp4"));
+            _sut.ShowResumeBar = true;
+
+            _sut.DismissResume();
+
+            Assert.False(_sut.ShowResumeBar);
+            Assert.False(_sut.HasMedia);
+            _engine.Received().Stop();
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    // ── Volume auto-unmute ──
+
+    [Fact]
+    public void SetVolume_WhenMuted_AutoUnmutes()
+    {
+        _sut.ToggleMute(); // mute
+        Assert.True(_sut.IsMuted);
+
+        _sut.Volume = 80; // change volume
+
+        Assert.False(_sut.IsMuted);
+    }
+
+    [Fact]
+    public void SetVolume_PersistsToSettings()
+    {
+        _sut.Volume = 60;
+
+        Assert.Equal(0.60, _settingsService.Current.Volume, precision: 2);
+        _settingsService.Received().QueueSave();
+    }
+
+    // ── Playback speed ──
+
+    [Fact]
+    public void SetPlaybackSpeed_ForwardsToEngine()
+    {
+        _sut.SetPlaybackSpeed(2.0);
+
+        _engine.Received().SpeedRatio = 2.0;
+    }
+
+    [Fact]
+    public void SetPlaybackSpeed_ClampsToRange()
+    {
+        _sut.SetPlaybackSpeed(10.0);
+        Assert.Equal(4.0, _sut.PlaybackSpeed);
+
+        _sut.SetPlaybackSpeed(0.1);
+        Assert.Equal(0.25, _sut.PlaybackSpeed);
+    }
+
+    [Fact]
+    public void SetPlaybackSpeed_UpdatesSpeedText()
+    {
+        _sut.SetPlaybackSpeed(1.5);
+        Assert.Equal("1.5x", _sut.PlaybackSpeedText);
+
+        _sut.SetPlaybackSpeed(2.0);
+        Assert.Equal("2x", _sut.PlaybackSpeedText);
+    }
+
+    [Fact]
+    public void SetPlaybackSpeed_PersistsToSettings()
+    {
+        _sut.SetPlaybackSpeed(1.75);
+
+        Assert.Equal(1.75, _settingsService.Current.PlaybackSpeed);
+        _settingsService.Received().QueueSave();
+    }
+
+    // ── LoadAndPlayAsync ──
+
+    [Fact]
+    public async Task LoadAndPlayAsync_SetsMediaProperties()
+    {
+        var dir = CreateTempVideoDir("video.mp4");
+        try
+        {
+            _engine.Duration.Returns(TimeSpan.FromMinutes(3));
+            var metadata = new VideoMetadata { FilePath = "video.mp4", FileName = "video.mp4", Width = 1920, Height = 1080 };
+            _engine.CurrentMetadata.Returns(metadata);
+
+            await _sut.LoadAndPlayAsync(Path.Combine(dir, "video.mp4"));
+
+            Assert.True(_sut.HasMedia);
+            Assert.Contains("video.mp4", _sut.CurrentFilePath);
+            Assert.Equal(TimeSpan.FromMinutes(3), _sut.Duration);
+            Assert.Same(metadata, _sut.CurrentMetadata);
+            Assert.Equal("00:00", _sut.PositionText);
+            _engine.Received().Play();
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task LoadAndPlayAsync_SavesStateService()
+    {
+        var dir = CreateTempVideoDir("save.mp4");
+        try
+        {
+            _engine.Duration.Returns(TimeSpan.FromMinutes(2));
+            var path = Path.Combine(dir, "save.mp4");
+
+            await _sut.LoadAndPlayAsync(path);
+
+            Assert.Equal(path, _stateService.Current.LastVideoPath);
+            Assert.Equal(0, _stateService.Current.LastVideoPosition);
+            Assert.Contains(path, _stateService.Current.RecentFiles);
+            _stateService.Received().QueueSave();
+        }
+        finally { Directory.Delete(dir, true); }
     }
 
     public void Dispose()

@@ -34,10 +34,14 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
     /// <summary>
     /// Creates a settings store backed by a specific file path (for testing).
     /// </summary>
-    internal PluginSettingsStore(string pluginId, string settingsFilePath)
+    internal static PluginSettingsStore ForTesting(string settingsFilePath)
     {
-        _ = pluginId; // unused, path is explicit
-        _settingsFilePath = settingsFilePath;
+        return new PluginSettingsStore(settingsFilePath, isExplicitPath: true);
+    }
+
+    private PluginSettingsStore(string filePath, bool isExplicitPath)
+    {
+        _settingsFilePath = filePath;
     }
 
     public T Get<T>(string key, T defaultValue)

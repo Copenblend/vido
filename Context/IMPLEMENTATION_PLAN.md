@@ -1723,34 +1723,6 @@ Write comprehensive unit tests covering:
 
 ---
 
-### vi-021: Dockable Panels — Drag to Dock
-
-**Goal**: Implement drag-to-dock functionality for bottom and right panels.
-
-**Tasks**:
-1. Implement drag-to-dock for panel tabs:
-   - User can drag a tab from the bottom panel to the right panel (and vice versa)
-   - Visual feedback during drag: show drop target indicator (highlighted border on target panel)
-   - When a tab is dropped on a different panel, it moves there
-   - The tab's content renders correctly in its new location
-2. Panel tabs from either panel can be dragged to the other:
-   - Bottom panel tab → Right panel: tab moves to right panel tab strip
-   - Right panel tab → Bottom panel: tab moves to bottom panel tab strip
-3. If a panel has no tabs left, it collapses automatically
-4. If a tab is dragged to a collapsed panel, the panel expands automatically
-5. Persist docked positions in state
-
-**Acceptance Criteria**:
-- Dragging a tab from bottom to right panel moves it correctly
-- Dragging a tab from right to bottom panel moves it correctly
-- Content renders correctly in the new location
-- Empty panels collapse automatically
-- Panel expansion works when dragging to a collapsed panel
-- Docked positions persist across restarts
-- Visual feedback (drop indicators) appears during drag
-
----
-
 ### vi-022: File Associations & Open File Command
 
 **Goal**: Implement opening files from the command line, File > Open File, and prepare for installer file associations.
@@ -1776,30 +1748,6 @@ Write comprehensive unit tests covering:
 - Command-line folder argument opens the folder in explorer
 - Recent Files submenu shows last 10 files and works
 - Recent files persist across app restarts
-
----
-
-### vi-023: Playback Speed Control
-
-**Goal**: Implement playback speed control throughout the application.
-
-**Tasks**:
-1. Add playback speed control to the video engine:
-   - Supported speeds: 0.25x, 0.5x, 0.75x, 1.0x, 1.25x, 1.5x, 2.0x
-   - Speed affects both video and audio presentation rate
-   - Audio pitch correction at non-1.0x speeds (maintain pitch or allow pitch shift — maintain pitch preferred using FFmpeg's `atempo` filter or resampling)
-2. Add speed selector to player controls bar:
-   - Small dropdown/button showing current speed (e.g., "1.0x")
-   - Click opens a popup with speed options
-3. Wire `Playback > Playback Speed` submenu to the speed options
-4. Persist current speed in state
-
-**Acceptance Criteria**:
-- All speed options work correctly
-- Audio pitch is maintained at different speeds (no chipmunk/slow-motion audio)
-- Speed indicator shows current speed in the controls bar
-- Playback Speed submenu works from the menu bar
-- Speed persists across app restart
 
 ---
 

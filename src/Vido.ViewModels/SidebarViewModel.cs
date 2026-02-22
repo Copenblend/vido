@@ -30,7 +30,7 @@ public partial class SidebarViewModel : ObservableObject
     /// Sets the header to a custom title. Used for plugin sidebar panels
     /// that don't correspond to a built-in <see cref="SidebarPanelKind"/>.
     /// </summary>
-    public void SetPanel(SidebarPanelKind? panel, string headerText)
+    public void SetPanel(string headerText)
     {
         HeaderText = headerText;
     }

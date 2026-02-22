@@ -150,6 +150,9 @@ public sealed class LogEntryViewModel
             LogLevel.Error => "ERR",
             _ => "???"
         };
+        FormattedLine = Source is not null
+            ? $"[{Timestamp}] [{LevelTag}] [{Source}] {Message}"
+            : $"[{Timestamp}] [{LevelTag}] {Message}";
     }
 
     public LogLevel Level { get; }
@@ -159,9 +162,8 @@ public sealed class LogEntryViewModel
     public string? Source { get; }
 
     /// <summary>
-    /// Full formatted line for display: "[HH:mm:ss.fff] [LVL] message"
+    /// Full formatted line for display: "[HH:mm:ss.fff] [LVL] message".
+    /// Precomputed since all properties are immutable.
     /// </summary>
-    public string FormattedLine => Source is not null
-        ? $"[{Timestamp}] [{LevelTag}] [{Source}] {Message}"
-        : $"[{Timestamp}] [{LevelTag}] {Message}";
+    public string FormattedLine { get; }
 }
