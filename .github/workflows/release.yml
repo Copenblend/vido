@@ -1,0 +1,111 @@
+name: Release
+
+# Trigger on version tags pushed to master, or manual dispatch
+on:
+  push:
+    tags:
+      - "v*"           # e.g. v0.1.0, v1.0.0-beta
+  workflow_dispatch:    # Allow manual trigger from GitHub UI
+    inputs:
+      tag_name:
+        description: "Release tag (e.g. v0.1.0). Leave empty to use version from csproj."
+        required: false
+        type: string
+
+permissions:
+  contents: write      # Required to create releases and upload assets
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: windows-latest
+
+    steps:
+      # ─── Checkout ───────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      # ─── Setup .NET ─────────────────────────────────────────
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # ─── Install WiX Toolset ────────────────────────────────
+      - name: Install WiX 5 CLI and extensions
+        shell: pwsh
+        run: |
+          dotnet tool install --global wix --version 5.0.2
+          wix extension add WixToolset.UI.wixext/5.0.2 -g
+          wix extension add WixToolset.Util.wixext/5.0.2 -g
+
+      # ─── Restore & Test ─────────────────────────────────────
+      - name: Restore dependencies
+        run: dotnet restore Vido.sln
+
+      - name: Run tests
+        run: dotnet test Vido.sln --no-restore --configuration Release
+
+      # ─── Build Release Artifacts ────────────────────────────
+      - name: Build portable zip and MSI installer
+        shell: pwsh
+        run: .\build-release.ps1
+
+      # ─── Determine Version ─────────────────────────────────
+      - name: Determine release version
+        id: version
+        shell: pwsh
+        run: |
+          # Read version from csproj
+          [xml]$csproj = Get-Content "src/Vido.App/Vido.App.csproj"
+          $version = ($csproj.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1)
+          if (-not $version) { $version = "0.1.0" }
+
+          # Determine the tag name
+          if ("${{ github.event_name }}" -eq "push") {
+            $tagName = "${{ github.ref_name }}"
+          } elseif ("${{ inputs.tag_name }}") {
+            $tagName = "${{ inputs.tag_name }}"
+          } else {
+            $tagName = "v$version"
+          }
+
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "tag_name=$tagName" >> $env:GITHUB_OUTPUT
+          echo "zip_name=Vido-$version-win-x64-portable.zip" >> $env:GITHUB_OUTPUT
+          echo "msi_name=Vido-$version-win-x64.msi" >> $env:GITHUB_OUTPUT
+
+          Write-Host "Version: $version"
+          Write-Host "Tag: $tagName"
+
+      # ─── Verify Artifacts ───────────────────────────────────
+      - name: Verify build artifacts exist
+        shell: pwsh
+        run: |
+          $zip = "publish/${{ steps.version.outputs.zip_name }}"
+          $msi = "publish/${{ steps.version.outputs.msi_name }}"
+
+          if (-not (Test-Path $zip)) { throw "Portable zip not found: $zip" }
+          if (-not (Test-Path $msi)) { throw "MSI installer not found: $msi" }
+
+          $zipSize = [math]::Round((Get-Item $zip).Length / 1MB, 1)
+          $msiSize = [math]::Round((Get-Item $msi).Length / 1MB, 1)
+          Write-Host "Portable zip: $zipSize MB"
+          Write-Host "MSI installer: $msiSize MB"
+
+      # ─── Create GitHub Release ──────────────────────────────
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag_name }}
+          name: Vido ${{ steps.version.outputs.version }}
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.tag_name, '-') }}
+          generate_release_notes: true
+          files: |
+            publish/${{ steps.version.outputs.zip_name }}
+            publish/${{ steps.version.outputs.msi_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

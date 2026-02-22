@@ -4,6 +4,14 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-024
+- **Portable distribution**: Added `build-release.ps1` PowerShell script that publishes a self-contained win-x64 application and packages it as a portable zip (~142 MB compressed, ~355 MB uncompressed)
+- **MSI installer**: Created WiX 5 installer project (`installer/`) producing a per-user MSI (~109 MB) with Start Menu shortcut, optional Desktop shortcut, and optional video file associations (.mp4, .avi, .mkv, .mov, .wmv, .flv, .webm)
+- **Build script**: `build-release.ps1` automates the full release pipeline — clean, publish, zip, MSI build — with `-SkipInstaller`, `-Configuration`, and `-OutputDir` parameters
+- **WiX installer features**: 3-feature installer with WixUI_FeatureTree dialog — core application (required), Desktop shortcut (optional), and file associations (optional)
+- **Per-user install**: MSI installs to `%LocalAppData%\Vido` requiring no administrator privileges, with MajorUpgrade support for seamless version updates
+- **BUILD.md**: Created comprehensive build documentation covering prerequisites, development/release builds, distribution details, project structure, versioning, and troubleshooting
+
 ### vi-025
 - **Code quality audit**: Verified no dead code, no TODO/HACK/FIXME markers, no unused usings across entire solution
 - **Swallowed catch blocks**: Added logging to all 7 empty catch blocks — PluginHost (3×), PluginInstaller (1×), FileExplorerPanel (1×), MainWindow (1×), App.xaml.cs (1×)
