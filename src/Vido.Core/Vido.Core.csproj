@@ -14,6 +14,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeSymbols>false</IncludeSymbols>
+    <DebugType>none</DebugType>
   </PropertyGroup>
 
 </Project>
