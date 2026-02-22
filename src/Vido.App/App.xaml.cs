@@ -48,6 +48,7 @@ public partial class App : Application
 
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;
+        mainWindow.FFmpegVersion = FFmpegInitializer.VersionString;
 
         // Store command-line args BEFORE Show() so they're available when the
         // Loaded event fires (Show triggers Loaded synchronously).

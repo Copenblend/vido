@@ -77,6 +77,18 @@ public class FFmpegInitializerTests : IDisposable
         Assert.True(result);
     }
 
+    [Fact]
+    public void VersionString_IsNullOrNonEmpty()
+    {
+        // VersionString is null if FFmpeg hasn't been initialized in this test run,
+        // or a non-empty string if it has (e.g. in integration tests).
+        var version = FFmpegInitializer.VersionString;
+        if (version is not null)
+        {
+            Assert.NotEmpty(version);
+        }
+    }
+
     public void Dispose()
     {
         try { Directory.Delete(_tempDir, true); } catch { }

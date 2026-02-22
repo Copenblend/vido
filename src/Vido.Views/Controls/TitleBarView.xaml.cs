@@ -251,6 +251,12 @@ public partial class TitleBarView : UserControl
     /// <summary>Raised when File > Recent Files > Clear Watch History is clicked.</summary>
     public event Action? ClearWatchHistoryRequested;
 
+    /// <summary>Raised when Help > About Vido is clicked.</summary>
+    public event Action? AboutRequested;
+
+    /// <summary>Raised when Help > Check for Updates is clicked.</summary>
+    public event Action? CheckForUpdatesRequested;
+
     /// <summary>
     /// Function that returns the current list of recent files.
     /// Set by MainWindow so TitleBarView can populate the submenu without
@@ -423,6 +429,16 @@ public partial class TitleBarView : UserControl
     private void OnFullscreenClick(object sender, RoutedEventArgs e)
     {
         FullscreenRequested?.Invoke();
+    }
+
+    private void OnAboutClick(object sender, RoutedEventArgs e)
+    {
+        AboutRequested?.Invoke();
+    }
+
+    private void OnCheckForUpdatesClick(object sender, RoutedEventArgs e)
+    {
+        CheckForUpdatesRequested?.Invoke();
     }
 
     private void OnRecentFilesSubmenuOpened(object sender, RoutedEventArgs e)

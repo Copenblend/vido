@@ -4,6 +4,26 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-022
+- Created AboutDialog showing app name, logo, version (0.1.0), .NET runtime version, and FFmpeg version
+- Dialog styled to match VS Code Dark Modern theme (dark background, rounded border, accent OK button)
+- Dialog is modal, centered on owner window, closes with OK button or Escape key
+- Added FFmpegInitializer.VersionString property — captures FFmpeg version via `av_version_info()` after initialization
+- Enabled Help > About Vido menu item — opens the About dialog
+- Enabled Help > Check for Updates menu item — shows placeholder "You are running the latest version" message
+- Added TitleBar.AboutRequested and TitleBar.CheckForUpdatesRequested events
+- Set explicit app version (0.1.0) in Vido.App.csproj
+- Added 1 new test for VersionString property (809 total passing)
+
+### vi-021
+- Implemented File > Open File menu item with video file filter dialog
+- Added Ctrl+O keyboard shortcut for Open File
+- Implemented command-line argument handling (file path → open and play, folder path → open in explorer)
+- Command-line processing deferred to Loaded event for proper video engine initialization
+- Created FileAssociationHelper (Windows registry-based file association for installer use)
+- FileAssociationHelper supports Register, Unregister, and IsAssociated methods
+- Added 9 new tests for FileAssociationHelper (808 total passing)
+
 ### vi-020
 - Implemented the Settings panel as a tab-based page (opens from activity bar gear icon)
 - Created SettingsViewModel with categorized app settings and plugin settings integration
