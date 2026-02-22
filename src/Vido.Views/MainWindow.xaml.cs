@@ -55,6 +55,7 @@ public partial class MainWindow : Window
     private FileExplorerPanel? _fileExplorerPanel;
     private PluginManagerPanel? _pluginManagerPanel;
     private PluginManagerViewModel? _pluginManagerViewModel;
+    private SettingsPage? _settingsPage;
 
     // Remembered panel dimensions for toggle persistence
     private double _bottomPanelHeight = 200;
@@ -1052,9 +1053,10 @@ public partial class MainWindow : Window
         }
         else if (activeTab.Id == MainWindowViewModel.SettingsTabId)
         {
-            // Show settings page
+            // Show settings page (cached to preserve state across tab switches)
             VideoPlayer.Visibility = Visibility.Collapsed;
-            DynamicTabContent.Content = new SettingsPage();
+            _settingsPage ??= new SettingsPage(_settingsService, _pluginHost);
+            DynamicTabContent.Content = _settingsPage;
             DynamicTabContent.Visibility = Visibility.Visible;
         }
         else if (activeTab.Id.StartsWith("plugin.detail.", StringComparison.Ordinal))

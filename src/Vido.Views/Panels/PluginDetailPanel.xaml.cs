@@ -207,7 +207,7 @@ public partial class PluginDetailPanel : UserControl
             IPluginSettingsStore? store = null;
 
             // Try to get the store from the PluginHost via the manager VM
-            if (_managerVm is not null)
+            if (_managerVm is not null && _item is not null)
             {
                 // The manager VM has access to IPluginHost
                 store = GetSettingsStoreFromHost(_item.Id);
@@ -237,7 +237,7 @@ public partial class PluginDetailPanel : UserControl
         }
         catch (Exception ex)
         {
-            _logService?.Error($"Failed to load settings for plugin '{_item.Id}': {ex.Message}", "PluginDetail");
+            _logService?.Error($"Failed to load settings for plugin '{_item?.Id}': {ex.Message}", "PluginDetail");
             NoSettingsText.Visibility = Visibility.Visible;
             NoSettingsText.Text = "Failed to load settings.";
         }

@@ -87,7 +87,8 @@ public sealed class PluginHost : IPluginHost
 
         DiscoverPlugins();
 
-        var disabledIds = GetDisabledPluginIds();
+        var disabledIds = new HashSet<string>(
+            _settingsService.Current.DisabledPluginIds, StringComparer.OrdinalIgnoreCase);
 
         foreach (var info in _plugins)
         {
@@ -103,6 +104,10 @@ public sealed class PluginHost : IPluginHost
 
             ActivatePlugin(info);
         }
+
+        // Prune orphaned entries from the disabled list (IDs that don't
+        // correspond to any discovered plugin). Keeps the settings tidy.
+        PruneOrphanedDisabledIds();
 
         _logService.Info(
             $"Plugin system ready: {_plugins.Count(p => p.State == PluginState.Active)} active, " +
@@ -130,7 +135,8 @@ public sealed class PluginHost : IPluginHost
     }
 
     public PluginInfo? GetPlugin(string pluginId) =>
-        _plugins.FirstOrDefault(p => p.Manifest.Id == pluginId);
+        _plugins.FirstOrDefault(p =>
+            string.Equals(p.Manifest.Id, pluginId, StringComparison.OrdinalIgnoreCase));
 
     public void SetEnabled(string pluginId, bool enabled)
     {
@@ -145,7 +151,8 @@ public sealed class PluginHost : IPluginHost
 
         if (enabled)
         {
-            disabledIds.Remove(pluginId);
+            disabledIds.RemoveAll(id =>
+                string.Equals(id, pluginId, StringComparison.OrdinalIgnoreCase));
 
             if (info.State == PluginState.Disabled)
             {
@@ -155,7 +162,8 @@ public sealed class PluginHost : IPluginHost
         }
         else
         {
-            if (!disabledIds.Contains(pluginId))
+            if (!disabledIds.Any(id =>
+                    string.Equals(id, pluginId, StringComparison.OrdinalIgnoreCase)))
                 disabledIds.Add(pluginId);
 
             if (info.State == PluginState.Active)
@@ -169,6 +177,25 @@ public sealed class PluginHost : IPluginHost
 
     public IReadOnlyList<string> GetDisabledPluginIds() =>
         _settingsService.Current.DisabledPluginIds.ToList().AsReadOnly();
+
+    /// <summary>
+    /// Removes entries from <see cref="AppSettings.DisabledPluginIds"/> that
+    /// don't match any discovered plugin. This cleans up stale IDs left by
+    /// renamed, removed, or manually-edited plugins.
+    /// </summary>
+    private void PruneOrphanedDisabledIds()
+    {
+        var knownIds = new HashSet<string>(
+            _plugins.Select(p => p.Manifest.Id), StringComparer.OrdinalIgnoreCase);
+        var disabledIds = _settingsService.Current.DisabledPluginIds;
+        var removed = disabledIds.RemoveAll(id => !knownIds.Contains(id));
+        if (removed > 0)
+        {
+            _logService.Debug(
+                $"Pruned {removed} orphaned disabled plugin ID(s)", "PluginHost");
+            _settingsService.QueueSave();
+        }
+    }
 
     // ── Discovery ──
 
@@ -408,7 +435,8 @@ public sealed class PluginHost : IPluginHost
         _settingsStores.Remove(pluginId);
 
         // Remove from disabled list so reinstallation starts fresh
-        _settingsService.Current.DisabledPluginIds.Remove(pluginId);
+        _settingsService.Current.DisabledPluginIds.RemoveAll(id =>
+            string.Equals(id, pluginId, StringComparison.OrdinalIgnoreCase));
         _settingsService.QueueSave();
 
         _logService.Debug($"Plugin '{pluginId}' removed from runtime state", "PluginHost");

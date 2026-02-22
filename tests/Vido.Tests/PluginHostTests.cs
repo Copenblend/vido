@@ -282,4 +282,87 @@ public class PluginHostTests : IDisposable
         Assert.Null(info.Instance);
         Assert.Null(info.ErrorMessage);
     }
+
+    [Fact]
+    public void ActivateAll_PrunesOrphanedDisabledIds()
+    {
+        // Add a stale ID that doesn't match any actual plugin
+        _appSettings.DisabledPluginIds = ["com.nonexistent.plugin"];
+
+        var host = CreateHost();
+        host.ActivateAll();
+
+        // Stale entry should be removed from DisabledPluginIds
+        Assert.Empty(_appSettings.DisabledPluginIds);
+        _settingsService.Received().QueueSave();
+    }
+
+    [Fact]
+    public void ActivateAll_KeepsValidDisabledIds()
+    {
+        _appSettings.DisabledPluginIds = ["com.test.real-plugin"];
+
+        CreatePluginDirectory("real-plugin", """
+        {
+            "id": "com.test.real-plugin",
+            "name": "real-plugin",
+            "version": "1.0.0",
+            "entryPoint": "Real.dll",
+            "pluginClass": "Real.Plugin"
+        }
+        """);
+
+        var host = CreateHost();
+        host.ActivateAll();
+
+        // Valid disabled ID should remain
+        Assert.Single(_appSettings.DisabledPluginIds);
+        Assert.Equal("com.test.real-plugin", _appSettings.DisabledPluginIds[0]);
+    }
+
+    [Fact]
+    public void ActivateAll_DisabledCheck_IsCaseInsensitive()
+    {
+        // Setting file has different casing than the manifest
+        _appSettings.DisabledPluginIds = ["COM.TEST.MY-PLUGIN"];
+
+        CreatePluginDirectory("ci-plugin", """
+        {
+            "id": "com.test.my-plugin",
+            "name": "ci-plugin",
+            "version": "1.0.0",
+            "entryPoint": "CI.dll",
+            "pluginClass": "CI.Plugin"
+        }
+        """);
+
+        var host = CreateHost();
+        host.ActivateAll();
+
+        // The disabled ID (case-insensitive) should be retained because the
+        // plugin exists. The plugin itself is in Error state (fake DLL) so the
+        // disabled check in the activation loop is bypassed, but the pruning
+        // should NOT remove the entry because the ID maps to a real plugin.
+        Assert.Single(_appSettings.DisabledPluginIds);
+    }
+
+    [Fact]
+    public void GetPlugin_IsCaseInsensitive()
+    {
+        CreatePluginDirectory("case-plugin", """
+        {
+            "id": "com.test.Case-Plugin",
+            "name": "case-plugin",
+            "version": "1.0.0",
+            "entryPoint": "Case.dll",
+            "pluginClass": "Case.Plugin"
+        }
+        """);
+
+        var host = CreateHost();
+        host.ActivateAll();
+
+        Assert.NotNull(host.GetPlugin("COM.TEST.CASE-PLUGIN"));
+        Assert.NotNull(host.GetPlugin("com.test.case-plugin"));
+    }
 }

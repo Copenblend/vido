@@ -54,12 +54,34 @@ public sealed class SettingsService : ISettingsService, IDisposable
             var json = await File.ReadAllTextAsync(_settingsPath);
             var loaded = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
             if (loaded is not null)
+            {
                 Current = loaded;
+                EnsureOfficialRegistryUrl();
+            }
         }
         catch (Exception ex) when (ex is System.Text.Json.JsonException or IOException)
         {
             // Corrupted or inaccessible file — use defaults
             Current = new AppSettings();
+        }
+    }
+
+    /// <summary>
+    /// Ensures the official Vido registry URL is always present as the first entry
+    /// in <see cref="AppSettings.PluginRegistryUrls"/>. Fixes settings files where
+    /// the official URL was accidentally removed or replaced.
+    /// </summary>
+    private void EnsureOfficialRegistryUrl()
+    {
+        var urls = Current.PluginRegistryUrls;
+        var officialUrl = AppSettings.OfficialRegistryUrl;
+
+        if (urls.Count == 0 ||
+            !urls[0].Equals(officialUrl, StringComparison.OrdinalIgnoreCase))
+        {
+            // Remove any existing occurrences of the official URL in wrong positions
+            urls.RemoveAll(u => u.Equals(officialUrl, StringComparison.OrdinalIgnoreCase));
+            urls.Insert(0, officialUrl);
         }
     }
 
