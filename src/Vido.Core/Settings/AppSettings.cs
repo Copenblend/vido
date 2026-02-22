@@ -7,23 +7,51 @@ namespace Vido.Core.Settings;
 public sealed class AppSettings
 {
     // --- Video Playback ---
+
+    /// <summary>Default volume level (0.0 to 1.0).</summary>
     public double Volume { get; set; } = 0.50;
+
+    /// <summary>Whether audio output is muted.</summary>
     public bool IsMuted { get; set; } = false;
+
+    /// <summary>Default playback speed multiplier (e.g. 1.0 = normal, 2.0 = 2x).</summary>
     public double PlaybackSpeed { get; set; } = 1.0;
+
+    /// <summary>Whether playback loops back to the start when the video ends.</summary>
     public bool LoopPlayback { get; set; } = false;
 
     // --- UI Layout ---
+
+    /// <summary>Whether the sidebar panel is visible.</summary>
     public bool SidebarVisible { get; set; } = true;
+
+    /// <summary>Width of the sidebar panel in pixels.</summary>
     public double SidebarWidth { get; set; } = 300;
+
+    /// <summary>Whether the status bar is visible.</summary>
     public bool StatusBarVisible { get; set; } = true;
+
+    /// <summary>Whether the bottom panel area is visible.</summary>
     public bool BottomPanelVisible { get; set; } = true;
+
+    /// <summary>Whether the bottom panel is in its collapsed state.</summary>
     public bool BottomPanelCollapsed { get; set; } = false;
+
+    /// <summary>Height of the bottom panel in pixels.</summary>
     public double BottomPanelHeight { get; set; } = 200;
+
+    /// <summary>Whether the right panel area is visible.</summary>
     public bool RightPanelVisible { get; set; } = true;
+
+    /// <summary>Whether the right panel is in its collapsed state.</summary>
     public bool RightPanelCollapsed { get; set; } = false;
+
+    /// <summary>Width of the right panel in pixels.</summary>
     public double RightPanelWidth { get; set; } = 300;
 
     // --- File Explorer ---
+
+    /// <summary>Whether hidden (user-removed) files are displayed in the explorer.</summary>
     public bool ShowHiddenFiles { get; set; } = false;
 
     // --- Plugins ---

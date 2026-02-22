@@ -363,7 +363,7 @@ public sealed class PluginHost : IPluginHost
             // Clean up any partial registrations
             if (_contexts.TryGetValue(info.Manifest.Id, out var ctx))
             {
-                try { ctx.Cleanup(); } catch { /* swallow cleanup errors */ }
+                try { ctx.Cleanup(); } catch (Exception cleanupEx) { _logService.Debug($"Cleanup after activation failure threw: {cleanupEx.Message}", "PluginHost"); }
                 _contexts.Remove(info.Manifest.Id);
             }
         }
@@ -383,7 +383,7 @@ public sealed class PluginHost : IPluginHost
         // Clean up contributions regardless of whether deactivation threw
         if (_contexts.TryGetValue(info.Manifest.Id, out var ctx))
         {
-            try { ctx.Cleanup(); } catch { /* swallow */ }
+            try { ctx.Cleanup(); } catch (Exception cleanupEx) { _logService.Debug($"Cleanup during deactivation threw: {cleanupEx.Message}", "PluginHost"); }
             _contexts.Remove(info.Manifest.Id);
         }
 
@@ -428,7 +428,7 @@ public sealed class PluginHost : IPluginHost
         // Remove context and settings store
         if (_contexts.TryGetValue(pluginId, out var ctx))
         {
-            try { ctx.Cleanup(); } catch { /* swallow */ }
+            try { ctx.Cleanup(); } catch (Exception cleanupEx) { _logService.Debug($"Cleanup during removal threw: {cleanupEx.Message}", "PluginHost"); }
             _contexts.Remove(pluginId);
         }
 

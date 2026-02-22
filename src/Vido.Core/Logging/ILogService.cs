@@ -5,9 +5,16 @@ namespace Vido.Core.Logging;
 /// </summary>
 public enum LogLevel
 {
+    /// <summary>Verbose diagnostic information for developers.</summary>
     Debug,
+
+    /// <summary>General informational messages about application flow.</summary>
     Info,
+
+    /// <summary>Potentially harmful conditions that merit attention.</summary>
     Warning,
+
+    /// <summary>Error events that indicate failures or unexpected behavior.</summary>
     Error
 }
 
@@ -32,9 +39,16 @@ public interface ILogService
     /// </summary>
     event Action<LogEntry>? EntryAdded;
 
+    /// <summary>Logs a message at <see cref="LogLevel.Debug"/> level.</summary>
     void Debug(string message, string? source = null);
+
+    /// <summary>Logs a message at <see cref="LogLevel.Info"/> level.</summary>
     void Info(string message, string? source = null);
+
+    /// <summary>Logs a message at <see cref="LogLevel.Warning"/> level.</summary>
     void Warning(string message, string? source = null);
+
+    /// <summary>Logs a message at <see cref="LogLevel.Error"/> level.</summary>
     void Error(string message, string? source = null);
 
     /// <summary>

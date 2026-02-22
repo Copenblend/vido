@@ -15,11 +15,7 @@
 
             <!-- Action button style (blue install/enable) -->
             <Style x:Key="ActionButtonBlueStyle" TargetType="Button">
-                <Setter Property="Background">
-                    <Setter.Value>
-                        <SolidColorBrush Color="#0078d4" />
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}" />
                 <Setter Property="Foreground" Value="White" />
                 <Setter Property="FontFamily" Value="Segoe UI" />
                 <Setter Property="FontSize" Value="12" />
@@ -36,11 +32,7 @@
                             </Border>
                             <ControlTemplate.Triggers>
                                 <Trigger Property="IsMouseOver" Value="True">
-                                    <Setter TargetName="Bd" Property="Background">
-                                        <Setter.Value>
-                                            <SolidColorBrush Color="#026ec1" />
-                                        </Setter.Value>
-                                    </Setter>
+                                    <Setter TargetName="Bd" Property="Background" Value="{DynamicResource ButtonHoverBackgroundBrush}" />
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
@@ -50,18 +42,10 @@
 
             <!-- Action button style (red uninstall/disable) -->
             <Style x:Key="ActionButtonRedStyle" TargetType="Button" BasedOn="{StaticResource ActionButtonBlueStyle}">
-                <Setter Property="Background">
-                    <Setter.Value>
-                        <SolidColorBrush Color="#c42b1c" />
-                    </Setter.Value>
-                </Setter>
+                <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background">
-                            <Setter.Value>
-                                <SolidColorBrush Color="#a12316" />
-                            </Setter.Value>
-                        </Setter>
+                        <Setter Property="Background" Value="{DynamicResource DangerHoverBrush}" />
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -143,7 +127,7 @@
 
                 <!-- Large plugin icon -->
                 <Border Grid.Column="0" Width="64" Height="64"
-                        CornerRadius="6" Background="#2a2a2a"
+                        CornerRadius="6" Background="{DynamicResource SubtleBackgroundBrush}"
                         VerticalAlignment="Top" Margin="0,0,16,0">
                     <Path Data="M 6,2 L 6,14 L 14,14 L 14,6 L 10,2 Z"
                           Stroke="{DynamicResource SecondaryForegroundBrush}"

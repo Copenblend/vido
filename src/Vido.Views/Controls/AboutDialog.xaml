@@ -107,7 +107,7 @@
                     Click="OnOkClick"
                     IsDefault="True"
                     FontSize="13"
-                    Foreground="White"
+                    Foreground="{StaticResource ActiveIconBrush}"
                     Cursor="Hand">
                 <Button.Style>
                     <Style TargetType="Button">

@@ -100,9 +100,10 @@ public partial class App : Application
                 var pluginHost = _serviceProvider.GetRequiredService<IPluginHost>();
                 pluginHost.DeactivateAll();
             }
-            catch
+            catch (Exception ex)
             {
                 // Plugin errors should not prevent shutdown
+                System.Diagnostics.Debug.WriteLine($"Plugin deactivation error during shutdown: {ex.Message}");
             }
 
             // Persist state and flush any pending settings before shutdown

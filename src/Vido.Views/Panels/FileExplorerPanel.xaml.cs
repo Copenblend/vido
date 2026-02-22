@@ -335,7 +335,7 @@ public partial class FileExplorerPanel : UserControl
             menuItem.Click += (_, _) =>
             {
                 try { entry.Handler(capturedNode); }
-                catch { /* Plugin error — swallowed to prevent crash */ }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Plugin context menu handler error: {ex.Message}"); }
             };
             menu.Items.Add(menuItem);
         }

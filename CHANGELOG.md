@@ -4,6 +4,18 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-025
+- **Code quality audit**: Verified no dead code, no TODO/HACK/FIXME markers, no unused usings across entire solution
+- **Swallowed catch blocks**: Added logging to all 7 empty catch blocks — PluginHost (3×), PluginInstaller (1×), FileExplorerPanel (1×), MainWindow (1×), App.xaml.cs (1×)
+- **XML documentation**: Added XML doc comments to 49 public API members across IWindowService, AppWindowState, LogLevel, ILogService, IContributionRegistry, AppSettings, and AppState
+- **Scrollbar theming**: Replaced AccentBrush (blue) scrollbar thumbs with proper grey ScrollbarThumbBrush matching VS Code Dark Modern; added hover opacity increase (0.5 → 0.8) on mouse-over
+- **Theme resources**: Added DangerBrush, DangerHoverBrush, BadgeBackgroundBrush, SubtleBackgroundBrush, ScrollbarThumbBrush to Brushes.xaml with corresponding Colors.xaml entries
+- **Hardcoded color cleanup**: Replaced 19+ hardcoded hex colors with theme resource references in PluginManagerPanel, PluginDetailPanel, StatusBarView, and AboutDialog
+- **Window sizing**: Changed default window width from 2560 to 1280 to avoid overflowing 1080p displays on first launch
+- **README.md**: Complete rewrite with features, requirements, build/run/test/publish instructions, keyboard shortcuts, architecture overview, plugin quick start, and configuration reference
+- **PLUGIN_DEVELOPMENT.md**: Created comprehensive plugin development guide covering project setup, manifest schema, full API reference (IVidoPlugin, IPluginContext, IEventBus, IVideoEngine, IPluginSettingsStore), code examples for all extension points, plugin isolation/safety, registry format, and distribution workflow
+- **CHANGELOG.md**: Added vi-025 entry summarizing all review and polish changes
+
 ### vi-023
 - **Frame buffer pooling**: FrameData now implements IDisposable and uses `ArrayPool<byte>.Shared` instead of `new byte[]` per frame, eliminating ~8 MB/frame LOH allocations at 30+ fps
 - **Hardware-accelerated decoding**: FFmpegVideoEngine tries D3D11VA, then DXVA2, with automatic software fallback. GPU decodes the video and frames are transferred to system memory for rendering
