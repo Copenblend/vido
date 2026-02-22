@@ -1,3 +1,4 @@
+using System.Buffers;
 using FFmpeg.AutoGen.Abstractions;
 using Vido.Core.Playback;
 
@@ -97,19 +98,15 @@ internal sealed unsafe class FrameConverter : IDisposable
                 dstData, dstLineSize);
         }
 
-        // Copy pixel data to a new array for the frame
+        // Copy pixel data to a pooled array to avoid per-frame GC allocations.
+        // For 1080p (1920×1080×4 = ~8.3 MB), new byte[] would land on the LOH
+        // every frame. ArrayPool.Shared reuses buffers, eliminating GC pressure.
         var stride = _dstLineSize[0];
-        var pixelData = new byte[stride * _dstHeight];
-        Buffer.BlockCopy(_buffer, 0, pixelData, 0, pixelData.Length);
+        var dataLength = stride * _dstHeight;
+        var pixelData = ArrayPool<byte>.Shared.Rent(dataLength);
+        Buffer.BlockCopy(_buffer, 0, pixelData, 0, dataLength);
 
-        return new FrameData
-        {
-            PixelData = pixelData,
-            Width = _dstWidth,
-            Height = _dstHeight,
-            Stride = stride,
-            Pts = pts
-        };
+        return new FrameData(pixelData, dataLength, _dstWidth, _dstHeight, stride, pts, pooled: true);
     }
 
     private void Cleanup()

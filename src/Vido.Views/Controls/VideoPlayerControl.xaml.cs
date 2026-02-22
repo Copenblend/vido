@@ -128,30 +128,39 @@ public partial class VideoPlayerControl : UserControl
     /// <summary>
     /// Renders a decoded BGRA32 frame into the WriteableBitmap.
     /// Called from the engine's decode thread — marshals to the UI thread.
+    /// Disposes the FrameData after copying pixels to return the pooled buffer.
     /// </summary>
     private void OnFrameReady(FrameData frame)
     {
         Dispatcher.BeginInvoke(() =>
         {
-            // Recreate bitmap if dimensions changed
-            if (_bitmap is null || _bitmap.PixelWidth != frame.Width || _bitmap.PixelHeight != frame.Height)
-            {
-                _bitmap = new WriteableBitmap(frame.Width, frame.Height, 96, 96, PixelFormats.Bgra32, null);
-                VideoSurface.Source = _bitmap;
-            }
-
-            _bitmap.Lock();
             try
             {
-                _bitmap.WritePixels(
-                    new Int32Rect(0, 0, frame.Width, frame.Height),
-                    frame.PixelData,
-                    frame.Stride,
-                    0);
+                // Recreate bitmap if dimensions changed
+                if (_bitmap is null || _bitmap.PixelWidth != frame.Width || _bitmap.PixelHeight != frame.Height)
+                {
+                    _bitmap = new WriteableBitmap(frame.Width, frame.Height, 96, 96, PixelFormats.Bgra32, null);
+                    VideoSurface.Source = _bitmap;
+                }
+
+                _bitmap.Lock();
+                try
+                {
+                    _bitmap.WritePixels(
+                        new Int32Rect(0, 0, frame.Width, frame.Height),
+                        frame.PixelData,
+                        frame.Stride,
+                        0);
+                }
+                finally
+                {
+                    _bitmap.Unlock();
+                }
             }
             finally
             {
-                _bitmap.Unlock();
+                // Return the pooled pixel buffer immediately after rendering
+                frame.Dispose();
             }
         });
     }

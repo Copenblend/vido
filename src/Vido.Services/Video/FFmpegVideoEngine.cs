@@ -31,6 +31,17 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     private readonly FrameConverter _frameConverter = new();
     private readonly AudioRenderer _audioRenderer = new();
 
+    // ── Hardware-accelerated decoding ──
+    // D3D11VA is tried first, then DXVA2, with automatic software fallback.
+    // When active, decoded frames arrive in GPU memory and are transferred to
+    // system memory via av_hwframe_transfer_data before swscale conversion.
+    private AVBufferRef* _hwDeviceCtx;
+    private AVPixelFormat _hwPixelFormat = AVPixelFormat.AV_PIX_FMT_NONE;
+    private bool _hwDecodingActive;
+
+    // Keep the managed get_format delegate alive to prevent GC of the native callback.
+    private AVCodecContext_get_format? _getFormatDelegate;
+
     // ── Threading ──
     private Thread? _decodeThread;
     private CancellationTokenSource _decodeCts = new();
@@ -71,6 +82,14 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     // _prerollTargetPts holds the seek target; frames with PTS below it are
     // decoded silently. Set to -1 when no preroll is active.
     private long _prerollTargetPts = -1;
+
+    // ── Performance metrics ──
+    // Tracks frame delivery rate and dropped frames for performance monitoring.
+    private long _framesRendered;
+    private long _framesDropped;
+    private readonly Stopwatch _metricsTimer = new();
+    private Timer? _metricsReportTimer;
+    private const int MetricsIntervalMs = 30_000; // Log metrics every 30 seconds
 
     public FFmpegVideoEngine(ILogService logService)
     {
@@ -175,8 +194,13 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
 
         return Task.Run(() =>
         {
+            var loadTimer = Stopwatch.StartNew();
             OpenMedia(filePath);
-            _logService.Info($"Loaded: {Path.GetFileName(filePath)} ({_currentMetadata?.Resolution}, {_currentMetadata?.Duration:hh\\:mm\\:ss})");
+            loadTimer.Stop();
+            _logService.Info(
+                $"Loaded: {Path.GetFileName(filePath)} ({_currentMetadata?.Resolution}, " +
+                $"{_currentMetadata?.Duration:hh\\:mm\\:ss}) in {loadTimer.ElapsedMilliseconds} ms" +
+                (_hwDecodingActive ? " [HW accel]" : ""));
         });
     }
 
@@ -208,6 +232,7 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         _playbackClock.Restart();
 
         StartPositionTimer();
+        StartMetricsTimer();
         State = PlaybackState.Playing;
     }
 
@@ -297,7 +322,7 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         if (_videoStreamIndex >= 0)
         {
             _videoStream = _formatContext->streams[_videoStreamIndex];
-            _videoCodecContext = OpenCodec(_videoStream);
+            _videoCodecContext = OpenVideoCodec(_videoStream);
         }
 
         // Find audio stream
@@ -320,6 +345,140 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     private int FindBestStream(AVMediaType mediaType)
     {
         return ffmpeg.av_find_best_stream(_formatContext, mediaType, -1, -1, null, 0);
+    }
+
+    /// <summary>
+    /// Opens the video decoder with hardware acceleration (D3D11VA → DXVA2 → software fallback).
+    /// If hw accel setup fails at any point, falls back to software decoding transparently.
+    /// </summary>
+    private AVCodecContext* OpenVideoCodec(AVStream* stream)
+    {
+        var codecPar = stream->codecpar;
+        var codec = ffmpeg.avcodec_find_decoder(codecPar->codec_id);
+        if (codec == null)
+            throw new InvalidOperationException($"Unsupported codec: {codecPar->codec_id}");
+
+        var codecCtx = ffmpeg.avcodec_alloc_context3(codec);
+        if (codecCtx == null)
+            throw new InvalidOperationException("Failed to allocate codec context.");
+
+        var result = ffmpeg.avcodec_parameters_to_context(codecCtx, codecPar);
+        if (result < 0)
+            throw new InvalidOperationException($"Failed to copy codec parameters: {FFmpegErrorString(result)}");
+
+        // Enable multi-threaded decoding
+        codecCtx->thread_count = Math.Min(Environment.ProcessorCount, 4);
+
+        // Try hardware-accelerated decoding (D3D11VA first, then DXVA2)
+        if (TrySetupHardwareDecoding(codecCtx, codec))
+        {
+            _logService.Info(
+                $"Hardware-accelerated decoding enabled ({_hwPixelFormat})",
+                "VideoEngine");
+        }
+        else
+        {
+            _logService.Info("Using software decoding", "VideoEngine");
+        }
+
+        result = ffmpeg.avcodec_open2(codecCtx, codec, null);
+        if (result < 0)
+            throw new InvalidOperationException($"Failed to open codec: {FFmpegErrorString(result)}");
+
+        return codecCtx;
+    }
+
+    /// <summary>
+    /// Attempts to set up hardware-accelerated decoding on the given codec context.
+    /// Tries D3D11VA first, then DXVA2. Returns true if successful.
+    /// </summary>
+    private bool TrySetupHardwareDecoding(AVCodecContext* codecCtx, AVCodec* codec)
+    {
+        // Try device types in preference order
+        AVHWDeviceType[] deviceTypes =
+        [
+            AVHWDeviceType.AV_HWDEVICE_TYPE_D3D11VA,
+            AVHWDeviceType.AV_HWDEVICE_TYPE_DXVA2,
+        ];
+
+        foreach (var deviceType in deviceTypes)
+        {
+            // Check if the codec supports this hw device type
+            var hwPixFmt = FindHwPixelFormat(codec, deviceType);
+            if (hwPixFmt == AVPixelFormat.AV_PIX_FMT_NONE)
+                continue;
+
+            // Create the hardware device context
+            AVBufferRef* hwDeviceCtx = null;
+            var result = ffmpeg.av_hwdevice_ctx_create(&hwDeviceCtx, deviceType, null, null, 0);
+            if (result < 0)
+            {
+                _logService.Debug(
+                    $"Failed to create {deviceType} device: {FFmpegErrorString(result)}",
+                    "VideoEngine");
+                continue;
+            }
+
+            // Set the hardware device context on the codec
+            codecCtx->hw_device_ctx = ffmpeg.av_buffer_ref(hwDeviceCtx);
+
+            // Store for cleanup and frame transfer
+            _hwDeviceCtx = hwDeviceCtx;
+            _hwPixelFormat = hwPixFmt;
+            _hwDecodingActive = true;
+
+            // Set the get_format callback to prefer the hw pixel format.
+            // The delegate must be stored as a field to prevent GC collection.
+            _getFormatDelegate = GetHwFormat;
+            codecCtx->get_format = _getFormatDelegate;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Finds the hardware pixel format supported by a codec for a given device type.
+    /// Returns AV_PIX_FMT_NONE if the codec doesn't support this device type.
+    /// </summary>
+    private static AVPixelFormat FindHwPixelFormat(AVCodec* codec, AVHWDeviceType deviceType)
+    {
+        for (var i = 0; ; i++)
+        {
+            var config = ffmpeg.avcodec_get_hw_config(codec, i);
+            if (config == null)
+                break;
+
+            if (config->device_type == deviceType &&
+                (config->methods & 0x02 /* AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX */) != 0)
+            {
+                return config->pix_fmt;
+            }
+        }
+
+        return AVPixelFormat.AV_PIX_FMT_NONE;
+    }
+
+    /// <summary>
+    /// get_format callback that prefers the hardware pixel format.
+    /// Called by FFmpeg during codec negotiation to select the output format.
+    /// </summary>
+    private AVPixelFormat GetHwFormat(AVCodecContext* ctx, AVPixelFormat* pix_fmts)
+    {
+        // Walk the list of offered formats and prefer the hw format
+        for (var p = pix_fmts; *p != AVPixelFormat.AV_PIX_FMT_NONE; p++)
+        {
+            if (*p == _hwPixelFormat)
+                return *p;
+        }
+
+        // Hardware format not available — fall back to software
+        _logService.Warning(
+            $"Hardware pixel format {_hwPixelFormat} not available, falling back to software",
+            "VideoEngine");
+        _hwDecodingActive = false;
+        return pix_fmts[0];
     }
 
     private AVCodecContext* OpenCodec(AVStream* stream)
@@ -537,55 +696,91 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         var result = ffmpeg.avcodec_send_packet(_videoCodecContext, packet);
         if (result < 0) return;
 
-        while (ffmpeg.avcodec_receive_frame(_videoCodecContext, frame) == 0)
+        // Pre-allocate a sw_frame for hw→sw transfer (reused across receive_frame calls)
+        AVFrame* swFrame = null;
+        if (_hwDecodingActive)
+            swFrame = ffmpeg.av_frame_alloc();
+
+        try
         {
-            // If a seek was requested since we started, discard stale frames.
-            if (_seekGeneration != generation)
+            while (ffmpeg.avcodec_receive_frame(_videoCodecContext, frame) == 0)
             {
-                ffmpeg.av_frame_unref(frame);
-                return;
-            }
-
-            // Silent preroll: after a seek, avformat_seek_file lands at a keyframe
-            // BEFORE the target. We must decode these frames (B-frame references)
-            // but not render them. Once we reach the target PTS, clear the flag.
-            var prerollTarget = _prerollTargetPts;
-            if (prerollTarget >= 0)
-            {
-                if (frame->best_effort_timestamp < prerollTarget)
-                {
-                    ffmpeg.av_frame_unref(frame);
-                    continue; // Decode next frame silently
-                }
-                // Reached or passed the target -- end preroll
-                _prerollTargetPts = -1;
-            }
-
-            // Configure frame converter on first frame or format change
-            _frameConverter.Configure(
-                frame->width, frame->height,
-                (AVPixelFormat)frame->format);
-
-            // Calculate presentation timestamp
-            var pts = CalculateTimestamp(frame->best_effort_timestamp, _videoStream);
-
-            var frameData = _frameConverter.Convert(frame, pts);
-            if (frameData != null)
-            {
-                // Wait for the correct display time, but abort if a seek arrives
-                WaitForPresentationTime(pts, generation);
-
-                // Check generation after the wait
+                // If a seek was requested since we started, discard stale frames.
                 if (_seekGeneration != generation)
                 {
                     ffmpeg.av_frame_unref(frame);
                     return;
                 }
 
-                FrameReady?.Invoke(frameData);
-            }
+                // Silent preroll: after a seek, avformat_seek_file lands at a keyframe
+                // BEFORE the target. We must decode these frames (B-frame references)
+                // but not render them. Once we reach the target PTS, clear the flag.
+                var prerollTarget = _prerollTargetPts;
+                if (prerollTarget >= 0)
+                {
+                    if (frame->best_effort_timestamp < prerollTarget)
+                    {
+                        ffmpeg.av_frame_unref(frame);
+                        continue; // Decode next frame silently
+                    }
+                    // Reached or passed the target -- end preroll
+                    _prerollTargetPts = -1;
+                }
 
-            ffmpeg.av_frame_unref(frame);
+                // If hardware decoding is active, transfer the frame from GPU to system memory.
+                // The decoded frame is in a hardware-specific pixel format (e.g. D3D11) and must
+                // be downloaded before swscale can convert to BGRA32.
+                AVFrame* renderFrame = frame;
+                if (_hwDecodingActive && (AVPixelFormat)frame->format == _hwPixelFormat && swFrame != null)
+                {
+                    result = ffmpeg.av_hwframe_transfer_data(swFrame, frame, 0);
+                    if (result < 0)
+                    {
+                        // Transfer failed — fall back to software for this frame
+                        ffmpeg.av_frame_unref(frame);
+                        continue;
+                    }
+                    swFrame->best_effort_timestamp = frame->best_effort_timestamp;
+                    renderFrame = swFrame;
+                }
+
+                // Configure frame converter on first frame or format change
+                _frameConverter.Configure(
+                    renderFrame->width, renderFrame->height,
+                    (AVPixelFormat)renderFrame->format);
+
+                // Calculate presentation timestamp
+                var pts = CalculateTimestamp(renderFrame->best_effort_timestamp, _videoStream);
+
+                var frameData = _frameConverter.Convert(renderFrame, pts);
+
+                // Clean up frame references before potentially blocking on presentation time
+                if (renderFrame == swFrame)
+                    ffmpeg.av_frame_unref(swFrame);
+                ffmpeg.av_frame_unref(frame);
+
+                if (frameData != null)
+                {
+                    // Wait for the correct display time, but abort if a seek arrives
+                    WaitForPresentationTime(pts, generation);
+
+                    // Check generation after the wait
+                    if (_seekGeneration != generation)
+                    {
+                        frameData.Dispose();
+                        Interlocked.Increment(ref _framesDropped);
+                        return;
+                    }
+
+                    Interlocked.Increment(ref _framesRendered);
+                    FrameReady?.Invoke(frameData);
+                }
+            }
+        }
+        finally
+        {
+            if (swFrame != null)
+                ffmpeg.av_frame_free(&swFrame);
         }
     }
 
@@ -678,6 +873,50 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         _positionTimer = null;
     }
 
+    // ── Performance Metrics ──
+
+    private void StartMetricsTimer()
+    {
+        StopMetricsTimer();
+        Interlocked.Exchange(ref _framesRendered, 0);
+        Interlocked.Exchange(ref _framesDropped, 0);
+        _metricsTimer.Restart();
+
+        _metricsReportTimer = new Timer(_ => ReportMetrics(), null,
+            TimeSpan.FromMilliseconds(MetricsIntervalMs),
+            TimeSpan.FromMilliseconds(MetricsIntervalMs));
+    }
+
+    private void StopMetricsTimer()
+    {
+        _metricsReportTimer?.Dispose();
+        _metricsReportTimer = null;
+
+        // Report final metrics on stop if any frames were rendered
+        if (_metricsTimer.IsRunning)
+            ReportMetrics();
+
+        _metricsTimer.Stop();
+    }
+
+    private void ReportMetrics()
+    {
+        var elapsed = _metricsTimer.Elapsed;
+        if (elapsed.TotalSeconds < 1) return;
+
+        var rendered = Interlocked.Read(ref _framesRendered);
+        var dropped = Interlocked.Read(ref _framesDropped);
+        var fps = rendered / elapsed.TotalSeconds;
+
+        var memoryMb = GC.GetTotalMemory(forceFullCollection: false) / (1024.0 * 1024.0);
+
+        _logService.Debug(
+            $"Playback metrics — {fps:F1} fps, {rendered} rendered, {dropped} dropped, " +
+            $"GC memory: {memoryMb:F1} MB" +
+            (_hwDecodingActive ? " [HW accel]" : " [SW decode]"),
+            "VideoEngine");
+    }
+
     // ── Seeking ──
 
     private void SeekInternal(TimeSpan position)
@@ -734,6 +973,7 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         _decodeCts = new CancellationTokenSource();
 
         StopPositionTimer();
+        StopMetricsTimer();
         _audioRenderer.Stop();
 
         // Free FFmpeg contexts
@@ -764,6 +1004,18 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
             ffmpeg.avformat_close_input(&fmt);
             _formatContext = null;
         }
+
+        // Free hardware device context (must be freed after codec context)
+        if (_hwDeviceCtx != null)
+        {
+            var hwCtx = _hwDeviceCtx;
+            ffmpeg.av_buffer_unref(&hwCtx);
+            _hwDeviceCtx = null;
+        }
+
+        _hwPixelFormat = AVPixelFormat.AV_PIX_FMT_NONE;
+        _hwDecodingActive = false;
+        _getFormatDelegate = null;
 
         _videoStreamIndex = -1;
         _audioStreamIndex = -1;

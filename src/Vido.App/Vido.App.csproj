@@ -9,6 +9,11 @@
     <RootNamespace>Vido.App</RootNamespace>
     <AssemblyName>Vido</AssemblyName>
     <Version>0.1.0</Version>
+
+    <!-- Performance: pre-compile assemblies for faster startup (publish builds) -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <!-- TieredCompilation is on by default in .NET 8 but explicit for clarity -->
+    <TieredCompilation>true</TieredCompilation>
   </PropertyGroup>
 
   <ItemGroup>
