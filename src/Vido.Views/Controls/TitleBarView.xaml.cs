@@ -479,7 +479,10 @@ public partial class TitleBarView : UserControl
             ToggleStatusBarItemRequested?.Invoke(registrationId, visible);
         };
 
-        StatusBarMenu.Items.Add(menuItem);
+        // Insert before the Show/Hide Status Bar item (last item)
+        var insertIndex = StatusBarMenu.Items.Count - 1;
+        if (insertIndex < 0) insertIndex = 0;
+        StatusBarMenu.Items.Insert(insertIndex, menuItem);
         _statusBarMenuItems[registrationId] = menuItem;
     }
 
@@ -567,10 +570,10 @@ public partial class TitleBarView : UserControl
             {
                 CornerRadius = new CornerRadius(4),
                 BorderThickness = new Thickness(1),
-                Padding = new Thickness(2, 0, 2, 0),
+                Padding = new Thickness(0),
                 VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Left,
-                Margin = new Thickness(8, 2, 0, 2),
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 2, 8, 2),
                 Child = _pluginToolbarPanel,
             };
             _pluginToolbarBorder.SetResourceReference(Border.BackgroundProperty, "EditorBackgroundBrush");

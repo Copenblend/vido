@@ -1,9 +1,7 @@
 # Additional Fixes
 
-1. Vido Title in TopMenu must be perfectly centered in the entire top bar, it appears to be centered between the buttons on its left and the buttons on its right. It should be exactly center in the window. 
-2. The Status Bar options in the Top Menu should be in View -> Status Bar -> {Status Bar Options} it is incorrectly in the submenu of Bottom Panel. 
-3. The Enable/Disable Button inside the plugin tab must be the same height as the Install/Uninstall Button. Change the font of Enable/Disable to white. 
-4. The settings Cog in the Sidebar Plugins should be slightly smaller and aligned with the Publsher name. 
-5. The highlight around Enabled/Disabled in the SideBar Plugins should be slightly smaller.
-6. The plugin Buttons on the top menu MUST be to the right of the Vido title AND the highlight MUST be the same as other topmenu items.  
-7. Update the plugin.json with the new name property for the status bar contribution and rerun the package.ps1
+1. The color of the Enable/Disable Button in the Plugin Tab must be the same color as the top menu!
+2. The Plugin Button that goes in the Top Menu MUST BE ON THE RIGHT SIDE OF THE "Vido" title!
+3. The Plugin Button Highlight should fill the section completely so long as it wouldnt overlap another plugin button. Right now there is a single button so it should fill the entire space!
+4. Put Show/Hide Status Bar on the bottom of its current menu.
+5. Remove Log Output from the Bottom Panel sub menu, since it is always part of that panel, it need not be there. 
