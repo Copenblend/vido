@@ -31,23 +31,11 @@ public partial class PluginItemViewModel : ObservableObject
     /// <summary>Tags for search.</summary>
     public IReadOnlyList<string> Tags { get; }
 
-    /// <summary>Icon URL (may be null).</summary>
-    public string? IconUrl { get; }
-
-    /// <summary>Download URL for installation.</summary>
-    public string DownloadUrl { get; }
-
-    /// <summary>Repository URL.</summary>
-    public string? Repository { get; }
-
     /// <summary>Last updated date string.</summary>
     public string? LastUpdated { get; }
 
     /// <summary>Which registry this plugin came from.</summary>
     public string RegistryName { get; }
-
-    /// <summary>The registry URL this plugin came from.</summary>
-    public string RegistryUrl { get; }
 
     /// <summary>Whether this plugin is from the official Vido registry (shows verified badge).</summary>
     [ObservableProperty]
@@ -56,10 +44,6 @@ public partial class PluginItemViewModel : ObservableObject
     /// <summary>Whether the plugin is currently installed locally.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusText))]
-    [NotifyPropertyChangedFor(nameof(ShowInstallButton))]
-    [NotifyPropertyChangedFor(nameof(ShowUninstallButton))]
-    [NotifyPropertyChangedFor(nameof(ShowSettingsCog))]
-    [NotifyPropertyChangedFor(nameof(ShowEnableDisableToggle))]
     private bool _isInstalled;
 
     /// <summary>Whether the plugin is enabled (only relevant when installed).</summary>
@@ -73,18 +57,6 @@ public partial class PluginItemViewModel : ObservableObject
 
     /// <summary>Status text: "Enabled", "Disabled", or empty for available plugins.</summary>
     public string StatusText => IsInstalled ? (IsEnabled ? "Enabled" : "Disabled") : string.Empty;
-
-    /// <summary>Show the Install button (available plugins only).</summary>
-    public bool ShowInstallButton => !IsInstalled;
-
-    /// <summary>Show the Uninstall button (installed plugins only).</summary>
-    public bool ShowUninstallButton => IsInstalled;
-
-    /// <summary>Show the settings cog (installed plugins only).</summary>
-    public bool ShowSettingsCog => IsInstalled;
-
-    /// <summary>Show the enable/disable toggle (installed plugins only).</summary>
-    public bool ShowEnableDisableToggle => IsInstalled;
 
     /// <summary>The PluginInfo from the host (set when installed, null when only in registry).</summary>
     public PluginInfo? PluginInfo { get; set; }
@@ -106,12 +78,8 @@ public partial class PluginItemViewModel : ObservableObject
             version: entry.Version,
             license: entry.License,
             tags: entry.Tags,
-            iconUrl: entry.IconUrl,
-            downloadUrl: entry.DownloadUrl,
-            repository: entry.Repository,
             lastUpdated: entry.LastUpdated,
             registryName: entry.RegistryName,
-            registryUrl: entry.RegistryUrl,
             isOfficial: entry.IsOfficial,
             isInstalled: false)
         {
@@ -134,12 +102,8 @@ public partial class PluginItemViewModel : ObservableObject
             version: manifest.Version,
             license: manifest.License,
             tags: manifest.Tags,
-            iconUrl: registryEntry?.IconUrl,
-            downloadUrl: registryEntry?.DownloadUrl ?? string.Empty,
-            repository: manifest.Repository,
             lastUpdated: registryEntry?.LastUpdated,
             registryName: registryEntry?.RegistryName ?? string.Empty,
-            registryUrl: registryEntry?.RegistryUrl ?? string.Empty,
             isOfficial: registryEntry?.IsOfficial ?? false,
             isInstalled: true)
         {
@@ -159,12 +123,8 @@ public partial class PluginItemViewModel : ObservableObject
         string version,
         string license,
         IReadOnlyList<string> tags,
-        string? iconUrl,
-        string downloadUrl,
-        string? repository,
         string? lastUpdated,
         string registryName,
-        string registryUrl,
         bool isOfficial,
         bool isInstalled)
     {
@@ -175,12 +135,8 @@ public partial class PluginItemViewModel : ObservableObject
         Version = version;
         License = license;
         Tags = tags;
-        IconUrl = iconUrl;
-        DownloadUrl = downloadUrl;
-        Repository = repository;
         LastUpdated = lastUpdated;
         RegistryName = registryName;
-        RegistryUrl = registryUrl;
         _isOfficial = isOfficial;
         _isInstalled = isInstalled;
     }

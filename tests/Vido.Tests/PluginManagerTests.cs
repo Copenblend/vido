@@ -101,17 +101,6 @@ public sealed class PluginManagerTests
     }
 
     [Fact]
-    public void FromRegistryEntry_Available_ShowsInstallButton()
-    {
-        var item = PluginItemViewModel.FromRegistryEntry(MakeEntry());
-
-        Assert.True(item.ShowInstallButton);
-        Assert.False(item.ShowUninstallButton);
-        Assert.False(item.ShowSettingsCog);
-        Assert.False(item.ShowEnableDisableToggle);
-    }
-
-    [Fact]
     public void FromPluginInfo_SetsInstalledProperties()
     {
         var info = MakePluginInfo();
@@ -144,17 +133,6 @@ public sealed class PluginManagerTests
     }
 
     [Fact]
-    public void Installed_ShowsCorrectButtons()
-    {
-        var item = PluginItemViewModel.FromPluginInfo(MakePluginInfo());
-
-        Assert.False(item.ShowInstallButton);
-        Assert.True(item.ShowUninstallButton);
-        Assert.True(item.ShowSettingsCog);
-        Assert.True(item.ShowEnableDisableToggle);
-    }
-
-    [Fact]
     public void StatusText_Installed_Enabled()
     {
         var item = PluginItemViewModel.FromPluginInfo(MakePluginInfo());
@@ -176,7 +154,7 @@ public sealed class PluginManagerTests
     }
 
     [Fact]
-    public void IsInstalled_ChangeNotifiesComputedProperties()
+    public void IsInstalled_ChangeNotifiesStatusText()
     {
         var item = PluginItemViewModel.FromRegistryEntry(MakeEntry());
         var changedProps = new List<string>();
@@ -185,10 +163,6 @@ public sealed class PluginManagerTests
         item.IsInstalled = true;
 
         Assert.Contains(nameof(item.StatusText), changedProps);
-        Assert.Contains(nameof(item.ShowInstallButton), changedProps);
-        Assert.Contains(nameof(item.ShowUninstallButton), changedProps);
-        Assert.Contains(nameof(item.ShowSettingsCog), changedProps);
-        Assert.Contains(nameof(item.ShowEnableDisableToggle), changedProps);
     }
 
     [Fact]
@@ -277,7 +251,6 @@ public sealed class PluginManagerTests
 
         Assert.True(item.IsOfficial);
         Assert.Same(entry, item.RegistryEntry);
-        Assert.Equal(entry.DownloadUrl, item.DownloadUrl);
     }
 
     // ╔══════════════════════════════════════════════════════════════════╗

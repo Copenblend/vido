@@ -105,7 +105,7 @@ public partial class VideoDetailsViewModel : ObservableObject, IDisposable
         FileName = metadata.FileName;
         FilePath = metadata.FilePath;
         FileSize = FormatFileSize(metadata.FileSize);
-        FormattedDuration = FormatDuration(metadata.Duration);
+        FormattedDuration = TimeFormatter.FormatPadded(metadata.Duration);
         Resolution = metadata.Resolution;
         VideoCodec = metadata.VideoCodec ?? "Unknown";
         AudioCodec = metadata.AudioCodec ?? "None";
@@ -127,8 +127,6 @@ public partial class VideoDetailsViewModel : ObservableObject, IDisposable
             _ => $"{bytes / (1024.0 * 1024 * 1024):F2} GB"
         };
     }
-
-    internal static string FormatDuration(TimeSpan duration) => TimeFormatter.FormatPadded(duration);
 
     internal static string FormatBitrate(long bitsPerSecond)
     {

@@ -696,4 +696,105 @@ public class MainWindowViewModelTests
 
         Assert.True(raised);
     }
+
+    // ── OpenBottomPanelTab with custom title ──
+
+    [Fact]
+    public void OpenBottomPanelTab_NewCustomTab_CreatesAndActivates()
+    {
+        _sut.OpenBottomPanelTab("plugin.test.panel1", "MY CUSTOM PANEL");
+
+        Assert.Equal(2, _sut.BottomPanelTabs.Count);
+        var tab = _sut.FindBottomPanelTab("plugin.test.panel1");
+        Assert.NotNull(tab);
+        Assert.Equal("MY CUSTOM PANEL", tab!.Title);
+        Assert.True(tab.IsClosable);
+        Assert.Equal(tab, _sut.ActiveBottomPanelTab);
+    }
+
+    [Fact]
+    public void OpenBottomPanelTab_NewTab_ShowsPanel()
+    {
+        _sut.IsBottomPanelVisible = false;
+
+        _sut.OpenBottomPanelTab("plugin.test.panel1", "PANEL");
+
+        Assert.True(_sut.IsBottomPanelVisible);
+    }
+
+    [Fact]
+    public void OpenBottomPanelTab_Duplicate_ActivatesExisting()
+    {
+        _sut.OpenBottomPanelTab("plugin.test.panel1", "PANEL");
+        _sut.ActivateBottomPanelTab(MainWindowViewModel.OutputTabId);
+
+        _sut.OpenBottomPanelTab("plugin.test.panel1", "PANEL");
+
+        Assert.Equal(2, _sut.BottomPanelTabs.Count); // No duplicate
+        Assert.Equal("plugin.test.panel1", _sut.ActiveBottomPanelTab!.Id);
+    }
+
+    // ── CloseBottomPanelTab for closable tabs ──
+
+    [Fact]
+    public void CloseBottomPanelTab_ClosableTab_RemovesIt()
+    {
+        _sut.OpenBottomPanelTab("custom1", "CUSTOM");
+        Assert.Equal(2, _sut.BottomPanelTabs.Count);
+
+        _sut.CloseBottomPanelTab("custom1");
+
+        Assert.Single(_sut.BottomPanelTabs);
+        Assert.Null(_sut.FindBottomPanelTab("custom1"));
+    }
+
+    [Fact]
+    public void CloseBottomPanelTab_ActiveClosable_ActivatesNeighbor()
+    {
+        _sut.OpenBottomPanelTab("custom1", "CUSTOM");
+        // custom1 is now active
+        Assert.Equal("custom1", _sut.ActiveBottomPanelTab!.Id);
+
+        _sut.CloseBottomPanelTab("custom1");
+
+        // Should fall back to OUTPUT
+        Assert.NotNull(_sut.ActiveBottomPanelTab);
+        Assert.Equal(MainWindowViewModel.OutputTabId, _sut.ActiveBottomPanelTab!.Id);
+    }
+
+    [Fact]
+    public void CloseBottomPanelTab_InactiveClosable_DoesNotChangeActive()
+    {
+        _sut.OpenBottomPanelTab("custom1", "C1");
+        _sut.OpenBottomPanelTab("custom2", "C2");
+        // custom2 is now active
+        Assert.Equal("custom2", _sut.ActiveBottomPanelTab!.Id);
+
+        _sut.CloseBottomPanelTab("custom1");
+
+        Assert.Equal("custom2", _sut.ActiveBottomPanelTab!.Id);
+        Assert.Equal(2, _sut.BottomPanelTabs.Count);
+    }
+
+    // ── SuppressSettingsSave ──
+
+    [Fact]
+    public void SuppressSettingsSave_PreventsQueueSave()
+    {
+        _sut.SuppressSettingsSave = true;
+
+        _sut.ToggleBottomPanel();
+
+        _settingsService.DidNotReceive().QueueSave();
+    }
+
+    [Fact]
+    public void SuppressSettingsSave_False_AllowsQueueSave()
+    {
+        _sut.SuppressSettingsSave = false;
+
+        _sut.ToggleBottomPanel();
+
+        _settingsService.Received().QueueSave();
+    }
 }

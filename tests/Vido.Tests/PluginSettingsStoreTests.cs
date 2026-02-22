@@ -24,7 +24,7 @@ public class PluginSettingsStoreTests : IDisposable
             Directory.Delete(_tempDir, recursive: true);
     }
 
-    private PluginSettingsStore CreateStore() => new("test-plugin", _settingsFile);
+    private PluginSettingsStore CreateStore() => PluginSettingsStore.ForTesting(_settingsFile);
 
     [Fact]
     public void Get_UnsetKey_ReturnsDefault()
@@ -68,7 +68,7 @@ public class PluginSettingsStoreTests : IDisposable
         store.Set("persistent", "value");
 
         // Create a fresh store instance pointing to the same file
-        var store2 = new PluginSettingsStore("test-plugin", _settingsFile);
+        var store2 = PluginSettingsStore.ForTesting(_settingsFile);
 
         Assert.Equal("value", store2.Get("persistent", ""));
     }
@@ -125,7 +125,7 @@ public class PluginSettingsStoreTests : IDisposable
     public void Set_CreatesDirectoryIfNotExists()
     {
         var nestedPath = Path.Combine(_tempDir, "sub", "dir", "settings.json");
-        var store = new PluginSettingsStore("test", nestedPath);
+        var store = PluginSettingsStore.ForTesting(nestedPath);
 
         store.Set("key", "value");
 
@@ -136,7 +136,7 @@ public class PluginSettingsStoreTests : IDisposable
     public void EmptyStore_NoFileCreated()
     {
         var path = Path.Combine(_tempDir, "notouch", "settings.json");
-        _ = new PluginSettingsStore("test", path);
+        _ = PluginSettingsStore.ForTesting(path);
 
         Assert.False(File.Exists(path));
     }
@@ -150,7 +150,7 @@ public class PluginSettingsStoreTests : IDisposable
         store.Set("b", "two");
         store.Set("c", 3.14);
 
-        var store2 = new PluginSettingsStore("test", _settingsFile);
+        var store2 = PluginSettingsStore.ForTesting(_settingsFile);
 
         Assert.Equal(1, store2.Get("a", 0));
         Assert.Equal("two", store2.Get("b", ""));
@@ -211,7 +211,7 @@ public class PluginSettingsStoreTests : IDisposable
         store.Set("key", "value");
         store.Reset("key");
 
-        var store2 = new PluginSettingsStore("test", _settingsFile);
+        var store2 = PluginSettingsStore.ForTesting(_settingsFile);
         Assert.Equal("default", store2.Get("key", "default"));
     }
 
@@ -253,7 +253,7 @@ public class PluginSettingsStoreTests : IDisposable
         store.Set("key", "val");
         store.ResetAll();
 
-        var store2 = new PluginSettingsStore("test", _settingsFile);
+        var store2 = PluginSettingsStore.ForTesting(_settingsFile);
         Assert.Equal("default", store2.Get("key", "default"));
     }
 }

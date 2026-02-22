@@ -25,44 +25,49 @@ public sealed class ContributionRegistry : IContributionRegistry
     // Track which plugin registered which file icon extensions for cleanup
     private readonly Dictionary<string, List<string>> _pluginFileIconKeys = [];
 
-    // Track which plugin registered which key bindings for cleanup
-    private readonly Dictionary<string, List<string>> _pluginKeyBindings = [];
-
     public event Action? ContributionsChanged;
+
+    // ── Helpers ──
+
+    /// <summary>
+    /// Inserts an item into a sorted list using binary search for O(log n) insertion,
+    /// then fires ContributionsChanged.
+    /// </summary>
+    private void InsertSorted<T>(List<T> list, T item, Comparison<T> comparison)
+    {
+        lock (_lock)
+        {
+            var index = list.BinarySearch(item, Comparer<T>.Create(comparison));
+            if (index < 0) index = ~index;
+            list.Insert(index, item);
+        }
+        ContributionsChanged?.Invoke();
+    }
 
     // ── Registration ──
 
     public void RegisterSidebarPanel(string pluginId, string contributionId, string title,
         string? iconPath, int order, Func<object> viewFactory)
     {
-        lock (_lock)
-        {
-            _sidebars.Add(new SidebarRegistration(pluginId, contributionId, title, iconPath, order, viewFactory));
-            _sidebars.Sort((a, b) => a.Order.CompareTo(b.Order));
-        }
-        ContributionsChanged?.Invoke();
+        InsertSorted(_sidebars,
+            new SidebarRegistration(pluginId, contributionId, title, iconPath, order, viewFactory),
+            (a, b) => a.Order.CompareTo(b.Order));
     }
 
     public void RegisterBottomPanel(string pluginId, string contributionId, string title,
         int order, Func<object> viewFactory)
     {
-        lock (_lock)
-        {
-            _bottomPanels.Add(new PanelRegistration(pluginId, contributionId, title, order, viewFactory));
-            _bottomPanels.Sort((a, b) => a.Order.CompareTo(b.Order));
-        }
-        ContributionsChanged?.Invoke();
+        InsertSorted(_bottomPanels,
+            new PanelRegistration(pluginId, contributionId, title, order, viewFactory),
+            (a, b) => a.Order.CompareTo(b.Order));
     }
 
     public void RegisterRightPanel(string pluginId, string contributionId, string title,
         int order, Func<object> viewFactory)
     {
-        lock (_lock)
-        {
-            _rightPanels.Add(new PanelRegistration(pluginId, contributionId, title, order, viewFactory));
-            _rightPanels.Sort((a, b) => a.Order.CompareTo(b.Order));
-        }
-        ContributionsChanged?.Invoke();
+        InsertSorted(_rightPanels,
+            new PanelRegistration(pluginId, contributionId, title, order, viewFactory),
+            (a, b) => a.Order.CompareTo(b.Order));
     }
 
     public void RegisterStatusBarItem(string pluginId, string contributionId, string position,
@@ -78,23 +83,17 @@ public sealed class ContributionRegistry : IContributionRegistry
     public void RegisterToolbarButton(string pluginId, string contributionId, string tooltip,
         string? iconPath, int order, Action clickHandler)
     {
-        lock (_lock)
-        {
-            _toolbarButtons.Add(new ToolbarButtonRegistration(pluginId, contributionId, tooltip, iconPath, order, clickHandler));
-            _toolbarButtons.Sort((a, b) => a.Order.CompareTo(b.Order));
-        }
-        ContributionsChanged?.Invoke();
+        InsertSorted(_toolbarButtons,
+            new ToolbarButtonRegistration(pluginId, contributionId, tooltip, iconPath, order, clickHandler),
+            (a, b) => a.Order.CompareTo(b.Order));
     }
 
     public void RegisterContextMenuHandler(string pluginId, string contributionId, string label,
         string[] fileExtensions, int order, Action<FileNode> handler)
     {
-        lock (_lock)
-        {
-            _contextMenuItems.Add(new ContextMenuRegistration(pluginId, contributionId, label, fileExtensions, order, handler));
-            _contextMenuItems.Sort((a, b) => a.Order.CompareTo(b.Order));
-        }
-        ContributionsChanged?.Invoke();
+        InsertSorted(_contextMenuItems,
+            new ContextMenuRegistration(pluginId, contributionId, label, fileExtensions, order, handler),
+            (a, b) => a.Order.CompareTo(b.Order));
     }
 
     public void RegisterFileHandler(string pluginId, string[] extensions, Action<FileNode> handler)
@@ -117,29 +116,17 @@ public sealed class ContributionRegistry : IContributionRegistry
                 keys.Add(ext);
             }
             if (!_pluginFileIconKeys.TryGetValue(pluginId, out var existing))
-            {
                 _pluginFileIconKeys[pluginId] = keys;
-            }
             else
-            {
                 existing.AddRange(keys);
-            }
         }
         ContributionsChanged?.Invoke();
     }
 
     public void RegisterKeyBinding(string pluginId, KeyBinding binding, string commandId, Action handler)
     {
-        lock (_lock)
-        {
-            if (!_pluginKeyBindings.TryGetValue(pluginId, out var bindings))
-            {
-                bindings = [];
-                _pluginKeyBindings[pluginId] = bindings;
-            }
-            bindings.Add(commandId);
-        }
-        // Note: actual key binding registration is handled by PluginContext via IKeyboardShortcutService
+        // Key binding registration is handled by PluginContext via IKeyboardShortcutService.
+        // This method exists to satisfy the IContributionRegistry interface contract.
     }
 
     // ── Query ──
@@ -186,21 +173,6 @@ public sealed class ContributionRegistry : IContributionRegistry
 
     // ── Cleanup ──
 
-    /// <summary>
-    /// Removes all contributions registered by the specified plugin.
-    /// Returns the list of key binding command IDs that were registered so the caller
-    /// can unregister them from <see cref="IKeyboardShortcutService"/>.
-    /// </summary>
-    public IReadOnlyList<string> GetPluginKeyBindingCommandIds(string pluginId)
-    {
-        lock (_lock)
-        {
-            return _pluginKeyBindings.TryGetValue(pluginId, out var bindings)
-                ? bindings.ToList()
-                : [];
-        }
-    }
-
     public void UnregisterAll(string pluginId)
     {
         lock (_lock)
@@ -220,8 +192,6 @@ public sealed class ContributionRegistry : IContributionRegistry
                     _fileIcons.Remove(key);
                 _pluginFileIconKeys.Remove(pluginId);
             }
-
-            _pluginKeyBindings.Remove(pluginId);
         }
         ContributionsChanged?.Invoke();
     }

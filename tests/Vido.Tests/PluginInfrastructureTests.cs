@@ -47,26 +47,6 @@ public sealed class PluginInfrastructureTests
         Assert.StartsWith("https://", AppSettings.OfficialRegistryUrl);
     }
 
-    // ── PluginIconConstants ──
-
-    [Fact]
-    public void SidebarIconSize_Is24()
-    {
-        Assert.Equal(24, PluginIconConstants.SidebarIconSize);
-    }
-
-    [Fact]
-    public void FileIconSize_Is16()
-    {
-        Assert.Equal(16, PluginIconConstants.FileIconSize);
-    }
-
-    [Fact]
-    public void ToolbarIconSize_Is16()
-    {
-        Assert.Equal(16, PluginIconConstants.ToolbarIconSize);
-    }
-
     // ── SettingContribution model ──
 
     [Fact]

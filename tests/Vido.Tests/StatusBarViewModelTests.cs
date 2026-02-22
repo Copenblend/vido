@@ -183,18 +183,6 @@ public class StatusBarViewModelTests : IDisposable
         Assert.Equal("1920x1080", _sut.FindItem(StatusBarViewModel.ResolutionItemId)!.Text);
     }
 
-    // ── Duration Formatting ──
-
-    [Theory]
-    [InlineData(0, "00:00")]
-    [InlineData(65, "01:05")]
-    [InlineData(3661, "01:01:01")]
-    [InlineData(3723, "01:02:03")]
-    public void FormatDuration_CorrectlyFormats(int seconds, string expected)
-    {
-        Assert.Equal(expected, StatusBarViewModel.FormatDuration(TimeSpan.FromSeconds(seconds)));
-    }
-
     // ── Item Registry ──
 
     [Fact]

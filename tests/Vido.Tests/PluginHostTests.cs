@@ -164,7 +164,7 @@ public class PluginHostTests : IDisposable
     }
 
     [Fact]
-    public void ActivateAll_DisabledPlugin_SetsDisabledState()
+    public void ActivateAll_DisabledPlugin_LogsStartup()
     {
         _appSettings.DisabledPluginIds = ["com.test.disabled"];
 

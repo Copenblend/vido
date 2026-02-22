@@ -189,17 +189,6 @@ public partial class FileExplorerViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Returns all video file paths currently visible in the tree (root-level only).
-    /// Used to build the skip-navigation list after additive drops.
-    /// </summary>
-    public List<string> GetAllVideoFilePaths()
-    {
-        var paths = new List<string>();
-        CollectVideoFiles(RootNodes, paths);
-        return paths;
-    }
-
-    /// <summary>
     /// Closes the currently open folder and clears the tree.
     /// </summary>
     [RelayCommand]
@@ -445,19 +434,5 @@ public partial class FileExplorerViewModel : ObservableObject
         RootNodes.Clear();
         foreach (var node in sorted)
             RootNodes.Add(node);
-    }
-
-    /// <summary>
-    /// Recursively collects all video file paths from the tree.
-    /// </summary>
-    private static void CollectVideoFiles(IEnumerable<FileNode> nodes, List<string> paths)
-    {
-        foreach (var node in nodes)
-        {
-            if (node.IsVideoFile)
-                paths.Add(node.FullPath);
-            else if (node.IsDirectory && !node.NeedsLoading)
-                CollectVideoFiles(node.Children, paths);
-        }
     }
 }
