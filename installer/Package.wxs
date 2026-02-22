@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  Vido Installer — WiX v5
+  Produces an MSI that installs Vido to Program Files, creates shortcuts,
+  and optionally registers file associations for video types.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Package Name="Vido"
+           Manufacturer="Vido Contributors"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="7A3C8F2E-1D5B-4E6A-9C0D-F8E2A1B3C4D5"
+           Scope="perUser"
+           InstallerVersion="500"
+           Compressed="yes">
+
+    <!-- Upgrade logic: remove older versions before installing -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Vido is already installed."
+                  Schedule="afterInstallInitialize" />
+
+    <!-- Embed all files in the MSI -->
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!--  FEATURES                                               -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+
+    <Feature Id="MainApplication" Title="Vido Video Player" Level="1"
+             Description="The Vido video player application and all required components."
+             AllowAbsent="no" AllowAdvertise="no">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="CleanInstallFolder" />
+      <ComponentRef Id="StartMenuShortcut" />
+    </Feature>
+
+    <Feature Id="DesktopShortcut" Title="Desktop Shortcut" Level="1"
+             Description="Create a shortcut on the Desktop."
+             AllowAdvertise="no">
+      <ComponentRef Id="DesktopShortcutComponent" />
+    </Feature>
+
+    <Feature Id="FileAssociations" Title="File Associations" Level="1"
+             Description="Associate video file types (.mp4, .avi, .mkv, .mov, .wmv, .flv, .webm) with Vido."
+             AllowAdvertise="no">
+      <ComponentRef Id="FileAssocMP4" />
+      <ComponentRef Id="FileAssocAVI" />
+      <ComponentRef Id="FileAssocMKV" />
+      <ComponentRef Id="FileAssocMOV" />
+      <ComponentRef Id="FileAssocWMV" />
+      <ComponentRef Id="FileAssocFLV" />
+      <ComponentRef Id="FileAssocWEBM" />
+      <ComponentRef Id="ProgIdRegistration" />
+    </Feature>
+
+    <!-- Minimal installer UI -->
+    <ui:WixUI Id="WixUI_FeatureTree" />
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!--  DIRECTORY STRUCTURE                                    -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="INSTALLFOLDER" Name="Vido" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="VidoProgramMenu" Name="Vido" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="DesktopFolder" />
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!--  APPLICATION FILES                                      -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+
+    <!-- Harvest all files from the publish directory -->
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(var.PublishDir)\**" />
+    </ComponentGroup>
+
+    <!-- Ensure install folder is removed on uninstall -->
+    <Component Id="CleanInstallFolder" Directory="INSTALLFOLDER" Guid="A1B2C3D4-E5F6-7A8B-9C0D-E1F2A3B4C5D6">
+      <RemoveFolder Id="RemoveInstallFolder" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\Vido\Install" Name="Path" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
+    </Component>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!--  SHORTCUTS                                              -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+
+    <Component Id="StartMenuShortcut" Directory="VidoProgramMenu" Guid="B1E2C3D4-5F6A-7B8C-9D0E-1F2A3B4C5D6E">
+      <Shortcut Id="StartMenuVidoShortcut"
+                Name="Vido"
+                Description="Vido Video Player"
+                Target="[INSTALLFOLDER]Vido.exe"
+                WorkingDirectory="INSTALLFOLDER" />
+      <RemoveFolder Id="CleanVidoProgramMenu" Directory="VidoProgramMenu" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\Vido\Install" Name="StartMenu" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="DesktopShortcutComponent" Directory="DesktopFolder" Guid="C2D3E4F5-6A7B-8C9D-0E1F-2A3B4C5D6E7F">
+      <Shortcut Id="DesktopVidoShortcut"
+                Name="Vido"
+                Description="Vido Video Player"
+                Target="[INSTALLFOLDER]Vido.exe"
+                WorkingDirectory="INSTALLFOLDER" />
+      <RegistryValue Root="HKCU" Key="Software\Vido\Install" Name="Desktop" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <!-- ═══════════════════════════════════════════════════════ -->
+    <!--  FILE ASSOCIATIONS                                      -->
+    <!-- ═══════════════════════════════════════════════════════ -->
+
+    <!-- ProgID registration (shared by all associations) -->
+    <Component Id="ProgIdRegistration" Directory="INSTALLFOLDER" Guid="D3E4F5A6-7B8C-9D0E-1F2A-3B4C5D6E7F8A">
+      <RegistryValue Root="HKCU" Key="Software\Classes\Vido.VideoFile" Type="string" Value="Vido Video File" KeyPath="yes" />
+      <RegistryValue Root="HKCU" Key="Software\Classes\Vido.VideoFile\DefaultIcon" Type="string" Value="[INSTALLFOLDER]Vido.exe,0" />
+      <RegistryValue Root="HKCU" Key="Software\Classes\Vido.VideoFile\shell\open\command" Type="string" Value="&quot;[INSTALLFOLDER]Vido.exe&quot; &quot;%1&quot;" />
+    </Component>
+
+    <!-- Individual file type associations -->
+    <Component Id="FileAssocMP4" Directory="INSTALLFOLDER" Guid="E4F5A6B7-8C9D-0E1F-2A3B-4C5D6E7F8A9B">
+      <RegistryValue Root="HKCU" Key="Software\Classes\.mp4" Type="string" Value="Vido.VideoFile" KeyPath="yes" />
+    </Component>
+
+    <Component Id="FileAssocAVI" Directory="INSTALLFOLDER" Guid="F5A6B7C8-9D0E-1F2A-3B4C-5D6E7F8A9B0C">
+      <RegistryValue Root="HKCU" Key="Software\Classes\.avi" Type="string" Value="Vido.VideoFile" KeyPath="yes" />
+    </Component>
+
+    <Component Id="FileAssocMKV" Directory="INSTALLFOLDER" Guid="A6B7C8D9-0E1F-2A3B-4C5D-6E7F8A9B0C1D">
+      <RegistryValue Root="HKCU" Key="Software\Classes\.mkv" Type="string" Value="Vido.VideoFile" KeyPath="yes" />
+    </Component>
+
+    <Component Id="FileAssocMOV" Directory="INSTALLFOLDER" Guid="B7C8D9E0-1F2A-3B4C-5D6E-7F8A9B0C1D2E">
+      <RegistryValue Root="HKCU" Key="Software\Classes\.mov" Type="string" Value="Vido.VideoFile" KeyPath="yes" />
+    </Component>
+
+    <Component Id="FileAssocWMV" Directory="INSTALLFOLDER" Guid="C8D9E0F1-2A3B-4C5D-6E7F-8A9B0C1D2E3F">
+      <RegistryValue Root="HKCU" Key="Software\Classes\.wmv" Type="string" Value="Vido.VideoFile" KeyPath="yes" />
+    </Component>
+
+    <Component Id="FileAssocFLV" Directory="INSTALLFOLDER" Guid="D9E0F1A2-3B4C-5D6E-7F8A-9B0C1D2E3F4A">
+      <RegistryValue Root="HKCU" Key="Software\Classes\.flv" Type="string" Value="Vido.VideoFile" KeyPath="yes" />
+    </Component>
+
+    <Component Id="FileAssocWEBM" Directory="INSTALLFOLDER" Guid="E0F1A2B3-4C5D-6E7F-8A9B-0C1D2E3F4A5B">
+      <RegistryValue Root="HKCU" Key="Software\Classes\.webm" Type="string" Value="Vido.VideoFile" KeyPath="yes" />
+    </Component>
+
+  </Package>
+</Wix>

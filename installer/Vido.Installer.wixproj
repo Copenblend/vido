@@ -1,0 +1,25 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <!-- Version is passed in from build-release.ps1 or defaults to 0.1.0 -->
+    <ProductVersion Condition="'$(ProductVersion)' == ''">0.1.0</ProductVersion>
+    <!-- PublishDir is the portable output directory -->
+    <PublishDir Condition="'$(PublishDir)' == ''">$(MSBuildThisFileDirectory)..\publish\portable</PublishDir>
+    <!-- Pass MSBuild properties to WiX preprocessor variables -->
+    <DefineConstants>ProductVersion=$(ProductVersion);PublishDir=$(PublishDir)</DefineConstants>
+    <!--
+      Suppress all ICE validation for perUser installs to LocalAppDataFolder.
+      ICE38, ICE64, and ICE91 are all expected for per-user MSI installers
+      and do not affect functionality.
+    -->
+    <SuppressValidation>true</SuppressValidation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
+  </ItemGroup>
+
+</Project>
