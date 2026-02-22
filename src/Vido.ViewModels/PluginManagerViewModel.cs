@@ -173,6 +173,37 @@ public partial class PluginManagerViewModel : ObservableObject
                 }
             }
 
+            // 3. Reconcile: plugins may have been discovered by ActivateAll
+            //    while the registry fetch was awaiting (startup race).
+            //    Link any host plugins to their existing available items,
+            //    or add new installed items if they weren't in the registry.
+            foreach (var info in _pluginHost.Plugins)
+            {
+                var id = info.Manifest.Id;
+
+                // Already correctly linked?
+                if (installedMap.ContainsKey(id))
+                    continue;
+
+                // Find the available item created from registry and upgrade it
+                var existing = _allPlugins.FirstOrDefault(p =>
+                    string.Equals(p.Id, id, StringComparison.OrdinalIgnoreCase));
+
+                if (existing is not null)
+                {
+                    existing.PluginInfo = info;
+                    existing.IsInstalled = true;
+                    existing.IsEnabled = info.State != PluginState.Disabled
+                                      && info.State != PluginState.Error;
+                }
+                else
+                {
+                    // Not in registry at all — add as installed-only
+                    var item = PluginItemViewModel.FromPluginInfo(info);
+                    _allPlugins.Add(item);
+                }
+            }
+
             ApplyFilter();
         }
         catch (Exception ex)
@@ -205,6 +236,10 @@ public partial class PluginManagerViewModel : ObservableObject
                 // Try to activate the plugin immediately
                 try
                 {
+                    // Ensure the plugin is not in the disabled list (may be
+                    // stale from a previous session or prior uninstall)
+                    _pluginHost.RemovePlugin(item.Id);
+
                     _pluginHost.ActivateAll(); // Will pick up the newly installed plugin
                     var info = _pluginHost.GetPlugin(item.Id);
                     if (info is not null)
@@ -237,8 +272,8 @@ public partial class PluginManagerViewModel : ObservableObject
         item.IsBusy = true;
         try
         {
-            // Deactivate the plugin first
-            _pluginHost.SetEnabled(item.Id, false);
+            // Remove all runtime state (deactivates, clears from _plugins and disabled list)
+            _pluginHost.RemovePlugin(item.Id);
 
             var fullyRemoved = await _pluginInstaller.UninstallAsync(item.Id);
 

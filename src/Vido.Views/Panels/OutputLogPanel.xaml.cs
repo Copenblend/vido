@@ -1,6 +1,8 @@
 using System.Collections.Specialized;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using Vido.ViewModels;
 
 namespace Vido.Views.Panels;
@@ -54,6 +56,63 @@ public partial class OutputLogPanel : UserControl
         if (LogListBox.Items.Count > 0)
         {
             LogListBox.ScrollIntoView(LogListBox.Items[^1]);
+        }
+    }
+
+    // ── Clipboard & context menu ──
+
+    private void OnLogListBoxKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.C && Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            CopySelectedLines();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.A && Keyboard.Modifiers == ModifierKeys.Control)
+        {
+            LogListBox.SelectAll();
+            e.Handled = true;
+        }
+    }
+
+    private void OnCopyClick(object sender, RoutedEventArgs e) => CopySelectedLines();
+
+    private void OnCopyAllClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is not OutputLogViewModel vm || vm.Entries.Count == 0) return;
+
+        var sb = new StringBuilder();
+        foreach (var entry in vm.Entries)
+            sb.AppendLine(entry.FormattedLine);
+
+        SetClipboardText(sb.ToString());
+    }
+
+    private void OnSelectAllClick(object sender, RoutedEventArgs e) => LogListBox.SelectAll();
+
+    private void CopySelectedLines()
+    {
+        if (LogListBox.SelectedItems.Count == 0) return;
+
+        var sb = new StringBuilder();
+        foreach (var item in LogListBox.SelectedItems)
+        {
+            if (item is LogEntryViewModel entry)
+                sb.AppendLine(entry.FormattedLine);
+        }
+
+        SetClipboardText(sb.ToString());
+    }
+
+    private static void SetClipboardText(string text)
+    {
+        try
+        {
+            Clipboard.SetDataObject(text, true);
+        }
+        catch
+        {
+            // Clipboard can fail if locked by another process
         }
     }
 }

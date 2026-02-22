@@ -180,11 +180,23 @@
                  ItemsSource="{Binding Entries}"
                  Background="Transparent"
                  BorderThickness="0"
+                 SelectionMode="Extended"
                  Style="{StaticResource ThinScrollBarListBoxStyle}"
                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                  VirtualizingPanel.IsVirtualizing="True"
-                 VirtualizingPanel.VirtualizationMode="Recycling">
+                 VirtualizingPanel.VirtualizationMode="Recycling"
+                 KeyDown="OnLogListBoxKeyDown">
+            <ListBox.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Copy" Click="OnCopyClick"
+                              InputGestureText="Ctrl+C" />
+                    <MenuItem Header="Copy All" Click="OnCopyAllClick" />
+                    <Separator />
+                    <MenuItem Header="Select All" Click="OnSelectAllClick"
+                              InputGestureText="Ctrl+A" />
+                </ContextMenu>
+            </ListBox.ContextMenu>
             <ListBox.ItemContainerStyle>
                 <Style TargetType="ListBoxItem">
                     <Setter Property="Padding" Value="0" />

@@ -71,6 +71,9 @@ public sealed class SettingsService : ISettingsService, IDisposable
             _debounceCts = new CancellationTokenSource();
             var token = _debounceCts.Token;
 
+            // Do NOT pass token to Task.Run — only use it inside the lambda.
+            // Passing it to Task.Run causes a first-chance TaskCanceledException
+            // when the token is cancelled before the task begins.
             _ = Task.Run(async () =>
             {
                 try
@@ -78,11 +81,11 @@ public sealed class SettingsService : ISettingsService, IDisposable
                     await Task.Delay(DebounceMs, token);
                     await SaveAsync();
                 }
-                catch (TaskCanceledException)
+                catch (OperationCanceledException)
                 {
                     // Debounce cancelled — a newer save was queued
                 }
-            }, token);
+            });
         }
     }
 

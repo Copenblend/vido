@@ -62,6 +62,15 @@ public partial class ActivityBarViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Clears the active panel selection. Used when a plugin sidebar panel is activated
+    /// to deselect all built-in panels without toggling visibility.
+    /// </summary>
+    public void ClearActivePanel()
+    {
+        ActivePanel = (SidebarPanelKind)(-1);
+    }
+
+    /// <summary>
     /// Returns true if the given panel is the currently active one.
     /// Helper used by the view to determine icon highlight state.
     /// </summary>

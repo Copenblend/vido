@@ -12,6 +12,7 @@ using Vido.Core.FileSystem;
 using Vido.Core.Keyboard;
 using Vido.Core.Layout;
 using KeyBinding = Vido.Core.Keyboard.KeyBinding;
+using Vido.Core.Menus;
 using Vido.Core.Plugin;
 using Vido.Core.Settings;
 using Vido.Core.State;
@@ -43,6 +44,7 @@ public partial class MainWindow : Window
     private readonly StatusBarViewModel _statusBarViewModel;
     private readonly IKeyboardShortcutService _keyboardShortcutService;
     private readonly IContributionRegistry _contributionRegistry;
+    private readonly IContextMenuRegistry _contextMenuRegistry;
     private readonly IPluginInstaller _pluginInstaller;
     private readonly IPluginHost _pluginHost;
 
@@ -87,6 +89,7 @@ public partial class MainWindow : Window
         ILogService logService,
         IKeyboardShortcutService keyboardShortcutService,
         IContributionRegistry contributionRegistry,
+        IContextMenuRegistry contextMenuRegistry,
         IPluginInstaller pluginInstaller,
         IPluginHost pluginHost,
         FileExplorerViewModel fileExplorerViewModel,
@@ -101,6 +104,7 @@ public partial class MainWindow : Window
         _logService = logService;
         _keyboardShortcutService = keyboardShortcutService;
         _contributionRegistry = contributionRegistry;
+        _contextMenuRegistry = contextMenuRegistry;
         _pluginInstaller = pluginInstaller;
         _pluginHost = pluginHost;
         _fileExplorerViewModel = fileExplorerViewModel;
@@ -816,11 +820,7 @@ public partial class MainWindow : Window
         TitleBar.ToggleBottomPanelRequested += () => _mainWindowViewModel.ToggleBottomPanel();
         TitleBar.ToggleRightPanelRequested += () => _mainWindowViewModel.ToggleRightPanel();
         TitleBar.ShowOutputRequested += () => _mainWindowViewModel.ActivateBottomPanelTab(MainWindowViewModel.OutputTabId);
-        TitleBar.ShowVideoInfoRequested += () =>
-        {
-            _mainWindowViewModel.IsRightPanelVisible = true;
-            _mainWindowViewModel.IsRightPanelCollapsed = false;
-        };
+        TitleBar.ShowVideoInfoRequested += () => SwitchRightPanel("vido.videoInfo");
         TitleBar.ToggleStatusBarRequested += () => _mainWindowViewModel.ToggleStatusBar();
         TitleBar.ToggleSidebarRequested += ToggleSidebar;
 
@@ -880,6 +880,15 @@ public partial class MainWindow : Window
 
         // Wire double-click on video file to play
         _fileExplorerPanel.VideoFileDoubleClicked += OnPlayFileRequested;
+
+        // Wire file handler for plugin-registered extensions
+        _fileExplorerPanel.FileHandlerRequested += OnFileHandlerRequested;
+
+        // Inject context menu registry for plugin-contributed menu items
+        _fileExplorerPanel.ContextMenuRegistry = _contextMenuRegistry;
+
+        // Inject contribution registry for plugin file icons
+        _fileExplorerPanel.ContributionRegistry = _contributionRegistry;
 
         // Subscribe to VM changes to update Close Folder menu state
         _fileExplorerViewModel.PropertyChanged += (_, e) =>
@@ -986,6 +995,28 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Handles double-click on a non-video file. Checks if any plugin has registered
+    /// a file handler for the file's extension and invokes it.
+    /// </summary>
+    private void OnFileHandlerRequested(FileNode node)
+    {
+        var ext = Path.GetExtension(node.Name);
+        if (string.IsNullOrEmpty(ext)) return;
+
+        if (_pluginFileHandlers.TryGetValue(ext, out var handler))
+        {
+            try
+            {
+                handler(node);
+            }
+            catch (Exception ex)
+            {
+                _logService.Error($"Plugin file handler error for '{node.Name}': {ex.Message}", "PluginHost");
+            }
+        }
+    }
+
     // ── Tab content switching ──
 
     /// <summary>
@@ -1034,10 +1065,11 @@ public partial class MainWindow : Window
     /// </summary>
     private PluginDetailPanel GetOrCreatePluginDetailPanel(string pluginId)
     {
+        // Use an already-prepared panel if available (set by Open*Requested handlers)
         if (_pluginDetailPanels.TryGetValue(pluginId, out var existing))
             return existing;
 
-        // Find the plugin item from the manager VM
+        // Fallback: look up the item from the manager VM (e.g. tab switching)
         PluginItemViewModel? item = null;
         if (_pluginManagerViewModel is not null)
         {
@@ -1069,6 +1101,7 @@ public partial class MainWindow : Window
                 BottomPanelSplitterRow.Height = new GridLength(0);
                 BottomPanelRow.Height = new GridLength(29); // Tab strip height only
                 BottomPanelContent.Visibility = Visibility.Collapsed;
+                BottomPanelTabStrip.Visibility = Visibility.Collapsed;
                 BottomPanel.BorderThickness = new Thickness(0, 1, 0, 0);
             }
             else
@@ -1078,6 +1111,7 @@ public partial class MainWindow : Window
                 BottomPanelSplitterRow.Height = GridLength.Auto;
                 BottomPanelRow.Height = new GridLength(_bottomPanelHeight);
                 BottomPanelContent.Visibility = Visibility.Visible;
+                BottomPanelTabStrip.Visibility = Visibility.Visible;
                 BottomPanel.BorderThickness = new Thickness(0);
             }
         }
@@ -1155,6 +1189,10 @@ public partial class MainWindow : Window
     {
         if (_activityBarViewModel is null || _sidebarViewModel is null)
             return;
+
+        // Clear plugin sidebar state when a built-in panel is selected
+        _activePluginSidebarId = null;
+        UpdatePluginSidebarButtonStates();
 
         // Update sidebar visibility
         if (_activityBarViewModel.IsSidebarVisible)
@@ -1260,18 +1298,24 @@ public partial class MainWindow : Window
         _pluginManagerViewModel.OpenDetailRequested += item =>
         {
             var tabId = $"plugin.detail.{item.Id}";
+            // Create the panel now with the actual item (don't rely on re-lookup)
+            var panel = new PluginDetailPanel(item, _pluginManagerViewModel, _pluginHost, _logService);
+            _pluginDetailPanels[item.Id] = panel;
+
+            // OpenTab will trigger PropertyChanged → UpdateTabContent,
+            // which will find the cached panel. No need to call UpdateTabContent again.
             _mainWindowViewModel.OpenTab(tabId, item.DisplayName, isClosable: true);
-            UpdateTabContent();
         };
 
         _pluginManagerViewModel.OpenSettingsRequested += item =>
         {
             var tabId = $"plugin.detail.{item.Id}";
+            var panel = new PluginDetailPanel(item, _pluginManagerViewModel, _pluginHost, _logService);
+            _pluginDetailPanels[item.Id] = panel;
+
             _mainWindowViewModel.OpenTab(tabId, item.DisplayName, isClosable: true);
-            UpdateTabContent();
-            // Scroll to settings tab — the detail panel will handle this
-            if (_pluginDetailPanels.TryGetValue(item.Id, out var panel))
-                panel.SwitchToSettings();
+            // Scroll to settings tab
+            panel.SwitchToSettings();
         };
     }
 
@@ -1310,13 +1354,54 @@ public partial class MainWindow : Window
     {
         WirePluginBottomPanels();
         WirePluginStatusBarItems();
+        WirePluginSidebarPanels();
+        WirePluginToolbarButtons();
+        WirePluginRightPanels();
+        WirePluginContextMenuItems();
+        WirePluginFileHandlers();
+        WirePluginFileIcons();
     }
 
-    /// <summary>Map of plugin contribution IDs to bottom panel content for cleanup.</summary>
+    /// <summary>Tracking sets for idempotent wiring — prevent re-adding contributions.</summary>
     private readonly HashSet<string> _wiredBottomPanelIds = [];
-
-    /// <summary>Map of plugin contribution IDs to status bar item IDs for cleanup.</summary>
     private readonly HashSet<string> _wiredStatusBarIds = [];
+    private readonly HashSet<string> _wiredSidebarPanelIds = [];
+    private readonly HashSet<string> _wiredToolbarButtonIds = [];
+    private readonly HashSet<string> _wiredRightPanelIds = [];
+    private readonly HashSet<string> _wiredContextMenuIds = [];
+    private readonly HashSet<string> _wiredFileHandlerIds = [];
+    private readonly HashSet<string> _wiredFileIconExts = [];
+
+    /// <summary>
+    /// Wraps an object returned by a plugin's view factory into a UIElement.
+    /// Plugins may return a WPF control (UIElement), a string, or any other object.
+    /// Non-UIElement values are wrapped in a styled TextBlock so they display in the UI.
+    /// </summary>
+    private static UIElement WrapAsUIElement(object? content, string fallbackText = "")
+    {
+        return content switch
+        {
+            UIElement el => el,
+            string text => CreatePluginTextBlock(text),
+            null => CreatePluginTextBlock(fallbackText),
+            _ => CreatePluginTextBlock(content.ToString() ?? fallbackText)
+        };
+    }
+
+    /// <summary>Creates a themed TextBlock for displaying plugin text content.</summary>
+    private static TextBlock CreatePluginTextBlock(string text)
+    {
+        return new TextBlock
+        {
+            Text = text,
+            Foreground = (Brush)Application.Current.FindResource("PrimaryForegroundBrush"),
+            Padding = new Thickness(12, 8, 12, 8),
+            TextWrapping = TextWrapping.Wrap,
+            VerticalAlignment = VerticalAlignment.Top
+        };
+    }
+
+    // ── Bottom Panel wiring ──
 
     private void WirePluginBottomPanels()
     {
@@ -1328,18 +1413,9 @@ public partial class MainWindow : Window
             try
             {
                 var view = panel.ViewFactory();
-                if (view is UIElement uiElement)
-                {
-                    _bottomPanelContents[fullId] = uiElement;
-                    _mainWindowViewModel.OpenBottomPanelTab(fullId, panel.Title.ToUpperInvariant());
-                }
-                else
-                {
-                    _logService.Warning(
-                        $"Plugin '{panel.PluginId}' bottom panel '{panel.ContributionId}' " +
-                        "view factory returned a non-UIElement — skipping",
-                        "PluginHost");
-                }
+                var uiElement = WrapAsUIElement(view, $"Plugin: {panel.Title}");
+                _bottomPanelContents[fullId] = uiElement;
+                _mainWindowViewModel.OpenBottomPanelTab(fullId, panel.Title.ToUpperInvariant());
             }
             catch (Exception ex)
             {
@@ -1350,6 +1426,8 @@ public partial class MainWindow : Window
             }
         }
     }
+
+    // ── Status Bar wiring ──
 
     private void WirePluginStatusBarItems()
     {
@@ -1364,7 +1442,18 @@ public partial class MainWindow : Window
                     ? Core.Layout.StatusBarAlignment.Left
                     : Core.Layout.StatusBarAlignment.Right;
 
-                _statusBarViewModel.RegisterItem(fullId, alignment, item.Order);
+                var statusBarItem = _statusBarViewModel.RegisterItem(fullId, alignment, item.Order);
+
+                // Invoke the view factory to get the display text
+                var content = item.ViewFactory();
+                statusBarItem.Text = content switch
+                {
+                    string text => text,
+                    null => string.Empty,
+                    _ => content.ToString() ?? string.Empty
+                };
+                statusBarItem.Tooltip = $"Plugin: {item.PluginId}";
+                statusBarItem.IsVisible = true;
             }
             catch (Exception ex)
             {
@@ -1373,6 +1462,314 @@ public partial class MainWindow : Window
                     $"registration failed: {ex.Message}",
                     "PluginHost");
             }
+        }
+    }
+
+    // ── Sidebar Panel wiring ──
+
+    /// <summary>Map of plugin sidebar panel ID → content UIElement.</summary>
+    private readonly Dictionary<string, UIElement> _pluginSidebarContents = [];
+
+    /// <summary>Map of plugin sidebar panel ID → dynamically-added activity bar Button.</summary>
+    private readonly Dictionary<string, Button> _pluginSidebarButtons = [];
+
+    /// <summary>The currently active plugin sidebar panel ID, or null if none is active.</summary>
+    private string? _activePluginSidebarId;
+
+    private void WirePluginSidebarPanels()
+    {
+        foreach (var panel in _contributionRegistry.GetSidebarPanels())
+        {
+            var fullId = $"plugin.{panel.PluginId}.{panel.ContributionId}";
+            if (!_wiredSidebarPanelIds.Add(fullId)) continue;
+
+            try
+            {
+                var view = panel.ViewFactory();
+                var uiElement = WrapAsUIElement(view, $"Plugin: {panel.Title}");
+                _pluginSidebarContents[fullId] = uiElement;
+
+                // Create an activity bar button for this panel
+                var panelId = fullId; // capture for closure
+                var button = CreatePluginActivityBarButton(panel.Title, panel.IconPath, () =>
+                {
+                    OnPluginSidebarButtonClick(panelId, panel.Title);
+                });
+                _pluginSidebarButtons[fullId] = button;
+
+                // Add to activity bar top section
+                ActivityBar.AddPluginButton(button);
+            }
+            catch (Exception ex)
+            {
+                _logService.Error(
+                    $"Plugin '{panel.PluginId}' sidebar panel '{panel.ContributionId}' " +
+                    $"view factory threw: {ex.Message}",
+                    "PluginHost");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates a Button styled for the activity bar with a plugin puzzle-piece icon.
+    /// Style is applied by ActivityBarView.AddPluginButton since it's a local resource.
+    /// </summary>
+    private static Button CreatePluginActivityBarButton(string tooltip, string? iconPath, Action onClick)
+    {
+        var icon = new Canvas { Width = 24, Height = 24 };
+
+        // Simple puzzle-piece icon for plugin panels
+        var path = new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M 5,4 L 11,4 L 11,7 L 14,7 L 14,13 L 17,13 L 17,19 L 11,19 L 11,16 L 8,16 L 8,19 L 2,19 L 2,13 L 5,13 L 5,10 L 2,10 L 2,4 Z"),
+            Stroke = (Brush)Application.Current.FindResource("InactiveIconBrush"),
+            StrokeThickness = 1.2,
+            Fill = Brushes.Transparent,
+            StrokeLineJoin = PenLineJoin.Round
+        };
+        icon.Children.Add(path);
+
+        var button = new Button
+        {
+            Content = icon,
+            ToolTip = tooltip
+        };
+        button.Click += (_, _) => onClick();
+        return button;
+    }
+
+    /// <summary>Handles click on a plugin sidebar panel button in the activity bar.</summary>
+    private void OnPluginSidebarButtonClick(string panelId, string title)
+    {
+        if (_activePluginSidebarId == panelId && Sidebar.Visibility == Visibility.Visible)
+        {
+            // Toggle off — hide sidebar
+            _activePluginSidebarId = null;
+            _activityBarViewModel!.IsSidebarVisible = false;
+            Sidebar.Visibility = Visibility.Collapsed;
+            SidebarSplitter.Visibility = Visibility.Collapsed;
+            SidebarColumn.Width = new GridLength(0);
+            SidebarColumn.MinWidth = 0;
+            SidebarColumn.MaxWidth = 0;
+            UpdatePluginSidebarButtonStates();
+            ActivityBar.UpdateActiveStates();
+            return;
+        }
+
+        // Activate this plugin panel
+        _activePluginSidebarId = panelId;
+        _activityBarViewModel!.IsSidebarVisible = true;
+
+        // Clear the built-in active panel to avoid conflict
+        _activityBarViewModel.ClearActivePanel();
+
+        Sidebar.Visibility = Visibility.Visible;
+        SidebarSplitter.Visibility = Visibility.Visible;
+        SidebarColumn.Width = new GridLength(_settingsService.Current.SidebarWidth);
+        SidebarColumn.MinWidth = 170;
+        SidebarColumn.MaxWidth = 600;
+
+        _sidebarViewModel!.SetPanel(null, title.ToUpperInvariant());
+
+        if (_pluginSidebarContents.TryGetValue(panelId, out var content))
+            Sidebar.SetPanelContent(content);
+
+        UpdatePluginSidebarButtonStates();
+        ActivityBar.UpdateActiveStates();
+    }
+
+    /// <summary>Updates visual active state for all plugin sidebar buttons.</summary>
+    private void UpdatePluginSidebarButtonStates()
+    {
+        foreach (var (id, button) in _pluginSidebarButtons)
+        {
+            var isActive = id == _activePluginSidebarId && Sidebar.Visibility == Visibility.Visible;
+            button.Tag = isActive ? "Active" : null;
+            ActivityBar.SetPluginButtonActive(button, isActive);
+        }
+    }
+
+    // ── Toolbar Button wiring ──
+
+    /// <summary>Map of plugin toolbar button ID → Button element in title bar.</summary>
+    private readonly Dictionary<string, Button> _pluginToolbarButtons = [];
+
+    private void WirePluginToolbarButtons()
+    {
+        foreach (var toolbarBtn in _contributionRegistry.GetToolbarButtons())
+        {
+            var fullId = $"plugin.{toolbarBtn.PluginId}.{toolbarBtn.ContributionId}";
+            if (!_wiredToolbarButtonIds.Add(fullId)) continue;
+
+            try
+            {
+                var handler = toolbarBtn.ClickHandler; // capture for closure
+                var button = CreatePluginToolbarButton(toolbarBtn.Tooltip, toolbarBtn.IconPath, handler);
+                _pluginToolbarButtons[fullId] = button;
+                TitleBar.AddPluginToolbarButton(button);
+            }
+            catch (Exception ex)
+            {
+                _logService.Error(
+                    $"Plugin '{toolbarBtn.PluginId}' toolbar button '{toolbarBtn.ContributionId}' " +
+                    $"creation failed: {ex.Message}",
+                    "PluginHost");
+            }
+        }
+    }
+
+    /// <summary>Creates a small toolbar button for the title bar.</summary>
+    private static Button CreatePluginToolbarButton(string tooltip, string? iconPath, Action clickHandler)
+    {
+        // Small puzzle icon for plugin toolbar buttons
+        var icon = new Canvas { Width = 16, Height = 16 };
+        var path = new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M 3,2 L 7,2 L 7,4 L 9,4 L 9,8 L 11,8 L 11,12 L 7,12 L 7,10 L 5,10 L 5,12 L 1,12 L 1,8 L 3,8 L 3,6 L 1,6 L 1,2 Z"),
+            Stroke = (Brush)Application.Current.FindResource("PrimaryForegroundBrush"),
+            StrokeThickness = 1.0,
+            Fill = Brushes.Transparent,
+            StrokeLineJoin = PenLineJoin.Round
+        };
+        icon.Children.Add(path);
+
+        var button = new Button
+        {
+            Content = icon,
+            ToolTip = tooltip,
+            Width = 28,
+            Height = 22,
+            Background = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Cursor = Cursors.Hand,
+            VerticalAlignment = VerticalAlignment.Center,
+            Padding = new Thickness(4, 2, 4, 2)
+        };
+
+        button.MouseEnter += (s, _) =>
+        {
+            if (s is Button b) b.Background = (Brush)Application.Current.FindResource("HoverBackgroundBrush");
+        };
+        button.MouseLeave += (s, _) =>
+        {
+            if (s is Button b) b.Background = Brushes.Transparent;
+        };
+
+        button.Click += (_, _) =>
+        {
+            try { clickHandler(); }
+            catch { /* Plugin error — swallowed to prevent crash */ }
+        };
+
+        return button;
+    }
+
+    // ── Right Panel wiring ──
+
+    /// <summary>Map of right panel ID → content UIElement.</summary>
+    private readonly Dictionary<string, UIElement> _rightPanelContents = [];
+
+    /// <summary>Map of right panel ID → display title.</summary>
+    private readonly Dictionary<string, string> _rightPanelTitles = [];
+
+    /// <summary>ID of the active right panel. Default is the built-in video info.</summary>
+    private string _activeRightPanelId = "vido.videoInfo";
+
+    private void WirePluginRightPanels()
+    {
+        foreach (var panel in _contributionRegistry.GetRightPanels())
+        {
+            var fullId = $"plugin.{panel.PluginId}.{panel.ContributionId}";
+            if (!_wiredRightPanelIds.Add(fullId)) continue;
+
+            try
+            {
+                var view = panel.ViewFactory();
+                var uiElement = WrapAsUIElement(view, $"Plugin: {panel.Title}");
+                _rightPanelContents[fullId] = uiElement;
+                _rightPanelTitles[fullId] = panel.Title;
+
+                // Add menu item to View → Right Panel submenu
+                TitleBar.AddRightPanelMenuItem(panel.Title, () => SwitchRightPanel(fullId));
+            }
+            catch (Exception ex)
+            {
+                _logService.Error(
+                    $"Plugin '{panel.PluginId}' right panel '{panel.ContributionId}' " +
+                    $"view factory threw: {ex.Message}",
+                    "PluginHost");
+            }
+        }
+    }
+
+    /// <summary>Switches the right panel to show the specified panel's content.</summary>
+    private void SwitchRightPanel(string panelId)
+    {
+        _activeRightPanelId = panelId;
+        _mainWindowViewModel.IsRightPanelVisible = true;
+        _mainWindowViewModel.IsRightPanelCollapsed = false;
+
+        if (panelId == "vido.videoInfo")
+        {
+            var videoDetailsPanel = new VideoDetailsPanel { DataContext = _videoDetailsViewModel };
+            RightPanelContent.Content = videoDetailsPanel;
+            RightPanelTitle.Text = "VIDEO INFO";
+        }
+        else if (_rightPanelContents.TryGetValue(panelId, out var content))
+        {
+            RightPanelContent.Content = content;
+            RightPanelTitle.Text = _rightPanelTitles.TryGetValue(panelId, out var title)
+                ? title.ToUpperInvariant()
+                : "PLUGIN";
+        }
+    }
+
+    // ── Context Menu wiring ──
+
+    private void WirePluginContextMenuItems()
+    {
+        // Context menu items are registered in IContextMenuRegistry by PluginContext.
+        // We track them here to avoid log noise, but the actual injection into the
+        // file explorer context menus happens in FileExplorerPanel.OnTreeItemPreviewRightClick
+        // by querying the registry at display time.
+        foreach (var item in _contributionRegistry.GetContextMenuItems())
+        {
+            var fullId = $"plugin.{item.PluginId}.{item.ContributionId}";
+            _wiredContextMenuIds.Add(fullId);
+        }
+    }
+
+    // ── File Handler wiring ──
+
+    /// <summary>Registered plugin file handlers, keyed by extension (lowercase).</summary>
+    private readonly Dictionary<string, Action<FileNode>> _pluginFileHandlers = new(StringComparer.OrdinalIgnoreCase);
+
+    private void WirePluginFileHandlers()
+    {
+        foreach (var handler in _contributionRegistry.GetFileHandlers())
+        {
+            var fullId = $"plugin.{handler.PluginId}.fileHandler";
+            if (!_wiredFileHandlerIds.Add(fullId)) continue;
+
+            foreach (var ext in handler.Extensions)
+            {
+                var normalizedExt = ext.StartsWith('.') ? ext : $".{ext}";
+                _pluginFileHandlers[normalizedExt] = handler.Handler;
+                _fileExplorerViewModel.AdditionalAcceptedExtensions.Add(normalizedExt);
+            }
+        }
+    }
+
+    // ── File Icon wiring ──
+
+    private void WirePluginFileIcons()
+    {
+        // File icon overrides are stored in the ContributionRegistry.
+        // The FileExplorerPanel can query them at render time.
+        // Track wired extensions to avoid re-processing.
+        foreach (var (ext, iconPath) in _contributionRegistry.GetFileIcons())
+        {
+            _wiredFileIconExts.Add(ext);
         }
     }
 

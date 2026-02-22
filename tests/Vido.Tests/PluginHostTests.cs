@@ -46,7 +46,8 @@ public class PluginHostTests : IDisposable
 
     private PluginHost.PluginHost CreateHost() => new(
         _eventBus, _videoEngine, _logService, _settingsService,
-        _contributions, _contextMenuRegistry, _keyboardShortcutService);
+        _contributions, _contextMenuRegistry, _keyboardShortcutService,
+        scanDefaultDirectory: false);
 
     private void CreatePluginDirectory(string pluginId, string json,
         bool createDll = false, string? dllName = null)

@@ -2,6 +2,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Shell;
 using System.Windows.Shapes;
 using Vido.ViewModels;
 
@@ -439,5 +440,61 @@ public partial class TitleBarView : UserControl
         clearItem.SetResourceReference(StyleProperty, "DropdownMenuItemStyle");
         clearItem.Click += (_, _) => ClearWatchHistoryRequested?.Invoke();
         RecentFilesMenu.Items.Add(clearItem);
+    }
+
+    // ── Plugin toolbar buttons ──
+
+    /// <summary>Lazy-initialized container panel for plugin toolbar buttons.</summary>
+    private StackPanel? _pluginToolbarPanel;
+
+    /// <summary>
+    /// Adds a plugin toolbar button to the title bar. Creates a horizontal
+    /// StackPanel between the menu bar and window controls if needed.
+    /// </summary>
+    public void AddPluginToolbarButton(Button button)
+    {
+        if (_pluginToolbarPanel is null)
+        {
+            _pluginToolbarPanel = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(4, 0, 0, 0)
+            };
+
+            // Insert into grid column 2 (the draggable area)
+            // with HorizontalAlignment=Left so it sits after the menu
+            _pluginToolbarPanel.HorizontalAlignment = HorizontalAlignment.Left;
+            Grid.SetColumn(_pluginToolbarPanel, 2);
+            WindowChrome.SetIsHitTestVisibleInChrome(_pluginToolbarPanel, true);
+
+            if (Content is Grid grid)
+            {
+                grid.Children.Add(_pluginToolbarPanel);
+            }
+        }
+
+        _pluginToolbarPanel.Children.Add(button);
+    }
+
+    // ── Plugin right panel menu items ──
+
+    /// <summary>
+    /// Adds a menu item to the View → Right Panel submenu for a plugin-contributed panel.
+    /// Inserted before the Show/Hide toggle item.
+    /// </summary>
+    public void AddRightPanelMenuItem(string title, Action onSelected)
+    {
+        var menuItem = new MenuItem
+        {
+            Header = $"_{title}",
+        };
+        menuItem.SetResourceReference(StyleProperty, "DropdownMenuItemStyle");
+        menuItem.Click += (_, _) => onSelected();
+
+        // Insert before the Show/Hide toggle (last item) and separator (second-to-last)
+        var insertIndex = RightPanelMenu.Items.Count - 1;
+        if (insertIndex < 0) insertIndex = 0;
+        RightPanelMenu.Items.Insert(insertIndex, menuItem);
     }
 }

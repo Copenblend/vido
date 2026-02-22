@@ -218,12 +218,12 @@ public class StatusBarViewModelTests : IDisposable
     [Fact]
     public void RegisterItem_InsertsInPriorityOrder()
     {
-        // Built-in right items: Duration(100), Resolution(200), Codec(300)
+        // Built-in right items: Duration(10100), Resolution(10200), Codec(10300)
         var item = _sut.RegisterItem("plugin.between", StatusBarAlignment.Right, 150);
 
-        // Should be between Duration(100) and Resolution(200)
+        // Should be before all built-in items (which are at 10100+)
         var index = _sut.RightItems.IndexOf(item);
-        Assert.Equal(1, index);
+        Assert.Equal(0, index);
     }
 
     [Fact]
