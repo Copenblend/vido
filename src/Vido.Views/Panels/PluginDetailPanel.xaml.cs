@@ -103,13 +103,22 @@ public partial class PluginDetailPanel : UserControl
 
     /// <summary>
     /// Loads README.md and CHANGELOG.md content from the plugin directory.
+    /// Falls back to the plugin description when local files aren't available
+    /// (e.g. for available-but-not-installed plugins).
     /// </summary>
     private void LoadContent()
     {
         if (_item is null) return;
 
-        // Load README.md
+        _logService?.Debug(
+            $"LoadContent for '{_item.Id}': PluginInfo={(_item.PluginInfo is not null ? "set" : "NULL")}, " +
+            $"Directory='{_item.PluginInfo?.Directory ?? "(none)"}', IsInstalled={_item.IsInstalled}",
+            "PluginDetail");
+
+        // Load README.md — fall back to description from manifest or registry
         var readme = TryReadPluginFile("README.md");
+        if (string.IsNullOrWhiteSpace(readme))
+            readme = _item.Description;
         DetailsText.Text = !string.IsNullOrWhiteSpace(readme)
             ? readme
             : "No details available.";
@@ -126,20 +135,42 @@ public partial class PluginDetailPanel : UserControl
 
     /// <summary>
     /// Reads a file from the plugin directory. Returns null if not found or on error.
+    /// Falls back to the well-known plugin directory when PluginInfo is null
+    /// (e.g. available-but-not-installed, after uninstall, or stale state).
     /// </summary>
     private string? TryReadPluginFile(string filename)
     {
-        if (_item?.PluginInfo?.Directory is null) return null;
+        // Prefer PluginInfo.Directory; fall back to the well-known path
+        var dir = _item?.PluginInfo?.Directory;
+        if (dir is null && _item is not null)
+        {
+            var fallback = Path.Combine(PluginPaths.DefaultPluginDirectory, _item.Id);
+            if (Directory.Exists(fallback))
+                dir = fallback;
+        }
 
-        var path = Path.Combine(_item.PluginInfo.Directory, filename);
-        if (!File.Exists(path)) return null;
+        if (dir is null)
+        {
+            _logService?.Debug($"TryReadPluginFile('{filename}'): no plugin directory available", "PluginDetail");
+            return null;
+        }
+
+        var path = Path.Combine(dir, filename);
+        if (!File.Exists(path))
+        {
+            _logService?.Debug($"TryReadPluginFile('{filename}'): File not found at '{path}'", "PluginDetail");
+            return null;
+        }
 
         try
         {
-            return File.ReadAllText(path);
+            var content = File.ReadAllText(path);
+            _logService?.Debug($"TryReadPluginFile('{filename}'): Read {content.Length} chars from '{path}'", "PluginDetail");
+            return content;
         }
-        catch
+        catch (Exception ex)
         {
+            _logService?.Error($"TryReadPluginFile('{filename}'): Exception reading '{path}': {ex.Message}", "PluginDetail");
             return null;
         }
     }
@@ -149,7 +180,11 @@ public partial class PluginDetailPanel : UserControl
     /// </summary>
     private void LoadSettings()
     {
-        if (_item?.PluginInfo is null)
+        // Try the item's PluginInfo first; fall back to the host directly
+        // (handles startup race where PluginInfo hasn't been linked yet)
+        var pluginInfo = _item?.PluginInfo ?? _pluginHost?.GetPlugin(_item?.Id ?? "");
+
+        if (pluginInfo is null)
         {
             NoSettingsText.Visibility = Visibility.Visible;
             NoSettingsText.Text = _item?.IsInstalled == true
@@ -158,7 +193,7 @@ public partial class PluginDetailPanel : UserControl
             return;
         }
 
-        var manifest = _item.PluginInfo.Manifest;
+        var manifest = pluginInfo.Manifest;
         var settings = manifest.Contributes.Settings;
 
         if (settings.Count == 0)

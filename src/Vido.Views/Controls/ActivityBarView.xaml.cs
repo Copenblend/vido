@@ -136,4 +136,40 @@ public partial class ActivityBarView : UserControl
             }
         }
     }
+
+    // ── Plugin sidebar buttons ──
+
+    /// <summary>
+    /// Adds a plugin button to the activity bar, positioned between the built-in
+    /// top buttons (Explorer, Extensions) and the bottom Settings button.
+    /// Applies the local ActivityBarButtonStyle since it's not in the global resources.
+    /// </summary>
+    public void AddPluginButton(Button button)
+    {
+        // Apply the style from local resources
+        if (TryFindResource("ActivityBarButtonStyle") is Style style)
+            button.Style = style;
+
+        // Find the top StackPanel (DockPanel.Dock="Top") and add the button there
+        if (Content is DockPanel dock)
+        {
+            foreach (var child in dock.Children)
+            {
+                if (child is StackPanel panel && DockPanel.GetDock(panel) == Dock.Top)
+                {
+                    panel.Children.Add(button);
+                    return;
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Sets the visual active/inactive state of a plugin sidebar button.
+    /// Uses the same icon coloring approach as built-in buttons.
+    /// </summary>
+    public void SetPluginButtonActive(Button button, bool isActive)
+    {
+        SetButtonActive(button, isActive);
+    }
 }

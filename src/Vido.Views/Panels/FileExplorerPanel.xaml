@@ -160,6 +160,7 @@
                            BasedOn="{StaticResource FileExplorerTreeViewItemStyle}">
                         <EventSetter Event="PreviewMouseRightButtonUp" Handler="OnTreeItemPreviewRightClick" />
                         <EventSetter Event="MouseDoubleClick" Handler="OnTreeItemDoubleClick" />
+                        <EventSetter Event="Loaded" Handler="OnTreeItemLoaded" />
                     </Style>
                 </TreeView.ItemContainerStyle>
                 <TreeView.ItemTemplate>
@@ -196,6 +197,14 @@
                                   Margin="0,0,6,0"
                                   VerticalAlignment="Center"
                                   Visibility="Collapsed" />
+
+                            <!-- Plugin-provided custom file icon -->
+                            <Image x:Name="CustomFileIcon"
+                                   Width="16" Height="16"
+                                   Margin="0,0,6,0"
+                                   VerticalAlignment="Center"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                   Visibility="Collapsed" />
 
                             <!-- File / folder name -->
                             <TextBlock x:Name="NodeName"

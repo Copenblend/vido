@@ -638,7 +638,7 @@ public sealed class PluginManagerTests
     }
 
     [Fact]
-    public async Task UninstallPluginAsync_DisablesPluginFirst()
+    public async Task UninstallPluginAsync_RemovesPluginFirst()
     {
         var (host, installer, settings, log) = CreateMocks();
         var info = MakePluginInfo();
@@ -648,7 +648,7 @@ public sealed class PluginManagerTests
         var vm = new PluginManagerViewModel(host, installer, settings, log);
         await vm.UninstallPluginAsync(item);
 
-        host.Received(1).SetEnabled(item.Id, false);
+        host.Received(1).RemovePlugin(item.Id);
     }
 
     [Fact]

@@ -47,21 +47,21 @@ public partial class StatusBarViewModel : ObservableObject, IDisposable
             IsVisible = true
         };
 
-        _resolutionItem = new StatusBarItem(ResolutionItemId, StatusBarAlignment.Right, 200)
+        _resolutionItem = new StatusBarItem(ResolutionItemId, StatusBarAlignment.Right, 10200)
         {
             Text = string.Empty,
             Tooltip = "Video resolution",
             IsVisible = false
         };
 
-        _durationItem = new StatusBarItem(DurationItemId, StatusBarAlignment.Right, 100)
+        _durationItem = new StatusBarItem(DurationItemId, StatusBarAlignment.Right, 10100)
         {
             Text = string.Empty,
             Tooltip = "Video duration",
             IsVisible = false
         };
 
-        _codecItem = new StatusBarItem(CodecItemId, StatusBarAlignment.Right, 300)
+        _codecItem = new StatusBarItem(CodecItemId, StatusBarAlignment.Right, 10300)
         {
             Text = string.Empty,
             Tooltip = "Video codec",

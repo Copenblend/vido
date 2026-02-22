@@ -41,4 +41,11 @@ public interface IPluginHost
     /// Used by the Plugin Manager UI to display and edit plugin settings.
     /// </summary>
     IPluginSettingsStore GetSettingsStore(string pluginId);
+
+    /// <summary>
+    /// Removes all runtime state for a plugin (from the discovered list,
+    /// contexts, settings stores, and disabled-plugin list).
+    /// Called during uninstall so that a subsequent install discovers the plugin fresh.
+    /// </summary>
+    void RemovePlugin(string pluginId);
 }

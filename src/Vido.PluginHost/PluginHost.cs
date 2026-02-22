@@ -50,7 +50,8 @@ public sealed class PluginHost : IPluginHost
         ISettingsService settingsService,
         ContributionRegistry contributions,
         IContextMenuRegistry contextMenuRegistry,
-        IKeyboardShortcutService keyboardShortcutService)
+        IKeyboardShortcutService keyboardShortcutService,
+        bool scanDefaultDirectory = true)
     {
         _eventBus = eventBus;
         _videoEngine = videoEngine;
@@ -60,8 +61,9 @@ public sealed class PluginHost : IPluginHost
         _contextMenuRegistry = contextMenuRegistry;
         _keyboardShortcutService = keyboardShortcutService;
 
-        // Always scan the default directory
-        _scanDirectories.Add(DefaultPluginDirectory);
+        // Always scan the default directory (unless disabled for testing)
+        if (scanDefaultDirectory)
+            _scanDirectories.Add(DefaultPluginDirectory);
 
         // Add custom directories from settings
         var customDirs = settingsService.Current.PluginDirectories;
@@ -172,7 +174,11 @@ public sealed class PluginHost : IPluginHost
 
     private void DiscoverPlugins()
     {
-        var seenIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // Seed seenIds with already-discovered plugins to prevent duplicates
+        // when ActivateAll is called multiple times (e.g. after install).
+        var seenIds = new HashSet<string>(
+            _plugins.Select(p => p.Manifest.Id),
+            StringComparer.OrdinalIgnoreCase);
 
         foreach (var scanDir in _scanDirectories)
         {
@@ -233,7 +239,18 @@ public sealed class PluginHost : IPluginHost
 
         try
         {
-            var assembly = Assembly.LoadFrom(dllPath);
+            // Load the assembly from a byte array so neither the original file
+            // nor any shadow-copy is locked by the process. This allows clean
+            // uninstall and reinstall at any time.
+            var assemblyBytes = File.ReadAllBytes(dllPath);
+
+            // Also load a PDB if present (enables stack-trace line numbers)
+            var pdbPath = Path.ChangeExtension(dllPath, ".pdb");
+            var pdbBytes = File.Exists(pdbPath) ? File.ReadAllBytes(pdbPath) : null;
+
+            var assembly = pdbBytes is not null
+                ? Assembly.Load(assemblyBytes, pdbBytes)
+                : Assembly.Load(assemblyBytes);
             var pluginType = assembly.GetType(info.Manifest.PluginClass);
 
             if (pluginType is null)
@@ -361,6 +378,40 @@ public sealed class PluginHost : IPluginHost
         var store = new PluginSettingsStore(pluginId);
         _settingsStores[pluginId] = store;
         return store;
+    }
+
+    /// <inheritdoc/>
+    public void RemovePlugin(string pluginId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
+
+        // Remove from the discovered plugins list
+        var info = _plugins.FirstOrDefault(p =>
+            string.Equals(p.Manifest.Id, pluginId, StringComparison.OrdinalIgnoreCase));
+
+        if (info is not null)
+        {
+            // Deactivate if still active
+            if (info.State == PluginState.Active)
+                DeactivatePlugin(info);
+
+            _plugins.Remove(info);
+        }
+
+        // Remove context and settings store
+        if (_contexts.TryGetValue(pluginId, out var ctx))
+        {
+            try { ctx.Cleanup(); } catch { /* swallow */ }
+            _contexts.Remove(pluginId);
+        }
+
+        _settingsStores.Remove(pluginId);
+
+        // Remove from disabled list so reinstallation starts fresh
+        _settingsService.Current.DisabledPluginIds.Remove(pluginId);
+        _settingsService.QueueSave();
+
+        _logService.Debug($"Plugin '{pluginId}' removed from runtime state", "PluginHost");
     }
 
     // ── Force Override ──

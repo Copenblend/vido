@@ -25,4 +25,13 @@ public partial class SidebarViewModel : ObservableObject
             _ => "EXPLORER"
         };
     }
+
+    /// <summary>
+    /// Sets the header to a custom title. Used for plugin sidebar panels
+    /// that don't correspond to a built-in <see cref="SidebarPanelKind"/>.
+    /// </summary>
+    public void SetPanel(SidebarPanelKind? panel, string headerText)
+    {
+        HeaderText = headerText;
+    }
 }

@@ -40,6 +40,13 @@ public partial class FileExplorerViewModel : ObservableObject
     private FileNode? _selectedNode;
 
     /// <summary>
+    /// File extensions accepted by plugins (e.g. ".sample"). Files with these
+    /// extensions will be accepted during drag-and-drop and menu-based addition
+    /// in addition to the built-in video extensions.
+    /// </summary>
+    public HashSet<string> AdditionalAcceptedExtensions { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// When true, hidden files/folders appear in the tree (dimmed).
     /// When false, hidden items are excluded from the tree entirely.
     /// </summary>
@@ -146,7 +153,8 @@ public partial class FileExplorerViewModel : ObservableObject
             }
             else if (File.Exists(path))
             {
-                if (FileNode.VideoExtensions.Contains(Path.GetExtension(path)))
+                var ext = Path.GetExtension(path);
+                if (FileNode.VideoExtensions.Contains(ext) || AdditionalAcceptedExtensions.Contains(ext))
                 {
                     if (!ContainsRootPath(path))
                     {

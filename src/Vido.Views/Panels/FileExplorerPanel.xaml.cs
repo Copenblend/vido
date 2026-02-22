@@ -1,9 +1,13 @@
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Vido.Core.FileSystem;
+using Vido.Core.Menus;
+using Vido.Core.Plugin;
 using Vido.ViewModels;
 
 namespace Vido.Views.Panels;
@@ -32,9 +36,26 @@ public partial class FileExplorerPanel : UserControl
     public event Action<FileNode>? VideoFileDoubleClicked;
 
     /// <summary>
+    /// Raised when a non-video file is double-clicked and matched by a plugin file handler.
+    /// </summary>
+    public event Action<FileNode>? FileHandlerRequested;
+
+    /// <summary>
     /// Raised when files or folders are dropped onto the explorer panel.
     /// </summary>
     public event Action<string[]>? FilesDroppedOnExplorer;
+
+    /// <summary>
+    /// Optional context menu registry for injecting plugin-contributed menu items.
+    /// Set by MainWindow after creating the panel.
+    /// </summary>
+    public IContextMenuRegistry? ContextMenuRegistry { get; set; }
+
+    /// <summary>
+    /// Optional contribution registry for querying plugin file icons.
+    /// Set by MainWindow after creating the panel.
+    /// </summary>
+    public IContributionRegistry? ContributionRegistry { get; set; }
 
     public FileExplorerPanel()
     {
@@ -67,6 +88,72 @@ public partial class FileExplorerPanel : UserControl
     }
 
     // ─── Tree item events ────────────────────────────────────────────
+
+    /// <summary>
+    /// When a TreeViewItem is loaded, checks if the file has a plugin-provided
+    /// custom icon override and swaps the default icon if one exists.
+    /// </summary>
+    private void OnTreeItemLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is not TreeViewItem item || item.DataContext is not FileNode node)
+            return;
+
+        if (node.IsDirectory || node.IsVideoFile) return;
+        if (ContributionRegistry is null) return;
+
+        var ext = Path.GetExtension(node.Name);
+        if (string.IsNullOrEmpty(ext)) return;
+
+        var icons = ContributionRegistry.GetFileIcons();
+        if (!icons.TryGetValue(ext, out var iconPath)) return;
+        if (!File.Exists(iconPath)) return;
+
+        // Find the named elements inside the data template
+        var contentPresenter = FindVisualChild<ContentPresenter>(item);
+        if (contentPresenter is null) return;
+
+        var template = contentPresenter.ContentTemplate;
+        if (template is null) return;
+
+        var genericIcon = template.FindName("GenericFileIcon", contentPresenter) as UIElement;
+        var customIcon = template.FindName("CustomFileIcon", contentPresenter) as System.Windows.Controls.Image;
+
+        if (genericIcon is not null && customIcon is not null)
+        {
+            try
+            {
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(iconPath, UriKind.Absolute);
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+                bitmap.Freeze();
+
+                customIcon.Source = bitmap;
+                customIcon.Visibility = Visibility.Visible;
+                genericIcon.Visibility = Visibility.Collapsed;
+            }
+            catch
+            {
+                // Icon load failed — keep default icon
+            }
+        }
+    }
+
+    /// <summary>
+    /// Finds the first visual child of the specified type.
+    /// </summary>
+    private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+    {
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is T match) return match;
+            var result = FindVisualChild<T>(child);
+            if (result is not null) return result;
+        }
+        return null;
+    }
 
     /// <summary>
     /// Handles tree item expansion — triggers lazy-loading of directory children.
@@ -129,6 +216,9 @@ public partial class FileExplorerPanel : UserControl
 
         menu.Tag = node;
         item.ContextMenu = menu;
+
+        // Inject plugin-contributed context menu items
+        InjectPluginContextMenuItems(menu, node);
     }
 
     /// <summary>
@@ -145,9 +235,17 @@ public partial class FileExplorerPanel : UserControl
         if (nearestItem != item)
             return;
 
-        if (node.IsVideoFile && !node.IsHidden)
+        if (node.IsHidden) return;
+
+        if (node.IsVideoFile)
         {
             VideoFileDoubleClicked?.Invoke(node);
+            e.Handled = true;
+        }
+        else if (!node.IsDirectory)
+        {
+            // Check if a plugin file handler is registered for this extension
+            FileHandlerRequested?.Invoke(node);
             e.Handled = true;
         }
     }
@@ -194,6 +292,52 @@ public partial class FileExplorerPanel : UserControl
             && DataContext is FileExplorerViewModel vm)
         {
             vm.RevealInExplorerCommand.Execute(node);
+        }
+    }
+
+    // ─── Plugin context menu injection ──────────────────────────────
+
+    /// <summary>
+    /// Dynamically adds plugin-contributed context menu items from the
+    /// <see cref="IContextMenuRegistry"/> to the given context menu.
+    /// Items tagged with "plugin-injected" are removed on each call to
+    /// avoid duplicates when the same static ContextMenu resource is reused.
+    /// </summary>
+    private void InjectPluginContextMenuItems(ContextMenu menu, FileNode node)
+    {
+        if (ContextMenuRegistry is null) return;
+
+        // Remove previously injected plugin items (static menus are reused)
+        for (int i = menu.Items.Count - 1; i >= 0; i--)
+        {
+            if (menu.Items[i] is FrameworkElement fe && fe.Tag is string tag && tag == "plugin-injected")
+                menu.Items.RemoveAt(i);
+        }
+
+        // Determine the target type
+        var target = node.IsDirectory ? ContextMenuTarget.Folder : ContextMenuTarget.File;
+        var entries = ContextMenuRegistry.GetEntries(target);
+
+        if (entries.Count == 0) return;
+
+        foreach (var entry in entries)
+        {
+            if (!entry.IsEnabled(node)) continue;
+
+            var menuItem = new MenuItem
+            {
+                Header = entry.Label,
+                Tag = "plugin-injected",
+                InputGestureText = entry.InputGestureText
+            };
+            menuItem.SetResourceReference(StyleProperty, "ContextMenuItemStyle");
+            var capturedNode = node;
+            menuItem.Click += (_, _) =>
+            {
+                try { entry.Handler(capturedNode); }
+                catch { /* Plugin error — swallowed to prevent crash */ }
+            };
+            menu.Items.Add(menuItem);
         }
     }
 
