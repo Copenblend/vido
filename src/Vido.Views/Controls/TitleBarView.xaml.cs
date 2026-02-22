@@ -14,6 +14,13 @@ namespace Vido.Views.Controls;
 /// </summary>
 public partial class TitleBarView : UserControl
 {
+    /// <summary>File filter for video file dialogs.</summary>
+    private const string VideoFileFilter =
+        "Video Files|*.mp4;*.avi;*.mkv;*.mov;*.wmv;*.flv;*.webm|All Files|*.*";
+
+    /// <summary>Raised when the user selects File > Open File and picks a video file.</summary>
+    public event Action<string>? FileOpened;
+
     /// <summary>Raised when the user selects File > Open Folder and picks a valid path.</summary>
     public event Action<string>? FolderOpened;
 
@@ -110,6 +117,20 @@ public partial class TitleBarView : UserControl
         }
     }
 
+    private void OnOpenFileClick(object sender, RoutedEventArgs e)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Open Video File",
+            Filter = VideoFileFilter
+        };
+
+        if (dialog.ShowDialog() == true && !string.IsNullOrEmpty(dialog.FileName))
+        {
+            FileOpened?.Invoke(dialog.FileName);
+        }
+    }
+
     private void OnOpenFolderClick(object sender, RoutedEventArgs e)
     {
         var dialog = new Microsoft.Win32.OpenFolderDialog
@@ -139,7 +160,7 @@ public partial class TitleBarView : UserControl
         {
             Title = "Add File to Explorer",
             Multiselect = true,
-            Filter = "Video Files|*.mp4;*.avi;*.mkv;*.mov;*.wmv;*.flv;*.webm|All Files|*.*"
+            Filter = VideoFileFilter
         };
 
         if (dialog.ShowDialog() == true && dialog.FileNames.Length > 0)

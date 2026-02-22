@@ -49,6 +49,8 @@ public partial class MainWindow : Window
     private readonly IPluginInstaller _pluginInstaller;
     private readonly IPluginHost _pluginHost;
 
+    private string[]? _pendingCommandLineArgs;
+
     private TitleBarViewModel? _titleBarViewModel;
     private ActivityBarViewModel? _activityBarViewModel;
     private SidebarViewModel? _sidebarViewModel;
@@ -137,6 +139,63 @@ public partial class MainWindow : Window
         RestoreLayoutState();
 
         _logService.Info("Vido started", "App");
+    }
+
+    /// <summary>
+    /// Stores command-line arguments for deferred processing after the window
+    /// has fully loaded (so the video engine and UI are ready).
+    /// </summary>
+    public void ProcessCommandLineArgs(string[] args)
+    {
+        if (args.Length == 0) return;
+        _pendingCommandLineArgs = args;
+    }
+
+    /// <summary>
+    /// Executes the stored command-line arguments. Called from the Loaded event
+    /// to ensure the video engine and visual tree are fully initialized.
+    /// </summary>
+    private async Task ExecutePendingCommandLineArgsAsync()
+    {
+        var args = _pendingCommandLineArgs;
+        _pendingCommandLineArgs = null;
+        if (args is null || args.Length == 0) return;
+
+        var arg = args[0].Trim('"');
+        if (string.IsNullOrWhiteSpace(arg)) return;
+
+        if (File.Exists(arg))
+        {
+            _logService.Info($"Opening file from command line: {arg}", "App");
+
+            // Open the file's parent directory in explorer
+            var parentDir = Path.GetDirectoryName(arg);
+            if (!string.IsNullOrEmpty(parentDir))
+            {
+                var currentFolder = _fileExplorerViewModel.FolderPath;
+                if (currentFolder is null ||
+                    !string.Equals(currentFolder, parentDir, StringComparison.OrdinalIgnoreCase))
+                {
+                    OnFolderOpened(parentDir);
+                }
+            }
+
+            // Switch to Player tab and load the video
+            _logService.Info($"Activating Player tab", "App");
+            _mainWindowViewModel.ActivateTab(MainWindowViewModel.PlayerTabId);
+            _logService.Info($"Calling LoadAndPlayAsync for: {arg}", "App");
+            await _videoPlayerViewModel.LoadAndPlayAsync(arg);
+            _logService.Info($"LoadAndPlayAsync completed for: {arg}", "App");
+        }
+        else if (Directory.Exists(arg))
+        {
+            _logService.Info($"Opening folder from command line: {arg}", "App");
+            OnFolderOpened(arg);
+        }
+        else
+        {
+            _logService.Warning($"Command-line argument is not a valid file or folder: {arg}", "App");
+        }
     }
 
     private void SetupWindowChrome()
@@ -284,6 +343,8 @@ public partial class MainWindow : Window
             new KeyBinding("S", ctrl: true, shift: true), "vido.toggleStatusBar", () => _mainWindowViewModel.ToggleStatusBar());
 
         // File operations
+        _keyboardShortcutService.Register(
+            new KeyBinding("O", ctrl: true), "vido.openFile", ShowOpenFileDialog);
         _keyboardShortcutService.Register(
             new KeyBinding("O", ctrl: true, shift: true), "vido.openFolder", ShowOpenFolderDialog);
         _keyboardShortcutService.Register(
@@ -810,6 +871,7 @@ public partial class MainWindow : Window
         };
 
         // Wire title bar folder events
+        TitleBar.FileOpened += OnFileOpened;
         TitleBar.FolderOpened += OnFolderOpened;
         TitleBar.FolderClosed += OnFolderClosed;
         TitleBar.FolderRescanned += OnFolderRescanned;
@@ -936,6 +998,52 @@ public partial class MainWindow : Window
         {
             OnFolderOpened(dialog.FolderName);
         }
+    }
+
+    /// <summary>
+    /// Shows the Open File dialog (Ctrl+O).
+    /// </summary>
+    private void ShowOpenFileDialog()
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Open Video File",
+            Filter = "Video Files|*.mp4;*.avi;*.mkv;*.mov;*.wmv;*.flv;*.webm|All Files|*.*"
+        };
+
+        if (dialog.ShowDialog(this) == true && !string.IsNullOrEmpty(dialog.FileName))
+        {
+            OnFileOpened(dialog.FileName);
+        }
+    }
+
+    /// <summary>
+    /// Opens and plays a video file. If the file's parent folder differs from
+    /// the current explorer folder, the parent folder is opened in the explorer.
+    /// </summary>
+    private async void OnFileOpened(string filePath)
+    {
+        if (!File.Exists(filePath))
+        {
+            _logService.Error($"File not found: {filePath}", "App");
+            return;
+        }
+
+        // Open the file's parent directory if different from the current explorer folder
+        var parentDir = Path.GetDirectoryName(filePath);
+        if (!string.IsNullOrEmpty(parentDir))
+        {
+            var currentFolder = _fileExplorerViewModel.FolderPath;
+            if (currentFolder is null ||
+                !string.Equals(currentFolder, parentDir, StringComparison.OrdinalIgnoreCase))
+            {
+                OnFolderOpened(parentDir);
+            }
+        }
+
+        // Switch to Player tab and load the video
+        _mainWindowViewModel.ActivateTab(MainWindowViewModel.PlayerTabId);
+        await _videoPlayerViewModel.LoadAndPlayAsync(filePath);
     }
 
     private void OnFolderOpened(string path)
@@ -2057,16 +2165,32 @@ public partial class MainWindow : Window
             }
         }
 
-        // Restore last video (paused at saved position)
+        // After Loaded: process command-line args (if any) or restore last video.
+        // Deferred to Loaded so the visual tree / video engine are fully ready.
         Loaded += async (_, _) =>
         {
-            try
+            if (_pendingCommandLineArgs is { Length: > 0 })
             {
-                await _videoPlayerViewModel.RestoreLastVideoAsync();
+                // Command-line file/folder takes priority over restoring last video.
+                try
+                {
+                    await ExecutePendingCommandLineArgsAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logService.Error($"Failed to process command-line args: {ex.Message}", "App");
+                }
             }
-            catch (Exception ex)
+            else
             {
-                _logService.Error($"Failed to restore last video: {ex.Message}", "App");
+                try
+                {
+                    await _videoPlayerViewModel.RestoreLastVideoAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logService.Error($"Failed to restore last video: {ex.Message}", "App");
+                }
             }
         };
     }

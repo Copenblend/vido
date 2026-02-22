@@ -48,6 +48,10 @@ public partial class App : Application
 
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;
+
+        // Store command-line args BEFORE Show() so they're available when the
+        // Loaded event fires (Show triggers Loaded synchronously).
+        mainWindow.ProcessCommandLineArgs(e.Args);
         mainWindow.Show();
 
         // Activate plugins after the main window is shown
