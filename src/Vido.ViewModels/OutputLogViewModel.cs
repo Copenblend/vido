@@ -10,7 +10,7 @@ namespace Vido.ViewModels;
 /// exposes a filtered, formatted collection of log entries for UI display.
 /// Supports level filtering and auto-scroll behavior.
 /// </summary>
-public partial class OutputLogViewModel : ObservableObject
+public partial class OutputLogViewModel : ObservableObject, IDisposable
 {
     private readonly ILogService _logService;
     private readonly SynchronizationContext? _syncContext;
@@ -128,6 +128,14 @@ public partial class OutputLogViewModel : ObservableObject
         }
 
         HasEntries = Entries.Count > 0;
+    }
+
+    /// <summary>
+    /// Unsubscribes from the log service to prevent memory leaks.
+    /// </summary>
+    public void Dispose()
+    {
+        _logService.EntryAdded -= OnEntryAdded;
     }
 }
 

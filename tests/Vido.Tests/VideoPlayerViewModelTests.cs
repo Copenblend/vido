@@ -212,13 +212,7 @@ public class VideoPlayerViewModelTests : IDisposable
         FrameData? received = null;
         _sut.FrameReady += f => received = f;
 
-        var frame = new FrameData
-        {
-            PixelData = new byte[100],
-            Width = 10,
-            Height = 10,
-            Stride = 40
-        };
+        var frame = new FrameData(new byte[100], 100, 10, 10, 40, TimeSpan.Zero, pooled: false);
 
         _engine.FrameReady += Raise.Event<Action<FrameData>>(frame);
 

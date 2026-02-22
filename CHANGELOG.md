@@ -4,6 +4,19 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### vi-023
+- **Frame buffer pooling**: FrameData now implements IDisposable and uses `ArrayPool<byte>.Shared` instead of `new byte[]` per frame, eliminating ~8 MB/frame LOH allocations at 30+ fps
+- **Hardware-accelerated decoding**: FFmpegVideoEngine tries D3D11VA, then DXVA2, with automatic software fallback. GPU decodes the video and frames are transferred to system memory for rendering
+- **TreeView virtualization fix**: Fixed `CanContentScroll="False"` in FileExplorerTreeViewStyle that was defeating `VirtualizingStackPanel.IsVirtualizing` — file explorer with 1000+ files now only realizes visible items
+- **Deferred plugin activation**: Plugin discovery/loading now runs via `Dispatcher.BeginInvoke(Background)` after the first render pass, improving time-to-visible window
+- **ReadyToRun compilation**: Added `PublishReadyToRun` and explicit `TieredCompilation` to Vido.App.csproj for faster startup in published builds
+- **Startup timing**: App.xaml.cs logs window-visible time, plugin activation time, and total startup time to the Output Log
+- **Video load timing**: FFmpegVideoEngine logs media load duration and whether HW acceleration is active
+- **Playback performance metrics**: Logs FPS, rendered/dropped frame counts, GC memory usage, and decode mode every 30 seconds during playback
+- **Video surface scaling**: Changed BitmapScalingMode from HighQuality to LowQuality on the video Image control — imperceptible at 30+ fps but reduces GPU overhead during playback
+- **OutputLogViewModel IDisposable**: Added Dispose() to unsubscribe from `ILogService.EntryAdded`, fixing potential memory leak pattern
+- **FrameData Dispose on seek discard**: Frames dropped due to seek generation mismatch are now properly disposed (returning pooled buffers)
+
 ### vi-022
 - Created AboutDialog showing app name, logo, version (0.1.0), .NET runtime version, and FFmpeg version
 - Dialog styled to match VS Code Dark Modern theme (dark background, rounded border, accent OK button)

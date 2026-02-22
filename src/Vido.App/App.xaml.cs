@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Windows;
+using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Vido.Core.Events;
 using Vido.Core.FileSystem;
@@ -30,6 +32,7 @@ public partial class App : Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        var startupTimer = Stopwatch.StartNew();
         base.OnStartup(e);
 
         var services = new ServiceCollection();
@@ -55,16 +58,36 @@ public partial class App : Application
         mainWindow.ProcessCommandLineArgs(e.Args);
         mainWindow.Show();
 
-        // Activate plugins after the main window is shown
-        try
+        // Log time-to-visible before kicking off deferred work
+        logService.Info(
+            $"Window visible in {startupTimer.ElapsedMilliseconds} ms",
+            "Startup");
+
+        // Defer plugin activation to run after the first render pass completes.
+        // This lets the window paint immediately without being blocked by
+        // synchronous plugin I/O (directory scan, assembly load, activation).
+        _ = Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, () =>
         {
-            var pluginHost = _serviceProvider.GetRequiredService<IPluginHost>();
-            pluginHost.ActivateAll();
-        }
-        catch (Exception ex)
-        {
-            logService.Error($"Plugin system initialization failed: {ex.Message}", "PluginHost");
-        }
+            try
+            {
+                var pluginTimer = Stopwatch.StartNew();
+                var pluginHost = _serviceProvider.GetRequiredService<IPluginHost>();
+                pluginHost.ActivateAll();
+                pluginTimer.Stop();
+                logService.Info(
+                    $"Plugin activation completed in {pluginTimer.ElapsedMilliseconds} ms",
+                    "Startup");
+            }
+            catch (Exception ex)
+            {
+                logService.Error($"Plugin system initialization failed: {ex.Message}", "PluginHost");
+            }
+
+            startupTimer.Stop();
+            logService.Info(
+                $"Total startup completed in {startupTimer.ElapsedMilliseconds} ms",
+                "Startup");
+        });
     }
 
     protected override async void OnExit(ExitEventArgs e)

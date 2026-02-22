@@ -26,8 +26,7 @@ public sealed class StateService : IStateService, IDisposable
     };
 
     private readonly SemaphoreSlim _saveLock = new(1, 1);
-    private readonly object _debounceGuard = new();
-    private CancellationTokenSource? _debounceCts;
+    private int _debounceVersion;
     private const int DebounceMs = 500;
 
     /// <summary>
@@ -68,28 +67,19 @@ public sealed class StateService : IStateService, IDisposable
 
     public void QueueSave()
     {
-        lock (_debounceGuard)
-        {
-            _debounceCts?.Cancel();
-            _debounceCts = new CancellationTokenSource();
-            var token = _debounceCts.Token;
+        // Increment the version counter. Any in-flight debounce with an older
+        // version will see the mismatch and skip the save. This avoids
+        // CancellationTokenSource + Task.Delay which produce first-chance
+        // TaskCanceledException noise in debugger output.
+        var version = Interlocked.Increment(ref _debounceVersion);
 
-            // Do NOT pass token to Task.Run — only use it inside the lambda.
-            // Passing it to Task.Run causes a first-chance TaskCanceledException
-            // when the token is cancelled before the task begins.
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await Task.Delay(DebounceMs, token);
-                    await SaveAsync();
-                }
-                catch (OperationCanceledException)
-                {
-                    // Debounce cancelled — a newer save was queued
-                }
-            });
-        }
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(DebounceMs);
+            // Only save if no newer QueueSave was called during the delay
+            if (Interlocked.CompareExchange(ref _debounceVersion, 0, 0) == version)
+                await SaveAsync();
+        });
     }
 
     public async Task SaveAsync()
@@ -109,8 +99,8 @@ public sealed class StateService : IStateService, IDisposable
 
     public void Dispose()
     {
-        _debounceCts?.Cancel();
-        _debounceCts?.Dispose();
+        // Bump version to suppress any in-flight debounce
+        Interlocked.Increment(ref _debounceVersion);
         _saveLock.Dispose();
     }
 }
