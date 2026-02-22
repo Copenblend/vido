@@ -17,7 +17,7 @@
             <Style x:Key="StatusBarItemStyle" TargetType="TextBlock">
                 <Setter Property="FontFamily" Value="Segoe UI" />
                 <Setter Property="FontSize" Value="12" />
-                <Setter Property="Foreground" Value="#ffffff" />
+                <Setter Property="Foreground" Value="{DynamicResource ActiveIconBrush}" />
                 <Setter Property="VerticalAlignment" Value="Center" />
                 <Setter Property="Margin" Value="0" />
             </Style>

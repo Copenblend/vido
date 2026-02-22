@@ -41,6 +41,14 @@
     <!-- Accent -->
     <Color x:Key="AccentColor">#007acc</Color>
 
+    <!-- Danger / Destructive Actions -->
+    <Color x:Key="DangerColor">#c42b1c</Color>
+    <Color x:Key="DangerHoverColor">#a12316</Color>
+
+    <!-- UI Element Colors -->
+    <Color x:Key="BadgeBackgroundColor">#5a5a5a</Color>
+    <Color x:Key="SubtleBackgroundColor">#2a2a2a</Color>
+
     <!-- Borders -->
     <Color x:Key="PrimaryBorderColor">#2b2b2b</Color>
     <Color x:Key="FocusBorderColor">#007fd4</Color>

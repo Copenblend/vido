@@ -6,8 +6,15 @@ namespace Vido.Core.Windowing;
 /// </summary>
 public interface IWindowService
 {
+    /// <summary>Minimizes the application window.</summary>
     void Minimize();
+
+    /// <summary>Toggles between maximized and restored window states.</summary>
     void ToggleMaximize();
+
+    /// <summary>Closes the application window.</summary>
     void Close();
+
+    /// <summary>Gets the current window state (Normal, Minimized, or Maximized).</summary>
     AppWindowState CurrentState { get; }
 }

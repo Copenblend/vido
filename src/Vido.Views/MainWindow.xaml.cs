@@ -1911,7 +1911,7 @@ public partial class MainWindow : Window
         button.Click += (_, _) =>
         {
             try { clickHandler(); }
-            catch { /* Plugin error — swallowed to prevent crash */ }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Plugin toolbar button handler error: {ex.Message}"); }
         };
 
         return button;

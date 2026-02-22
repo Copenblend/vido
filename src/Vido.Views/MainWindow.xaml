@@ -4,7 +4,7 @@
         xmlns:controls="clr-namespace:Vido.Views.Controls"
         xmlns:layout="clr-namespace:Vido.Core.Layout;assembly=Vido.Core"
         Title="Vido"
-        Width="2560"
+        Width="1280"
         Height="720"
         WindowStyle="None"
         AllowDrop="True"

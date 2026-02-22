@@ -12,29 +12,62 @@ public interface IContributionRegistry
 {
     // ── Registration (called by PluginContext) ──
 
+    /// <summary>Registers a sidebar panel contribution from a plugin.</summary>
     void RegisterSidebarPanel(string pluginId, string contributionId, string title, string? iconPath, int order, Func<object> viewFactory);
+
+    /// <summary>Registers a bottom panel tab contribution from a plugin.</summary>
     void RegisterBottomPanel(string pluginId, string contributionId, string title, int order, Func<object> viewFactory);
+
+    /// <summary>Registers a right panel tab contribution from a plugin.</summary>
     void RegisterRightPanel(string pluginId, string contributionId, string title, int order, Func<object> viewFactory);
+
+    /// <summary>Registers a status bar item contribution from a plugin.</summary>
     void RegisterStatusBarItem(string pluginId, string contributionId, string name, string position, int order, Func<object> viewFactory);
+
+    /// <summary>Registers a toolbar button contribution in the title bar area.</summary>
     void RegisterToolbarButton(string pluginId, string contributionId, string tooltip, string? iconPath, int order, Action clickHandler);
+
+    /// <summary>Registers a context menu handler for files matching specified extensions.</summary>
     void RegisterContextMenuHandler(string pluginId, string contributionId, string label, string[] fileExtensions, int order, Action<FileNode> handler);
+
+    /// <summary>Registers a file handler for double-click actions on specified extensions.</summary>
     void RegisterFileHandler(string pluginId, string[] extensions, Action<FileNode> handler);
+
+    /// <summary>Registers custom file icons mapping file extensions to icon paths.</summary>
     void RegisterFileIcons(string pluginId, Dictionary<string, string> extensionToIconPath);
+
+    /// <summary>Registers a keyboard binding for a plugin command.</summary>
     void RegisterKeyBinding(string pluginId, KeyBinding binding, string commandId, Action handler);
 
     // ── Query (called by UI layer) ──
 
+    /// <summary>Gets all registered sidebar panel contributions, ordered by priority.</summary>
     IReadOnlyList<SidebarRegistration> GetSidebarPanels();
+
+    /// <summary>Gets all registered bottom panel tab contributions, ordered by priority.</summary>
     IReadOnlyList<PanelRegistration> GetBottomPanels();
+
+    /// <summary>Gets all registered right panel tab contributions, ordered by priority.</summary>
     IReadOnlyList<PanelRegistration> GetRightPanels();
+
+    /// <summary>Gets all registered status bar item contributions, ordered by priority.</summary>
     IReadOnlyList<StatusBarRegistration> GetStatusBarItems();
+
+    /// <summary>Gets all registered toolbar button contributions, ordered by priority.</summary>
     IReadOnlyList<ToolbarButtonRegistration> GetToolbarButtons();
+
+    /// <summary>Gets all registered context menu item contributions.</summary>
     IReadOnlyList<ContextMenuRegistration> GetContextMenuItems();
+
+    /// <summary>Gets all registered file handler contributions.</summary>
     IReadOnlyList<FileHandlerRegistration> GetFileHandlers();
+
+    /// <summary>Gets the merged file icon map from all plugins (extension → icon path).</summary>
     IReadOnlyDictionary<string, string> GetFileIcons();
 
     // ── Unregistration (called when plugin deactivates) ──
 
+    /// <summary>Removes all contributions registered by the specified plugin.</summary>
     void UnregisterAll(string pluginId);
 
     // ── Change notification ──

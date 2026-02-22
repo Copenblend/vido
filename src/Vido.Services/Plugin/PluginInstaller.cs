@@ -113,7 +113,7 @@ public sealed class PluginInstaller : IPluginInstaller
                 if (Directory.Exists(targetDir))
                     Directory.Delete(targetDir, recursive: true);
             }
-            catch { /* best effort */ }
+            catch (Exception cleanupEx) { _logService.Debug($"Cleanup of partial install threw: {cleanupEx.Message}", "PluginInstaller"); }
 
             return false;
         }

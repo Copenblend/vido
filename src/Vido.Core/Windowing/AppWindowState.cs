@@ -6,7 +6,12 @@ namespace Vido.Core.Windowing;
 /// </summary>
 public enum AppWindowState
 {
+    /// <summary>Window is in its normal (restored) state.</summary>
     Normal,
+
+    /// <summary>Window is minimized to the taskbar.</summary>
     Minimized,
+
+    /// <summary>Window fills the screen's working area.</summary>
     Maximized
 }
