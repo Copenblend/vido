@@ -1,4 +1,6 @@
 using NSubstitute;
+using Vido.Core.Logging;
+using Vido.Core.Plugin;
 using Vido.Core.Settings;
 using Vido.Core.State;
 using Vido.ViewModels;
@@ -206,6 +208,8 @@ public sealed class StatePersistenceTests
         svc.Current.RightPanelWidth = 350;
         svc.Current.StatusBarVisible = false;
         svc.Current.ShowHiddenFiles = true;
+        svc.Current.PluginInstalledSectionExpanded = false;
+        svc.Current.PluginAvailableSectionExpanded = false;
 
         await svc.SaveAsync();
 
@@ -225,10 +229,72 @@ public sealed class StatePersistenceTests
         Assert.Equal(350, svc2.Current.RightPanelWidth);
         Assert.False(svc2.Current.StatusBarVisible);
         Assert.True(svc2.Current.ShowHiddenFiles);
+        Assert.False(svc2.Current.PluginInstalledSectionExpanded);
+        Assert.False(svc2.Current.PluginAvailableSectionExpanded);
         }
         finally
         {
             try { Directory.Delete(tempDir, recursive: true); } catch { }
         }
+    }
+
+    // ── PluginManagerViewModel persists section expanded state ──
+
+    [Fact]
+    public void PluginManagerVM_RestoresSectionState_FromSettings()
+    {
+        var (host, installer, settings, log) = CreatePluginMocks();
+        settings.Current.Returns(new AppSettings
+        {
+            PluginInstalledSectionExpanded = false,
+            PluginAvailableSectionExpanded = false
+        });
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+
+        Assert.False(vm.IsInstalledExpanded);
+        Assert.False(vm.IsAvailableExpanded);
+    }
+
+    [Fact]
+    public void PluginManagerVM_ToggleInstalledExpanded_SavesSettings()
+    {
+        var (host, installer, settings, log) = CreatePluginMocks();
+        var appSettings = new AppSettings();
+        settings.Current.Returns(appSettings);
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        Assert.True(vm.IsInstalledExpanded);
+
+        vm.IsInstalledExpanded = false;
+
+        Assert.False(appSettings.PluginInstalledSectionExpanded);
+        settings.Received().QueueSave();
+    }
+
+    [Fact]
+    public void PluginManagerVM_ToggleAvailableExpanded_SavesSettings()
+    {
+        var (host, installer, settings, log) = CreatePluginMocks();
+        var appSettings = new AppSettings();
+        settings.Current.Returns(appSettings);
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        Assert.True(vm.IsAvailableExpanded);
+
+        vm.IsAvailableExpanded = false;
+
+        Assert.False(appSettings.PluginAvailableSectionExpanded);
+        settings.Received().QueueSave();
+    }
+
+    private static (IPluginHost host, IPluginInstaller installer, ISettingsService settings, ILogService log) CreatePluginMocks()
+    {
+        var host = Substitute.For<IPluginHost>();
+        var installer = Substitute.For<IPluginInstaller>();
+        var settings = Substitute.For<ISettingsService>();
+        var log = Substitute.For<ILogService>();
+        host.Plugins.Returns(Array.Empty<PluginInfo>());
+        return (host, installer, settings, log);
     }
 }

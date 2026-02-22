@@ -28,6 +28,12 @@ public sealed class AppSettings
 
     // --- Plugins ---
 
+    /// <summary>Whether the Installed section in the Plugin Manager is expanded.</summary>
+    public bool PluginInstalledSectionExpanded { get; set; } = true;
+
+    /// <summary>Whether the Available section in the Plugin Manager is expanded.</summary>
+    public bool PluginAvailableSectionExpanded { get; set; } = true;
+
     /// <summary>Additional directories to scan for plugins (besides %APPDATA%/Vido/plugins/).</summary>
     public List<string> PluginDirectories { get; set; } = [];
 
@@ -64,6 +70,8 @@ public sealed class AppSettings
         RightPanelCollapsed = false;
         RightPanelWidth = 300;
         ShowHiddenFiles = false;
+        PluginInstalledSectionExpanded = true;
+        PluginAvailableSectionExpanded = true;
         PluginDirectories = [];
         DisabledPluginIds = [];
         PluginRegistryUrls = [OfficialRegistryUrl];

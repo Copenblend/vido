@@ -43,11 +43,15 @@ public partial class MainWindow : Window
     private readonly StatusBarViewModel _statusBarViewModel;
     private readonly IKeyboardShortcutService _keyboardShortcutService;
     private readonly IContributionRegistry _contributionRegistry;
+    private readonly IPluginInstaller _pluginInstaller;
+    private readonly IPluginHost _pluginHost;
 
     private TitleBarViewModel? _titleBarViewModel;
     private ActivityBarViewModel? _activityBarViewModel;
     private SidebarViewModel? _sidebarViewModel;
     private FileExplorerPanel? _fileExplorerPanel;
+    private PluginManagerPanel? _pluginManagerPanel;
+    private PluginManagerViewModel? _pluginManagerViewModel;
 
     // Remembered panel dimensions for toggle persistence
     private double _bottomPanelHeight = 200;
@@ -83,6 +87,8 @@ public partial class MainWindow : Window
         ILogService logService,
         IKeyboardShortcutService keyboardShortcutService,
         IContributionRegistry contributionRegistry,
+        IPluginInstaller pluginInstaller,
+        IPluginHost pluginHost,
         FileExplorerViewModel fileExplorerViewModel,
         VideoPlayerViewModel videoPlayerViewModel,
         MainWindowViewModel mainWindowViewModel,
@@ -95,12 +101,18 @@ public partial class MainWindow : Window
         _logService = logService;
         _keyboardShortcutService = keyboardShortcutService;
         _contributionRegistry = contributionRegistry;
+        _pluginInstaller = pluginInstaller;
+        _pluginHost = pluginHost;
         _fileExplorerViewModel = fileExplorerViewModel;
         _videoPlayerViewModel = videoPlayerViewModel;
         _mainWindowViewModel = mainWindowViewModel;
         _outputLogViewModel = outputLogViewModel;
         _videoDetailsViewModel = videoDetailsViewModel;
         _statusBarViewModel = statusBarViewModel;
+
+        // Create the Plugin Manager ViewModel
+        _pluginManagerViewModel = new PluginManagerViewModel(
+            pluginHost, pluginInstaller, settingsService, logService);
 
         InitializeComponent();
         SetupWindowChrome();
@@ -999,6 +1011,15 @@ public partial class MainWindow : Window
             DynamicTabContent.Content = new SettingsPage();
             DynamicTabContent.Visibility = Visibility.Visible;
         }
+        else if (activeTab.Id.StartsWith("plugin.detail.", StringComparison.Ordinal))
+        {
+            // Show plugin detail panel
+            VideoPlayer.Visibility = Visibility.Collapsed;
+            var pluginId = activeTab.Id["plugin.detail.".Length..];
+            var panel = GetOrCreatePluginDetailPanel(pluginId);
+            DynamicTabContent.Content = panel;
+            DynamicTabContent.Visibility = Visibility.Visible;
+        }
         else
         {
             // Future tabs — show empty for now
@@ -1006,6 +1027,27 @@ public partial class MainWindow : Window
             DynamicTabContent.Content = null;
             DynamicTabContent.Visibility = Visibility.Visible;
         }
+    }
+
+    /// <summary>
+    /// Gets or creates a PluginDetailPanel for the given plugin ID.
+    /// </summary>
+    private PluginDetailPanel GetOrCreatePluginDetailPanel(string pluginId)
+    {
+        if (_pluginDetailPanels.TryGetValue(pluginId, out var existing))
+            return existing;
+
+        // Find the plugin item from the manager VM
+        PluginItemViewModel? item = null;
+        if (_pluginManagerViewModel is not null)
+        {
+            item = _pluginManagerViewModel.InstalledPlugins.FirstOrDefault(p => p.Id == pluginId)
+                ?? _pluginManagerViewModel.AvailablePlugins.FirstOrDefault(p => p.Id == pluginId);
+        }
+
+        var panel = new PluginDetailPanel(item, _pluginManagerViewModel, _pluginHost, _logService);
+        _pluginDetailPanels[pluginId] = panel;
+        return panel;
     }
 
     // ── Panel visibility ──
@@ -1130,8 +1172,20 @@ public partial class MainWindow : Window
                 case SidebarPanelKind.Explorer:
                     Sidebar.SetPanelContent(_fileExplorerPanel);
                     break;
+                case SidebarPanelKind.Extensions:
+                    if (_pluginManagerPanel is null)
+                    {
+                        _pluginManagerPanel = new PluginManagerPanel
+                        {
+                            DataContext = _pluginManagerViewModel
+                        };
+                        WirePluginManagerEvents();
+                    }
+                    Sidebar.SetPanelContent(_pluginManagerPanel);
+                    // Load plugin data when switching to extensions
+                    _ = _pluginManagerViewModel?.LoadAsync();
+                    break;
                 default:
-                    // Future panels (Extensions, Settings) will be added here
                     Sidebar.SetPanelContent(null);
                     break;
             }
@@ -1187,6 +1241,38 @@ public partial class MainWindow : Window
         Drop += OnWindowDrop;
         DragEnter += OnWindowDragEnter;
         DragOver += OnWindowDragOver;
+    }
+
+    // ── Plugin Manager (Extensions sidebar) wiring ──
+
+    /// <summary>
+    /// Map of plugin ID → detail panel content for reuse (avoids re-creating panels).
+    /// </summary>
+    private readonly Dictionary<string, PluginDetailPanel> _pluginDetailPanels = [];
+
+    /// <summary>
+    /// Wires events from the Plugin Manager ViewModel to open detail panels and settings.
+    /// </summary>
+    private void WirePluginManagerEvents()
+    {
+        if (_pluginManagerViewModel is null) return;
+
+        _pluginManagerViewModel.OpenDetailRequested += item =>
+        {
+            var tabId = $"plugin.detail.{item.Id}";
+            _mainWindowViewModel.OpenTab(tabId, item.DisplayName, isClosable: true);
+            UpdateTabContent();
+        };
+
+        _pluginManagerViewModel.OpenSettingsRequested += item =>
+        {
+            var tabId = $"plugin.detail.{item.Id}";
+            _mainWindowViewModel.OpenTab(tabId, item.DisplayName, isClosable: true);
+            UpdateTabContent();
+            // Scroll to settings tab — the detail panel will handle this
+            if (_pluginDetailPanels.TryGetValue(item.Id, out var panel))
+                panel.SwitchToSettings();
+        };
     }
 
     // ── Plugin contribution wiring ──
@@ -1560,6 +1646,13 @@ public partial class MainWindow : Window
         const int GclpHbrBackground = -10;
         var darkBrush = CreateSolidBrush(0x001F1F1F);
         SetClassLongPtr(hwnd, GclpHbrBackground, darkBrush);
+
+        // Ensure WS_SYSMENU is set so the taskbar shows our Window.Icon.
+        // WindowStyle="None" can strip this flag, causing a blank taskbar icon.
+        const int GWL_STYLE = -16;
+        const int WS_SYSMENU = 0x00080000;
+        var style = GetWindowLongPtr(hwnd, GWL_STYLE);
+        SetWindowLongPtr(hwnd, GWL_STYLE, new IntPtr(style.ToInt64() | WS_SYSMENU));
     }
 
     private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -1615,6 +1708,12 @@ public partial class MainWindow : Window
 
     [DllImport("user32.dll", EntryPoint = "SetClassLongPtr")]
     private static extern IntPtr SetClassLongPtr(IntPtr hwnd, int index, IntPtr newLong);
+
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtr")]
+    private static extern IntPtr GetWindowLongPtr(IntPtr hwnd, int index);
+
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtr")]
+    private static extern IntPtr SetWindowLongPtr(IntPtr hwnd, int index, IntPtr newLong);
 
     [DllImport("user32.dll")]
     private static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint flags);
