@@ -109,24 +109,20 @@
                           Header="_Bottom Panel"
                           Style="{StaticResource SubmenuParentItemStyle}"
                           SubmenuOpened="OnBottomPanelSubmenuOpened">
-                    <MenuItem x:Name="StatusBarMenu"
-                              Header="S_tatus Bar"
-                              Style="{StaticResource SubmenuParentItemStyle}"
-                              SubmenuOpened="OnStatusBarSubmenuOpened">
-                        <MenuItem x:Name="ShowHideStatusBarMenuItem"
-                                  Header="Show S_tatus Bar" InputGestureText="Ctrl+Shift+S"
-                                  Style="{StaticResource DropdownMenuItemStyle}"
-                                  Click="OnToggleStatusBarClick" />
-                    </MenuItem>
-                    <Separator Style="{StaticResource MenuSeparatorStyle}" />
-                    <MenuItem x:Name="OutputMenuItem"
-                              Header="_Log Output"
-                              Style="{StaticResource DropdownMenuItemStyle}"
-                              Click="OnShowOutputClick" />
                     <MenuItem x:Name="ShowHideBottomPanelMenuItem"
                               Header="_Show Bottom Panel" InputGestureText="Ctrl+J"
                               Style="{StaticResource DropdownMenuItemStyle}"
                               Click="OnToggleBottomPanelClick" />
+                </MenuItem>
+                <MenuItem x:Name="StatusBarMenu"
+                          Header="S_tatus Bar"
+                          Style="{StaticResource SubmenuParentItemStyle}"
+                          SubmenuOpened="OnStatusBarSubmenuOpened">
+                    <!-- Plugin status bar items are dynamically inserted here -->
+                    <MenuItem x:Name="ShowHideStatusBarMenuItem"
+                              Header="Show S_tatus Bar" InputGestureText="Ctrl+Shift+S"
+                              Style="{StaticResource DropdownMenuItemStyle}"
+                              Click="OnToggleStatusBarClick" />
                 </MenuItem>
                 <Separator Style="{StaticResource MenuSeparatorStyle}" />
                 <MenuItem x:Name="ShowHiddenFilesMenuItem"
@@ -184,15 +180,17 @@
         </Menu>
 
         <!-- Draggable title area with centered "Vido" title -->
-        <Grid Grid.Column="2">
-            <TextBlock Text="Vido"
-                       Foreground="{DynamicResource SecondaryForegroundBrush}"
-                       FontFamily="Segoe UI"
-                       FontSize="12"
-                       HorizontalAlignment="Center"
-                       VerticalAlignment="Center"
-                       IsHitTestVisible="False" />
-        </Grid>
+        <!-- Column 2: draggable title area -->
+
+        <!-- Centered "Vido" title — overlays the full grid, centered in the entire window -->
+        <TextBlock Grid.Column="0" Grid.ColumnSpan="4"
+                   Text="Vido"
+                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                   FontFamily="Segoe UI"
+                   FontSize="12"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   IsHitTestVisible="False" />
 
         <!-- Window Control Buttons -->
         <StackPanel Grid.Column="3"

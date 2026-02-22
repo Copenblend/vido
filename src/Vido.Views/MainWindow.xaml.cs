@@ -1737,7 +1737,7 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Creates a small toolbar button for the title bar.</summary>
+    /// <summary>Creates a small toolbar button for the title bar with menu-matching hover highlight.</summary>
     private static Button CreatePluginToolbarButton(string tooltip, string? iconPath, Action clickHandler)
     {
         // Small puzzle icon for plugin toolbar buttons
@@ -1756,23 +1756,36 @@ public partial class MainWindow : Window
         {
             Content = icon,
             ToolTip = tooltip,
-            Width = 28,
             Height = 22,
             Background = Brushes.Transparent,
             BorderThickness = new Thickness(0),
             Cursor = Cursors.Hand,
             VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
             Padding = new Thickness(4, 2, 4, 2)
         };
 
-        button.MouseEnter += (s, _) =>
-        {
-            if (s is Button b) b.Background = (Brush)Application.Current.FindResource("HoverBackgroundBrush");
-        };
-        button.MouseLeave += (s, _) =>
-        {
-            if (s is Button b) b.Background = Brushes.Transparent;
-        };
+        // Build a template — button stretches to fill container, highlight fills entire space
+        var template = new ControlTemplate(typeof(Button));
+        var borderFactory = new FrameworkElementFactory(typeof(Border));
+        borderFactory.Name = "Bd";
+        borderFactory.SetValue(Border.BackgroundProperty, Brushes.Transparent);
+        borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
+        borderFactory.SetValue(Border.PaddingProperty, new Thickness(6, 2, 6, 2));
+        var contentFactory = new FrameworkElementFactory(typeof(ContentPresenter));
+        contentFactory.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+        contentFactory.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+        borderFactory.AppendChild(contentFactory);
+        template.VisualTree = borderFactory;
+
+        // Hover trigger matching TitleBarMenuItemStyle
+        var hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        hoverTrigger.Setters.Add(new Setter(Border.BackgroundProperty,
+            new DynamicResourceExtension("HoverBackgroundBrush"), "Bd"));
+        template.Triggers.Add(hoverTrigger);
+
+        button.Template = template;
 
         button.Click += (_, _) =>
         {
