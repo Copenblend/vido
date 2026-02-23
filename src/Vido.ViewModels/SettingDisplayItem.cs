@@ -99,6 +99,10 @@ public partial class SettingDisplayItem : ObservableObject
     [ObservableProperty]
     private string _newListItemText = string.Empty;
 
+    /// <summary>Validation error message shown below the add-item input.</summary>
+    [ObservableProperty]
+    private string _validationError = string.Empty;
+
     /// <summary>Adds a new item to the string list and persists.</summary>
     [RelayCommand]
     public void AddListItem()
@@ -107,6 +111,19 @@ public partial class SettingDisplayItem : ObservableObject
         if (string.IsNullOrWhiteSpace(text)) return;
         if (ListItems.Contains(text)) return; // no duplicates
 
+        // Validate if a validation rule is specified
+        if (!string.IsNullOrEmpty(_definition.Validation) &&
+            _definition.Validation.Equals("url", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!Uri.TryCreate(text, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeFile))
+            {
+                ValidationError = "Enter a valid URL (https:// or file://)";
+                return;
+            }
+        }
+
+        ValidationError = string.Empty;
         ListItems.Add(text);
         NewListItemText = string.Empty;
         SaveListToStore();

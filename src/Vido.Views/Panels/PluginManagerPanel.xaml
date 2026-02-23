@@ -380,11 +380,8 @@
                                                                TextTrimming="CharacterEllipsis"
                                                                Margin="0,1,0,0" />
                                                     <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                                        <TextBlock Text="{Binding Publisher}"
-                                                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                                                   FontFamily="Segoe UI" FontSize="10.5" />
                                                         <!-- Verified badge (official only) -->
-                                                        <Canvas Width="14" Height="14" Margin="4,0,0,0"
+                                                        <Canvas Width="14" Height="14" Margin="0,0,4,0"
                                                                 VerticalAlignment="Center"
                                                                 Visibility="{Binding IsOfficial, Converter={StaticResource BoolToVis}}">
                                                             <Ellipse Width="14" Height="14"
@@ -394,6 +391,9 @@
                                                                   StrokeLineJoin="Round" Fill="Transparent"
                                                                   Canvas.Left="0" Canvas.Top="0" />
                                                         </Canvas>
+                                                        <TextBlock Text="{Binding Publisher}"
+                                                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                                                   FontFamily="Segoe UI" FontSize="10.5" />
                                                     </StackPanel>
                                                 </StackPanel>
 
@@ -505,11 +505,8 @@
                                                                TextTrimming="CharacterEllipsis"
                                                                Margin="0,1,0,0" />
                                                     <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                                        <TextBlock Text="{Binding Publisher}"
-                                                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                                                   FontFamily="Segoe UI" FontSize="10.5" />
                                                         <!-- Verified badge (official only) -->
-                                                        <Canvas Width="14" Height="14" Margin="4,0,0,0"
+                                                        <Canvas Width="14" Height="14" Margin="0,0,4,0"
                                                                 VerticalAlignment="Center"
                                                                 Visibility="{Binding IsOfficial, Converter={StaticResource BoolToVis}}">
                                                             <Ellipse Width="14" Height="14"
@@ -519,6 +516,9 @@
                                                                   StrokeLineJoin="Round" Fill="Transparent"
                                                                   Canvas.Left="0" Canvas.Top="0" />
                                                         </Canvas>
+                                                        <TextBlock Text="{Binding Publisher}"
+                                                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                                                   FontFamily="Segoe UI" FontSize="10.5" />
                                                     </StackPanel>
                                                 </StackPanel>
 

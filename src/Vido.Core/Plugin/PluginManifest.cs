@@ -242,6 +242,14 @@ public sealed class SettingContribution
     [JsonPropertyName("forceOverride")]
     public bool ForceOverride { get; set; }
 
+    /// <summary>
+    /// Optional validation rule for stringList items.
+    /// Supported values: <c>"url"</c> (requires valid https:// or file:// URI).
+    /// When null or empty, no validation is applied.
+    /// </summary>
+    [JsonPropertyName("validation")]
+    public string? Validation { get; set; }
+
     /// <summary>Supported setting type identifiers.</summary>
     public static readonly HashSet<string> ValidTypes = new(StringComparer.OrdinalIgnoreCase)
     {

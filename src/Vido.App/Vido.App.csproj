@@ -8,7 +8,7 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>Vido.App</RootNamespace>
     <AssemblyName>Vido</AssemblyName>
-    <Version>0.1.0</Version>
+    <Version>$(VidoVersion)</Version>
 
     <!-- Performance: pre-compile assemblies for faster startup (publish builds) -->
     <PublishReadyToRun>true</PublishReadyToRun>

@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
     <RootNamespace>Vido.Tests</RootNamespace>
+    <Version>$(VidoVersion)</Version>
   </PropertyGroup>
 
   <ItemGroup>

@@ -37,9 +37,9 @@ $InstallerProject = Join-Path $Root "installer\Vido.Installer.wixproj"
 $PublishDir = Join-Path $Root $OutputDir
 $PortableDir = Join-Path $PublishDir "portable"
 
-# Read version from csproj
-[xml]$csproj = Get-Content $AppProject
-$Version = $csproj.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+# Read version from Directory.Build.props (single source of truth)
+[xml]$buildProps = Get-Content (Join-Path $Root "Directory.Build.props")
+$Version = $buildProps.Project.PropertyGroup.VidoVersion | Where-Object { $_ } | Select-Object -First 1
 if (-not $Version) { $Version = "0.1.0" }
 
 Write-Host "========================================" -ForegroundColor Cyan

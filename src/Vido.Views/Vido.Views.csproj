@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <RootNamespace>Vido.Views</RootNamespace>
+    <Version>$(VidoVersion)</Version>
   </PropertyGroup>
 
   <ItemGroup>
