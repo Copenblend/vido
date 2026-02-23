@@ -58,9 +58,9 @@ jobs:
         id: version
         shell: pwsh
         run: |
-          # Read version from csproj
-          [xml]$csproj = Get-Content "src/Vido.App/Vido.App.csproj"
-          $version = ($csproj.Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1)
+          # Read version from Directory.Build.props (single source of truth)
+          [xml]$buildProps = Get-Content "Directory.Build.props"
+          $version = ($buildProps.Project.PropertyGroup.VidoVersion | Where-Object { $_ } | Select-Object -First 1)
           if (-not $version) { $version = "0.1.0" }
 
           # Determine the tag name
