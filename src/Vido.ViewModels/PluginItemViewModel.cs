@@ -1,3 +1,4 @@
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Vido.Core.Plugin;
 
@@ -58,6 +59,16 @@ public partial class PluginItemViewModel : ObservableObject
     /// <summary>Status text: "Enabled", "Disabled", or empty for available plugins.</summary>
     public string StatusText => IsInstalled ? (IsEnabled ? "Enabled" : "Disabled") : string.Empty;
 
+    /// <summary>Absolute file-system path or URL to the plugin icon image.</summary>
+    [ObservableProperty]
+    private string? _iconSource;
+
+    /// <summary>URL to the plugin README.md content (for available-but-not-installed plugins).</summary>
+    public string? ReadmeUrl { get; init; }
+
+    /// <summary>URL to the plugin CHANGELOG.md content (for available-but-not-installed plugins).</summary>
+    public string? ChangelogUrl { get; init; }
+
     /// <summary>The PluginInfo from the host (set when installed, null when only in registry).</summary>
     public PluginInfo? PluginInfo { get; set; }
 
@@ -83,7 +94,10 @@ public partial class PluginItemViewModel : ObservableObject
             isOfficial: entry.IsOfficial,
             isInstalled: false)
         {
-            RegistryEntry = entry
+            RegistryEntry = entry,
+            IconSource = entry.IconUrl,
+            ReadmeUrl = entry.ReadmeUrl,
+            ChangelogUrl = entry.ChangelogUrl,
         };
     }
 
@@ -110,6 +124,7 @@ public partial class PluginItemViewModel : ObservableObject
             PluginInfo = info,
             RegistryEntry = registryEntry,
             IsEnabled = info.State != PluginState.Disabled && info.State != PluginState.Error,
+            IconSource = ResolveIconPath(info, registryEntry),
         };
 
         return vm;
@@ -139,6 +154,19 @@ public partial class PluginItemViewModel : ObservableObject
         RegistryName = registryName;
         _isOfficial = isOfficial;
         _isInstalled = isInstalled;
+    }
+
+    /// <summary>
+    /// Resolves the icon path from the installed manifest or falls back to the registry URL.
+    /// </summary>
+    private static string? ResolveIconPath(PluginInfo info, PluginRegistryEntry? registryEntry)
+    {
+        // Prefer the local manifest icon (installed plugin)
+        if (!string.IsNullOrWhiteSpace(info.Manifest.Icon))
+            return Path.Combine(info.Directory, info.Manifest.Icon);
+
+        // Fall back to the registry icon URL
+        return registryEntry?.IconUrl;
     }
 
     /// <summary>

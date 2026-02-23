@@ -59,6 +59,15 @@ public interface IPluginContext
     /// </summary>
     void RegisterStatusBarItem(string contributionId, Func<object> viewFactory);
 
+    /// <summary>
+    /// Updates the text of a previously registered status bar item.
+    /// Uses the built-in text renderer so the item is shown with the
+    /// same style as native status bar items.
+    /// </summary>
+    /// <param name="contributionId">The contribution ID used during registration.</param>
+    /// <param name="text">Display text.</param>
+    void UpdateStatusBarItem(string contributionId, string text);
+
     /// <summary>Register a toolbar button click handler.</summary>
     void RegisterToolbarButtonHandler(string contributionId, Action clickHandler);
 

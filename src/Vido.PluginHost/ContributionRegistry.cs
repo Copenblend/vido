@@ -1,5 +1,6 @@
 using Vido.Core.FileSystem;
 using Vido.Core.Keyboard;
+using Vido.Core.Layout;
 using Vido.Core.Plugin;
 
 namespace Vido.PluginHost;
@@ -24,6 +25,9 @@ public sealed class ContributionRegistry : IContributionRegistry
 
     // Track which plugin registered which file icon extensions for cleanup
     private readonly Dictionary<string, List<string>> _pluginFileIconKeys = [];
+
+    // Map of wired status-bar full IDs → host StatusBarItem instances for text updates
+    private readonly Dictionary<string, StatusBarItem> _statusBarItemRefs = new(StringComparer.OrdinalIgnoreCase);
 
     public event Action? ContributionsChanged;
     public event Action<string, bool>? ToolbarButtonHighlightChanged;
@@ -146,6 +150,24 @@ public sealed class ContributionRegistry : IContributionRegistry
     {
         // Key binding registration is handled by PluginContext via IKeyboardShortcutService.
         // This method exists to satisfy the IContributionRegistry interface contract.
+    }
+
+    // ── Status bar item updates ──
+
+    public void SetStatusBarItemReference(string fullId, StatusBarItem item)
+    {
+        lock (_lock)
+            _statusBarItemRefs[fullId] = item;
+    }
+
+    public void UpdateStatusBarItem(string fullId, string text)
+    {
+        StatusBarItem? item;
+        lock (_lock)
+            _statusBarItemRefs.TryGetValue(fullId, out item);
+
+        if (item is null) return;
+        item.Text = text;
     }
 
     // ── Query ──

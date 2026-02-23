@@ -129,11 +129,19 @@
                 <Border Grid.Column="0" Width="64" Height="64"
                         CornerRadius="6" Background="{DynamicResource SubtleBackgroundBrush}"
                         VerticalAlignment="Top" Margin="0,0,16,0">
-                    <Path Data="M 6,2 L 6,14 L 14,14 L 14,6 L 10,2 Z"
-                          Stroke="{DynamicResource SecondaryForegroundBrush}"
-                          StrokeThickness="1.5" Fill="Transparent"
-                          Stretch="Uniform" Width="28" Height="28"
-                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Grid>
+                        <Path x:Name="HeaderIconPlaceholder"
+                              Data="M 6,2 L 6,14 L 14,14 L 14,6 L 10,2 Z"
+                              Stroke="{DynamicResource SecondaryForegroundBrush}"
+                              StrokeThickness="1.5" Fill="Transparent"
+                              Stretch="Uniform" Width="28" Height="28"
+                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        <Image x:Name="HeaderIconImage"
+                               Width="56" Height="56"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                               RenderOptions.BitmapScalingMode="HighQuality"
+                               Visibility="Collapsed" />
+                    </Grid>
                 </Border>
 
                 <!-- Title, publisher, description, buttons -->

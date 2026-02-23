@@ -1,9 +1,11 @@
 using System.IO;
+using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Vido.Views.Services;
 using Vido.Core.Logging;
 using Vido.Core.Plugin;
@@ -41,7 +43,7 @@ public partial class PluginDetailPanel : UserControl
         {
             PopulateHeader();
             PopulateMetadata();
-            LoadContent();
+            _ = LoadContentAsync();
             SubscribeToChanges();
         }
     }
@@ -57,6 +59,28 @@ public partial class PluginDetailPanel : UserControl
         HeaderPublisher.Text = _item.Publisher;
         HeaderDescription.Text = _item.Description;
         HeaderVerifiedBadge.Visibility = _item.IsOfficial ? Visibility.Visible : Visibility.Collapsed;
+
+        // Load plugin icon if available
+        if (!string.IsNullOrWhiteSpace(_item.IconSource))
+        {
+            try
+            {
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(_item.IconSource, UriKind.Absolute);
+                bitmap.DecodePixelWidth = 56;
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+                bitmap.Freeze();
+                HeaderIconImage.Source = bitmap;
+                HeaderIconImage.Visibility = Visibility.Visible;
+                HeaderIconPlaceholder.Visibility = Visibility.Collapsed;
+            }
+            catch
+            {
+                // Fall back to placeholder on any image load failure
+            }
+        }
 
         UpdateActionButtons();
     }
@@ -102,10 +126,11 @@ public partial class PluginDetailPanel : UserControl
 
     /// <summary>
     /// Loads README.md and CHANGELOG.md content from the plugin directory.
-    /// Falls back to the plugin description when local files aren't available
-    /// (e.g. for available-but-not-installed plugins).
+    /// For installed plugins, reads from the local directory.
+    /// For available-but-not-installed plugins, fetches from registry URLs.
+    /// Falls back to the plugin description when neither source is available.
     /// </summary>
-    private void LoadContent()
+    private async Task LoadContentAsync()
     {
         if (_item is null) return;
 
@@ -114,15 +139,19 @@ public partial class PluginDetailPanel : UserControl
             $"Directory='{_item.PluginInfo?.Directory ?? "(none)"}', IsInstalled={_item.IsInstalled}",
             "PluginDetail");
 
-        // Load README.md — fall back to description from manifest or registry
+        // Load README.md — try local file first, then registry URL, then description
         var readme = TryReadPluginFile("README.md");
+        if (string.IsNullOrWhiteSpace(readme))
+            readme = await TryFetchUrlContentAsync(_item.ReadmeUrl);
         if (string.IsNullOrWhiteSpace(readme))
             readme = _item.Description;
         DetailsContentHost.Content = MarkdownRenderer.Render(
             !string.IsNullOrWhiteSpace(readme) ? readme : "No details available.");
 
-        // Load CHANGELOG.md
+        // Load CHANGELOG.md — try local file first, then registry URL
         var changelog = TryReadPluginFile("CHANGELOG.md");
+        if (string.IsNullOrWhiteSpace(changelog))
+            changelog = await TryFetchUrlContentAsync(_item.ChangelogUrl);
         ChangelogContentHost.Content = MarkdownRenderer.Render(
             !string.IsNullOrWhiteSpace(changelog) ? changelog : "No changelog available.");
 
@@ -168,6 +197,43 @@ public partial class PluginDetailPanel : UserControl
         catch (Exception ex)
         {
             _logService?.Error($"TryReadPluginFile('{filename}'): Exception reading '{path}': {ex.Message}", "PluginDetail");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Fetches text content from a URL. Supports both file:// and http(s):// URLs.
+    /// Returns null if the URL is empty, the fetch fails, or the content is empty.
+    /// </summary>
+    private async Task<string?> TryFetchUrlContentAsync(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            return null;
+
+        try
+        {
+            if (url.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
+            {
+                var localPath = new Uri(url).LocalPath;
+                if (!File.Exists(localPath))
+                {
+                    _logService?.Debug($"TryFetchUrlContent: file not found at '{localPath}'", "PluginDetail");
+                    return null;
+                }
+                var content = await File.ReadAllTextAsync(localPath);
+                _logService?.Debug($"TryFetchUrlContent: Read {content.Length} chars from '{localPath}'", "PluginDetail");
+                return content;
+            }
+
+            using var httpClient = new System.Net.Http.HttpClient();
+            httpClient.Timeout = TimeSpan.FromSeconds(10);
+            var text = await httpClient.GetStringAsync(url);
+            _logService?.Debug($"TryFetchUrlContent: Fetched {text.Length} chars from '{url}'", "PluginDetail");
+            return text;
+        }
+        catch (Exception ex)
+        {
+            _logService?.Debug($"TryFetchUrlContent: Failed to fetch '{url}': {ex.Message}", "PluginDetail");
             return null;
         }
     }

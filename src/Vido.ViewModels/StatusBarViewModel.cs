@@ -144,9 +144,15 @@ public partial class StatusBarViewModel : ObservableObject, IDisposable
         if (item is null) return;
 
         if (item.Alignment == StatusBarAlignment.Left)
+        {
             LeftItems.Remove(item);
+            UpdateSeparatorFlags(LeftItems);
+        }
         else
+        {
             RightItems.Remove(item);
+            UpdateSeparatorFlags(RightItems);
+        }
     }
 
     /// <summary>Finds a registered status bar item by ID, or null if not found.</summary>
@@ -171,11 +177,26 @@ public partial class StatusBarViewModel : ObservableObject, IDisposable
             if (collection[i].Priority > item.Priority)
             {
                 collection.Insert(i, item);
+                UpdateSeparatorFlags(collection);
                 return;
             }
         }
 
         collection.Add(item);
+        UpdateSeparatorFlags(collection);
+    }
+
+    /// <summary>
+    /// Sets <see cref="StatusBarItem.ShowSeparator"/> on every item in the
+    /// collection: false for the first item, true for all subsequent items.
+    /// Called after every insert or remove so the UI always has correct state.
+    /// </summary>
+    private static void UpdateSeparatorFlags(ObservableCollection<StatusBarItem> collection)
+    {
+        for (int i = 0; i < collection.Count; i++)
+        {
+            collection[i].ShowSeparator = i > 0;
+        }
     }
 
     public void Dispose()
