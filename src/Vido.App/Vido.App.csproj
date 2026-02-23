@@ -9,6 +9,7 @@
     <RootNamespace>Vido.App</RootNamespace>
     <AssemblyName>Vido</AssemblyName>
     <Version>$(VidoVersion)</Version>
+    <ApplicationIcon>Vido.ico</ApplicationIcon>
 
     <!-- Performance: pre-compile assemblies for faster startup (publish builds) -->
     <PublishReadyToRun>true</PublishReadyToRun>

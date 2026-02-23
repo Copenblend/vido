@@ -15,14 +15,20 @@
            UpgradeCode="7A3C8F2E-1D5B-4E6A-9C0D-F8E2A1B3C4D5"
            Scope="perUser"
            InstallerVersion="500"
-           Compressed="yes">
+           Compressed="yes"
+           IconSourceFile="Vido.ico">
 
     <!-- Upgrade logic: remove older versions before installing -->
     <MajorUpgrade DowngradeErrorMessage="A newer version of Vido is already installed."
+                  AllowSameVersionUpgrades="yes"
                   Schedule="afterInstallInitialize" />
 
     <!-- Embed all files in the MSI -->
     <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <!-- Icon for Add/Remove Programs and shortcuts -->
+    <Icon Id="VidoIcon.ico" SourceFile="Vido.ico" />
+    <Property Id="ARPPRODUCTICON" Value="VidoIcon.ico" />
 
     <!-- ═══════════════════════════════════════════════════════ -->
     <!--  FEATURES                                               -->
@@ -57,6 +63,9 @@
 
     <!-- Minimal installer UI -->
     <ui:WixUI Id="WixUI_FeatureTree" />
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+    <WixVariable Id="WixUIDialogBmp" Overridable="yes" />
+    <WixVariable Id="WixUIBannerBmp" Overridable="yes" />
 
     <!-- ═══════════════════════════════════════════════════════ -->
     <!--  DIRECTORY STRUCTURE                                    -->
@@ -96,7 +105,8 @@
                 Name="Vido"
                 Description="Vido Video Player"
                 Target="[INSTALLFOLDER]Vido.exe"
-                WorkingDirectory="INSTALLFOLDER" />
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="VidoIcon.ico" />
       <RemoveFolder Id="CleanVidoProgramMenu" Directory="VidoProgramMenu" On="uninstall" />
       <RegistryValue Root="HKCU" Key="Software\Vido\Install" Name="StartMenu" Type="integer" Value="1" KeyPath="yes" />
     </Component>
@@ -106,7 +116,8 @@
                 Name="Vido"
                 Description="Vido Video Player"
                 Target="[INSTALLFOLDER]Vido.exe"
-                WorkingDirectory="INSTALLFOLDER" />
+                WorkingDirectory="INSTALLFOLDER"
+                Icon="VidoIcon.ico" />
       <RegistryValue Root="HKCU" Key="Software\Vido\Install" Name="Desktop" Type="integer" Value="1" KeyPath="yes" />
     </Component>
 
