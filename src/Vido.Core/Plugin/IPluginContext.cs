@@ -84,4 +84,11 @@ public interface IPluginContext
     /// that was previously registered via <see cref="RegisterRightPanel"/>.
     /// </summary>
     void RequestShowRightPanel(string contributionId);
+
+    /// <summary>
+    /// Requests that the host show and activate the specified bottom panel tab.
+    /// The <paramref name="contributionId"/> must match a bottom panel contribution
+    /// that was previously registered via <see cref="RegisterBottomPanel"/>.
+    /// </summary>
+    void RequestShowBottomPanel(string contributionId);
 }

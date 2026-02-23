@@ -1492,6 +1492,7 @@ public partial class MainWindow : Window
     {
         _contributionRegistry.ContributionsChanged += OnPluginContributionsChanged;
         _contributionRegistry.RightPanelShowRequested += OnRightPanelShowRequested;
+        _contributionRegistry.BottomPanelShowRequested += OnBottomPanelShowRequested;
         WirePluginContributions();
     }
 
@@ -1703,14 +1704,23 @@ public partial class MainWindow : Window
 
                 var statusBarItem = _statusBarViewModel.RegisterItem(fullId, alignment, item.Order);
 
-                // Invoke the view factory to get the display text
+                // Invoke the view factory to get the display content
                 var content = item.ViewFactory();
-                statusBarItem.Text = content switch
+                if (content is System.Windows.FrameworkElement fe)
                 {
-                    string text => text,
-                    null => string.Empty,
-                    _ => content.ToString() ?? string.Empty
-                };
+                    // Plugin returned a custom WPF element — host it directly
+                    statusBarItem.ContentView = fe;
+                    statusBarItem.Text = item.Name; // fallback text
+                }
+                else
+                {
+                    statusBarItem.Text = content switch
+                    {
+                        string text => text,
+                        null => string.Empty,
+                        _ => content.ToString() ?? string.Empty
+                    };
+                }
                 statusBarItem.Tooltip = $"Plugin: {item.PluginId}";
                 statusBarItem.IsVisible = true;
 
@@ -1759,23 +1769,48 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Creates a Button styled for the activity bar with a plugin puzzle-piece icon.
+    /// Creates a Button styled for the activity bar with a plugin icon.
+    /// Uses the plugin's custom icon if <paramref name="iconPath"/> points to a valid image file,
+    /// otherwise falls back to a generic puzzle-piece icon.
     /// Style is applied by ActivityBarView.AddPluginButton since it's a local resource.
     /// </summary>
     private static Button CreatePluginActivityBarButton(string tooltip, string? iconPath, Action onClick)
     {
-        var icon = new Canvas { Width = 24, Height = 24 };
+        UIElement icon;
 
-        // Simple puzzle-piece icon for plugin panels
-        var path = new System.Windows.Shapes.Path
+        if (!string.IsNullOrEmpty(iconPath) && System.IO.File.Exists(iconPath))
         {
-            Data = Geometry.Parse("M 5,4 L 11,4 L 11,7 L 14,7 L 14,13 L 17,13 L 17,19 L 11,19 L 11,16 L 8,16 L 8,19 L 2,19 L 2,13 L 5,13 L 5,10 L 2,10 L 2,4 Z"),
-            Stroke = (Brush)Application.Current.FindResource("InactiveIconBrush"),
-            StrokeThickness = 1.2,
-            Fill = Brushes.Transparent,
-            StrokeLineJoin = PenLineJoin.Round
-        };
-        icon.Children.Add(path);
+            try
+            {
+                var bitmap = new System.Windows.Media.Imaging.BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(iconPath, UriKind.Absolute);
+                bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                bitmap.DecodePixelWidth = 24;
+                bitmap.DecodePixelHeight = 24;
+                bitmap.EndInit();
+                bitmap.Freeze();
+
+                icon = new Image
+                {
+                    Source = bitmap,
+                    Width = 24,
+                    Height = 24,
+                    Stretch = Stretch.Uniform,
+                    SnapsToDevicePixels = true,
+                    Opacity = 0.85
+                };
+            }
+            catch
+            {
+                // Fall back to default puzzle icon on load failure
+                icon = CreatePuzzlePieceIcon24();
+            }
+        }
+        else
+        {
+            icon = CreatePuzzlePieceIcon24();
+        }
 
         var button = new Button
         {
@@ -1784,6 +1819,22 @@ public partial class MainWindow : Window
         };
         button.Click += (_, _) => onClick();
         return button;
+    }
+
+    /// <summary>Creates a 24×24 puzzle-piece Canvas icon for plugins without a custom icon.</summary>
+    private static Canvas CreatePuzzlePieceIcon24()
+    {
+        var canvas = new Canvas { Width = 24, Height = 24 };
+        var path = new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M 5,4 L 11,4 L 11,7 L 14,7 L 14,13 L 17,13 L 17,19 L 11,19 L 11,16 L 8,16 L 8,19 L 2,19 L 2,13 L 5,13 L 5,10 L 2,10 L 2,4 Z"),
+            Stroke = (Brush)Application.Current.FindResource("InactiveIconBrush"),
+            StrokeThickness = 1.2,
+            Fill = Brushes.Transparent,
+            StrokeLineJoin = PenLineJoin.Round
+        };
+        canvas.Children.Add(path);
+        return canvas;
     }
 
     /// <summary>Handles click on a plugin sidebar panel button in the activity bar.</summary>
@@ -1862,17 +1913,40 @@ public partial class MainWindow : Window
     /// <summary>Creates a small toolbar button for the title bar with menu-matching hover highlight.</summary>
     private static Button CreatePluginToolbarButton(string tooltip, string? iconPath, Action clickHandler)
     {
-        // Small puzzle icon for plugin toolbar buttons
-        var icon = new Canvas { Width = 16, Height = 16 };
-        var path = new System.Windows.Shapes.Path
+        UIElement icon;
+
+        if (!string.IsNullOrEmpty(iconPath) && System.IO.File.Exists(iconPath))
         {
-            Data = Geometry.Parse("M 3,2 L 7,2 L 7,4 L 9,4 L 9,8 L 11,8 L 11,12 L 7,12 L 7,10 L 5,10 L 5,12 L 1,12 L 1,8 L 3,8 L 3,6 L 1,6 L 1,2 Z"),
-            Stroke = (Brush)Application.Current.FindResource("PrimaryForegroundBrush"),
-            StrokeThickness = 1.0,
-            Fill = Brushes.Transparent,
-            StrokeLineJoin = PenLineJoin.Round
-        };
-        icon.Children.Add(path);
+            try
+            {
+                var bitmap = new System.Windows.Media.Imaging.BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(iconPath, UriKind.Absolute);
+                bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                bitmap.DecodePixelWidth = 16;
+                bitmap.DecodePixelHeight = 16;
+                bitmap.EndInit();
+                bitmap.Freeze();
+
+                icon = new Image
+                {
+                    Source = bitmap,
+                    Width = 16,
+                    Height = 16,
+                    Stretch = Stretch.Uniform,
+                    SnapsToDevicePixels = true
+                };
+            }
+            catch
+            {
+                // Fall back to default puzzle icon on load failure
+                icon = CreatePuzzlePieceIcon16();
+            }
+        }
+        else
+        {
+            icon = CreatePuzzlePieceIcon16();
+        }
 
         var button = new Button
         {
@@ -1916,6 +1990,22 @@ public partial class MainWindow : Window
         };
 
         return button;
+    }
+
+    /// <summary>Creates a 16×16 puzzle-piece Canvas icon for plugins without a custom icon.</summary>
+    private static Canvas CreatePuzzlePieceIcon16()
+    {
+        var canvas = new Canvas { Width = 16, Height = 16 };
+        var path = new System.Windows.Shapes.Path
+        {
+            Data = Geometry.Parse("M 3,2 L 7,2 L 7,4 L 9,4 L 9,8 L 11,8 L 11,12 L 7,12 L 7,10 L 5,10 L 5,12 L 1,12 L 1,8 L 3,8 L 3,6 L 1,6 L 1,2 Z"),
+            Stroke = (Brush)Application.Current.FindResource("PrimaryForegroundBrush"),
+            StrokeThickness = 1.0,
+            Fill = Brushes.Transparent,
+            StrokeLineJoin = PenLineJoin.Round
+        };
+        canvas.Children.Add(path);
+        return canvas;
     }
 
     // ── Right Panel wiring ──
@@ -1977,6 +2067,27 @@ public partial class MainWindow : Window
             SwitchRightPanel(fullPanelId);
         else
             Dispatcher.BeginInvoke(() => SwitchRightPanel(fullPanelId));
+    }
+
+    /// <summary>
+    /// Handles a plugin's request to show a specific bottom panel tab.
+    /// Dispatches to the UI thread if needed, activates the tab
+    /// and shows its cached content.
+    /// </summary>
+    private void OnBottomPanelShowRequested(string fullPanelId)
+    {
+        void Activate()
+        {
+            _mainWindowViewModel.ActivateBottomPanelTab(fullPanelId);
+
+            if (_bottomPanelContents.TryGetValue(fullPanelId, out var content))
+                BottomPanelContent.Content = content;
+        }
+
+        if (Dispatcher.CheckAccess())
+            Activate();
+        else
+            Dispatcher.BeginInvoke(Activate);
     }
 
     // ── File Handler wiring ──

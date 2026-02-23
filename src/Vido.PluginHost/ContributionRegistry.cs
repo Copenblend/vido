@@ -27,6 +27,7 @@ public sealed class ContributionRegistry : IContributionRegistry
 
     public event Action? ContributionsChanged;
     public event Action<string>? RightPanelShowRequested;
+    public event Action<string>? BottomPanelShowRequested;
 
     // ── Helpers ──
 
@@ -178,6 +179,14 @@ public sealed class ContributionRegistry : IContributionRegistry
     public void RequestShowRightPanel(string fullPanelId)
     {
         RightPanelShowRequested?.Invoke(fullPanelId);
+    }
+
+    /// <summary>
+    /// Requests that the host show and activate the specified bottom panel tab.
+    /// </summary>
+    public void RequestShowBottomPanel(string fullPanelId)
+    {
+        BottomPanelShowRequested?.Invoke(fullPanelId);
     }
 
     // ── Cleanup ──

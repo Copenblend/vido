@@ -80,6 +80,12 @@ public interface IContributionRegistry
     /// The argument is the full panel ID (e.g. "plugin.{pluginId}.{contributionId}").
     /// </summary>
     event Action<string>? RightPanelShowRequested;
+
+    /// <summary>
+    /// Raised when a plugin requests that a specific bottom panel tab be shown and activated.
+    /// The argument is the full panel ID (e.g. "plugin.{pluginId}.{contributionId}").
+    /// </summary>
+    event Action<string>? BottomPanelShowRequested;
 }
 
 // ── Registration records ──

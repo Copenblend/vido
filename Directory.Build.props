@@ -1,7 +1,7 @@
 <Project>
 
   <PropertyGroup>
-    <VidoVersion>0.5.1</VidoVersion>
+    <VidoVersion>0.5.2</VidoVersion>
     <Company>Vido</Company>
     <Product>Vido</Product>
     <Authors>Vido</Authors>

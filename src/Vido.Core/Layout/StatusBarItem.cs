@@ -63,6 +63,28 @@ public class StatusBarItem : INotifyPropertyChanged
         }
     }
 
+    private object? _contentView;
+
+    /// <summary>
+    /// Optional custom WPF content to display instead of <see cref="Text"/>.
+    /// When set, the status bar renders this element directly rather than a TextBlock.
+    /// Used by plugins that provide their own <c>FrameworkElement</c> via the view factory.
+    /// </summary>
+    public object? ContentView
+    {
+        get => _contentView;
+        set
+        {
+            if (_contentView == value) return;
+            _contentView = value;
+            OnPropertyChanged(nameof(ContentView));
+            OnPropertyChanged(nameof(HasContentView));
+        }
+    }
+
+    /// <summary>Whether <see cref="ContentView"/> is set (non-null).</summary>
+    public bool HasContentView => _contentView is not null;
+
     public StatusBarItem(string id, StatusBarAlignment alignment, int priority)
     {
         Id = id;
