@@ -50,11 +50,32 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="{x:Type layout:StatusBarItem}">
-                        <TextBlock Text="{Binding Text}"
-                                   ToolTip="{Binding Tooltip}"
-                                   Style="{StaticResource StatusBarItemStyle}"
-                                   Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}"
-                                   Margin="0,0,12,0" />
+                        <Grid Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}"
+                              ToolTip="{Binding Tooltip}" Margin="0,0,12,0">
+                            <TextBlock Text="{Binding Text}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource StatusBarItemStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasContentView}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <ContentPresenter Content="{Binding ContentView}" VerticalAlignment="Center">
+                                <ContentPresenter.Style>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasContentView}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ContentPresenter.Style>
+                            </ContentPresenter>
+                        </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
@@ -77,8 +98,31 @@
                             <Ellipse x:Name="Separator"
                                      Style="{StaticResource StatusBarSeparatorStyle}" />
                             <TextBlock Text="{Binding Text}"
-                                       ToolTip="{Binding Tooltip}"
-                                       Style="{StaticResource StatusBarItemStyle}" />
+                                       ToolTip="{Binding Tooltip}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource StatusBarItemStyle}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasContentView}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <ContentPresenter Content="{Binding ContentView}"
+                                              ToolTip="{Binding Tooltip}"
+                                              VerticalAlignment="Center">
+                                <ContentPresenter.Style>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasContentView}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ContentPresenter.Style>
+                            </ContentPresenter>
                         </StackPanel>
                         <DataTemplate.Triggers>
                             <!-- Hide separator for the first item (Priority 100 = Duration, the first right item) -->
