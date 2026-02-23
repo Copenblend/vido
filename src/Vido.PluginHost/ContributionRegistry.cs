@@ -26,6 +26,7 @@ public sealed class ContributionRegistry : IContributionRegistry
     private readonly Dictionary<string, List<string>> _pluginFileIconKeys = [];
 
     public event Action? ContributionsChanged;
+    public event Action<string>? RightPanelShowRequested;
 
     // ── Helpers ──
 
@@ -169,6 +170,14 @@ public sealed class ContributionRegistry : IContributionRegistry
     public IReadOnlyDictionary<string, string> GetFileIcons()
     {
         lock (_lock) return new Dictionary<string, string>(_fileIcons, StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Requests that the host show and expand the specified right panel.
+    /// </summary>
+    public void RequestShowRightPanel(string fullPanelId)
+    {
+        RightPanelShowRequested?.Invoke(fullPanelId);
     }
 
     // ── Cleanup ──

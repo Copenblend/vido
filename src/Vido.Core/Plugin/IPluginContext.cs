@@ -77,4 +77,11 @@ public interface IPluginContext
 
     /// <summary>Register a keyboard shortcut.</summary>
     void RegisterKeyBinding(KeyBinding binding, Action handler);
+
+    /// <summary>
+    /// Requests that the host show and expand the specified right panel.
+    /// The <paramref name="contributionId"/> must match a right panel contribution
+    /// that was previously registered via <see cref="RegisterRightPanel"/>.
+    /// </summary>
+    void RequestShowRightPanel(string contributionId);
 }
