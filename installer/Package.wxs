@@ -63,8 +63,6 @@
     <!-- Minimal installer UI -->
     <ui:WixUI Id="WixUI_FeatureTree" />
     <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
-    <WixVariable Id="WixUIDialogBmp" Overridable="yes" />
-    <WixVariable Id="WixUIBannerBmp" Overridable="yes" />
 
     <!-- ═══════════════════════════════════════════════════════ -->
     <!--  DIRECTORY STRUCTURE                                    -->
