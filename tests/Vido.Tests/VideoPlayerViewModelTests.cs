@@ -1,4 +1,5 @@
 using NSubstitute;
+using Vido.Core.Events;
 using Vido.Core.Logging;
 using Vido.Core.Playback;
 using Vido.Core.Settings;
@@ -31,7 +32,7 @@ public class VideoPlayerViewModelTests : IDisposable
         _engine.Volume.Returns(75);
         _engine.IsMuted.Returns(false);
         _engine.IsLooping.Returns(false);
-        _sut = new VideoPlayerViewModel(_engine, _logService, _settingsService, _stateService);
+        _sut = new VideoPlayerViewModel(_engine, Substitute.For<IEventBus>(), _logService, _settingsService, _stateService);
     }
 
     // ── Initial State ──

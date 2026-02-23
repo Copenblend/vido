@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Vido.Core.Events;
 using Vido.Core.FileSystem;
 using Vido.Core.Formatting;
 using Vido.Core.Logging;
@@ -17,6 +18,7 @@ namespace Vido.ViewModels;
 public partial class VideoPlayerViewModel : ObservableObject, IDisposable
 {
     private readonly IVideoEngine _engine;
+    private readonly IEventBus _eventBus;
     private readonly ILogService _logService;
     private readonly ISettingsService _settingsService;
     private readonly IStateService _stateService;
@@ -135,10 +137,11 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// </summary>
     public event Action<FrameData>? FrameReady;
 
-    public VideoPlayerViewModel(IVideoEngine engine, ILogService logService,
+    public VideoPlayerViewModel(IVideoEngine engine, IEventBus eventBus, ILogService logService,
         ISettingsService settingsService, IStateService stateService)
     {
         _engine = engine;
+        _eventBus = eventBus;
         _logService = logService;
         _settingsService = settingsService;
         _stateService = stateService;
@@ -167,6 +170,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     {
         State = newState;
         ShowPlayIcon = newState != PlaybackState.Playing;
+        _eventBus.Publish(new PlaybackStateChangedEvent { State = newState });
     }
 
     private void OnEnginePositionChanged(TimeSpan position)
@@ -175,6 +179,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
 
         Position = position;
         PositionText = FormatTime(position);
+        _eventBus.Publish(new PlaybackPositionChangedEvent { Position = position, Duration = Duration });
 
         if (Duration.TotalSeconds > 0)
             SeekPosition = position.TotalSeconds / Duration.TotalSeconds * SeekSliderMaximum;
@@ -226,6 +231,16 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         CurrentMetadata = _engine.CurrentMetadata;
         HasMedia = true;
         BuildSiblingList(filePath);
+
+        _eventBus.Publish(new VideoLoadedEvent
+        {
+            FilePath = filePath,
+            Metadata = CurrentMetadata ?? new VideoMetadata
+            {
+                FilePath = filePath,
+                FileName = Path.GetFileName(filePath)
+            }
+        });
     }
 
     /// <summary>
@@ -363,6 +378,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     {
         if (!HasMedia) return;
         _engine.Stop();
+        _eventBus.Publish(new VideoUnloadedEvent());
         _logService.Info("Playback stopped", "Player");
         HasMedia = false;
         CurrentMetadata = null;
