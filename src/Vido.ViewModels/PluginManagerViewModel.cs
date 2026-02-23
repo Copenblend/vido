@@ -113,6 +113,17 @@ public partial class PluginManagerViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Refreshes the plugin list by re-fetching registries.
+    /// Resets the registry filter to "All".
+    /// </summary>
+    [RelayCommand]
+    public async Task RefreshAsync()
+    {
+        await LoadAsync();
+        SelectedRegistrySource = "All";
+    }
+
+    /// <summary>
     /// Loads installed plugins from the plugin host and fetches registry data.
     /// Call this when the panel becomes visible.
     /// </summary>
