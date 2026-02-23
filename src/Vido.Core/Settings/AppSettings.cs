@@ -76,7 +76,7 @@ public sealed class AppSettings
     public List<string> PluginRegistryUrls { get; set; } = [OfficialRegistryUrl];
 
     /// <summary>The official Vido plugin registry URL (always present).</summary>
-    public const string OfficialRegistryUrl = "https://plugins.vido.app/registry";
+    public const string OfficialRegistryUrl = "https://raw.githubusercontent.com/Copenblend/vido-plugin-registry/refs/heads/master/registry.json";
 
     /// <summary>
     /// Resets every property to its default value.

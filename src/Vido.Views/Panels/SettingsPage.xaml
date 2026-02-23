@@ -13,6 +13,7 @@
 
             <BooleanToVisibilityConverter x:Key="BoolToVis" />
             <converters:StringToBoolConverter x:Key="StringToBoolConverter" />
+            <converters:StringNotEmptyToVisibilityConverter x:Key="StringToVis" />
 
             <!-- Search TextBox Style -->
             <Style x:Key="SearchTextBoxStyle" TargetType="TextBox">
@@ -21,7 +22,7 @@
                 <Setter Property="CaretBrush" Value="{DynamicResource PrimaryForegroundBrush}" />
                 <Setter Property="FontFamily" Value="Segoe UI" />
                 <Setter Property="FontSize" Value="13" />
-                <Setter Property="Padding" Value="28,6,8,6" />
+                <Setter Property="Padding" Value="0" />
                 <Setter Property="BorderThickness" Value="1" />
                 <Setter Property="Template">
                     <Setter.Value>
@@ -42,7 +43,7 @@
                                           VerticalAlignment="Center"
                                           Margin="8,0,0,0" />
                                     <ScrollViewer x:Name="PART_ContentHost" Focusable="False"
-                                                  Margin="{TemplateBinding Padding}"
+                                                  Margin="28,6,8,6"
                                                   VerticalAlignment="Center" />
                                     <!-- Placeholder -->
                                     <TextBlock x:Name="PlaceholderText"
@@ -50,7 +51,7 @@
                                                Foreground="{DynamicResource SecondaryForegroundBrush}"
                                                FontFamily="Segoe UI" FontSize="13"
                                                IsHitTestVisible="False"
-                                               Margin="30,0,0,0"
+                                               Margin="28,0,0,0"
                                                VerticalAlignment="Center"
                                                Visibility="Collapsed" />
                                 </Grid>
@@ -307,6 +308,14 @@
                                                             </Button.Style>
                                                         </Button>
                                                     </Grid>
+
+                                                    <!-- Validation error message -->
+                                                    <TextBlock Text="{Binding ValidationError}"
+                                                               Foreground="{DynamicResource ErrorForegroundBrush}"
+                                                               FontFamily="Segoe UI" FontSize="11"
+                                                               Margin="0,2,0,0"
+                                                               TextWrapping="Wrap"
+                                                               Visibility="{Binding ValidationError, Converter={StaticResource StringToVis}}" />
                                                 </StackPanel>
                                             </StackPanel>
                                         </DataTemplate>

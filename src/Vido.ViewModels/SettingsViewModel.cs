@@ -133,7 +133,8 @@ public partial class SettingsViewModel : ObservableObject
                 Type = "stringList",
                 Title = "Plugin Registry URLs",
                 Description = "Additional plugin registry URLs. Supports https:// and file:// for local testing. The official Vido registry is always included.",
-                Default = null
+                Default = null,
+                Validation = "url"
             },
         };
 

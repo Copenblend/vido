@@ -169,4 +169,106 @@ public sealed class SettingDisplayItemTests
         Assert.False(item.IsNumber);
         Assert.False(item.IsEnum);
     }
+
+    // ── URL validation tests ──
+
+    private static SettingContribution MakeUrlValidatedContribution(string id = "test.urls") =>
+        new() { Id = id, Type = "stringList", Title = "URLs", Description = "URL list", Validation = "url" };
+
+    [Fact]
+    public void AddListItem_WithUrlValidation_AcceptsHttpsUrl()
+    {
+        var store = CreateStore();
+        var item = new SettingDisplayItem(MakeUrlValidatedContribution(), store);
+
+        item.NewListItemText = "https://example.com/plugins.json";
+        item.AddListItemCommand.Execute(null);
+
+        Assert.Single(item.ListItems);
+        Assert.Equal(string.Empty, item.ValidationError);
+    }
+
+    [Fact]
+    public void AddListItem_WithUrlValidation_AcceptsFileUrl()
+    {
+        var store = CreateStore();
+        var item = new SettingDisplayItem(MakeUrlValidatedContribution(), store);
+
+        item.NewListItemText = "file:///C:/local/registry.json";
+        item.AddListItemCommand.Execute(null);
+
+        Assert.Single(item.ListItems);
+        Assert.Equal(string.Empty, item.ValidationError);
+    }
+
+    [Fact]
+    public void AddListItem_WithUrlValidation_RejectsPlainText()
+    {
+        var store = CreateStore();
+        var item = new SettingDisplayItem(MakeUrlValidatedContribution(), store);
+
+        item.NewListItemText = "sdfsfsdfsdfs";
+        item.AddListItemCommand.Execute(null);
+
+        Assert.Empty(item.ListItems);
+        Assert.NotEmpty(item.ValidationError);
+    }
+
+    [Fact]
+    public void AddListItem_WithUrlValidation_RejectsHttpUrl()
+    {
+        var store = CreateStore();
+        var item = new SettingDisplayItem(MakeUrlValidatedContribution(), store);
+
+        item.NewListItemText = "http://insecure.com/registry.json";
+        item.AddListItemCommand.Execute(null);
+
+        Assert.Empty(item.ListItems);
+        Assert.NotEmpty(item.ValidationError);
+    }
+
+    [Fact]
+    public void AddListItem_WithUrlValidation_RejectsFtpUrl()
+    {
+        var store = CreateStore();
+        var item = new SettingDisplayItem(MakeUrlValidatedContribution(), store);
+
+        item.NewListItemText = "ftp://files.example.com/registry.json";
+        item.AddListItemCommand.Execute(null);
+
+        Assert.Empty(item.ListItems);
+        Assert.NotEmpty(item.ValidationError);
+    }
+
+    [Fact]
+    public void AddListItem_WithUrlValidation_ClearsErrorOnSuccess()
+    {
+        var store = CreateStore();
+        var item = new SettingDisplayItem(MakeUrlValidatedContribution(), store);
+
+        // First add invalid text
+        item.NewListItemText = "not-a-url";
+        item.AddListItemCommand.Execute(null);
+        Assert.NotEmpty(item.ValidationError);
+
+        // Then add a valid URL
+        item.NewListItemText = "https://valid.com/registry.json";
+        item.AddListItemCommand.Execute(null);
+
+        Assert.Single(item.ListItems);
+        Assert.Equal(string.Empty, item.ValidationError);
+    }
+
+    [Fact]
+    public void AddListItem_WithoutValidation_AcceptsAnyText()
+    {
+        var store = CreateStore();
+        var item = new SettingDisplayItem(MakeStringListContribution(), store);
+
+        item.NewListItemText = "any arbitrary text";
+        item.AddListItemCommand.Execute(null);
+
+        Assert.Single(item.ListItems);
+        Assert.Equal(string.Empty, item.ValidationError);
+    }
 }

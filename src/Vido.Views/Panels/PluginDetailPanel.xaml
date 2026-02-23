@@ -146,16 +146,16 @@
 
                     <!-- Publisher with verified badge -->
                     <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                        <TextBlock x:Name="HeaderPublisher"
-                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
-                                   FontFamily="Segoe UI" FontSize="12" />
                         <Canvas x:Name="HeaderVerifiedBadge" Width="14" Height="14"
-                                Margin="4,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
+                                Margin="0,0,4,0" VerticalAlignment="Center" Visibility="Collapsed">
                             <Ellipse Width="14" Height="14" Fill="{DynamicResource AccentBrush}" />
                             <Path Data="M 3.5,7 L 6,9.5 L 10.5,5"
                                   Stroke="#1e1e1e" StrokeThickness="1.5"
                                   StrokeLineJoin="Round" Fill="Transparent" />
                         </Canvas>
+                        <TextBlock x:Name="HeaderPublisher"
+                                   Foreground="{DynamicResource SecondaryForegroundBrush}"
+                                   FontFamily="Segoe UI" FontSize="12" />
                     </StackPanel>
 
                     <!-- Short description -->

@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using Vido.Core.Plugin;
 using Vido.Core.Settings;
 using Vido.ViewModels;
@@ -89,15 +90,16 @@ public partial class SettingsPage : UserControl
 
     /// <summary>
     /// Walks up the visual tree to find the <see cref="SettingDisplayItem"/> DataContext.
+    /// Uses the visual tree (not logical tree) so it works inside DataTemplates.
     /// </summary>
     private static SettingDisplayItem? FindParentSettingDisplayItem(FrameworkElement element)
     {
-        var current = element as FrameworkElement;
+        DependencyObject? current = element;
         while (current is not null)
         {
-            if (current.DataContext is SettingDisplayItem item)
+            if (current is FrameworkElement fe && fe.DataContext is SettingDisplayItem item)
                 return item;
-            current = current.Parent as FrameworkElement;
+            current = VisualTreeHelper.GetParent(current);
         }
         return null;
     }
