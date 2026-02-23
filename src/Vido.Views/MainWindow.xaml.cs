@@ -1698,10 +1698,11 @@ public partial class MainWindow : Window
         foreach (var panel in _contributionRegistry.GetBottomPanels())
         {
             var fullId = $"plugin.{panel.PluginId}.{panel.ContributionId}";
-            if (!_wiredBottomPanelIds.Add(fullId)) continue;
+            if (_wiredBottomPanelIds.Contains(fullId)) continue;
 
             SafeWireContribution(panel.PluginId, panel.ContributionId, "bottom panel", () =>
             {
+                _wiredBottomPanelIds.Add(fullId);
                 var view = panel.ViewFactory();
                 var uiElement = WrapAsUIElement(view, $"Plugin: {panel.Title}");
                 _bottomPanelContents[fullId] = uiElement;
@@ -1717,10 +1718,12 @@ public partial class MainWindow : Window
 
     private void WirePluginStatusBarItems()
     {
-        foreach (var item in _contributionRegistry.GetStatusBarItems())
+        var statusBarItems = _contributionRegistry.GetStatusBarItems();
+
+        foreach (var item in statusBarItems)
         {
             var fullId = $"plugin.{item.PluginId}.{item.ContributionId}";
-            if (!_wiredStatusBarIds.Add(fullId)) continue;
+            if (_wiredStatusBarIds.Contains(fullId)) continue;
 
             SafeWireContribution(item.PluginId, item.ContributionId, "status bar item", () =>
             {
@@ -1728,10 +1731,29 @@ public partial class MainWindow : Window
                     ? Core.Layout.StatusBarAlignment.Left
                     : Core.Layout.StatusBarAlignment.Right;
 
-                var statusBarItem = _statusBarViewModel.RegisterItem(fullId, alignment, item.Order);
+                // Invoke the view factory FIRST — before registering the item.
+                // If the factory throws, we must not leave a half-wired item
+                // in RightItems with no content (which renders as invisible
+                // zero-width and is never retried).
+                object? content;
+                try
+                {
+                    content = item.ViewFactory();
+                }
+                catch (Exception factoryEx)
+                {
+                    _logService.Error(
+                        $"Status bar view factory for '{fullId}' threw: {factoryEx}", "PluginHost");
+                    // Use fallback text content so the item is still visible
+                    content = null;
+                }
 
-                // Invoke the view factory to get the display content
-                var content = item.ViewFactory();
+                // Use FindItem to handle retry after partial failure — if a prior
+                // attempt registered the item but threw before marking it as wired,
+                // reuse the existing item instead of throwing on duplicate.
+                var statusBarItem = _statusBarViewModel.FindItem(fullId)
+                    ?? _statusBarViewModel.RegisterItem(fullId, alignment, item.Order);
+
                 if (content is System.Windows.FrameworkElement fe)
                 {
                     // Plugin returned a custom WPF element — host it directly
@@ -1740,15 +1762,22 @@ public partial class MainWindow : Window
                 }
                 else
                 {
+                    // Factory returned non-UIElement or threw — show text
                     statusBarItem.Text = content switch
                     {
                         string text => text,
-                        null => string.Empty,
-                        _ => content.ToString() ?? string.Empty
+                        null => item.Name, // fallback to contribution name
+                        _ => content.ToString() ?? item.Name
                     };
                 }
                 statusBarItem.Tooltip = $"Plugin: {item.PluginId}";
                 statusBarItem.IsVisible = true;
+
+                // Store reference so plugins can push text updates via UpdateStatusBarItem
+                _contributionRegistry.SetStatusBarItemReference(fullId, statusBarItem);
+
+                // Mark as wired AFTER successful registration
+                _wiredStatusBarIds.Add(fullId);
 
                 // Add show/hide menu item under Status Bar submenu
                 TitleBar.AddStatusBarMenuItem(fullId, item.Name);
@@ -1772,10 +1801,11 @@ public partial class MainWindow : Window
         foreach (var panel in _contributionRegistry.GetSidebarPanels())
         {
             var fullId = $"plugin.{panel.PluginId}.{panel.ContributionId}";
-            if (!_wiredSidebarPanelIds.Add(fullId)) continue;
+            if (_wiredSidebarPanelIds.Contains(fullId)) continue;
 
             SafeWireContribution(panel.PluginId, panel.ContributionId, "sidebar panel", () =>
             {
+                _wiredSidebarPanelIds.Add(fullId);
                 var view = panel.ViewFactory();
                 var uiElement = WrapAsUIElement(view, $"Plugin: {panel.Title}");
                 _pluginSidebarContents[fullId] = uiElement;
@@ -1922,10 +1952,11 @@ public partial class MainWindow : Window
         foreach (var toolbarBtn in _contributionRegistry.GetToolbarButtons())
         {
             var fullId = $"plugin.{toolbarBtn.PluginId}.{toolbarBtn.ContributionId}";
-            if (!_wiredToolbarButtonIds.Add(fullId)) continue;
+            if (_wiredToolbarButtonIds.Contains(fullId)) continue;
 
             SafeWireContribution(toolbarBtn.PluginId, toolbarBtn.ContributionId, "toolbar button", () =>
             {
+                _wiredToolbarButtonIds.Add(fullId);
                 var handler = toolbarBtn.ClickHandler; // capture for closure
                 var button = CreatePluginToolbarButton(toolbarBtn.Tooltip, toolbarBtn.IconPath, handler);
                 _pluginToolbarButtons[fullId] = button;
@@ -2043,10 +2074,11 @@ public partial class MainWindow : Window
         foreach (var panel in _contributionRegistry.GetRightPanels())
         {
             var fullId = $"plugin.{panel.PluginId}.{panel.ContributionId}";
-            if (!_wiredRightPanelIds.Add(fullId)) continue;
+            if (_wiredRightPanelIds.Contains(fullId)) continue;
 
             SafeWireContribution(panel.PluginId, panel.ContributionId, "right panel", () =>
             {
+                _wiredRightPanelIds.Add(fullId);
                 var view = panel.ViewFactory();
                 var uiElement = WrapAsUIElement(view, $"Plugin: {panel.Title}");
                 _rightPanelContents[fullId] = uiElement;
@@ -2122,7 +2154,8 @@ public partial class MainWindow : Window
         foreach (var handler in _contributionRegistry.GetFileHandlers())
         {
             var fullId = $"plugin.{handler.PluginId}.fileHandler";
-            if (!_wiredFileHandlerIds.Add(fullId)) continue;
+            if (_wiredFileHandlerIds.Contains(fullId)) continue;
+            _wiredFileHandlerIds.Add(fullId);
 
             foreach (var ext in handler.Extensions)
             {

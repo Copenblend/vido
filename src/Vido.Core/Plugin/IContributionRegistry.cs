@@ -73,6 +73,19 @@ public interface IContributionRegistry
 
     // ── Unregistration (called when plugin deactivates) ──
 
+    /// <summary>
+    /// Stores a reference to the host-side <see cref="Layout.StatusBarItem"/> so
+    /// that plugins can push text updates after initial registration.
+    /// Called by the UI layer after wiring.
+    /// </summary>
+    void SetStatusBarItemReference(string fullId, Layout.StatusBarItem item);
+
+    /// <summary>
+    /// Updates the text of a status bar item.
+    /// No-op if the item has not been wired yet.
+    /// </summary>
+    void UpdateStatusBarItem(string fullId, string text);
+
     /// <summary>Removes all contributions registered by the specified plugin.</summary>
     void UnregisterAll(string pluginId);
 

@@ -55,6 +55,10 @@ public sealed class PluginManifest
     [JsonPropertyName("tags")]
     public List<string> Tags { get; set; } = [];
 
+    /// <summary>Relative path to the plugin icon image (e.g. "Assets/plugin-icon.png").</summary>
+    [JsonPropertyName("icon")]
+    public string? Icon { get; set; }
+
     /// <summary>UI contributions declared by the plugin.</summary>
     [JsonPropertyName("contributes")]
     public PluginContributions Contributes { get; set; } = new();

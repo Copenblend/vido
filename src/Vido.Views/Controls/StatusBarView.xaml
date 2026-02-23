@@ -17,7 +17,7 @@
             <Style x:Key="StatusBarItemStyle" TargetType="TextBlock">
                 <Setter Property="FontFamily" Value="Segoe UI" />
                 <Setter Property="FontSize" Value="12" />
-                <Setter Property="Foreground" Value="{DynamicResource ActiveIconBrush}" />
+                <Setter Property="Foreground" Value="White" />
                 <Setter Property="VerticalAlignment" Value="Center" />
                 <Setter Property="Margin" Value="0" />
             </Style>
@@ -125,8 +125,8 @@
                             </ContentPresenter>
                         </StackPanel>
                         <DataTemplate.Triggers>
-                            <!-- Hide separator for the first item (Priority 100 = Duration, the first right item) -->
-                            <DataTrigger Binding="{Binding Priority}" Value="100">
+                            <!-- Hide separator for the first right-side item -->
+                            <DataTrigger Binding="{Binding ShowSeparator}" Value="False">
                                 <Setter TargetName="Separator" Property="Visibility" Value="Collapsed" />
                             </DataTrigger>
                         </DataTemplate.Triggers>

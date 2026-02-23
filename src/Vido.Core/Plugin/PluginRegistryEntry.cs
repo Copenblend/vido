@@ -43,6 +43,14 @@ public sealed class PluginRegistryEntry
     [JsonPropertyName("iconUrl")]
     public string? IconUrl { get; set; }
 
+    /// <summary>URL to the plugin README.md content (shown in the Details tab).</summary>
+    [JsonPropertyName("readmeUrl")]
+    public string? ReadmeUrl { get; set; }
+
+    /// <summary>URL to the plugin CHANGELOG.md content (shown in the Changelog tab).</summary>
+    [JsonPropertyName("changelogUrl")]
+    public string? ChangelogUrl { get; set; }
+
     /// <summary>Repository URL.</summary>
     [JsonPropertyName("repository")]
     public string? Repository { get; set; }

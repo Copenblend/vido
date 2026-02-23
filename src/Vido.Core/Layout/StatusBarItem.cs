@@ -85,6 +85,23 @@ public class StatusBarItem : INotifyPropertyChanged
     /// <summary>Whether <see cref="ContentView"/> is set (non-null).</summary>
     public bool HasContentView => _contentView is not null;
 
+    private bool _showSeparator;
+
+    /// <summary>
+    /// Whether a separator dot should be shown before this item.
+    /// Managed by <c>StatusBarViewModel</c> whenever the collection changes.
+    /// </summary>
+    public bool ShowSeparator
+    {
+        get => _showSeparator;
+        set
+        {
+            if (_showSeparator == value) return;
+            _showSeparator = value;
+            OnPropertyChanged(nameof(ShowSeparator));
+        }
+    }
+
     public StatusBarItem(string id, StatusBarAlignment alignment, int priority)
     {
         Id = id;

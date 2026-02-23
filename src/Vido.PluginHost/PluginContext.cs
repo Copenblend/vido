@@ -109,6 +109,13 @@ public sealed class PluginContext : IPluginContext
         Logger.Debug($"Plugin '{Manifest.Id}' registered status bar item '{contributionId}'", "PluginHost");
     }
 
+    public void UpdateStatusBarItem(string contributionId, string text)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
+        var fullId = $"plugin.{Manifest.Id}.{contributionId}";
+        _contributions.UpdateStatusBarItem(fullId, text);
+    }
+
     public void RegisterToolbarButtonHandler(string contributionId, Action clickHandler)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
