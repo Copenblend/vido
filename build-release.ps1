@@ -7,6 +7,9 @@
       - A portable zip archive
       - An MSI installer (requires WiX 5 CLI)
 
+    If a code signing certificate is provided, the EXE and MSI are signed.
+    Signing eliminates the Windows SmartScreen "Unknown Publisher" warning.
+
 .PARAMETER Configuration
     Build configuration. Default: Release.
 
@@ -16,14 +19,31 @@
 .PARAMETER OutputDir
     Directory for final artifacts. Default: ./publish.
 
+.PARAMETER CertificatePath
+    Path to a .pfx code signing certificate file. If provided, artifacts are signed.
+
+.PARAMETER CertificatePassword
+    Password for the .pfx certificate.
+
+.PARAMETER SignTool
+    Path to signtool.exe. Default: auto-detect from Windows SDK.
+
+.PARAMETER TimestampServer
+    RFC 3161 timestamp server URL. Default: http://timestamp.digicert.com.
+
 .EXAMPLE
     .\build-release.ps1
     .\build-release.ps1 -SkipInstaller
+    .\build-release.ps1 -CertificatePath .\cert.pfx -CertificatePassword $securePass
 #>
 param(
     [string]$Configuration = "Release",
     [switch]$SkipInstaller,
-    [string]$OutputDir = "publish"
+    [string]$OutputDir = "publish",
+    [string]$CertificatePath = "",
+    [string]$CertificatePassword = "",
+    [string]$SignTool = "",
+    [string]$TimestampServer = "http://timestamp.digicert.com"
 )
 
 Set-StrictMode -Version Latest
@@ -37,6 +57,51 @@ $InstallerProject = Join-Path $Root "installer\Vido.Installer.wixproj"
 $PublishDir = Join-Path $Root $OutputDir
 $PortableDir = Join-Path $PublishDir "portable"
 
+# Signing setup
+$SigningEnabled = $false
+$ResolvedSignTool = ""
+if ($CertificatePath -and (Test-Path $CertificatePath)) {
+    $SigningEnabled = $true
+    if ($SignTool -and (Test-Path $SignTool)) {
+        $ResolvedSignTool = $SignTool
+    }
+    else {
+        # Auto-detect signtool from Windows SDK
+        $sdkPaths = @(
+            "${env:ProgramFiles(x86)}\Windows Kits\10\bin\*\x64\signtool.exe",
+            "${env:ProgramFiles}\Windows Kits\10\bin\*\x64\signtool.exe"
+        )
+        foreach ($p in $sdkPaths) {
+            $found = Get-Item $p -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1
+            if ($found) { $ResolvedSignTool = $found.FullName; break }
+        }
+        if (-not $ResolvedSignTool) {
+            Write-Host "  WARNING: signtool.exe not found. Install Windows SDK or specify -SignTool path." -ForegroundColor Red
+            $SigningEnabled = $false
+        }
+    }
+}
+
+function Invoke-CodeSign([string]$FilePath, [string]$Description) {
+    if (-not $SigningEnabled) { return }
+    Write-Host "  Signing: $(Split-Path $FilePath -Leaf)..." -ForegroundColor Gray
+    $args = @(
+        "sign", "/f", $CertificatePath,
+        "/fd", "sha256",
+        "/tr", $TimestampServer,
+        "/td", "sha256",
+        "/d", $Description
+    )
+    if ($CertificatePassword) {
+        $args += @("/p", $CertificatePassword)
+    }
+    $args += $FilePath
+    & $ResolvedSignTool @args
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  WARNING: Code signing failed for $(Split-Path $FilePath -Leaf)" -ForegroundColor Red
+    }
+}
+
 # Read version from Directory.Build.props (single source of truth)
 [xml]$buildProps = Get-Content (Join-Path $Root "Directory.Build.props")
 $Version = $buildProps.Project.PropertyGroup.VidoVersion | Where-Object { $_ } | Select-Object -First 1
@@ -45,6 +110,12 @@ if (-not $Version) { $Version = "0.1.0" }
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  Vido $Version Release Build" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
+if ($SigningEnabled) {
+    Write-Host "  Code signing: ENABLED" -ForegroundColor Green
+} else {
+    Write-Host "  Code signing: DISABLED (no certificate)" -ForegroundColor Yellow
+    Write-Host "  To sign, pass: -CertificatePath .\cert.pfx" -ForegroundColor Gray
+}
 Write-Host ""
 
 # Step 1: Clean
@@ -63,6 +134,9 @@ dotnet publish $AppProject `
     -p:DebugType=none `
     -p:DebugSymbols=false
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed with exit code $LASTEXITCODE" }
+
+# Sign the main EXE before zipping / packaging
+Invoke-CodeSign (Join-Path $PortableDir "Vido.exe") "Vido Video Player"
 
 # Step 3: Clean unnecessary files from portable output
 Write-Host "[3/5] Cleaning publish output..." -ForegroundColor Yellow
@@ -109,6 +183,7 @@ if (-not $SkipInstaller) {
             if ($msiSource) {
                 $MsiPath = Join-Path $PublishDir $MsiName
                 Copy-Item $msiSource.FullName $MsiPath -Force
+                Invoke-CodeSign $MsiPath "Vido Installer"
                 $msiSizeMB = [math]::Round((Get-Item $MsiPath).Length / 1MB, 1)
                 Write-Host "  Created: $MsiName - $msiSizeMB MB" -ForegroundColor Green
             }

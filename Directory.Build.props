@@ -1,7 +1,12 @@
 <Project>
 
   <PropertyGroup>
-    <VidoVersion>0.4.0</VidoVersion>
+    <VidoVersion>0.5.0</VidoVersion>
+    <Company>Vido</Company>
+    <Product>Vido</Product>
+    <Authors>Vido</Authors>
+    <Copyright>Copyright (c) 2025-2026 Vido</Copyright>
+    <Description>A performant, extensible video player for Windows</Description>
   </PropertyGroup>
 
 </Project>

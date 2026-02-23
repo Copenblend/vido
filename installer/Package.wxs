@@ -10,12 +10,16 @@
      xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
 
   <Package Name="Vido"
-           Manufacturer="Vido Contributors"
+           Manufacturer="Vido"
            Version="$(var.ProductVersion)"
            UpgradeCode="7A3C8F2E-1D5B-4E6A-9C0D-F8E2A1B3C4D5"
            Scope="perUser"
            InstallerVersion="500"
            Compressed="yes">
+
+    <!-- Summary metadata shown in file properties -->
+    <SummaryInformation Description="Vido Video Player $(var.ProductVersion)"
+                        Manufacturer="Vido" />
 
     <!-- Upgrade logic: remove older versions before installing -->
     <MajorUpgrade DowngradeErrorMessage="A newer version of Vido is already installed."
@@ -87,10 +91,14 @@
       <Files Include="$(var.PublishDir)\**" />
     </ComponentGroup>
 
-    <!-- Ensure install folder is removed on uninstall -->
+    <!-- Registry marker for install path (used as keypath for the component).
+         Individual file components handle cleanup; we do NOT use RemoveFolder
+         here because during a major upgrade the old product is uninstalled first.
+         An aggressive folder removal can break the upgrade if the new install
+         fails, leaving no files and forcing a manual AppData cleanup. -->
     <Component Id="CleanInstallFolder" Directory="INSTALLFOLDER" Guid="A1B2C3D4-E5F6-7A8B-9C0D-E1F2A3B4C5D6">
-      <RemoveFolder Id="RemoveInstallFolder" On="uninstall" />
       <RegistryValue Root="HKCU" Key="Software\Vido\Install" Name="Path" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
+      <RemoveRegistryKey Root="HKCU" Key="Software\Vido\Install" Action="removeOnUninstall" />
     </Component>
 
     <!-- ═══════════════════════════════════════════════════════ -->
