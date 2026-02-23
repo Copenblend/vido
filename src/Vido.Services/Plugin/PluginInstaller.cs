@@ -61,10 +61,26 @@ public sealed class PluginInstaller : IPluginInstaller
                 zipData = await _httpClient.GetByteArrayAsync(entry.DownloadUrl);
             }
 
-            // Ensure target directory exists and is clean
+            // Ensure target directory exists — best-effort clean of existing files.
+            // Some files may be locked (AV, pending deletes) so we tolerate failures
+            // and rely on ZipFile.ExtractToDirectory's overwriteFiles to replace what matters.
             if (Directory.Exists(targetDir))
-                Directory.Delete(targetDir, recursive: true);
-            Directory.CreateDirectory(targetDir);
+            {
+                try
+                {
+                    Directory.Delete(targetDir, recursive: true);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    _logService.Debug($"Could not fully clean '{targetDir}' (locked files). Will overwrite.", "PluginInstaller");
+                }
+                catch (IOException)
+                {
+                    _logService.Debug($"Could not fully clean '{targetDir}' (IO error). Will overwrite.", "PluginInstaller");
+                }
+            }
+            if (!Directory.Exists(targetDir))
+                Directory.CreateDirectory(targetDir);
 
             // Extract
             using var zipStream = new MemoryStream(zipData);
