@@ -15,8 +15,7 @@
            UpgradeCode="7A3C8F2E-1D5B-4E6A-9C0D-F8E2A1B3C4D5"
            Scope="perUser"
            InstallerVersion="500"
-           Compressed="yes"
-           IconSourceFile="Vido.ico">
+           Compressed="yes">
 
     <!-- Upgrade logic: remove older versions before installing -->
     <MajorUpgrade DowngradeErrorMessage="A newer version of Vido is already installed."
