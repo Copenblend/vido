@@ -209,6 +209,13 @@ public sealed class PluginContext : IPluginContext
         }
     }
 
+    public void RequestShowRightPanel(string contributionId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
+        var fullId = $"plugin.{Manifest.Id}.{contributionId}";
+        _contributions.RequestShowRightPanel(fullId);
+    }
+
     /// <summary>
     /// Cleans up all registrations made by this plugin context.
     /// Called during plugin deactivation.

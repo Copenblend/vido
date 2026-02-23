@@ -74,6 +74,12 @@ public interface IContributionRegistry
 
     /// <summary>Raised whenever contributions are added or removed.</summary>
     event Action? ContributionsChanged;
+
+    /// <summary>
+    /// Raised when a plugin requests that a specific right panel be shown and expanded.
+    /// The argument is the full panel ID (e.g. "plugin.{pluginId}.{contributionId}").
+    /// </summary>
+    event Action<string>? RightPanelShowRequested;
 }
 
 // ── Registration records ──

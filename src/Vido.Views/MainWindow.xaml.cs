@@ -1491,6 +1491,7 @@ public partial class MainWindow : Window
     private void SetupPluginContributions()
     {
         _contributionRegistry.ContributionsChanged += OnPluginContributionsChanged;
+        _contributionRegistry.RightPanelShowRequested += OnRightPanelShowRequested;
         WirePluginContributions();
     }
 
@@ -1964,6 +1965,18 @@ public partial class MainWindow : Window
                 ? title.ToUpperInvariant()
                 : "PLUGIN";
         }
+    }
+
+    /// <summary>
+    /// Handles a plugin's request to show a specific right panel.
+    /// Dispatches to the UI thread if needed.
+    /// </summary>
+    private void OnRightPanelShowRequested(string fullPanelId)
+    {
+        if (Dispatcher.CheckAccess())
+            SwitchRightPanel(fullPanelId);
+        else
+            Dispatcher.BeginInvoke(() => SwitchRightPanel(fullPanelId));
     }
 
     // ── File Handler wiring ──
