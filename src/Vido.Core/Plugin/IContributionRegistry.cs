@@ -27,6 +27,12 @@ public interface IContributionRegistry
     /// <summary>Registers a toolbar button contribution in the title bar area.</summary>
     void RegisterToolbarButton(string pluginId, string contributionId, string tooltip, string? iconPath, int order, Action clickHandler);
 
+    /// <summary>
+    /// Sets the highlight (active) state of a toolbar button.
+    /// When highlighted, the host renders the button with an accent background.
+    /// </summary>
+    void SetToolbarButtonHighlight(string pluginId, string contributionId, bool highlighted);
+
     /// <summary>Registers a context menu handler for files matching specified extensions.</summary>
     void RegisterContextMenuHandler(string pluginId, string contributionId, string label, string[] fileExtensions, int order, Action<FileNode> handler);
 
@@ -74,6 +80,12 @@ public interface IContributionRegistry
 
     /// <summary>Raised whenever contributions are added or removed.</summary>
     event Action? ContributionsChanged;
+
+    /// <summary>
+    /// Raised when a toolbar button's highlight state changes.
+    /// Arguments: full button ID ("plugin.{pluginId}.{contributionId}"), highlighted.
+    /// </summary>
+    event Action<string, bool>? ToolbarButtonHighlightChanged;
 
     /// <summary>
     /// Raised when a plugin requests that a specific right panel be shown and expanded.

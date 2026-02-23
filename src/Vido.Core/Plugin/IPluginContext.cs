@@ -62,6 +62,13 @@ public interface IPluginContext
     /// <summary>Register a toolbar button click handler.</summary>
     void RegisterToolbarButtonHandler(string contributionId, Action clickHandler);
 
+    /// <summary>
+    /// Sets the highlight state of a toolbar button. When highlighted the host
+    /// applies the accent background colour; when not highlighted the button
+    /// returns to its default transparent background.
+    /// </summary>
+    void SetToolbarButtonHighlight(string contributionId, bool highlighted);
+
     /// <summary>Register a context menu action handler.</summary>
     void RegisterContextMenuHandler(string contributionId, Action<FileNode> handler);
 

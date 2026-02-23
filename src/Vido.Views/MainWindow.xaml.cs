@@ -1493,6 +1493,7 @@ public partial class MainWindow : Window
         _contributionRegistry.ContributionsChanged += OnPluginContributionsChanged;
         _contributionRegistry.RightPanelShowRequested += OnRightPanelShowRequested;
         _contributionRegistry.BottomPanelShowRequested += OnBottomPanelShowRequested;
+        _contributionRegistry.ToolbarButtonHighlightChanged += OnToolbarButtonHighlightChanged;
         WirePluginContributions();
     }
 
@@ -1506,6 +1507,31 @@ public partial class MainWindow : Window
             WirePluginContributions();
         else
             Dispatcher.BeginInvoke(WirePluginContributions);
+    }
+
+    /// <summary>
+    /// Callback fired when a plugin sets or clears a toolbar button highlight.
+    /// Updates the button's background to AccentBrush (highlighted) or Transparent (normal).
+    /// </summary>
+    private void OnToolbarButtonHighlightChanged(string fullButtonId, bool highlighted)
+    {
+        void Apply()
+        {
+            if (!_pluginToolbarButtons.TryGetValue(fullButtonId, out var button)) return;
+
+            // Walk the visual tree to find the named "Bd" Border inside the template
+            if (button.Template?.FindName("Bd", button) is Border bd)
+            {
+                bd.Background = highlighted
+                    ? (Brush)FindResource("AccentBrush")
+                    : Brushes.Transparent;
+            }
+        }
+
+        if (Dispatcher.CheckAccess())
+            Apply();
+        else
+            Dispatcher.BeginInvoke(Apply);
     }
 
     /// <summary>
@@ -1786,8 +1812,6 @@ public partial class MainWindow : Window
                 bitmap.BeginInit();
                 bitmap.UriSource = new Uri(iconPath, UriKind.Absolute);
                 bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-                bitmap.DecodePixelWidth = 24;
-                bitmap.DecodePixelHeight = 24;
                 bitmap.EndInit();
                 bitmap.Freeze();
 
@@ -1923,8 +1947,6 @@ public partial class MainWindow : Window
                 bitmap.BeginInit();
                 bitmap.UriSource = new Uri(iconPath, UriKind.Absolute);
                 bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-                bitmap.DecodePixelWidth = 16;
-                bitmap.DecodePixelHeight = 16;
                 bitmap.EndInit();
                 bitmap.Freeze();
 

@@ -26,8 +26,12 @@ public sealed class ContributionRegistry : IContributionRegistry
     private readonly Dictionary<string, List<string>> _pluginFileIconKeys = [];
 
     public event Action? ContributionsChanged;
+    public event Action<string, bool>? ToolbarButtonHighlightChanged;
     public event Action<string>? RightPanelShowRequested;
     public event Action<string>? BottomPanelShowRequested;
+
+    // Track highlighted toolbar buttons
+    private readonly HashSet<string> _highlightedToolbarButtons = new(StringComparer.OrdinalIgnoreCase);
 
     // ── Helpers ──
 
@@ -88,6 +92,19 @@ public sealed class ContributionRegistry : IContributionRegistry
         InsertSorted(_toolbarButtons,
             new ToolbarButtonRegistration(pluginId, contributionId, tooltip, iconPath, order, clickHandler),
             (a, b) => a.Order.CompareTo(b.Order));
+    }
+
+    public void SetToolbarButtonHighlight(string pluginId, string contributionId, bool highlighted)
+    {
+        var fullId = $"plugin.{pluginId}.{contributionId}";
+        lock (_lock)
+        {
+            if (highlighted)
+                _highlightedToolbarButtons.Add(fullId);
+            else
+                _highlightedToolbarButtons.Remove(fullId);
+        }
+        ToolbarButtonHighlightChanged?.Invoke(fullId, highlighted);
     }
 
     public void RegisterContextMenuHandler(string pluginId, string contributionId, string label,

@@ -368,4 +368,27 @@ public class PluginContextTests
         var ctx = CreateContext();
         Assert.Throws<ArgumentNullException>(() => ctx.RegisterKeyBinding(new KeyBinding("F5"), null!));
     }
+
+    [Fact]
+    public void SetToolbarButtonHighlight_DelegatesToRegistry()
+    {
+        var context = CreateContext();
+        context.RegisterToolbarButtonHandler("btn1", () => { });
+
+        string? firedId = null;
+        bool? firedState = null;
+        _contributions.ToolbarButtonHighlightChanged += (id, state) => { firedId = id; firedState = state; };
+
+        context.SetToolbarButtonHighlight("btn1", true);
+
+        Assert.Equal("plugin.com.test.plugin.btn1", firedId);
+        Assert.True(firedState);
+    }
+
+    [Fact]
+    public void SetToolbarButtonHighlight_EmptyId_Throws()
+    {
+        var ctx = CreateContext();
+        Assert.Throws<ArgumentException>(() => ctx.SetToolbarButtonHighlight(" ", true));
+    }
 }

@@ -290,4 +290,36 @@ public class ContributionRegistryTests
             _registry.RegisterKeyBinding("p1", new KeyBinding("Ctrl+P"), "cmd1", () => { }));
         Assert.Null(ex);
     }
+
+    [Fact]
+    public void SetToolbarButtonHighlight_FiresEvent()
+    {
+        _registry.RegisterToolbarButton("p1", "btn1", "T", null, 10, () => { });
+
+        string? firedId = null;
+        bool? firedState = null;
+        _registry.ToolbarButtonHighlightChanged += (id, state) => { firedId = id; firedState = state; };
+
+        _registry.SetToolbarButtonHighlight("p1", "btn1", true);
+
+        Assert.Equal("plugin.p1.btn1", firedId);
+        Assert.True(firedState);
+    }
+
+    [Fact]
+    public void SetToolbarButtonHighlight_ClearFiresEvent()
+    {
+        _registry.RegisterToolbarButton("p1", "btn1", "T", null, 10, () => { });
+
+        _registry.SetToolbarButtonHighlight("p1", "btn1", true);
+
+        string? firedId = null;
+        bool? firedState = null;
+        _registry.ToolbarButtonHighlightChanged += (id, state) => { firedId = id; firedState = state; };
+
+        _registry.SetToolbarButtonHighlight("p1", "btn1", false);
+
+        Assert.Equal("plugin.p1.btn1", firedId);
+        Assert.False(firedState);
+    }
 }

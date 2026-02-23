@@ -125,6 +125,12 @@ public sealed class PluginContext : IPluginContext
         Logger.Debug($"Plugin '{Manifest.Id}' registered toolbar button '{contributionId}'", "PluginHost");
     }
 
+    public void SetToolbarButtonHighlight(string contributionId, bool highlighted)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
+        _contributions.SetToolbarButtonHighlight(Manifest.Id, contributionId, highlighted);
+    }
+
     public void RegisterContextMenuHandler(string contributionId, Action<FileNode> handler)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);

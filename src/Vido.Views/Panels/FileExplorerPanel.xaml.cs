@@ -105,7 +105,24 @@ public partial class FileExplorerPanel : UserControl
         if (string.IsNullOrEmpty(ext)) return;
 
         var icons = ContributionRegistry.GetFileIcons();
-        if (!icons.TryGetValue(ext, out var iconPath)) return;
+
+        // Try compound extension first (e.g. ".twist.funscript")
+        string? iconPath = null;
+        var dotIndex = node.Name.IndexOf('.');
+        if (dotIndex >= 0)
+        {
+            var compoundExt = node.Name[dotIndex..];
+            if (!string.Equals(compoundExt, ext, StringComparison.OrdinalIgnoreCase)
+                && icons.TryGetValue(compoundExt, out var compoundPath))
+            {
+                iconPath = compoundPath;
+            }
+        }
+
+        // Fall back to simple extension
+        if (iconPath is null && !icons.TryGetValue(ext, out iconPath))
+            return;
+
         if (!File.Exists(iconPath)) return;
 
         // Find the named elements inside the data template
