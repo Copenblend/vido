@@ -322,4 +322,31 @@ public class ContributionRegistryTests
         Assert.Equal("plugin.p1.btn1", firedId);
         Assert.False(firedState);
     }
+
+    // ── Priority tiebreaking ──
+
+    [Fact]
+    public void RegisterStatusBarItem_SamePriority_OrdersByPluginId()
+    {
+        _registry.RegisterStatusBarItem("pluginC", "s1", "C", "left", 10, () => "v");
+        _registry.RegisterStatusBarItem("pluginA", "s2", "A", "left", 10, () => "v");
+        _registry.RegisterStatusBarItem("pluginB", "s3", "B", "left", 10, () => "v");
+
+        var items = _registry.GetStatusBarItems();
+        Assert.Equal(3, items.Count);
+        Assert.Equal("pluginA", items[0].PluginId);
+        Assert.Equal("pluginB", items[1].PluginId);
+        Assert.Equal("pluginC", items[2].PluginId);
+    }
+
+    [Fact]
+    public void RegisterSidebarPanel_SamePriority_OrdersByPluginId()
+    {
+        _registry.RegisterSidebarPanel("pluginZ", "a", "Z", null, 50, () => "v");
+        _registry.RegisterSidebarPanel("pluginA", "b", "A", null, 50, () => "v");
+
+        var panels = _registry.GetSidebarPanels();
+        Assert.Equal("pluginA", panels[0].PluginId);
+        Assert.Equal("pluginZ", panels[1].PluginId);
+    }
 }

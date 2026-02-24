@@ -167,7 +167,11 @@ public partial class StatusBarViewModel : ObservableObject, IDisposable
         return null;
     }
 
-    /// <summary>Inserts an item into the correct collection, sorted by priority (ascending).</summary>
+    /// <summary>
+    /// Inserts an item into the correct collection, sorted by priority (ascending).
+    /// When priorities are equal, items are sorted alphabetically by ID for
+    /// deterministic ordering.
+    /// </summary>
     private void InsertByPriority(StatusBarItem item)
     {
         var collection = item.Alignment == StatusBarAlignment.Left ? LeftItems : RightItems;
@@ -175,6 +179,15 @@ public partial class StatusBarViewModel : ObservableObject, IDisposable
         for (int i = 0; i < collection.Count; i++)
         {
             if (collection[i].Priority > item.Priority)
+            {
+                collection.Insert(i, item);
+                UpdateSeparatorFlags(collection);
+                return;
+            }
+
+            // Same priority — sort by ID alphabetically for deterministic ordering
+            if (collection[i].Priority == item.Priority &&
+                string.Compare(collection[i].Id, item.Id, StringComparison.OrdinalIgnoreCase) > 0)
             {
                 collection.Insert(i, item);
                 UpdateSeparatorFlags(collection);

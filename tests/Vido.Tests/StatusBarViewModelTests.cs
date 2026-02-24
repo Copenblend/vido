@@ -350,4 +350,35 @@ public class StatusBarViewModelTests : IDisposable
 
         Assert.Equal("02:05", _sut.FindItem(StatusBarViewModel.DurationItemId)!.Text);
     }
+
+    // ── Priority tiebreaking ──
+
+    [Fact]
+    public void RegisterItem_SamePriority_OrdersByIdAlphabetically()
+    {
+        var itemC = _sut.RegisterItem("plugin.charlie", StatusBarAlignment.Left, 50);
+        var itemA = _sut.RegisterItem("plugin.alpha", StatusBarAlignment.Left, 50);
+        var itemB = _sut.RegisterItem("plugin.bravo", StatusBarAlignment.Left, 50);
+
+        // Built-in "fileName" is at index 0, then our three items sorted by ID
+        Assert.Equal("plugin.alpha", _sut.LeftItems[1].Id);
+        Assert.Equal("plugin.bravo", _sut.LeftItems[2].Id);
+        Assert.Equal("plugin.charlie", _sut.LeftItems[3].Id);
+    }
+
+    [Fact]
+    public void InsertByPriority_DeterministicWith_SamePriority()
+    {
+        // Register items in reverse alphabetical order, all same priority
+        _sut.RegisterItem("z.item", StatusBarAlignment.Right, 500);
+        _sut.RegisterItem("a.item", StatusBarAlignment.Right, 500);
+        _sut.RegisterItem("m.item", StatusBarAlignment.Right, 500);
+
+        // Find them among the right items (built-ins are at 10100+)
+        var pluginItems = _sut.RightItems.Where(i => i.Priority == 500).ToList();
+        Assert.Equal(3, pluginItems.Count);
+        Assert.Equal("a.item", pluginItems[0].Id);
+        Assert.Equal("m.item", pluginItems[1].Id);
+        Assert.Equal("z.item", pluginItems[2].Id);
+    }
 }
