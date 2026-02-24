@@ -26,4 +26,22 @@ public interface IPlaylistProvider
     /// When <c>false</c>, Vido falls back to its built-in navigation logic.
     /// </summary>
     bool IsActive { get; }
+
+    /// <summary>
+    /// Whether shuffle mode is currently enabled for this provider.
+    /// Providers that do not support shuffle will always return <c>false</c>.
+    /// </summary>
+    bool IsShuffling => false;
+
+    /// <summary>
+    /// Enables shuffle mode. The provider should randomize its playback order.
+    /// Default implementation is a no-op for providers that don't support shuffle.
+    /// </summary>
+    void EnableShuffle() { }
+
+    /// <summary>
+    /// Disables shuffle mode. The provider should return to sequential playback.
+    /// Default implementation is a no-op for providers that don't support shuffle.
+    /// </summary>
+    void DisableShuffle() { }
 }

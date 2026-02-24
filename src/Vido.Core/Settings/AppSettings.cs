@@ -90,7 +90,7 @@ public sealed class AppSettings
     public const string OfficialRegistryUrl = "https://raw.githubusercontent.com/Copenblend/vido-plugin-registry/refs/heads/master/registry.json";
 
     /// <summary>The official NSFW Vido plugin registry URL.</summary>
-    public const string NsfwRegistryUrl = "https://raw.githubusercontent.com/Copenblend/vido-nsfw-plugin-registry/refs/heads/main/registry.json";
+    public const string NsfwRegistryUrl = "https://raw.githubusercontent.com/Copenblend/vido-nsfw-plugin-registry/refs/heads/master/registry.json";
 
     /// <summary>All official Vido registry URLs. Plugins from these registries show a verified badge.</summary>
     public static readonly HashSet<string> OfficialRegistryUrls = new(StringComparer.OrdinalIgnoreCase)
