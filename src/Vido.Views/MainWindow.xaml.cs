@@ -1515,6 +1515,7 @@ public partial class MainWindow : Window
         _contributionRegistry.RightPanelShowRequested += OnRightPanelShowRequested;
         _contributionRegistry.BottomPanelShowRequested += OnBottomPanelShowRequested;
         _contributionRegistry.ToolbarButtonHighlightChanged += OnToolbarButtonHighlightChanged;
+        _contributionRegistry.ControlBarOverlayToggled += OnControlBarOverlayToggled;
         WirePluginContributions();
     }
 
@@ -1556,6 +1557,20 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
+    /// Callback fired when a plugin toggles a control-bar overlay on or off.
+    /// Dispatches to the UI thread to apply the visibility change.
+    /// </summary>
+    private void OnControlBarOverlayToggled(string fullId, bool visible)
+    {
+        void Apply() => VideoPlayer.SetPluginOverlayVisible(fullId, visible);
+
+        if (Dispatcher.CheckAccess())
+            Apply();
+        else
+            Dispatcher.BeginInvoke(Apply);
+    }
+
+    /// <summary>
     /// Applies all current plugin contributions to the UI. Idempotent — safe to call
     /// multiple times. Only adds contributions that aren't already wired.
     /// Also removes contributions that are no longer registered (e.g. after disable/uninstall).
@@ -1569,6 +1584,7 @@ public partial class MainWindow : Window
         WirePluginToolbarButtons();
         WirePluginRightPanels();
         WirePluginFileHandlers();
+        WirePluginControlBarItems();
     }
 
     /// <summary>
@@ -1590,6 +1606,8 @@ public partial class MainWindow : Window
             _contributionRegistry.GetRightPanels().Select(p => $"plugin.{p.PluginId}.{p.ContributionId}"));
         var currentFileHandlers = new HashSet<string>(
             _contributionRegistry.GetFileHandlers().Select(h => $"plugin.{h.PluginId}.fileHandler"));
+        var currentControlBarItems = new HashSet<string>(
+            _contributionRegistry.GetControlBarItems().Select(c => $"plugin.{c.PluginId}.{c.ContributionId}"));
 
         // Remove stale bottom panels
         foreach (var id in _wiredBottomPanelIds.Where(id => !currentBottomPanels.Contains(id)).ToList())
@@ -1655,6 +1673,14 @@ public partial class MainWindow : Window
         {
             _wiredFileHandlerIds.Remove(id);
         }
+
+        // Remove stale control bar items
+        foreach (var id in _wiredControlBarIds.Where(id => !currentControlBarItems.Contains(id)).ToList())
+        {
+            VideoPlayer.RemovePluginControlBarItem(id);
+            VideoPlayer.RemovePluginOverlay(id);
+            _wiredControlBarIds.Remove(id);
+        }
     }
 
     /// <summary>Tracking sets for idempotent wiring — prevent re-adding contributions.</summary>
@@ -1664,6 +1690,7 @@ public partial class MainWindow : Window
     private readonly HashSet<string> _wiredToolbarButtonIds = [];
     private readonly HashSet<string> _wiredRightPanelIds = [];
     private readonly HashSet<string> _wiredFileHandlerIds = [];
+    private readonly HashSet<string> _wiredControlBarIds = [];
 
     /// <summary>
     /// Wraps an object returned by a plugin's view factory into a UIElement.
@@ -2184,6 +2211,28 @@ public partial class MainWindow : Window
                 _pluginFileHandlers[normalizedExt] = handler.Handler;
                 _fileExplorerViewModel.AdditionalAcceptedExtensions.Add(normalizedExt);
             }
+        }
+    }
+
+    private void WirePluginControlBarItems()
+    {
+        foreach (var item in _contributionRegistry.GetControlBarItems())
+        {
+            var fullId = $"plugin.{item.PluginId}.{item.ContributionId}";
+            if (_wiredControlBarIds.Contains(fullId)) continue;
+
+            SafeWireContribution(item.PluginId, item.ContributionId, "control bar item", () =>
+            {
+                _wiredControlBarIds.Add(fullId);
+                var view = WrapAsUIElement(item.ViewFactory());
+                VideoPlayer.AddPluginControlBarItem(fullId, view);
+
+                if (item.OverlayFactory is not null)
+                {
+                    var overlay = WrapAsUIElement(item.OverlayFactory());
+                    VideoPlayer.AddPluginOverlay(fullId, overlay);
+                }
+            });
         }
     }
 
