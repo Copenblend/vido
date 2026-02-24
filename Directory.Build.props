@@ -1,12 +1,36 @@
 <Project>
 
   <PropertyGroup>
-    <VidoVersion>0.5.3</VidoVersion>
+    <!-- App version -->
+    <VidoVersion>0.6.0</VidoVersion>
     <Company>Vido</Company>
     <Product>Vido</Product>
     <Authors>Vido</Authors>
     <Copyright>Copyright (c) 2025-2026 Vido</Copyright>
     <Description>A performant, extensible video player for Windows</Description>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package Versions - Microsoft">
+    <MicrosoftExtensionsDIVersion>8.0.1</MicrosoftExtensionsDIVersion>
+    <MicrosoftExtensionsHostingVersion>8.0.1</MicrosoftExtensionsHostingVersion>
+    <MicrosoftNETTestSdkVersion>17.11.1</MicrosoftNETTestSdkVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package Versions - Media">
+    <FFmpegAutoGenVersion>8.0.0</FFmpegAutoGenVersion>
+    <FFmpegLGPLVersion>20260220.1.0</FFmpegLGPLVersion>
+    <NAudioVersion>2.2.1</NAudioVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package Versions - UI/MVVM">
+    <CommunityToolkitMvvmVersion>8.4.0</CommunityToolkitMvvmVersion>
+    <MarkdigVersion>0.38.0</MarkdigVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package Versions - Testing">
+    <NSubstituteVersion>5.3.0</NSubstituteVersion>
+    <XunitVersion>2.9.2</XunitVersion>
+    <XunitRunnerVisualStudioVersion>2.8.2</XunitRunnerVisualStudioVersion>
   </PropertyGroup>
 
 </Project>
