@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Diagnostics;
 using Vido.Core.Events;
 using Vido.Core.FileSystem;
 using Vido.Core.Formatting;
@@ -69,6 +70,10 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string _playbackSpeedText = "1x";
 
+    /// <summary>Whether a video file is currently being loaded.</summary>
+    [ObservableProperty]
+    private bool _isLoadingMedia;
+
     /// <summary>Whether a video file is currently loaded.</summary>
     [ObservableProperty]
     private bool _hasMedia;
@@ -129,6 +134,17 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// </summary>
     private List<string> _shufflePlaylist = [];
     private int _shuffleIndex = -1;
+
+    /// <summary>
+    /// Cancels the delayed loading-indicator timer when a load completes quickly.
+    /// </summary>
+    private CancellationTokenSource? _loadingIndicatorCts;
+
+    /// <summary>
+    /// Timestamp (via <see cref="Stopwatch.GetTimestamp"/>) recorded when the
+    /// loading indicator was shown. Zero means the indicator was never displayed.
+    /// </summary>
+    private long _loadingShownTimestamp;
 
     /// <summary>
     /// Fired when a decoded frame is ready for display.
@@ -221,25 +237,110 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// and <see cref="RestoreLastVideoAsync"/>. Loads the file into the engine,
     /// updates duration/metadata/sibling list, and sets <see cref="HasMedia"/>.
     /// </summary>
+    /// <summary>How long to wait before showing the loading spinner.</summary>
+    private static readonly TimeSpan LoadingIndicatorDelay = TimeSpan.FromMilliseconds(500);
+
+    /// <summary>
+    /// Once shown, the spinner stays visible for at least this long so it
+    /// doesn't appear as a distracting flash.
+    /// </summary>
+    private static readonly TimeSpan MinimumIndicatorDisplay = TimeSpan.FromMilliseconds(500);
+
     private async Task LoadMediaCoreAsync(string filePath)
     {
-        await _engine.LoadAsync(filePath);
-        CurrentFilePath = filePath;
-        Duration = _engine.Duration;
-        DurationText = FormatTime(Duration);
-        CurrentMetadata = _engine.CurrentMetadata;
-        HasMedia = true;
-        await BuildSiblingListAsync(filePath);
+        // Only show the loading indicator if the load takes longer than the
+        // threshold. Fast local loads complete before the delay elapses,
+        // avoiding any UI overhead from showing and immediately hiding the
+        // spinner.
+        _loadingIndicatorCts?.Cancel();
+        _loadingIndicatorCts = new CancellationTokenSource();
+        var cts = _loadingIndicatorCts;
+        _loadingShownTimestamp = 0;
+        _ = ShowLoadingIndicatorAfterDelayAsync(cts.Token);
 
-        _eventBus.Publish(new VideoLoadedEvent
+        try
         {
-            FilePath = filePath,
-            Metadata = CurrentMetadata ?? new VideoMetadata
+            await _engine.LoadAsync(filePath);
+            CurrentFilePath = filePath;
+            Duration = _engine.Duration;
+            DurationText = FormatTime(Duration);
+            CurrentMetadata = _engine.CurrentMetadata;
+            HasMedia = true;
+
+            // Fire-and-forget: sibling list scan runs concurrently so it doesn't
+            // delay playback start. Skip-prev/next will use whatever list exists
+            // until the scan completes.
+            _ = BuildSiblingListAsync(filePath);
+
+            _eventBus.Publish(new VideoLoadedEvent
             {
                 FilePath = filePath,
-                FileName = Path.GetFileName(filePath)
+                Metadata = CurrentMetadata ?? new VideoMetadata
+                {
+                    FilePath = filePath,
+                    FileName = Path.GetFileName(filePath)
+                }
+            });
+        }
+        finally
+        {
+            cts.Cancel();
+
+            if (_loadingShownTimestamp != 0)
+            {
+                // Spinner was shown — keep it visible for a minimum duration
+                // to avoid a distracting flash. Fire-and-forget so we don't
+                // block playback start.
+                var elapsed = Stopwatch.GetElapsedTime(_loadingShownTimestamp);
+                var remaining = MinimumIndicatorDisplay - elapsed;
+                if (remaining > TimeSpan.Zero)
+                    _ = HideLoadingAfterDelayAsync(remaining);
+                else
+                    IsLoadingMedia = false;
             }
-        });
+            else
+            {
+                IsLoadingMedia = false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Sets <see cref="IsLoadingMedia"/> to <c>true</c> after a short delay.
+    /// If the token is cancelled before the delay elapses (i.e. the load
+    /// finished quickly), the indicator is never shown.
+    /// </summary>
+    private async Task ShowLoadingIndicatorAfterDelayAsync(CancellationToken ct)
+    {
+        try
+        {
+            await Task.Delay(LoadingIndicatorDelay, ct);
+
+            // Guard against race: Task.Delay can complete just before
+            // the finally block calls Cancel(). By the time this
+            // continuation runs the token will be cancelled, so
+            // re-check to avoid setting the flag after the load
+            // already finished.
+            if (!ct.IsCancellationRequested)
+            {
+                _loadingShownTimestamp = Stopwatch.GetTimestamp();
+                IsLoadingMedia = true;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Load completed before the delay — nothing to show.
+        }
+    }
+
+    /// <summary>
+    /// Hides the loading indicator after a delay, ensuring a minimum visible
+    /// duration so the spinner doesn't appear as a brief distracting flash.
+    /// </summary>
+    private async Task HideLoadingAfterDelayAsync(TimeSpan delay)
+    {
+        await Task.Delay(delay);
+        IsLoadingMedia = false;
     }
 
     /// <summary>

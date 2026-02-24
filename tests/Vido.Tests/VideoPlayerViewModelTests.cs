@@ -234,6 +234,70 @@ public class VideoPlayerViewModelTests : IDisposable
         Assert.Equal(expected, result);
     }
 
+    // ── IsLoadingMedia ──
+
+    [Fact]
+    public async Task LoadAndPlayAsync_SetsIsLoadingMedia_True_Then_False()
+    {
+        var dir = CreateTempVideoDir("test.mp4");
+        try
+        {
+            var tcs = new TaskCompletionSource();
+            _engine.LoadAsync(Arg.Any<string>()).Returns(tcs.Task);
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            Assert.False(_sut.IsLoadingMedia);
+
+            var task = _sut.LoadAndPlayAsync(Path.Combine(dir, "test.mp4"));
+
+            // The loading indicator only appears after a 500 ms delay,
+            // so we wait long enough for that threshold to elapse.
+            await Task.Delay(650);
+            Assert.True(_sut.IsLoadingMedia);
+
+            tcs.SetResult();
+            await task;
+
+            // The spinner stays visible for a minimum 500 ms display period
+            // after it was shown. Wait for that to elapse.
+            await Task.Delay(600);
+            Assert.False(_sut.IsLoadingMedia);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task LoadAndPlayAsync_ResetsIsLoadingMedia_OnFailure()
+    {
+        _engine.LoadAsync(Arg.Any<string>())
+            .Returns(Task.FromException(new InvalidOperationException("test error")));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            _sut.LoadAndPlayAsync(Path.Combine(Path.GetTempPath(), "nonexistent.mp4")));
+
+        Assert.False(_sut.IsLoadingMedia);
+    }
+
+    [Fact]
+    public async Task LoadAndPlayAsync_FastLoad_NeverShowsLoadingIndicator()
+    {
+        var dir = CreateTempVideoDir("fast.mp4");
+        try
+        {
+            // LoadAsync returns immediately — simulates a fast local load.
+            _engine.LoadAsync(Arg.Any<string>()).Returns(Task.CompletedTask);
+            _engine.Duration.Returns(TimeSpan.FromMinutes(1));
+
+            await _sut.LoadAndPlayAsync(Path.Combine(dir, "fast.mp4"));
+
+            // Even after waiting past the 500 ms threshold, the indicator
+            // should never have been shown because the load already finished.
+            await Task.Delay(650);
+            Assert.False(_sut.IsLoadingMedia);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
     // ── GetAdjacentVideoFile ──
 
     [Fact]
@@ -254,7 +318,7 @@ public class VideoPlayerViewModelTests : IDisposable
             var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
             _engine.Duration.Returns(TimeSpan.FromMinutes(5));
 
-            // Load the last file
+            await _sut.SetExplorerRootAsync(dir);
             await _sut.LoadAndPlayAsync(files[2]);
 
             // GetAdjacentVideoFile should wrap to first
@@ -273,7 +337,7 @@ public class VideoPlayerViewModelTests : IDisposable
             var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
             _engine.Duration.Returns(TimeSpan.FromMinutes(5));
 
-            // Load the first file
+            await _sut.SetExplorerRootAsync(dir);
             await _sut.LoadAndPlayAsync(files[0]);
 
             // GetAdjacentVideoFile(-1) should wrap to last
@@ -292,6 +356,7 @@ public class VideoPlayerViewModelTests : IDisposable
             var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
             _engine.Duration.Returns(TimeSpan.FromMinutes(5));
 
+            await _sut.SetExplorerRootAsync(dir);
             await _sut.LoadAndPlayAsync(files[0]);
 
             var next = _sut.GetAdjacentVideoFile(1);
@@ -332,6 +397,7 @@ public class VideoPlayerViewModelTests : IDisposable
             var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
             _engine.Duration.Returns(TimeSpan.FromMinutes(5));
 
+            await _sut.SetExplorerRootAsync(dir);
             await _sut.LoadAndPlayAsync(files[0]);
             _sut.ToggleShuffle(); // builds the shuffle playlist
 
@@ -359,6 +425,7 @@ public class VideoPlayerViewModelTests : IDisposable
             var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
             _engine.Duration.Returns(TimeSpan.FromMinutes(5));
 
+            await _sut.SetExplorerRootAsync(dir);
             await _sut.LoadAndPlayAsync(files[1]); // load middle file
             _sut.ToggleShuffle();
 
@@ -436,6 +503,7 @@ public class VideoPlayerViewModelTests : IDisposable
             var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
             _engine.Duration.Returns(TimeSpan.FromMinutes(5));
 
+            await _sut.SetExplorerRootAsync(dir);
             await _sut.LoadAndPlayAsync(files[0]);
             _sut.ToggleShuffle();
 
@@ -457,6 +525,7 @@ public class VideoPlayerViewModelTests : IDisposable
             var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
             _engine.Duration.Returns(TimeSpan.FromMinutes(5));
 
+            await _sut.SetExplorerRootAsync(dir);
             await _sut.LoadAndPlayAsync(files[0]);
 
             var next = _sut.GetNextFile();
