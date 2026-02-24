@@ -6,6 +6,7 @@ using Vido.Core.FileSystem;
 using Vido.Core.Formatting;
 using Vido.Core.Logging;
 using Vido.Core.Playback;
+using Vido.Core.Plugin;
 using Vido.Core.Settings;
 using Vido.Core.State;
 
@@ -22,6 +23,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     private readonly ILogService _logService;
     private readonly ISettingsService _settingsService;
     private readonly IStateService _stateService;
+    private readonly IContributionRegistry _contributionRegistry;
     private bool _disposed;
     private bool _isSeeking;
     private double _lastSavedPositionSeconds;
@@ -153,13 +155,14 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     public event Action<FrameData>? FrameReady;
 
     public VideoPlayerViewModel(IVideoEngine engine, IEventBus eventBus, ILogService logService,
-        ISettingsService settingsService, IStateService stateService)
+        ISettingsService settingsService, IStateService stateService, IContributionRegistry contributionRegistry)
     {
         _engine = engine;
         _eventBus = eventBus;
         _logService = logService;
         _settingsService = settingsService;
         _stateService = stateService;
+        _contributionRegistry = contributionRegistry;
 
         // Initialize from persisted settings (use backing fields to avoid triggering save handlers)
         var settings = settingsService.Current;
@@ -221,10 +224,22 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         // Otherwise, advance to next file (respecting shuffle mode).
         if (!IsLooping)
         {
-            var next = GetNextFile();
-            if (next is not null)
+            // Delegate to playlist provider if one is registered and active
+            var provider = _contributionRegistry.GetPlaylistProvider();
+            if (provider is { IsActive: true })
             {
-                _ = LoadAndPlayAsync(next);
+                var next = provider.GetNextFile();
+                if (next is not null)
+                {
+                    _ = LoadAndPlayAsync(next);
+                    return;
+                }
+            }
+
+            var nextFile = GetNextFile();
+            if (nextFile is not null)
+            {
+                _ = LoadAndPlayAsync(nextFile);
             }
         }
     }
@@ -498,18 +513,42 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     [RelayCommand]
     public async Task SkipPrevious()
     {
-        var prev = IsShuffling ? GetShuffleFile(-1) : GetAdjacentVideoFile(-1);
-        if (prev is not null)
-            await LoadAndPlayAsync(prev);
+        // Delegate to playlist provider if one is registered and active
+        var provider = _contributionRegistry.GetPlaylistProvider();
+        if (provider is { IsActive: true })
+        {
+            var prev = provider.GetPreviousFile();
+            if (prev is not null)
+            {
+                await LoadAndPlayAsync(prev);
+                return;
+            }
+        }
+
+        var prevFile = IsShuffling ? GetShuffleFile(-1) : GetAdjacentVideoFile(-1);
+        if (prevFile is not null)
+            await LoadAndPlayAsync(prevFile);
     }
 
     /// <summary>Skips to the next video file in the folder (wraps around).</summary>
     [RelayCommand]
     public async Task SkipNext()
     {
-        var next = IsShuffling ? GetShuffleFile(1) : GetAdjacentVideoFile(1);
-        if (next is not null)
-            await LoadAndPlayAsync(next);
+        // Delegate to playlist provider if one is registered and active
+        var provider = _contributionRegistry.GetPlaylistProvider();
+        if (provider is { IsActive: true })
+        {
+            var next = provider.GetNextFile();
+            if (next is not null)
+            {
+                await LoadAndPlayAsync(next);
+                return;
+            }
+        }
+
+        var nextFile = IsShuffling ? GetShuffleFile(1) : GetAdjacentVideoFile(1);
+        if (nextFile is not null)
+            await LoadAndPlayAsync(nextFile);
     }
 
     /// <summary>Toggles mute state.</summary>

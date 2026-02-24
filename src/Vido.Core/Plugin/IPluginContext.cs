@@ -127,4 +127,19 @@ public interface IPluginContext
     /// Only applicable when the item was registered with a non-null overlayFactory.
     /// </summary>
     void ToggleControlBarOverlay(string contributionId, bool visible);
+
+    // ── Playlist Provider ──
+
+    /// <summary>
+    /// Registers an <see cref="IPlaylistProvider"/> that overrides Vido's built-in
+    /// next/previous file navigation. Only one provider may be active at a time;
+    /// registering a second provider replaces the first (with a warning log).
+    /// </summary>
+    void RegisterPlaylistProvider(IPlaylistProvider provider);
+
+    /// <summary>
+    /// Removes the playlist provider previously registered by this plugin.
+    /// Called automatically during plugin deactivation.
+    /// </summary>
+    void UnregisterPlaylistProvider();
 }

@@ -20,6 +20,7 @@ public sealed class PluginContext : IPluginContext
     private readonly IKeyboardShortcutService _keyboardShortcutService;
     private readonly List<string> _registeredContextMenuIds = [];
     private readonly List<string> _registeredKeyBindingIds = [];
+    private bool _hasPlaylistProvider;
 
     public PluginManifest Manifest { get; }
     public string PluginDirectory { get; }
@@ -258,6 +259,25 @@ public sealed class PluginContext : IPluginContext
         _contributions.ToggleControlBarOverlay(fullId, visible);
     }
 
+    public void RegisterPlaylistProvider(IPlaylistProvider provider)
+    {
+        ArgumentNullException.ThrowIfNull(provider);
+
+        _contributions.RegisterPlaylistProvider(Manifest.Id, provider);
+        _hasPlaylistProvider = true;
+        Logger.Debug($"Plugin '{Manifest.Id}' registered playlist provider", "PluginHost");
+    }
+
+    public void UnregisterPlaylistProvider()
+    {
+        if (_hasPlaylistProvider)
+        {
+            _contributions.UnregisterPlaylistProvider(Manifest.Id);
+            _hasPlaylistProvider = false;
+            Logger.Debug($"Plugin '{Manifest.Id}' unregistered playlist provider", "PluginHost");
+        }
+    }
+
     /// <summary>
     /// Cleans up all registrations made by this plugin context.
     /// Called during plugin deactivation.
@@ -273,6 +293,13 @@ public sealed class PluginContext : IPluginContext
         foreach (var id in _registeredKeyBindingIds)
             _keyboardShortcutService.Unregister(id);
         _registeredKeyBindingIds.Clear();
+
+        // Unregister playlist provider
+        if (_hasPlaylistProvider)
+        {
+            _contributions.UnregisterPlaylistProvider(Manifest.Id);
+            _hasPlaylistProvider = false;
+        }
 
         // Unregister all UI contributions
         _contributions.UnregisterAll(Manifest.Id);
