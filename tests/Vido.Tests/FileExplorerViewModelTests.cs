@@ -35,7 +35,7 @@ public sealed class FileExplorerViewModelTests
     }
 
     [Fact]
-    public void OpenFolder_PopulatesRootNodes()
+    public async Task OpenFolder_PopulatesRootNodes()
     {
         var testDir = CreateTempDir();
         var nodes = new List<FileNode>
@@ -43,9 +43,9 @@ public sealed class FileExplorerViewModelTests
             new(Path.Combine(testDir, "a.txt"), false),
             new(Path.Combine(testDir, "sub"), true)
         };
-        _fileSystemService.GetChildren(testDir).Returns(nodes);
+        _fileSystemService.GetChildrenAsync(testDir).Returns(nodes);
 
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
 
         Assert.True(_sut.HasFolderOpen);
         Assert.Equal(testDir, _sut.FolderPath);
@@ -54,48 +54,48 @@ public sealed class FileExplorerViewModelTests
     }
 
     [Fact]
-    public void OpenFolder_SetsFolderName()
+    public async Task OpenFolder_SetsFolderName()
     {
         var testDir = CreateTempDir();
-        _fileSystemService.GetChildren(testDir).Returns(new List<FileNode>());
+        _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>());
 
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
 
         Assert.Equal(Path.GetFileName(testDir), _sut.FolderName);
         CleanupDir(testDir);
     }
 
     [Fact]
-    public void OpenFolder_PersistsLastOpenFolder()
+    public async Task OpenFolder_PersistsLastOpenFolder()
     {
         var testDir = CreateTempDir();
-        _fileSystemService.GetChildren(testDir).Returns(new List<FileNode>());
+        _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>());
 
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
 
         Assert.Equal(testDir, _appState.LastOpenFolder);
         CleanupDir(testDir);
     }
 
     [Fact]
-    public void OpenFolder_IgnoresNonExistentPath()
+    public async Task OpenFolder_IgnoresNonExistentPath()
     {
-        _sut.OpenFolder(@"C:\NonExistent_" + Guid.NewGuid());
+        await _sut.OpenFolderAsync(@"C:\NonExistent_" + Guid.NewGuid());
 
         Assert.False(_sut.HasFolderOpen);
         Assert.Empty(_sut.RootNodes);
     }
 
     [Fact]
-    public void CloseFolder_ClearsEverything()
+    public async Task CloseFolder_ClearsEverything()
     {
         var testDir = CreateTempDir();
-        _fileSystemService.GetChildren(testDir).Returns(new List<FileNode>
+        _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>
         {
             new(Path.Combine(testDir, "file.txt"), false)
         });
 
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
         Assert.True(_sut.HasFolderOpen);
 
         _sut.CloseFolder();
@@ -109,25 +109,25 @@ public sealed class FileExplorerViewModelTests
     }
 
     [Fact]
-    public void OpenFolder_ClearsPreviousFolder()
+    public async Task OpenFolder_ClearsPreviousFolder()
     {
         var dir1 = CreateTempDir();
         var dir2 = CreateTempDir();
 
-        _fileSystemService.GetChildren(dir1).Returns(new List<FileNode>
+        _fileSystemService.GetChildrenAsync(dir1).Returns(new List<FileNode>
         {
             new(Path.Combine(dir1, "a.txt"), false)
         });
-        _fileSystemService.GetChildren(dir2).Returns(new List<FileNode>
+        _fileSystemService.GetChildrenAsync(dir2).Returns(new List<FileNode>
         {
             new(Path.Combine(dir2, "b.txt"), false),
             new(Path.Combine(dir2, "c.txt"), false)
         });
 
-        _sut.OpenFolder(dir1);
+        await _sut.OpenFolderAsync(dir1);
         Assert.Single(_sut.RootNodes);
 
-        _sut.OpenFolder(dir2);
+        await _sut.OpenFolderAsync(dir2);
         Assert.Equal(2, _sut.RootNodes.Count);
         Assert.Equal(dir2, _sut.FolderPath);
 
@@ -136,24 +136,24 @@ public sealed class FileExplorerViewModelTests
     }
 
     [Fact]
-    public void ExpandNode_DelegatesToFileSystemService()
+    public async Task ExpandNode_DelegatesToFileSystemService()
     {
         var node = new FileNode(@"C:\Test", isDirectory: true);
-        _fileSystemService.GetChildren(node.FullPath).Returns(new List<FileNode>());
+        _fileSystemService.GetChildrenAsync(node.FullPath).Returns(new List<FileNode>());
 
-        _sut.ExpandNode(node);
+        await _sut.ExpandNodeAsync(node);
 
-        _fileSystemService.Received(1).GetChildren(node.FullPath);
+        await _fileSystemService.Received(1).GetChildrenAsync(node.FullPath);
     }
 
     [Fact]
-    public void RestoreLastFolder_OpensPersistedFolder()
+    public async Task RestoreLastFolder_OpensPersistedFolder()
     {
         var testDir = CreateTempDir();
         _appState.LastOpenFolder = testDir;
-        _fileSystemService.GetChildren(testDir).Returns(new List<FileNode>());
+        _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>());
 
-        _sut.RestoreLastFolder();
+        await _sut.RestoreLastFolderAsync();
 
         Assert.True(_sut.HasFolderOpen);
         Assert.Equal(testDir, _sut.FolderPath);
@@ -161,31 +161,31 @@ public sealed class FileExplorerViewModelTests
     }
 
     [Fact]
-    public void RestoreLastFolder_NoOp_WhenNoPersistedFolder()
+    public async Task RestoreLastFolder_NoOp_WhenNoPersistedFolder()
     {
         _appState.LastOpenFolder = null;
-        _sut.RestoreLastFolder();
+        await _sut.RestoreLastFolderAsync();
         Assert.False(_sut.HasFolderOpen);
     }
 
     [Fact]
-    public void RestoreLastFolder_NoOp_WhenPersistedFolderDeleted()
+    public async Task RestoreLastFolder_NoOp_WhenPersistedFolderDeleted()
     {
         _appState.LastOpenFolder = @"C:\NonExistent_" + Guid.NewGuid();
-        _sut.RestoreLastFolder();
+        await _sut.RestoreLastFolderAsync();
         Assert.False(_sut.HasFolderOpen);
     }
 
     [Fact]
-    public void PropertyChanged_RaisedForHasFolderOpen()
+    public async Task PropertyChanged_RaisedForHasFolderOpen()
     {
         var testDir = CreateTempDir();
-        _fileSystemService.GetChildren(testDir).Returns(new List<FileNode>());
+        _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>());
 
         var raised = new List<string?>();
         _sut.PropertyChanged += (_, e) => raised.Add(e.PropertyName);
 
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
 
         Assert.Contains(nameof(FileExplorerViewModel.HasFolderOpen), raised);
         Assert.Contains(nameof(FileExplorerViewModel.FolderPath), raised);
@@ -196,7 +196,7 @@ public sealed class FileExplorerViewModelTests
     //  Rescan tests 
 
     [Fact]
-    public void RescanFolder_ReloadsFromDisk()
+    public async Task RescanFolder_ReloadsFromDisk()
     {
         var testDir = CreateTempDir();
         var initialNodes = new List<FileNode> { new(Path.Combine(testDir, "a.txt"), false) };
@@ -206,44 +206,44 @@ public sealed class FileExplorerViewModelTests
             new(Path.Combine(testDir, "b.txt"), false)
         };
 
-        _fileSystemService.GetChildren(testDir)
+        _fileSystemService.GetChildrenAsync(testDir)
             .Returns(initialNodes, updatedNodes);
 
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
         Assert.Single(_sut.RootNodes);
 
-        _sut.RescanFolder();
+        await _sut.RescanFolderAsync();
         Assert.Equal(2, _sut.RootNodes.Count);
         CleanupDir(testDir);
     }
 
     [Fact]
-    public void RescanFolder_NoOp_WhenNoFolderOpen()
+    public async Task RescanFolder_NoOp_WhenNoFolderOpen()
     {
-        _sut.RescanFolder();
+        await _sut.RescanFolderAsync();
         Assert.Empty(_sut.RootNodes);
     }
 
     [Fact]
-    public void RescanFolder_PreservesHiddenFiles()
+    public async Task RescanFolder_PreservesHiddenFiles()
     {
         var testDir = CreateTempDir();
         var hiddenPath = Path.Combine(testDir, "hidden.txt");
         var visiblePath = Path.Combine(testDir, "visible.txt");
 
-        _fileSystemService.GetChildren(testDir).Returns(new List<FileNode>
+        _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>
         {
             new(hiddenPath, false),
             new(visiblePath, false)
         });
 
         _appState.HiddenFiles.Add(hiddenPath);
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
 
         // Hidden file is excluded (ShowHiddenFiles is false by default)
         Assert.Single(_sut.RootNodes);
 
-        _sut.RescanFolder();
+        await _sut.RescanFolderAsync();
 
         // Still excluded after rescan  hidden files persist
         Assert.Single(_sut.RootNodes);
@@ -254,16 +254,16 @@ public sealed class FileExplorerViewModelTests
     //  HideFile tests 
 
     [Fact]
-    public void HideFile_RemovesNodeFromTree_WhenShowHiddenFalse()
+    public async Task HideFile_RemovesNodeFromTree_WhenShowHiddenFalse()
     {
         var testDir = CreateTempDir();
         var fileNode = new FileNode(Path.Combine(testDir, "hide-me.txt"), false);
         var keepNode = new FileNode(Path.Combine(testDir, "keep.txt"), false);
 
-        _fileSystemService.GetChildren(testDir)
+        _fileSystemService.GetChildrenAsync(testDir)
             .Returns(new List<FileNode> { fileNode, keepNode });
 
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
         Assert.Equal(2, _sut.RootNodes.Count);
 
         _sut.HideFile(fileNode);
@@ -274,16 +274,16 @@ public sealed class FileExplorerViewModelTests
     }
 
     [Fact]
-    public void HideFile_MarksNodeHidden_WhenShowHiddenTrue()
+    public async Task HideFile_MarksNodeHidden_WhenShowHiddenTrue()
     {
         var testDir = CreateTempDir();
         var fileNode = new FileNode(Path.Combine(testDir, "dim-me.txt"), false);
 
-        _fileSystemService.GetChildren(testDir)
+        _fileSystemService.GetChildrenAsync(testDir)
             .Returns(new List<FileNode> { fileNode });
 
         _sut.ShowHiddenFiles = true;
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
 
         _sut.HideFile(fileNode);
 
@@ -294,14 +294,14 @@ public sealed class FileExplorerViewModelTests
     }
 
     [Fact]
-    public void HideFile_AddsToHiddenFilesState()
+    public async Task HideFile_AddsToHiddenFilesState()
     {
         var testDir = CreateTempDir();
         var fileNode = new FileNode(Path.Combine(testDir, "hide.txt"), false);
-        _fileSystemService.GetChildren(testDir)
+        _fileSystemService.GetChildrenAsync(testDir)
             .Returns(new List<FileNode> { fileNode });
 
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
         _sut.HideFile(fileNode);
 
         Assert.Contains(fileNode.FullPath, _appState.HiddenFiles);
@@ -309,15 +309,15 @@ public sealed class FileExplorerViewModelTests
     }
 
     [Fact]
-    public void HideFile_NoDuplicatesInHiddenFiles()
+    public async Task HideFile_NoDuplicatesInHiddenFiles()
     {
         var testDir = CreateTempDir();
         var fileNode = new FileNode(Path.Combine(testDir, "dup.txt"), false);
-        _fileSystemService.GetChildren(testDir)
+        _fileSystemService.GetChildrenAsync(testDir)
             .Returns(new List<FileNode> { fileNode });
 
         _sut.ShowHiddenFiles = true;
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
         _sut.HideFile(fileNode);
         _sut.HideFile(fileNode);
 
@@ -333,14 +333,14 @@ public sealed class FileExplorerViewModelTests
     }
 
     [Fact]
-    public void HideFile_WorksForFolders()
+    public async Task HideFile_WorksForFolders()
     {
         var testDir = CreateTempDir();
         var folderNode = new FileNode(Path.Combine(testDir, "SubFolder"), true);
-        _fileSystemService.GetChildren(testDir)
+        _fileSystemService.GetChildrenAsync(testDir)
             .Returns(new List<FileNode> { folderNode });
 
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
         _sut.HideFile(folderNode);
 
         Assert.Empty(_sut.RootNodes);
@@ -372,23 +372,23 @@ public sealed class FileExplorerViewModelTests
     //  ShowHiddenFiles toggle 
 
     [Fact]
-    public void ToggleShowHiddenFiles_TogglesProperty()
+    public async Task ToggleShowHiddenFiles_TogglesProperty()
     {
         Assert.False(_sut.ShowHiddenFiles);
-        _sut.ToggleShowHiddenFiles();
+        await _sut.ToggleShowHiddenFilesAsync();
         Assert.True(_sut.ShowHiddenFiles);
-        _sut.ToggleShowHiddenFiles();
+        await _sut.ToggleShowHiddenFilesAsync();
         Assert.False(_sut.ShowHiddenFiles);
     }
 
     [Fact]
-    public void ShowHiddenFiles_True_IncludesHiddenNodesAsMarked()
+    public async Task ShowHiddenFiles_True_IncludesHiddenNodesAsMarked()
     {
         var testDir = CreateTempDir();
         var hiddenPath = Path.Combine(testDir, "hidden.txt");
         var visiblePath = Path.Combine(testDir, "visible.txt");
 
-        _fileSystemService.GetChildren(testDir).Returns(new List<FileNode>
+        _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>
         {
             new(hiddenPath, false),
             new(visiblePath, false)
@@ -396,7 +396,7 @@ public sealed class FileExplorerViewModelTests
 
         _appState.HiddenFiles.Add(hiddenPath);
         _sut.ShowHiddenFiles = true;
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
 
         Assert.Equal(2, _sut.RootNodes.Count);
         var hidden = _sut.RootNodes.First(n => n.FullPath == hiddenPath);
@@ -407,13 +407,13 @@ public sealed class FileExplorerViewModelTests
     }
 
     [Fact]
-    public void ShowHiddenFiles_False_ExcludesHiddenNodes()
+    public async Task ShowHiddenFiles_False_ExcludesHiddenNodes()
     {
         var testDir = CreateTempDir();
         var hiddenPath = Path.Combine(testDir, "hidden.txt");
         var visiblePath = Path.Combine(testDir, "visible.txt");
 
-        _fileSystemService.GetChildren(testDir).Returns(new List<FileNode>
+        _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>
         {
             new(hiddenPath, false),
             new(visiblePath, false)
@@ -421,7 +421,7 @@ public sealed class FileExplorerViewModelTests
 
         _appState.HiddenFiles.Add(hiddenPath);
         _sut.ShowHiddenFiles = false;
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
 
         Assert.Single(_sut.RootNodes);
         Assert.Equal("visible.txt", _sut.RootNodes[0].Name);
@@ -429,46 +429,46 @@ public sealed class FileExplorerViewModelTests
     }
 
     [Fact]
-    public void ToggleShowHiddenFiles_RefreshesTreeWithHiddenNodes()
+    public async Task ToggleShowHiddenFiles_RefreshesTreeWithHiddenNodes()
     {
         var testDir = CreateTempDir();
         var hiddenPath = Path.Combine(testDir, "hidden.txt");
         var visiblePath = Path.Combine(testDir, "visible.txt");
 
-        _fileSystemService.GetChildren(testDir).Returns(new List<FileNode>
+        _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>
         {
             new(hiddenPath, false),
             new(visiblePath, false)
         });
 
         _appState.HiddenFiles.Add(hiddenPath);
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
 
         // Initially hidden files are excluded
         Assert.Single(_sut.RootNodes);
 
         // Toggle on — hidden node appears marked
-        _sut.ToggleShowHiddenFiles();
+        await _sut.ToggleShowHiddenFilesAsync();
         Assert.Equal(2, _sut.RootNodes.Count);
         var hiddenNode = _sut.RootNodes.First(n => n.FullPath == hiddenPath);
         Assert.True(hiddenNode.IsHidden);
 
         // Toggle off — hidden node disappears again
-        _sut.ToggleShowHiddenFiles();
+        await _sut.ToggleShowHiddenFilesAsync();
         Assert.Single(_sut.RootNodes);
         Assert.Equal("visible.txt", _sut.RootNodes[0].Name);
         CleanupDir(testDir);
     }
 
     [Fact]
-    public void ExpandNode_AppliesHiddenFilter()
+    public async Task ExpandNode_AppliesHiddenFilter()
     {
         var testDir = CreateTempDir();
         var parentPath = Path.Combine(testDir, "parent");
         var hiddenChildPath = Path.Combine(parentPath, "hidden-child.txt");
         var visibleChildPath = Path.Combine(parentPath, "visible-child.txt");
 
-        _fileSystemService.GetChildren(parentPath).Returns(new List<FileNode>
+        _fileSystemService.GetChildrenAsync(parentPath).Returns(new List<FileNode>
         {
             new(hiddenChildPath, false),
             new(visibleChildPath, false)
@@ -477,7 +477,7 @@ public sealed class FileExplorerViewModelTests
         _appState.HiddenFiles.Add(hiddenChildPath);
         var parentNode = new FileNode(parentPath, isDirectory: true);
 
-        _sut.ExpandNode(parentNode);
+        await _sut.ExpandNodeAsync(parentNode);
 
         Assert.Single(parentNode.Children);
         Assert.Equal("visible-child.txt", parentNode.Children[0].Name);
@@ -487,14 +487,14 @@ public sealed class FileExplorerViewModelTests
     //  CloseFolder clears SelectedNode 
 
     [Fact]
-    public void CloseFolder_ClearsSelectedNode()
+    public async Task CloseFolder_ClearsSelectedNode()
     {
         var testDir = CreateTempDir();
         var node = new FileNode(Path.Combine(testDir, "file.txt"), false);
-        _fileSystemService.GetChildren(testDir)
+        _fileSystemService.GetChildrenAsync(testDir)
             .Returns(new List<FileNode> { node });
 
-        _sut.OpenFolder(testDir);
+        await _sut.OpenFolderAsync(testDir);
         _sut.SelectedNode = node;
 
         _sut.CloseFolder();
@@ -512,6 +512,25 @@ public sealed class FileExplorerViewModelTests
         _sut.SelectedNode = node;
 
         Assert.Contains(nameof(FileExplorerViewModel.SelectedNode), raised);
+    }
+
+    [Fact]
+    public async Task OpenFolderAsync_SetsIsLoadingDuringOperation()
+    {
+        var testDir = CreateTempDir();
+        var tcs = new TaskCompletionSource<List<FileNode>>();
+        _fileSystemService.GetChildrenAsync(testDir).Returns(tcs.Task);
+
+        Assert.False(_sut.IsLoading);
+
+        var task = _sut.OpenFolderAsync(testDir);
+        Assert.True(_sut.IsLoading);
+
+        tcs.SetResult(new List<FileNode>());
+        await task;
+
+        Assert.False(_sut.IsLoading);
+        CleanupDir(testDir);
     }
 
     private static string CreateTempDir()

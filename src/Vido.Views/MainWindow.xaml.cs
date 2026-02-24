@@ -909,7 +909,7 @@ public partial class MainWindow : Window
 
         // Wire show hidden files
         TitleBar.GetShowHiddenFiles = () => _fileExplorerViewModel.ShowHiddenFiles;
-        TitleBar.ToggleShowHiddenFilesRequested += () => _fileExplorerViewModel.ToggleShowHiddenFiles();
+        TitleBar.ToggleShowHiddenFilesRequested += () => SafeFireAndForget(_fileExplorerViewModel.ToggleShowHiddenFilesAsync());
 
         // Wire status bar item and bottom panel tab show/hide toggles
         TitleBar.ToggleStatusBarItemRequested += (registrationId, visible) =>
@@ -990,7 +990,15 @@ public partial class MainWindow : Window
         Sidebar.SetPanelContent(_fileExplorerPanel);
 
         // Restore last opened folder from state
-        _fileExplorerViewModel.RestoreLastFolder();
+        SafeFireAndForget(RestoreLastFolderAndSyncAsync());
+    }
+
+    /// <summary>
+    /// Restores the last opened folder asynchronously, then syncs dependent UI state.
+    /// </summary>
+    private async Task RestoreLastFolderAndSyncAsync()
+    {
+        await _fileExplorerViewModel.RestoreLastFolderAsync();
         TitleBar.SetCloseFolderEnabled(_fileExplorerViewModel.HasFolderOpen);
 
         // Sync explorer root to video player for skip prev/next across all folders
@@ -1057,9 +1065,9 @@ public partial class MainWindow : Window
         await _videoPlayerViewModel.LoadAndPlayAsync(filePath);
     }
 
-    private void OnFolderOpened(string path)
+    private async void OnFolderOpened(string path)
     {
-        _fileExplorerViewModel.OpenFolder(path);
+        await _fileExplorerViewModel.OpenFolderAsync(path);
         _videoPlayerViewModel.SetExplorerRoot(path);
 
         // Ensure sidebar is visible and Explorer panel is active
@@ -1077,9 +1085,9 @@ public partial class MainWindow : Window
         _videoPlayerViewModel.SetExplorerRoot(null);
     }
 
-    private void OnFolderRescanned()
+    private async void OnFolderRescanned()
     {
-        _fileExplorerViewModel.RescanFolder();
+        await _fileExplorerViewModel.RescanFolderAsync();
         _logService.Info("Folder rescanned", "Explorer");
     }
 

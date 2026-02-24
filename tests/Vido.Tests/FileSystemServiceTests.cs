@@ -156,4 +156,26 @@ public sealed class FileSystemServiceTests
 
         Directory.Delete(_testDir, recursive: true);
     }
+
+    [Fact]
+    public async Task GetChildrenAsync_ReturnsSameResultAsSync()
+    {
+        // Arrange
+        File.WriteAllText(Path.Combine(_testDir, "file.txt"), "");
+        Directory.CreateDirectory(Path.Combine(_testDir, "SubDir"));
+
+        // Act
+        var syncResult = _sut.GetChildren(_testDir);
+        var asyncResult = await _sut.GetChildrenAsync(_testDir);
+
+        // Assert
+        Assert.Equal(syncResult.Count, asyncResult.Count);
+        for (var i = 0; i < syncResult.Count; i++)
+        {
+            Assert.Equal(syncResult[i].Name, asyncResult[i].Name);
+            Assert.Equal(syncResult[i].IsDirectory, asyncResult[i].IsDirectory);
+        }
+
+        Directory.Delete(_testDir, recursive: true);
+    }
 }

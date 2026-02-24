@@ -210,12 +210,12 @@ public sealed class AddItemsTests : IDisposable
     }
 
     [Fact]
-    public void AddItems_ChangesFolderNameToCustom_WhenFolderAlreadyOpen()
+    public async Task AddItems_ChangesFolderNameToCustom_WhenFolderAlreadyOpen()
     {
         // Open a real folder first
         var realFolder = CreateSubDir("RealFolder");
-        _fileSystemService.GetChildren(realFolder).Returns(new List<FileNode>());
-        _sut.OpenFolder(realFolder);
+        _fileSystemService.GetChildrenAsync(realFolder).Returns(new List<FileNode>());
+        await _sut.OpenFolderAsync(realFolder);
 
         Assert.Equal("RealFolder", _sut.FolderName);
 
@@ -331,12 +331,12 @@ public sealed class AddItemsTests : IDisposable
     // ── Custom title logic ──
 
     [Fact]
-    public void AddItems_DoesNotChangeFolderName_WhenNothingAdded()
+    public async Task AddItems_DoesNotChangeFolderName_WhenNothingAdded()
     {
         // Open a folder
         var folder = CreateSubDir("Original");
-        _fileSystemService.GetChildren(folder).Returns(new List<FileNode>());
-        _sut.OpenFolder(folder);
+        _fileSystemService.GetChildrenAsync(folder).Returns(new List<FileNode>());
+        await _sut.OpenFolderAsync(folder);
 
         // Try to add a non-existent file
         _sut.AddItems([Path.Combine(_tempDir, "ghost.mp4")]);
@@ -346,7 +346,7 @@ public sealed class AddItemsTests : IDisposable
     }
 
     [Fact]
-    public void OpenFolder_AfterCustomTitle_RestoresRealName()
+    public async Task OpenFolder_AfterCustomTitle_RestoresRealName()
     {
         // Add items first (no folder open)
         var video = CreateFile("v.mp4");
@@ -355,8 +355,8 @@ public sealed class AddItemsTests : IDisposable
 
         // Open a real folder — should reset to folder name
         var folder = CreateSubDir("Restored");
-        _fileSystemService.GetChildren(folder).Returns(new List<FileNode>());
-        _sut.OpenFolder(folder);
+        _fileSystemService.GetChildrenAsync(folder).Returns(new List<FileNode>());
+        await _sut.OpenFolderAsync(folder);
 
         Assert.Equal("Restored", _sut.FolderName);
     }
