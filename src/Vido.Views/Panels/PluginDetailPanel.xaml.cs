@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Microsoft.Win32;
 using Vido.Views.Services;
 using Vido.Core.Logging;
 using Vido.Core.Plugin;
@@ -479,6 +480,46 @@ public partial class PluginDetailPanel : UserControl
 
     [GeneratedRegex(@"^[\d.\-]$")]
     private static partial Regex NumericRegex();
+
+    /// <summary>
+    /// Handles the Browse button click for a folder path setting.
+    /// Opens a folder browser dialog and updates the setting value.
+    /// </summary>
+    private void OnBrowseFolderClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn) return;
+
+        // Walk up the visual tree to find the SettingDisplayItem DataContext
+        DependencyObject? current = btn;
+        ViewModels.SettingDisplayItem? settingItem = null;
+        while (current is not null)
+        {
+            if (current is FrameworkElement fe && fe.DataContext is ViewModels.SettingDisplayItem item)
+            {
+                settingItem = item;
+                break;
+            }
+            current = VisualTreeHelper.GetParent(current);
+        }
+        if (settingItem is null) return;
+
+        var dialog = new OpenFolderDialog
+        {
+            Title = settingItem.Title,
+            Multiselect = false,
+        };
+
+        if (!string.IsNullOrWhiteSpace(settingItem.StringValue) &&
+            Directory.Exists(settingItem.StringValue))
+        {
+            dialog.InitialDirectory = settingItem.StringValue;
+        }
+
+        if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
+        {
+            settingItem.SetFolderPath(dialog.FolderName);
+        }
+    }
 
     /// <summary>
     /// Finds a named child element in the visual tree.

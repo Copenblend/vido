@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using Microsoft.Win32;
 using Vido.Core.Plugin;
 using Vido.Core.Settings;
 using Vido.ViewModels;
@@ -17,11 +18,11 @@ public partial class SettingsPage : UserControl
 {
     private readonly SettingsViewModel _viewModel;
 
-    public SettingsPage(ISettingsService settingsService, IPluginHost? pluginHost)
+    public SettingsPage(ISettingsService settingsService, IPluginHost? pluginHost, AppSettingsStore? appSettingsStore = null)
     {
         InitializeComponent();
 
-        var appSettingsStore = new AppSettingsStore(settingsService);
+        appSettingsStore ??= new AppSettingsStore(settingsService);
         _viewModel = new SettingsViewModel(settingsService, appSettingsStore, pluginHost);
 
         CategoriesControl.ItemsSource = _viewModel.FilteredCategories;
@@ -91,6 +92,37 @@ public partial class SettingsPage : UserControl
         {
             var settingItem = FindParentSettingDisplayItem(btn);
             settingItem?.AddListItemCommand.Execute(null);
+        }
+    }
+
+    /// <summary>
+    /// Handles the Browse button click for a folder path setting.
+    /// Opens a folder browser dialog and updates the setting value.
+    /// </summary>
+    private void OnBrowseFolderClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn)
+        {
+            var settingItem = FindParentSettingDisplayItem(btn);
+            if (settingItem is null) return;
+
+            var dialog = new OpenFolderDialog
+            {
+                Title = settingItem.Title,
+                Multiselect = false,
+            };
+
+            // Pre-select the current folder if one is set
+            if (!string.IsNullOrWhiteSpace(settingItem.StringValue) &&
+                System.IO.Directory.Exists(settingItem.StringValue))
+            {
+                dialog.InitialDirectory = settingItem.StringValue;
+            }
+
+            if (dialog.ShowDialog() == true && !string.IsNullOrWhiteSpace(dialog.FolderName))
+            {
+                settingItem.SetFolderPath(dialog.FolderName);
+            }
         }
     }
 

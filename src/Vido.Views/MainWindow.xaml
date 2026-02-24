@@ -273,6 +273,13 @@
 
             <!-- Status Bar -->
             <controls:StatusBarView x:Name="StatusBar" Grid.Row="2" />
+
+            <!-- Screenshot flash overlay (covers entire window) -->
+            <Border x:Name="ScreenshotFlashOverlay"
+                    Grid.Row="0" Grid.RowSpan="3"
+                    Background="White"
+                    Opacity="0"
+                    IsHitTestVisible="False" />
         </Grid>
     </Border>
 </Window>

@@ -261,7 +261,7 @@ public sealed class SettingContribution
     /// <summary>Supported setting type identifiers.</summary>
     public static readonly HashSet<string> ValidTypes = new(StringComparer.OrdinalIgnoreCase)
     {
-        "boolean", "string", "number", "enum"
+        "boolean", "string", "number", "enum", "folderPath"
     };
 }
 

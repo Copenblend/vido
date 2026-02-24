@@ -54,6 +54,17 @@ public sealed class AppSettings
     /// <summary>Whether hidden (user-removed) files are displayed in the explorer.</summary>
     public bool ShowHiddenFiles { get; set; } = false;
 
+    // --- Screenshot ---
+
+    /// <summary>Whether the screenshot capture button is shown in the title bar.</summary>
+    public bool ScreenshotEnabled { get; set; } = false;
+
+    /// <summary>
+    /// Directory where screenshots are saved.
+    /// When empty, defaults to <c>%USERPROFILE%\Pictures\Screenshots</c>.
+    /// </summary>
+    public string ScreenshotDirectory { get; set; } = string.Empty;
+
     // --- Plugins ---
 
     /// <summary>Whether the Installed section in the Plugin Manager is expanded.</summary>
@@ -129,6 +140,8 @@ public sealed class AppSettings
         RightPanelCollapsed = false;
         RightPanelWidth = 300;
         ShowHiddenFiles = false;
+        ScreenshotEnabled = false;
+        ScreenshotDirectory = string.Empty;
         PluginInstalledSectionExpanded = true;
         PluginAvailableSectionExpanded = true;
         PluginDirectories = [];

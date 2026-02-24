@@ -59,6 +59,23 @@ public partial class SettingsViewModel : ObservableObject
         item?.Reload();
     }
 
+    /// <summary>Reference to the screenshot directory setting item for conditional visibility.</summary>
+    private SettingDisplayItem? _screenshotDirectoryItem;
+
+    private void OnAppSettingChanged(string key)
+    {
+        if (key.Equals("screenshot.enabled", StringComparison.OrdinalIgnoreCase))
+        {
+            UpdateScreenshotDirectoryVisibility();
+        }
+    }
+
+    private void UpdateScreenshotDirectoryVisibility()
+    {
+        if (_screenshotDirectoryItem is null) return;
+        _screenshotDirectoryItem.IsSettingVisible = _appSettingsStore.Get("screenshot.enabled", false);
+    }
+
     /// <summary>
     /// Rebuilds plugin settings categories. Call after a plugin is
     /// enabled/disabled/installed/uninstalled.
@@ -154,6 +171,39 @@ public partial class SettingsViewModel : ObservableObject
             .Select(d => new SettingDisplayItem(d, _appSettingsStore))
             .ToList();
         AllCategories.Add(new SettingsCategoryViewModel("Plugins", pluginItems));
+
+        // ── Screenshot ──
+        var screenshotDefinitions = new List<SettingContribution>
+        {
+            new()
+            {
+                Id = "screenshot.enabled",
+                Type = "boolean",
+                Title = "Enable Screenshot Capture",
+                Description = "Show a camera button in the title bar for capturing full-window screenshots.",
+                Default = false
+            },
+            new()
+            {
+                Id = "screenshot.directory",
+                Type = "folderPath",
+                Title = "Screenshot Save Directory",
+                Description = "Folder where screenshots are saved. Leave empty to use the default Pictures\\Screenshots folder.",
+                Default = ""
+            },
+        };
+
+        var screenshotItems = screenshotDefinitions
+            .Select(d => new SettingDisplayItem(d, _appSettingsStore))
+            .ToList();
+        AllCategories.Add(new SettingsCategoryViewModel("Screenshot", screenshotItems));
+
+        // Set initial visibility of the directory setting based on the enabled flag
+        _screenshotDirectoryItem = screenshotItems.FirstOrDefault(s => s.Id == "screenshot.directory");
+        UpdateScreenshotDirectoryVisibility();
+
+        // Listen for changes to toggle the directory setting visibility
+        _appSettingsStore.SettingChanged += OnAppSettingChanged;
     }
 
     /// <summary>

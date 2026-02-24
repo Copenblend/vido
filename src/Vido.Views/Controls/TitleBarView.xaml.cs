@@ -260,6 +260,9 @@ public partial class TitleBarView : UserControl
     /// <summary>Raised when Help > Enter Repository Code is clicked.</summary>
     public event Action? EnterRepositoryCodeRequested;
 
+    /// <summary>Raised when the screenshot button is clicked.</summary>
+    public event Action? ScreenshotRequested;
+
     /// <summary>
     /// Function that returns the current list of recent files.
     /// Set by MainWindow so TitleBarView can populate the submenu without
@@ -449,6 +452,99 @@ public partial class TitleBarView : UserControl
         EnterRepositoryCodeRequested?.Invoke();
     }
 
+    private void OnScreenshotClick(object sender, RoutedEventArgs e)
+    {
+        ScreenshotRequested?.Invoke();
+    }
+
+    /// <summary>The screenshot button instance, created on demand.</summary>
+    private Button? _screenshotButton;
+
+    /// <summary>Shows or hides the screenshot button in the title bar toolbar area.</summary>
+    public void SetScreenshotButtonVisible(bool visible)
+    {
+        if (visible)
+        {
+            if (_screenshotButton is null)
+            {
+                _screenshotButton = CreateScreenshotButton();
+            }
+
+            EnsureToolbarPanelExists();
+
+            // Remove first to avoid duplicate, then add at end
+            _pluginToolbarPanel!.Children.Remove(_screenshotButton);
+            _pluginToolbarPanel.Children.Add(_screenshotButton);
+            UpdatePluginToolbarVisibility();
+        }
+        else if (_screenshotButton is not null && _pluginToolbarPanel is not null)
+        {
+            _pluginToolbarPanel.Children.Remove(_screenshotButton);
+            UpdatePluginToolbarVisibility();
+        }
+    }
+
+    /// <summary>Creates the screenshot button styled identically to plugin toolbar buttons.</summary>
+    private Button CreateScreenshotButton()
+    {
+        // Camera icon: body path + lens ellipse
+        var bodyPath = new System.Windows.Shapes.Path
+        {
+            Data = System.Windows.Media.Geometry.Parse("M 2,5 L 5,5 6,3 10,3 11,5 14,5 14,13 2,13 Z"),
+            StrokeThickness = 1,
+            Fill = System.Windows.Media.Brushes.Transparent,
+        };
+        bodyPath.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "PrimaryForegroundBrush");
+
+        var lensEllipse = new System.Windows.Shapes.Ellipse
+        {
+            Width = 5,
+            Height = 5,
+            StrokeThickness = 1,
+            Fill = System.Windows.Media.Brushes.Transparent,
+        };
+        lensEllipse.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "PrimaryForegroundBrush");
+        Canvas.SetLeft(lensEllipse, 5.5);
+        Canvas.SetTop(lensEllipse, 7);
+
+        var canvas = new Canvas { Width = 16, Height = 16 };
+        canvas.Children.Add(bodyPath);
+        canvas.Children.Add(lensEllipse);
+
+        var button = new Button
+        {
+            ToolTip = "Take Screenshot",
+            Content = canvas,
+            Height = 22,
+            Background = System.Windows.Media.Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Cursor = System.Windows.Input.Cursors.Hand,
+            VerticalAlignment = VerticalAlignment.Center,
+            Padding = new Thickness(4, 2, 4, 2),
+            VerticalContentAlignment = VerticalAlignment.Center,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+        };
+
+        // Custom template matching plugin toolbar button style
+        var bdName = "Bd";
+        var template = new ControlTemplate(typeof(Button));
+        var borderFactory = new FrameworkElementFactory(typeof(Border), bdName);
+        borderFactory.SetValue(Border.BackgroundProperty, System.Windows.Media.Brushes.Transparent);
+        borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
+        borderFactory.SetValue(Border.PaddingProperty, new Thickness(6, 2, 6, 2));
+        borderFactory.AppendChild(new FrameworkElementFactory(typeof(ContentPresenter)));
+
+        var hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        hoverTrigger.Setters.Add(new Setter(Border.BackgroundProperty,
+            new DynamicResourceExtension("HoverBackgroundBrush"), bdName));
+        template.Triggers.Add(hoverTrigger);
+        template.VisualTree = borderFactory;
+        button.Template = template;
+
+        button.Click += OnScreenshotClick;
+        return button;
+    }
+
     private void OnRecentFilesSubmenuOpened(object sender, RoutedEventArgs e)
     {
         RecentFilesMenu.Items.Clear();
@@ -600,41 +696,60 @@ public partial class TitleBarView : UserControl
     /// <summary>
     /// Adds a plugin toolbar button to the title bar. Creates a styled, bordered
     /// container panel in the drag area (column 2) if needed.
+    /// The screenshot button (if present) is always kept as the rightmost item.
     /// </summary>
     public void AddPluginToolbarButton(Button button)
     {
-        if (_pluginToolbarPanel is null)
+        EnsureToolbarPanelExists();
+
+        // Insert before the screenshot button if it's present, otherwise append
+        if (_screenshotButton is not null && _pluginToolbarPanel!.Children.Contains(_screenshotButton))
         {
-            _pluginToolbarPanel = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-
-            _pluginToolbarBorder = new Border
-            {
-                CornerRadius = new CornerRadius(4),
-                BorderThickness = new Thickness(1),
-                Padding = new Thickness(0),
-                VerticalAlignment = VerticalAlignment.Center,
-                HorizontalAlignment = HorizontalAlignment.Right,
-                Margin = new Thickness(0, 2, 8, 2),
-                Child = _pluginToolbarPanel,
-            };
-            _pluginToolbarBorder.SetResourceReference(Border.BackgroundProperty, "EditorBackgroundBrush");
-            _pluginToolbarBorder.SetResourceReference(Border.BorderBrushProperty, "PrimaryBorderBrush");
-
-            Grid.SetColumn(_pluginToolbarBorder, 2);
-            WindowChrome.SetIsHitTestVisibleInChrome(_pluginToolbarBorder, true);
-
-            if (Content is Grid grid)
-            {
-                grid.Children.Add(_pluginToolbarBorder);
-            }
+            var idx = _pluginToolbarPanel.Children.IndexOf(_screenshotButton);
+            _pluginToolbarPanel.Children.Insert(idx, button);
+        }
+        else
+        {
+            _pluginToolbarPanel!.Children.Add(button);
         }
 
-        _pluginToolbarPanel.Children.Add(button);
         UpdatePluginToolbarVisibility();
+    }
+
+    /// <summary>
+    /// Ensures the toolbar panel and border container exist, creating them on first use.
+    /// </summary>
+    private void EnsureToolbarPanelExists()
+    {
+        if (_pluginToolbarPanel is not null)
+            return;
+
+        _pluginToolbarPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+
+        _pluginToolbarBorder = new Border
+        {
+            CornerRadius = new CornerRadius(4),
+            BorderThickness = new Thickness(1),
+            Padding = new Thickness(0),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right,
+            Margin = new Thickness(0, 2, 8, 2),
+            Child = _pluginToolbarPanel,
+        };
+        _pluginToolbarBorder.SetResourceReference(Border.BackgroundProperty, "EditorBackgroundBrush");
+        _pluginToolbarBorder.SetResourceReference(Border.BorderBrushProperty, "PrimaryBorderBrush");
+
+        Grid.SetColumn(_pluginToolbarBorder, 2);
+        WindowChrome.SetIsHitTestVisibleInChrome(_pluginToolbarBorder, true);
+
+        if (Content is Grid grid)
+        {
+            grid.Children.Add(_pluginToolbarBorder);
+        }
     }
 
     /// <summary>
