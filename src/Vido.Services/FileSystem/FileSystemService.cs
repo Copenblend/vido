@@ -15,39 +15,57 @@ public sealed class FileSystemService : IFileSystemService
         _log = log;
     }
 
+    // Shared options: single-pass, OS-level hidden-file skip, no extra stat calls.
+    // .NET 8 uses FindFirstFileEx with FIND_FIRST_EX_LARGE_FETCH internally,
+    // which fetches directory entries in large SMB batches — same as Explorer.
+    private static readonly EnumerationOptions s_shallowOptions = new()
+    {
+        AttributesToSkip = FileAttributes.Hidden | FileAttributes.System,
+        IgnoreInaccessible = true,
+        ReturnSpecialDirectories = false,
+        RecurseSubdirectories = false
+    };
+
     /// <inheritdoc />
     public List<FileNode> GetChildren(string directoryPath)
     {
-        var nodes = new List<FileNode>();
+        var dirs = new List<FileNode>();
+        var files = new List<FileNode>();
         try
         {
-            var dirInfo = new DirectoryInfo(directoryPath);
-            if (!dirInfo.Exists) return nodes;
-
-            // Directories first (sorted), then files (sorted)
-            foreach (var dir in dirInfo.EnumerateDirectories()
-                         .Where(d => !d.Attributes.HasFlag(FileAttributes.Hidden))
-                         .OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase))
+            // Single pass over the directory — one SMB round-trip sequence
+            // instead of two separate EnumerateDirectories + EnumerateFiles calls.
+            // AttributesToSkip filters hidden entries at the OS enumeration level
+            // so no per-entry Attributes check or extra stat call is needed.
+            foreach (var entry in new DirectoryInfo(directoryPath)
+                         .EnumerateFileSystemInfos("*", s_shallowOptions))
             {
-                nodes.Add(new FileNode(dir.FullName, isDirectory: true));
+                if (entry is DirectoryInfo)
+                    dirs.Add(new FileNode(entry.FullName, isDirectory: true));
+                else
+                    files.Add(new FileNode(entry.FullName, isDirectory: false));
             }
 
-            foreach (var file in dirInfo.EnumerateFiles()
-                         .Where(f => !f.Attributes.HasFlag(FileAttributes.Hidden))
-                         .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase))
-            {
-                nodes.Add(new FileNode(file.FullName, isDirectory: false));
-            }
+            // In-place sort avoids LINQ OrderBy allocation overhead
+            dirs.Sort(static (a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+            files.Sort(static (a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
         }
         catch (UnauthorizedAccessException ex)
         {
             _log.Warning($"Access denied: {directoryPath} — {ex.Message}", nameof(FileSystemService));
+        }
+        catch (DirectoryNotFoundException)
+        {
+            // Path doesn't exist — return empty
         }
         catch (IOException ex)
         {
             _log.Error($"IO error reading: {directoryPath} — {ex.Message}", nameof(FileSystemService));
         }
 
+        var nodes = new List<FileNode>(dirs.Count + files.Count);
+        nodes.AddRange(dirs);
+        nodes.AddRange(files);
         return nodes;
     }
 
@@ -57,13 +75,4 @@ public sealed class FileSystemService : IFileSystemService
         return Task.Run(() => GetChildren(directoryPath));
     }
 
-    /// <inheritdoc />
-    public void LoadChildren(FileNode node)
-    {
-        if (!node.IsDirectory || !node.NeedsLoading) return;
-
-        node.Children.Clear(); // Remove the dummy child
-        foreach (var child in GetChildren(node.FullPath))
-            node.Children.Add(child);
-    }
 }

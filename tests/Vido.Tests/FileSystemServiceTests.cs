@@ -77,6 +77,23 @@ public sealed class FileSystemServiceTests
     }
 
     [Fact]
+    public void GetChildren_SkipsSystemFiles()
+    {
+        var visibleFile = Path.Combine(_testDir, "visible.txt");
+        var systemFile = Path.Combine(_testDir, "system.txt");
+        File.WriteAllText(visibleFile, "");
+        File.WriteAllText(systemFile, "");
+        File.SetAttributes(systemFile, FileAttributes.System);
+
+        var result = _sut.GetChildren(_testDir);
+
+        Assert.Single(result);
+        Assert.Equal("visible.txt", result[0].Name);
+
+        Directory.Delete(_testDir, recursive: true);
+    }
+
+    [Fact]
     public void GetChildren_DirectoryNodes_HaveDummyChild()
     {
         Directory.CreateDirectory(Path.Combine(_testDir, "SubDir"));
@@ -86,64 +103,6 @@ public sealed class FileSystemServiceTests
         Assert.Single(result);
         Assert.True(result[0].IsDirectory);
         Assert.True(result[0].NeedsLoading);
-
-        Directory.Delete(_testDir, recursive: true);
-    }
-
-    [Fact]
-    public void LoadChildren_PopulatesDirectoryNode()
-    {
-        // Arrange
-        var subDir = Path.Combine(_testDir, "Sub");
-        Directory.CreateDirectory(subDir);
-        File.WriteAllText(Path.Combine(subDir, "video.mp4"), "");
-
-        var parentNode = new FileNode(subDir, isDirectory: true);
-        Assert.True(parentNode.NeedsLoading);
-
-        // Act
-        _sut.LoadChildren(parentNode);
-
-        // Assert
-        Assert.False(parentNode.NeedsLoading);
-        Assert.Single(parentNode.Children);
-        Assert.Equal("video.mp4", parentNode.Children[0].Name);
-        Assert.True(parentNode.Children[0].IsVideoFile);
-
-        Directory.Delete(_testDir, recursive: true);
-    }
-
-    [Fact]
-    public void LoadChildren_NoOp_WhenAlreadyLoaded()
-    {
-        var subDir = Path.Combine(_testDir, "Sub");
-        Directory.CreateDirectory(subDir);
-        File.WriteAllText(Path.Combine(subDir, "a.txt"), "");
-
-        var node = new FileNode(subDir, isDirectory: true);
-        _sut.LoadChildren(node);
-        Assert.Single(node.Children);
-
-        // Add another file after loading
-        File.WriteAllText(Path.Combine(subDir, "b.txt"), "");
-
-        // LoadChildren should not re-load
-        _sut.LoadChildren(node);
-        Assert.Single(node.Children); // Still 1, not 2
-
-        Directory.Delete(_testDir, recursive: true);
-    }
-
-    [Fact]
-    public void LoadChildren_NoOp_ForFileNode()
-    {
-        var filePath = Path.Combine(_testDir, "test.mp4");
-        File.WriteAllText(filePath, "");
-
-        var node = new FileNode(filePath, isDirectory: false);
-        _sut.LoadChildren(node); // Should not throw or modify
-
-        Assert.Empty(node.Children);
 
         Directory.Delete(_testDir, recursive: true);
     }

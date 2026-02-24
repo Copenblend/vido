@@ -21,7 +21,8 @@ public partial class FileExplorerViewModel : ObservableObject
     private readonly ILogService _logService;
 
     /// <summary>Root-level nodes displayed in the tree.</summary>
-    public ObservableCollection<FileNode> RootNodes { get; } = [];
+    [ObservableProperty]
+    private ObservableCollection<FileNode> _rootNodes = [];
 
     /// <summary>Full path of the currently open folder.</summary>
     [ObservableProperty]
@@ -112,22 +113,27 @@ public partial class FileExplorerViewModel : ObservableObject
     /// </summary>
     public async Task OpenFolderAsync(string path)
     {
-        if (!Directory.Exists(path)) return;
-
-        CloseFolder();
-
-        FolderPath = path;
-        FolderName = Path.GetFileName(path);
-        if (string.IsNullOrEmpty(FolderName))
-            FolderName = path; // Root drives like "C:\"
-        HasFolderOpen = true;
         IsLoading = true;
 
         try
         {
+            // Check existence on thread pool so UI stays free on slow/network paths
+            if (!await Task.Run(() => Directory.Exists(path)))
+                return;
+
+            // Enumerate children entirely on thread pool
             var allNodes = await _fileSystemService.GetChildrenAsync(path);
-            foreach (var node in ApplyHiddenFilter(allNodes))
-                RootNodes.Add(node);
+            var filtered = ApplyHiddenFilter(allNodes);
+
+            CloseFolder();
+
+            FolderPath = path;
+            FolderName = Path.GetFileName(path);
+            if (string.IsNullOrEmpty(FolderName))
+                FolderName = path; // Root drives like "C:\"
+            HasFolderOpen = true;
+
+            RootNodes = new ObservableCollection<FileNode>(filtered);
         }
         finally
         {
@@ -207,7 +213,7 @@ public partial class FileExplorerViewModel : ObservableObject
     public void CloseFolder()
     {
         var wasOpen = FolderPath;
-        RootNodes.Clear();
+        RootNodes = [];
         FolderPath = null;
         FolderName = null;
         HasFolderOpen = false;
@@ -241,19 +247,20 @@ public partial class FileExplorerViewModel : ObservableObject
         if (FolderPath is null) return;
 
         IsLoading = true;
+
         try
         {
             // Collect expanded directory paths before clearing
             var expandedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             CollectExpandedPaths(RootNodes, expandedPaths);
 
-            RootNodes.Clear();
             var allNodes = await _fileSystemService.GetChildrenAsync(FolderPath);
-            foreach (var node in ApplyHiddenFilter(allNodes))
-            {
-                RootNodes.Add(node);
+            var filtered = ApplyHiddenFilter(allNodes);
+
+            RootNodes = new ObservableCollection<FileNode>(filtered);
+
+            foreach (var node in RootNodes)
                 await RestoreExpandedStateAsync(node, expandedPaths);
-            }
         }
         finally
         {
@@ -371,7 +378,7 @@ public partial class FileExplorerViewModel : ObservableObject
     public async Task RestoreLastFolderAsync()
     {
         var last = _stateService.Current.LastOpenFolder;
-        if (!string.IsNullOrEmpty(last) && Directory.Exists(last))
+        if (!string.IsNullOrEmpty(last))
             await OpenFolderAsync(last);
     }
 

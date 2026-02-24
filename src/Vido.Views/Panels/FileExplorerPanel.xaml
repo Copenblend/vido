@@ -136,6 +136,38 @@
             </Button>
         </StackPanel>
 
+        <!-- Loading state -->
+        <StackPanel x:Name="LoadingState"
+                    VerticalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    Visibility="Collapsed">
+            <!-- Spinning arc -->
+            <Canvas Width="36" Height="36" HorizontalAlignment="Center">
+                <Path x:Name="SpinnerArc"
+                      StrokeThickness="3"
+                      Stroke="{DynamicResource AccentBrush}"
+                      StrokeStartLineCap="Round"
+                      StrokeEndLineCap="Round">
+                    <Path.Data>
+                        <PathGeometry>
+                            <PathFigure StartPoint="18,3" IsClosed="False">
+                                <ArcSegment Point="3,18" Size="15,15" SweepDirection="Clockwise" IsLargeArc="True" />
+                            </PathFigure>
+                        </PathGeometry>
+                    </Path.Data>
+                    <Path.RenderTransform>
+                        <RotateTransform x:Name="SpinnerRotation" CenterX="18" CenterY="18" />
+                    </Path.RenderTransform>
+                </Path>
+            </Canvas>
+            <TextBlock Text="Loading..."
+                       Foreground="{DynamicResource SecondaryForegroundBrush}"
+                       FontFamily="Segoe UI"
+                       FontSize="13"
+                       Margin="0,10,0,0"
+                       TextAlignment="Center" />
+        </StackPanel>
+
         <!-- Folder open state: tree view -->
         <DockPanel x:Name="TreePanel" Visibility="Collapsed"
                    ContextMenu="{StaticResource TreeBackgroundContextMenu}">

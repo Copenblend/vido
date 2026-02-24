@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Vido.Core.Events;
@@ -230,7 +229,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         DurationText = FormatTime(Duration);
         CurrentMetadata = _engine.CurrentMetadata;
         HasMedia = true;
-        BuildSiblingList(filePath);
+        await BuildSiblingListAsync(filePath);
 
         _eventBus.Publish(new VideoLoadedEvent
         {
@@ -529,10 +528,10 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// is rebuilt to include all video files recursively under this root.
     /// Called from MainWindow when a folder is opened or closed.
     /// </summary>
-    public void SetExplorerRoot(string? rootPath)
+    public async Task SetExplorerRootAsync(string? rootPath)
     {
         _explorerRootPath = rootPath;
-        RebuildSiblingList();
+        await RebuildSiblingListAsync();
 
         // Clear shuffle when the library changes
         if (IsShuffling)
@@ -548,7 +547,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// Builds the sorted list of all video files under the explorer root recursively.
     /// Falls back to the parent directory of the given file if no root is set.
     /// </summary>
-    private void BuildSiblingList(string filePath)
+    private async Task BuildSiblingListAsync(string filePath)
     {
         // If there's no explorer root, use the file's parent folder as fallback
         if (_explorerRootPath is null)
@@ -558,31 +557,50 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
                 _explorerRootPath = dir;
         }
 
-        RebuildSiblingList();
+        await RebuildSiblingListAsync();
     }
 
     /// <summary>
     /// Scans the explorer root (recursively) for all video files and sorts alphabetically.
+    /// The directory enumeration runs on the thread pool to avoid blocking the UI thread.
     /// </summary>
-    private void RebuildSiblingList()
+    /// Shared options for recursive video-file scanning.
+    /// IgnoreInaccessible avoids per-entry exceptions on network shares.
+    private static readonly EnumerationOptions s_recursiveOptions = new()
     {
-        if (_explorerRootPath is null || !Directory.Exists(_explorerRootPath))
+        RecurseSubdirectories = true,
+        IgnoreInaccessible = true,
+        AttributesToSkip = FileAttributes.Hidden | FileAttributes.System,
+        ReturnSpecialDirectories = false
+    };
+
+    private async Task RebuildSiblingListAsync()
+    {
+        if (_explorerRootPath is null)
         {
             _siblingVideoFiles = [];
             return;
         }
 
-        try
+        var root = _explorerRootPath;
+        _siblingVideoFiles = await Task.Run(() =>
         {
-            _siblingVideoFiles = Directory.EnumerateFiles(_explorerRootPath, "*.*", SearchOption.AllDirectories)
-                .Where(f => FileNode.VideoExtensions.Contains(Path.GetExtension(f)))
-                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
-        catch (Exception)
-        {
-            _siblingVideoFiles = [];
-        }
+            try
+            {
+                var list = new List<string>();
+                foreach (var path in Directory.EnumerateFiles(root, "*", s_recursiveOptions))
+                {
+                    if (FileNode.VideoExtensions.Contains(Path.GetExtension(path)))
+                        list.Add(path);
+                }
+                list.Sort(StringComparer.OrdinalIgnoreCase);
+                return list;
+            }
+            catch (Exception)
+            {
+                return new List<string>();
+            }
+        });
     }
 
     /// <summary>
