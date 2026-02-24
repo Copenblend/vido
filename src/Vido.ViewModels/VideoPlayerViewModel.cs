@@ -604,6 +604,16 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
 
     partial void OnIsShufflingChanged(bool value)
     {
+        // Propagate shuffle toggle to the active playlist provider (if any)
+        var provider = _contributionRegistry.GetPlaylistProvider();
+        if (provider is { IsActive: true })
+        {
+            if (value)
+                provider.EnableShuffle();
+            else
+                provider.DisableShuffle();
+        }
+
         if (value)
             BuildShufflePlaylist();
         else
