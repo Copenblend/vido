@@ -257,6 +257,9 @@ public partial class TitleBarView : UserControl
     /// <summary>Raised when Help > Check for Updates is clicked.</summary>
     public event Action? CheckForUpdatesRequested;
 
+    /// <summary>Raised when Help > Enter Repository Code is clicked.</summary>
+    public event Action? EnterRepositoryCodeRequested;
+
     /// <summary>
     /// Function that returns the current list of recent files.
     /// Set by MainWindow so TitleBarView can populate the submenu without
@@ -439,6 +442,11 @@ public partial class TitleBarView : UserControl
     private void OnCheckForUpdatesClick(object sender, RoutedEventArgs e)
     {
         CheckForUpdatesRequested?.Invoke();
+    }
+
+    private void OnEnterRepositoryCodeClick(object sender, RoutedEventArgs e)
+    {
+        EnterRepositoryCodeRequested?.Invoke();
     }
 
     private void OnRecentFilesSubmenuOpened(object sender, RoutedEventArgs e)

@@ -28,6 +28,12 @@ public partial class SettingsPage : UserControl
         UpdateNoResultsVisibility();
     }
 
+    /// <summary>
+    /// Reloads plugin registry URLs from the settings store so the list
+    /// reflects changes made externally (e.g. via "Enter Repository Code").
+    /// </summary>
+    public void RefreshRegistryUrls() => _viewModel.RefreshRegistryUrls();
+
     private void OnSearchTextChanged(object sender, TextChangedEventArgs e)
     {
         _viewModel.SearchText = SearchBox.Text;

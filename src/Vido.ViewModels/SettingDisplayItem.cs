@@ -154,6 +154,16 @@ public partial class SettingDisplayItem : ObservableObject
     }
 
     /// <summary>
+    /// Reloads the current value from the backing store, refreshing the UI.
+    /// </summary>
+    public void Reload()
+    {
+        _suppressSave = true;
+        LoadCurrentValue();
+        _suppressSave = false;
+    }
+
+    /// <summary>
     /// Loads the current value from the store (or falls back to default).
     /// </summary>
     private void LoadCurrentValue()
