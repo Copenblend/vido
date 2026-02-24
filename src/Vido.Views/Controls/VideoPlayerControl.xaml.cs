@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using Vido.Core.Playback;
 using Vido.ViewModels;
 
@@ -18,6 +19,7 @@ public partial class VideoPlayerControl : UserControl
 {
     private WriteableBitmap? _bitmap;
     private VideoPlayerViewModel? _viewModel;
+    private DispatcherTimer? _loadingSpinnerTimer;
 
     /// <summary>Cached gradient brush for fullscreen overlay (transparent→black).</summary>
     private static readonly LinearGradientBrush FullscreenOverlayGradient = CreateFullscreenGradient();
@@ -104,7 +106,7 @@ public partial class VideoPlayerControl : UserControl
     {
         if (e.PropertyName == nameof(VideoPlayerViewModel.HasMedia) && _viewModel is not null)
         {
-            Dispatcher.Invoke(() =>
+            Dispatcher.BeginInvoke(() =>
             {
                 var hasMedia = _viewModel.HasMedia;
                 UpdateVisualState(hasMedia);
@@ -117,12 +119,57 @@ public partial class VideoPlayerControl : UserControl
                 }
             });
         }
+        else if (e.PropertyName == nameof(VideoPlayerViewModel.IsLoadingMedia) && _viewModel is not null)
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                UpdateLoadingState(_viewModel.IsLoadingMedia);
+            });
+        }
     }
 
     private void UpdateVisualState(bool hasMedia)
     {
         EmptyState.Visibility = hasMedia ? Visibility.Collapsed : Visibility.Visible;
         VideoSurface.Visibility = hasMedia ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void UpdateLoadingState(bool isLoading)
+    {
+        LoadingOverlay.Visibility = isLoading ? Visibility.Visible : Visibility.Collapsed;
+
+        if (isLoading)
+        {
+            // Hide empty state while loading
+            EmptyState.Visibility = Visibility.Collapsed;
+            StartLoadingSpinner();
+        }
+        else
+        {
+            StopLoadingSpinner();
+        }
+    }
+
+    private void StartLoadingSpinner()
+    {
+        if (_loadingSpinnerTimer is not null) return;
+
+        _loadingSpinnerTimer = new DispatcherTimer(DispatcherPriority.Render)
+        {
+            Interval = TimeSpan.FromMilliseconds(16)
+        };
+        _loadingSpinnerTimer.Tick += (_, _) =>
+        {
+            LoadingSpinnerRotation.Angle = (LoadingSpinnerRotation.Angle + 6) % 360;
+        };
+        _loadingSpinnerTimer.Start();
+    }
+
+    private void StopLoadingSpinner()
+    {
+        _loadingSpinnerTimer?.Stop();
+        _loadingSpinnerTimer = null;
+        LoadingSpinnerRotation.Angle = 0;
     }
 
     /// <summary>

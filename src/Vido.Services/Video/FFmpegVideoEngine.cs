@@ -188,12 +188,13 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         if (!File.Exists(filePath))
             throw new FileNotFoundException("Video file not found.", filePath);
 
-        // Stop any current playback
-        Stop();
-        CleanupMedia();
-
         return Task.Run(() =>
         {
+            // Stop and cleanup run on the thread pool so the UI thread stays free.
+            // Stop() joins the decode thread (up to 2 s), CleanupMedia() frees FFmpeg contexts.
+            Stop();
+            CleanupMedia();
+
             var loadTimer = Stopwatch.StartNew();
             OpenMedia(filePath);
             loadTimer.Stop();
