@@ -145,7 +145,10 @@ public partial class PluginManagerViewModel : ObservableObject
             //    so it may not have completed yet if the user opens the
             //    Extensions panel quickly. ActivateAll is idempotent — calling
             //    it again after it has already run is a no-op (seenIds guard).
-            await Task.Run(() => _pluginHost.ActivateAll());
+            //    We call it synchronously here (on the UI thread) rather than
+            //    via Task.Run to avoid racing with the deferred BeginInvoke
+            //    startup call that also modifies the plugins list.
+            _pluginHost.ActivateAll();
 
             // 1. Load installed plugins from the host
             var installedMap = new Dictionary<string, PluginItemViewModel>(StringComparer.OrdinalIgnoreCase);
