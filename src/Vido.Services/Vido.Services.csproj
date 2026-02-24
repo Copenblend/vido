@@ -18,10 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FFmpeg.AutoGen.Abstractions" Version="8.0.0" />
-    <PackageReference Include="FFmpeg.AutoGen.Bindings.DynamicallyLoaded" Version="8.0.0" />
-    <PackageReference Include="FFmpeg.LGPL" Version="20260220.1.0" />
-    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="FFmpeg.AutoGen.Abstractions" Version="$(FFmpegAutoGenVersion)" />
+    <PackageReference Include="FFmpeg.AutoGen.Bindings.DynamicallyLoaded" Version="$(FFmpegAutoGenVersion)" />
+    <PackageReference Include="FFmpeg.LGPL" Version="$(FFmpegLGPLVersion)" />
+    <PackageReference Include="NAudio" Version="$(NAudioVersion)" />
   </ItemGroup>
 
 </Project>

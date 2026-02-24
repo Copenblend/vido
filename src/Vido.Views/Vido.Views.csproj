@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <Resource Include="Assets\Vido.png" />
+    <Resource Include="Assets\video-file-icon.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -19,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Markdig" Version="0.38.0" />
+    <PackageReference Include="Markdig" Version="$(MarkdigVersion)" />
   </ItemGroup>
 
 </Project>

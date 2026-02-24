@@ -76,13 +76,6 @@
                           Click="OnExitClick" />
             </MenuItem>
 
-            <!-- Edit -->
-            <MenuItem Header="_Edit" Style="{StaticResource TitleBarMenuItemStyle}">
-                <MenuItem Header="No actions available"
-                          Style="{StaticResource DropdownMenuItemStyle}"
-                          IsEnabled="False" />
-            </MenuItem>
-
             <!-- View -->
             <MenuItem Header="_View" Style="{StaticResource TitleBarMenuItemStyle}"
                       SubmenuOpened="OnViewSubmenuOpened">
