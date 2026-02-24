@@ -140,6 +140,13 @@ public partial class PluginManagerViewModel : ObservableObject
             RegistrySources.Clear();
             RegistrySources.Add("All");
 
+            // 0. Ensure plugins are activated before enumerating.
+            //    ActivateAll is deferred at startup (runs after first render),
+            //    so it may not have completed yet if the user opens the
+            //    Extensions panel quickly. ActivateAll is idempotent — calling
+            //    it again after it has already run is a no-op (seenIds guard).
+            await Task.Run(() => _pluginHost.ActivateAll());
+
             // 1. Load installed plugins from the host
             var installedMap = new Dictionary<string, PluginItemViewModel>(StringComparer.OrdinalIgnoreCase);
             foreach (var info in _pluginHost.Plugins)
@@ -180,6 +187,13 @@ public partial class PluginManagerViewModel : ObservableObject
                         // Update installed plugin with registry info
                         installed.RegistryEntry = entry;
                         installed.IsOfficial = isOfficial;
+
+                        // Detect available updates
+                        if (installed.IsInstalled && IsNewerVersion(entry.Version, installed.Version))
+                        {
+                            installed.HasUpdate = true;
+                            installed.AvailableVersion = entry.Version;
+                        }
                     }
                     else if (seenIds.Add(entry.Id))
                     {
@@ -212,6 +226,17 @@ public partial class PluginManagerViewModel : ObservableObject
                     existing.IsInstalled = true;
                     existing.IsEnabled = info.State != PluginState.Disabled
                                       && info.State != PluginState.Error;
+
+                    // The item was created from a registry entry, so its Version
+                    // is the registry version. Compare the installed manifest
+                    // version against the registry version for update detection.
+                    var installedVersion = info.Manifest.Version;
+                    var registryVersion = existing.RegistryEntry?.Version;
+                    if (registryVersion is not null && IsNewerVersion(registryVersion, installedVersion))
+                    {
+                        existing.HasUpdate = true;
+                        existing.AvailableVersion = registryVersion;
+                    }
                 }
                 else
                 {
@@ -346,6 +371,53 @@ public partial class PluginManagerViewModel : ObservableObject
     public void OpenPluginSettings(PluginItemViewModel item)
     {
         OpenSettingsRequested?.Invoke(item);
+    }
+
+    /// <summary>
+    /// Updates a plugin to the latest version from the registry.
+    /// Removes the old version, installs the new one, and re-activates.
+    /// </summary>
+    [RelayCommand]
+    public async Task UpdatePluginAsync(PluginItemViewModel item)
+    {
+        if (!item.HasUpdate || item.IsBusy || item.RegistryEntry is null) return;
+
+        item.IsBusy = true;
+        try
+        {
+            _pluginHost.RemovePlugin(item.Id);
+
+            var success = await _pluginInstaller.InstallAsync(item.RegistryEntry);
+            if (success)
+            {
+                _pluginHost.ActivateAll();
+                var info = _pluginHost.GetPlugin(item.Id);
+                if (info is not null)
+                    item.PluginInfo = info;
+                item.HasUpdate = false;
+                item.AvailableVersion = null;
+                _logService.Info($"Plugin '{item.DisplayName}' updated successfully.", "PluginManager");
+                RestartRequired?.Invoke($"Plugin '{item.DisplayName}' was updated. A restart is recommended.");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logService.Error($"Failed to update plugin '{item.Id}': {ex.Message}", "PluginManager");
+        }
+        finally
+        {
+            item.IsBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// Compares two version strings. Returns true if <paramref name="latest"/> is newer than <paramref name="current"/>.
+    /// </summary>
+    internal static bool IsNewerVersion(string latest, string current)
+    {
+        if (Version.TryParse(latest, out var latestVer) && Version.TryParse(current, out var currentVer))
+            return latestVer > currentVer;
+        return false; // Can't parse — assume no update
     }
 
     /// <summary>

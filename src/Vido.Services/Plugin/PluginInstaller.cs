@@ -90,16 +90,21 @@ public sealed class PluginInstaller : IPluginInstaller
             var manifestPath = Path.Combine(targetDir, "plugin.json");
             if (!File.Exists(manifestPath))
             {
-                // Check if the zip had a single root folder
+                // The zip may contain a root folder (e.g. "com.vido.osr2-plus/").
+                // When updating, remnant files from the old install may still
+                // exist alongside the extracted subfolder, so we can't rely on
+                // there being exactly one subdirectory. Search all subdirs for
+                // the one that contains plugin.json.
                 var subDirs = Directory.GetDirectories(targetDir);
-                if (subDirs.Length == 1)
+                foreach (var subDir in subDirs)
                 {
-                    var innerManifest = Path.Combine(subDirs[0], "plugin.json");
+                    var innerManifest = Path.Combine(subDir, "plugin.json");
                     if (File.Exists(innerManifest))
                     {
                         // Move contents up one level
-                        MoveContentsUp(subDirs[0], targetDir);
+                        MoveContentsUp(subDir, targetDir);
                         manifestPath = Path.Combine(targetDir, "plugin.json");
+                        break;
                     }
                 }
             }

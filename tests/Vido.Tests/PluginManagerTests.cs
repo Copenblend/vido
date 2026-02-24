@@ -1694,4 +1694,243 @@ public sealed class PluginManagerTests
         vm.SearchQuery = "ViDeO";
         Assert.Single(vm.AvailablePlugins);
     }
+
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║ vi-046: Plugin Update Detection & UI                           ║
+    // ╚══════════════════════════════════════════════════════════════════╝
+
+    [Fact]
+    public void StatusText_ShowsUpdateAvailable_When_HasUpdate()
+    {
+        var item = PluginItemViewModel.FromPluginInfo(MakePluginInfo());
+        item.HasUpdate = true;
+        Assert.Equal("Update Available", item.StatusText);
+    }
+
+    [Fact]
+    public void HasUpdate_NotifiesStatusTextChanged()
+    {
+        var item = PluginItemViewModel.FromPluginInfo(MakePluginInfo());
+        var changedProps = new List<string>();
+        item.PropertyChanged += (_, e) => changedProps.Add(e.PropertyName!);
+
+        item.HasUpdate = true;
+
+        Assert.Contains(nameof(item.StatusText), changedProps);
+        Assert.Contains(nameof(item.HasUpdate), changedProps);
+    }
+
+    [Theory]
+    [InlineData("2.0.0", "1.0.0", true)]
+    [InlineData("1.0.0", "1.0.0", false)]
+    [InlineData("0.9.0", "1.0.0", false)]
+    [InlineData("1.1.0", "1.0.0", true)]
+    [InlineData("1.0.1", "1.0.0", true)]
+    public void IsNewerVersion_ComparesCorrectly(string latest, string current, bool expected)
+    {
+        Assert.Equal(expected, PluginManagerViewModel.IsNewerVersion(latest, current));
+    }
+
+    [Fact]
+    public void IsNewerVersion_UnparseableStrings_ReturnsFalse()
+    {
+        // Can't parse — assume no update (conservative)
+        Assert.False(PluginManagerViewModel.IsNewerVersion("abc", "def"));
+        Assert.False(PluginManagerViewModel.IsNewerVersion("abc", "abc"));
+    }
+
+    [Fact]
+    public async Task LoadAsync_DetectsUpdate_When_RegistryVersionNewer()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var info = MakePluginInfo(id: "com.test.plugin", displayName: "Test Plugin");
+        host.Plugins.Returns(new[] { info });
+
+        var registry = new PluginRegistry
+        {
+            Name = "R",
+            Plugins = [MakeEntry(id: "com.test.plugin", version: "2.0.0")]
+        };
+        installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        var installed = vm.InstalledPlugins.Single(p => p.Id == "com.test.plugin");
+        Assert.True(installed.HasUpdate);
+        Assert.Equal("2.0.0", installed.AvailableVersion);
+        Assert.Equal("Update Available", installed.StatusText);
+    }
+
+    [Fact]
+    public async Task LoadAsync_NoUpdate_When_VersionsSame()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var info = MakePluginInfo(id: "com.test.plugin");
+        host.Plugins.Returns(new[] { info });
+
+        var registry = new PluginRegistry
+        {
+            Name = "R",
+            Plugins = [MakeEntry(id: "com.test.plugin", version: "1.0.0")]
+        };
+        installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        var installed = vm.InstalledPlugins.Single(p => p.Id == "com.test.plugin");
+        Assert.False(installed.HasUpdate);
+        Assert.Null(installed.AvailableVersion);
+    }
+
+    [Fact]
+    public async Task LoadAsync_NoUpdate_When_RegistryVersionOlder()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var info = MakePluginInfo(id: "com.test.plugin");
+        host.Plugins.Returns(new[] { info });
+
+        var registry = new PluginRegistry
+        {
+            Name = "R",
+            Plugins = [MakeEntry(id: "com.test.plugin", version: "0.5.0")]
+        };
+        installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        var installed = vm.InstalledPlugins.Single(p => p.Id == "com.test.plugin");
+        Assert.False(installed.HasUpdate);
+    }
+
+    [Fact]
+    public async Task UpdatePluginAsync_Reinstalls_And_ClearsHasUpdate()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var info = MakePluginInfo(id: "com.test.plugin");
+        host.Plugins.Returns(new[] { info });
+
+        var entry = MakeEntry(id: "com.test.plugin", version: "2.0.0");
+        var registry = new PluginRegistry { Name = "R", Plugins = [entry] };
+        installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
+        installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
+
+        var updatedInfo = MakePluginInfo(id: "com.test.plugin");
+        host.GetPlugin("com.test.plugin").Returns(updatedInfo);
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        var installed = vm.InstalledPlugins.Single(p => p.Id == "com.test.plugin");
+        Assert.True(installed.HasUpdate);
+
+        await vm.UpdatePluginAsync(installed);
+
+        Assert.False(installed.HasUpdate);
+        Assert.Null(installed.AvailableVersion);
+        Assert.False(installed.IsBusy);
+        host.Received(1).RemovePlugin("com.test.plugin");
+        await installer.Received(1).InstallAsync(Arg.Any<PluginRegistryEntry>());
+        host.Received().ActivateAll();
+    }
+
+    [Fact]
+    public async Task UpdatePluginAsync_DoesNothing_When_NoUpdate()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var entry = MakeEntry();
+        var item = PluginItemViewModel.FromRegistryEntry(entry);
+        item.IsInstalled = true;
+        item.HasUpdate = false;
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.UpdatePluginAsync(item);
+
+        host.DidNotReceive().RemovePlugin(Arg.Any<string>());
+        await installer.DidNotReceive().InstallAsync(Arg.Any<PluginRegistryEntry>());
+    }
+
+    [Fact]
+    public async Task UpdatePluginAsync_DoesNothing_When_Busy()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var entry = MakeEntry();
+        var item = PluginItemViewModel.FromRegistryEntry(entry);
+        item.IsInstalled = true;
+        item.HasUpdate = true;
+        item.IsBusy = true;
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.UpdatePluginAsync(item);
+
+        host.DidNotReceive().RemovePlugin(Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task UpdatePluginAsync_Fires_RestartRequired()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var info = MakePluginInfo(id: "com.test.plugin");
+        host.Plugins.Returns(new[] { info });
+
+        var entry = MakeEntry(id: "com.test.plugin", version: "2.0.0");
+        var registry = new PluginRegistry { Name = "R", Plugins = [entry] };
+        installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
+        installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
+
+        var updatedInfo = MakePluginInfo(id: "com.test.plugin");
+        host.GetPlugin("com.test.plugin").Returns(updatedInfo);
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        string? restartMessage = null;
+        vm.RestartRequired += msg => restartMessage = msg;
+
+        var installed = vm.InstalledPlugins.Single(p => p.Id == "com.test.plugin");
+        await vm.UpdatePluginAsync(installed);
+
+        Assert.NotNull(restartMessage);
+        Assert.Contains("Test Plugin", restartMessage);
+        Assert.Contains("updated", restartMessage);
+    }
+
+    [Fact]
+    public async Task LoadAsync_Reconcile_DetectsUpdate_WhenPluginAppearsLate()
+    {
+        // Simulates the startup race: ActivateAll returns no plugins initially,
+        // but after the registry fetch, the plugin appears in the host.
+        var (host, installer, settings, log) = CreateMocks();
+
+        var pluginInfo = MakePluginInfo(id: "com.test.plugin"); // version 1.0.0
+
+        // First call to Plugins returns empty (ActivateAll hasn't run yet in this scenario).
+        // After ActivateAll is called inside LoadAsync, subsequent calls return the plugin.
+        var callCount = 0;
+        host.Plugins.Returns(_ =>
+        {
+            callCount++;
+            // First call is for step 1 enumeration; ActivateAll is called before it,
+            // so all calls should return the plugin. But to test step 3 reconciliation,
+            // simulate the plugin appearing only after the first enumeration.
+            return callCount > 1 ? new[] { pluginInfo } : Array.Empty<PluginInfo>();
+        });
+
+        var entry = MakeEntry(id: "com.test.plugin", version: "2.0.0");
+        var registry = new PluginRegistry { Name = "R", Plugins = [entry] };
+        installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        // The plugin should be marked as installed (from reconciliation step 3)
+        var plugin = vm.InstalledPlugins.FirstOrDefault(p => p.Id == "com.test.plugin");
+        Assert.NotNull(plugin);
+        Assert.True(plugin.IsInstalled);
+        // And the update should be detected (registry 2.0.0 > installed 1.0.0)
+        Assert.True(plugin.HasUpdate);
+        Assert.Equal("2.0.0", plugin.AvailableVersion);
+    }
 }

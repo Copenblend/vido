@@ -92,7 +92,8 @@ public sealed class PluginHost : IPluginHost
 
         foreach (var info in _plugins)
         {
-            if (info.State == PluginState.Error || info.State == PluginState.Disabled)
+            if (info.State == PluginState.Error || info.State == PluginState.Disabled
+                || info.State == PluginState.Active)
                 continue;
 
             if (disabledIds.Contains(info.Manifest.Id))

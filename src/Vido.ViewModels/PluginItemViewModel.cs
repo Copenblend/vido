@@ -56,8 +56,19 @@ public partial class PluginItemViewModel : ObservableObject
     [ObservableProperty]
     private bool _isBusy;
 
-    /// <summary>Status text: "Enabled", "Disabled", or empty for available plugins.</summary>
-    public string StatusText => IsInstalled ? (IsEnabled ? "Enabled" : "Disabled") : string.Empty;
+    /// <summary>Whether an update is available (registry version > installed version).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StatusText))]
+    private bool _hasUpdate;
+
+    /// <summary>The version available for update from the registry.</summary>
+    [ObservableProperty]
+    private string? _availableVersion;
+
+    /// <summary>Status text: "Update Available", "Enabled", "Disabled", or empty for available plugins.</summary>
+    public string StatusText => IsInstalled
+        ? (HasUpdate ? "Update Available" : (IsEnabled ? "Enabled" : "Disabled"))
+        : string.Empty;
 
     /// <summary>Absolute file-system path or URL to the plugin icon image.</summary>
     [ObservableProperty]
