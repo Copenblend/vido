@@ -13,6 +13,12 @@ public interface IFileSystemService
     List<FileNode> GetChildren(string directoryPath);
 
     /// <summary>
+    /// Asynchronously gets the top-level items inside <paramref name="directoryPath"/>.
+    /// Offloads I/O to a background thread to prevent UI blocking on network paths.
+    /// </summary>
+    Task<List<FileNode>> GetChildrenAsync(string directoryPath);
+
+    /// <summary>
     /// Replaces the dummy child of <paramref name="node"/> with real children from disk.
     /// No-op if already loaded or if the node is not a directory.
     /// </summary>

@@ -35,6 +35,10 @@ public partial class FileExplorerViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasFolderOpen;
 
+    /// <summary>Whether the explorer is currently loading file data.</summary>
+    [ObservableProperty]
+    private bool _isLoading;
+
     /// <summary>The currently selected node in the tree (set from the view).</summary>
     [ObservableProperty]
     private FileNode? _selectedNode;
@@ -106,7 +110,7 @@ public partial class FileExplorerViewModel : ObservableObject
     /// Opens a folder and populates the tree with its contents.
     /// Persists the folder path in application state.
     /// </summary>
-    public void OpenFolder(string path)
+    public async Task OpenFolderAsync(string path)
     {
         if (!Directory.Exists(path)) return;
 
@@ -117,10 +121,18 @@ public partial class FileExplorerViewModel : ObservableObject
         if (string.IsNullOrEmpty(FolderName))
             FolderName = path; // Root drives like "C:\"
         HasFolderOpen = true;
+        IsLoading = true;
 
-        var allNodes = _fileSystemService.GetChildren(path);
-        foreach (var node in ApplyHiddenFilter(allNodes))
-            RootNodes.Add(node);
+        try
+        {
+            var allNodes = await _fileSystemService.GetChildrenAsync(path);
+            foreach (var node in ApplyHiddenFilter(allNodes))
+                RootNodes.Add(node);
+        }
+        finally
+        {
+            IsLoading = false;
+        }
 
         _stateService.Current.LastOpenFolder = path;
         _stateService.QueueSave();
@@ -209,12 +221,12 @@ public partial class FileExplorerViewModel : ObservableObject
     /// <summary>
     /// Lazily loads children of a directory node when first expanded.
     /// </summary>
-    public void ExpandNode(FileNode node)
+    public async Task ExpandNodeAsync(FileNode node)
     {
         if (!node.IsDirectory || !node.NeedsLoading) return;
 
         node.Children.Clear(); // remove dummy
-        var allChildren = _fileSystemService.GetChildren(node.FullPath);
+        var allChildren = await _fileSystemService.GetChildrenAsync(node.FullPath);
         foreach (var child in ApplyHiddenFilter(allChildren))
             node.Children.Add(child);
     }
@@ -224,20 +236,28 @@ public partial class FileExplorerViewModel : ObservableObject
     /// Hidden files remain hidden (they persist in state).
     /// </summary>
     [RelayCommand]
-    public void RescanFolder()
+    public async Task RescanFolderAsync()
     {
         if (FolderPath is null) return;
 
-        // Collect expanded directory paths before clearing
-        var expandedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        CollectExpandedPaths(RootNodes, expandedPaths);
-
-        RootNodes.Clear();
-        var allNodes = _fileSystemService.GetChildren(FolderPath);
-        foreach (var node in ApplyHiddenFilter(allNodes))
+        IsLoading = true;
+        try
         {
-            RootNodes.Add(node);
-            RestoreExpandedState(node, expandedPaths);
+            // Collect expanded directory paths before clearing
+            var expandedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            CollectExpandedPaths(RootNodes, expandedPaths);
+
+            RootNodes.Clear();
+            var allNodes = await _fileSystemService.GetChildrenAsync(FolderPath);
+            foreach (var node in ApplyHiddenFilter(allNodes))
+            {
+                RootNodes.Add(node);
+                await RestoreExpandedStateAsync(node, expandedPaths);
+            }
+        }
+        finally
+        {
+            IsLoading = false;
         }
     }
 
@@ -337,22 +357,22 @@ public partial class FileExplorerViewModel : ObservableObject
     /// When toggled off, hidden items are removed from the tree.
     /// </summary>
     [RelayCommand]
-    public void ToggleShowHiddenFiles()
+    public async Task ToggleShowHiddenFilesAsync()
     {
         ShowHiddenFiles = !ShowHiddenFiles;
         _settingsService.Current.ShowHiddenFiles = ShowHiddenFiles;
         _settingsService.QueueSave();
-        RescanFolder();
+        await RescanFolderAsync();
     }
 
     /// <summary>
     /// Restores the last opened folder from persisted state (called on startup).
     /// </summary>
-    public void RestoreLastFolder()
+    public async Task RestoreLastFolderAsync()
     {
         var last = _stateService.Current.LastOpenFolder;
         if (!string.IsNullOrEmpty(last) && Directory.Exists(last))
-            OpenFolder(last);
+            await OpenFolderAsync(last);
     }
 
     /// <summary>
@@ -375,7 +395,7 @@ public partial class FileExplorerViewModel : ObservableObject
     /// <summary>
     /// Restores expanded state for nodes whose paths were previously expanded.
     /// </summary>
-    private void RestoreExpandedState(FileNode node, HashSet<string> expandedPaths)
+    private async Task RestoreExpandedStateAsync(FileNode node, HashSet<string> expandedPaths)
     {
         if (!node.IsDirectory || !expandedPaths.Contains(node.FullPath)) return;
 
@@ -383,13 +403,13 @@ public partial class FileExplorerViewModel : ObservableObject
         if (node.NeedsLoading)
         {
             node.Children.Clear();
-            var allChildren = _fileSystemService.GetChildren(node.FullPath);
+            var allChildren = await _fileSystemService.GetChildrenAsync(node.FullPath);
             foreach (var child in ApplyHiddenFilter(allChildren))
                 node.Children.Add(child);
         }
 
         foreach (var child in node.Children)
-            RestoreExpandedState(child, expandedPaths);
+            await RestoreExpandedStateAsync(child, expandedPaths);
     }
 
     /// <summary>

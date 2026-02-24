@@ -190,13 +190,13 @@ public partial class FileExplorerPanel : UserControl
     /// <summary>
     /// Handles tree item expansion — triggers lazy-loading of directory children.
     /// </summary>
-    private void OnTreeViewItemExpanded(object sender, RoutedEventArgs e)
+    private async void OnTreeViewItemExpanded(object sender, RoutedEventArgs e)
     {
         if (e.OriginalSource is TreeViewItem treeViewItem
             && treeViewItem.DataContext is FileNode node
             && DataContext is FileExplorerViewModel vm)
         {
-            vm.ExpandNode(node);
+            await vm.ExpandNodeAsync(node);
         }
     }
 

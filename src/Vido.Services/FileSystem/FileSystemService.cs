@@ -52,6 +52,12 @@ public sealed class FileSystemService : IFileSystemService
     }
 
     /// <inheritdoc />
+    public Task<List<FileNode>> GetChildrenAsync(string directoryPath)
+    {
+        return Task.Run(() => GetChildren(directoryPath));
+    }
+
+    /// <inheritdoc />
     public void LoadChildren(FileNode node)
     {
         if (!node.IsDirectory || !node.NeedsLoading) return;
