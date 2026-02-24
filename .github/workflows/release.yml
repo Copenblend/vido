@@ -60,7 +60,7 @@ jobs:
         run: |
           # Read version from Directory.Build.props (single source of truth)
           [xml]$buildProps = Get-Content "Directory.Build.props"
-          $version = ($buildProps.Project.PropertyGroup.VidoVersion | Where-Object { $_ } | Select-Object -First 1)
+          $version = $buildProps.SelectSingleNode('//VidoVersion').'#text'
           if (-not $version) { $version = "0.1.0" }
 
           # Determine the tag name

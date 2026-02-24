@@ -104,7 +104,7 @@ function Invoke-CodeSign([string]$FilePath, [string]$Description) {
 
 # Read version from Directory.Build.props (single source of truth)
 [xml]$buildProps = Get-Content (Join-Path $Root "Directory.Build.props")
-$Version = $buildProps.Project.PropertyGroup.VidoVersion | Where-Object { $_ } | Select-Object -First 1
+$Version = $buildProps.SelectSingleNode('//VidoVersion').'#text'
 if (-not $Version) { $Version = "0.1.0" }
 
 Write-Host "========================================" -ForegroundColor Cyan
