@@ -30,6 +30,10 @@ public sealed class ContributionRegistry : IContributionRegistry
     // Map of wired status-bar full IDs → host StatusBarItem instances for text updates
     private readonly Dictionary<string, StatusBarItem> _statusBarItemRefs = new(StringComparer.OrdinalIgnoreCase);
 
+    // Playlist provider (only one at a time)
+    private IPlaylistProvider? _playlistProvider;
+    private string? _playlistProviderPluginId;
+
     public event Action? ContributionsChanged;
     public event Action<string, bool>? ToolbarButtonHighlightChanged;
     public event Action<string>? RightPanelShowRequested;
@@ -196,6 +200,32 @@ public sealed class ContributionRegistry : IContributionRegistry
         ControlBarOverlayToggled?.Invoke(fullId, visible);
     }
 
+    public void RegisterPlaylistProvider(string pluginId, IPlaylistProvider provider)
+    {
+        lock (_lock)
+        {
+            _playlistProvider = provider;
+            _playlistProviderPluginId = pluginId;
+        }
+    }
+
+    public void UnregisterPlaylistProvider(string pluginId)
+    {
+        lock (_lock)
+        {
+            if (string.Equals(_playlistProviderPluginId, pluginId, StringComparison.OrdinalIgnoreCase))
+            {
+                _playlistProvider = null;
+                _playlistProviderPluginId = null;
+            }
+        }
+    }
+
+    public IPlaylistProvider? GetPlaylistProvider()
+    {
+        lock (_lock) return _playlistProvider;
+    }
+
     // ── Status bar item updates ──
 
     public void SetStatusBarItemReference(string fullId, StatusBarItem item)
@@ -298,6 +328,13 @@ public sealed class ContributionRegistry : IContributionRegistry
                 foreach (var key in iconKeys)
                     _fileIcons.Remove(key);
                 _pluginFileIconKeys.Remove(pluginId);
+            }
+
+            // Remove playlist provider if owned by this plugin
+            if (string.Equals(_playlistProviderPluginId, pluginId, StringComparison.OrdinalIgnoreCase))
+            {
+                _playlistProvider = null;
+                _playlistProviderPluginId = null;
             }
         }
         ContributionsChanged?.Invoke();

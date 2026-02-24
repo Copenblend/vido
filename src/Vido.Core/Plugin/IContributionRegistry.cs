@@ -49,6 +49,15 @@ public interface IContributionRegistry
     void RegisterControlBarItem(string pluginId, string contributionId, string tooltip, int order,
         Func<object> viewFactory, Func<object>? overlayFactory);
 
+    /// <summary>
+    /// Registers a playlist provider from a plugin. Only one provider may be active
+    /// at a time; a second registration replaces the first.
+    /// </summary>
+    void RegisterPlaylistProvider(string pluginId, IPlaylistProvider provider);
+
+    /// <summary>Removes the playlist provider registered by the specified plugin.</summary>
+    void UnregisterPlaylistProvider(string pluginId);
+
     // ── Query (called by UI layer) ──
 
     /// <summary>Gets all registered sidebar panel contributions, ordered by priority.</summary>
@@ -77,6 +86,11 @@ public interface IContributionRegistry
 
     /// <summary>Gets all registered control bar item contributions, ordered by priority.</summary>
     IReadOnlyList<ControlBarRegistration> GetControlBarItems();
+
+    /// <summary>
+    /// Returns the currently registered playlist provider, or <c>null</c> if none.
+    /// </summary>
+    IPlaylistProvider? GetPlaylistProvider();
 
     // ── Unregistration (called when plugin deactivates) ──
 
