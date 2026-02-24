@@ -107,4 +107,24 @@ public interface IPluginContext
     /// that was previously registered via <see cref="RegisterBottomPanel"/>.
     /// </summary>
     void RequestShowBottomPanel(string contributionId);
+
+    /// <summary>
+    /// Register a control bar item with an optional video overlay.
+    /// The item appears left of the loop button in the transport controls.
+    /// The <paramref name="contributionId"/> must match a controlBar contribution
+    /// declared in the plugin manifest.
+    /// </summary>
+    /// <param name="contributionId">Contribution ID from manifest.</param>
+    /// <param name="viewFactory">Factory returning a WPF element for the control bar button/widget.</param>
+    /// <param name="overlayFactory">
+    /// Optional factory returning a WPF element to overlay on the video surface.
+    /// Use <see cref="ToggleControlBarOverlay"/> to show/hide it.
+    /// </param>
+    void RegisterControlBarItem(string contributionId, Func<object> viewFactory, Func<object>? overlayFactory = null);
+
+    /// <summary>
+    /// Toggles visibility of a control bar item's video overlay.
+    /// Only applicable when the item was registered with a non-null overlayFactory.
+    /// </summary>
+    void ToggleControlBarOverlay(string contributionId, bool visible);
 }

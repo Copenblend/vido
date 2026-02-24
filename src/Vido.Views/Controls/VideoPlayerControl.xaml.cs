@@ -470,4 +470,67 @@ public partial class VideoPlayerControl : UserControl
 
     /// <summary>Gets the controls overlay border for animation purposes.</summary>
     public Border ControlsOverlayElement => ControlsOverlay;
+
+    // ── Plugin control bar items ──
+
+    private readonly Dictionary<string, UIElement> _pluginControlBarItems = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, UIElement> _pluginOverlays = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Adds a plugin-provided control bar item (left of the loop button).
+    /// </summary>
+    public void AddPluginControlBarItem(string fullId, UIElement element)
+    {
+        if (_pluginControlBarItems.ContainsKey(fullId)) return;
+        _pluginControlBarItems[fullId] = element;
+        PluginControlBarPanel.Items.Add(element);
+    }
+
+    /// <summary>
+    /// Removes a plugin control bar item by its full ID.
+    /// </summary>
+    public void RemovePluginControlBarItem(string fullId)
+    {
+        if (!_pluginControlBarItems.TryGetValue(fullId, out var element)) return;
+        PluginControlBarPanel.Items.Remove(element);
+        _pluginControlBarItems.Remove(fullId);
+    }
+
+    /// <summary>
+    /// Adds a plugin video overlay element (e.g. a beat bar).
+    /// Overlays are layered on top of the video surface and are
+    /// not hit-test visible by default.
+    /// </summary>
+    public void AddPluginOverlay(string fullId, UIElement overlay)
+    {
+        if (_pluginOverlays.ContainsKey(fullId)) return;
+        overlay.Visibility = Visibility.Collapsed;
+        _pluginOverlays[fullId] = overlay;
+        PluginOverlayContainer.Children.Add(overlay);
+    }
+
+    /// <summary>
+    /// Removes a plugin overlay by its full ID.
+    /// </summary>
+    public void RemovePluginOverlay(string fullId)
+    {
+        if (!_pluginOverlays.TryGetValue(fullId, out var overlay)) return;
+        PluginOverlayContainer.Children.Remove(overlay);
+        _pluginOverlays.Remove(fullId);
+    }
+
+    /// <summary>
+    /// Toggles visibility of a plugin overlay.
+    /// </summary>
+    public void SetPluginOverlayVisible(string fullId, bool visible)
+    {
+        if (_pluginOverlays.TryGetValue(fullId, out var overlay))
+            overlay.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>
+    /// Returns whether a plugin control bar item with the given ID exists.
+    /// </summary>
+    public bool HasPluginControlBarItem(string fullId) =>
+        _pluginControlBarItems.ContainsKey(fullId);
 }

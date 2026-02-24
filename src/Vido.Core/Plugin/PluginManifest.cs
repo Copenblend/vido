@@ -107,6 +107,10 @@ public sealed class PluginContributions
     /// <summary>Setting contributions (plugin settings).</summary>
     [JsonPropertyName("settings")]
     public List<SettingContribution> Settings { get; set; } = [];
+
+    /// <summary>Control bar item contributions (transport controls area).</summary>
+    [JsonPropertyName("controlBar")]
+    public List<ControlBarContribution> ControlBar { get; set; } = [];
 }
 
 /// <summary>Sidebar panel contribution declaration.</summary>
@@ -259,4 +263,19 @@ public sealed class SettingContribution
     {
         "boolean", "string", "number", "enum"
     };
+}
+
+/// <summary>Control bar item contribution declaration.</summary>
+public sealed class ControlBarContribution
+{
+    [JsonPropertyName("id")]
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>Tooltip text shown on hover.</summary>
+    [JsonPropertyName("tooltip")]
+    public string Tooltip { get; set; } = string.Empty;
+
+    /// <summary>Order for positioning among other plugin control bar items. Lower values appear first (leftmost).</summary>
+    [JsonPropertyName("order")]
+    public int Order { get; set; } = 100;
 }
