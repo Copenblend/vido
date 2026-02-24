@@ -22,6 +22,7 @@ using Vido.ViewModels;
 using Vido.Views.Panels;
 using Vido.Views.Services;
 using Vido.Core.Logging;
+using Vido.Core.Updates;
 using Vido.Views.Controls;
 
 namespace Vido.Views;
@@ -48,8 +49,10 @@ public partial class MainWindow : Window
     private readonly IContributionRegistry _contributionRegistry;
     private readonly IContextMenuRegistry _contextMenuRegistry;
     private readonly IPluginHost _pluginHost;
+    private readonly IUpdateService _updateService;
 
     private string[]? _pendingCommandLineArgs;
+    private string? _pendingInstallerPath;
 
     /// <summary>
     /// FFmpeg version string, set by App.xaml.cs after initialization.
@@ -102,6 +105,7 @@ public partial class MainWindow : Window
         IContextMenuRegistry contextMenuRegistry,
         IPluginInstaller pluginInstaller,
         IPluginHost pluginHost,
+        IUpdateService updateService,
         FileExplorerViewModel fileExplorerViewModel,
         VideoPlayerViewModel videoPlayerViewModel,
         MainWindowViewModel mainWindowViewModel,
@@ -116,6 +120,7 @@ public partial class MainWindow : Window
         _contributionRegistry = contributionRegistry;
         _contextMenuRegistry = contextMenuRegistry;
         _pluginHost = pluginHost;
+        _updateService = updateService;
         _fileExplorerViewModel = fileExplorerViewModel;
         _videoPlayerViewModel = videoPlayerViewModel;
         _mainWindowViewModel = mainWindowViewModel;
@@ -2580,13 +2585,131 @@ public partial class MainWindow : Window
         dialog.ShowDialog();
     }
 
-    private void ShowCheckForUpdatesMessage()
+    private async void ShowCheckForUpdatesMessage()
     {
-        MessageBox.Show(
-            this,
-            "You are running the latest version of Vido.",
-            "Check for Updates",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
+        // If an installer was already downloaded, offer to install it
+        if (_pendingInstallerPath is not null && File.Exists(_pendingInstallerPath))
+        {
+            var install = MessageBox.Show(
+                this,
+                "An update has already been downloaded. Install now and restart?",
+                "Update Ready",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+            if (install == MessageBoxResult.Yes)
+            {
+                _updateService.LaunchInstaller(_pendingInstallerPath);
+                Application.Current.Shutdown();
+            }
+            return;
+        }
+
+        var result = await _updateService.CheckForUpdateAsync();
+
+        if (result.ErrorMessage is not null)
+        {
+            MessageBox.Show(
+                this,
+                $"Could not check for updates:\n\n{result.ErrorMessage}",
+                "Check for Updates",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        if (result.IsUpdateAvailable)
+        {
+            var msg = $"A new version of Vido is available!\n\n" +
+                      $"Current: v{result.CurrentVersion}\nLatest: v{result.LatestVersion}\n\n";
+
+            if (result.InstallerDownloadUrl is not null)
+            {
+                msg += "Download and install the update?";
+                var mbResult = MessageBox.Show(
+                    this, msg, "Update Available",
+                    MessageBoxButton.YesNo, MessageBoxImage.Information);
+
+                if (mbResult == MessageBoxResult.Yes)
+                    await DownloadAndPromptRestartAsync(result);
+            }
+            else
+            {
+                // No installer asset — fall back to opening the release page
+                msg += "Open the release page to download manually?";
+                var mbResult = MessageBox.Show(
+                    this, msg, "Update Available",
+                    MessageBoxButton.YesNo, MessageBoxImage.Information);
+
+                if (mbResult == MessageBoxResult.Yes && result.ReleaseUrl is not null)
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                    {
+                        FileName = result.ReleaseUrl,
+                        UseShellExecute = true
+                    });
+                }
+            }
+        }
+        else
+        {
+            MessageBox.Show(
+                this,
+                "You are running the latest version of Vido.",
+                "Check for Updates",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+    }
+
+    private async Task DownloadAndPromptRestartAsync(UpdateCheckResult result)
+    {
+        try
+        {
+            _logService.Info("Downloading update...", "Updates");
+
+            var fileName = Path.GetFileName(new Uri(result.InstallerDownloadUrl!).LocalPath);
+            _pendingInstallerPath = await _updateService.DownloadInstallerAsync(
+                result.InstallerDownloadUrl!, fileName);
+
+            _logService.Info($"Update downloaded to {_pendingInstallerPath}", "Updates");
+
+            var restart = MessageBox.Show(
+                this,
+                $"Vido v{result.LatestVersion} has been downloaded.\n\n" +
+                "Install now and restart?",
+                "Update Downloaded",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Information);
+
+            if (restart == MessageBoxResult.Yes)
+            {
+                _updateService.LaunchInstaller(_pendingInstallerPath);
+                Application.Current.Shutdown();
+            }
+            // If No — the installer stays in temp. Next "Check for Updates" will
+            // offer to install it.
+        }
+        catch (Exception ex)
+        {
+            _pendingInstallerPath = null;
+            _logService.Error($"Failed to download update: {ex.Message}", "Updates");
+
+            MessageBox.Show(
+                this,
+                $"Failed to download update: {ex.Message}\n\n" +
+                "You can download it manually from the release page.",
+                "Download Failed",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            if (result.ReleaseUrl is not null)
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = result.ReleaseUrl,
+                    UseShellExecute = true
+                });
+            }
+        }
     }
 }
