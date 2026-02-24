@@ -349,4 +349,112 @@ public class ContributionRegistryTests
         Assert.Equal("pluginA", panels[0].PluginId);
         Assert.Equal("pluginZ", panels[1].PluginId);
     }
+
+    // ── Control bar items ──
+
+    [Fact]
+    public void RegisterControlBarItem_AddsEntry()
+    {
+        _registry.RegisterControlBarItem("p1", "beat", "Beat Bar", 10, () => "view", () => "overlay");
+
+        var items = _registry.GetControlBarItems();
+        Assert.Single(items);
+        Assert.Equal("p1", items[0].PluginId);
+        Assert.Equal("beat", items[0].ContributionId);
+        Assert.Equal("Beat Bar", items[0].Tooltip);
+        Assert.Equal(10, items[0].Order);
+        Assert.Equal("view", items[0].ViewFactory());
+        Assert.Equal("overlay", items[0].OverlayFactory!());
+    }
+
+    [Fact]
+    public void RegisterControlBarItem_NullOverlay_Allowed()
+    {
+        _registry.RegisterControlBarItem("p1", "btn", "Btn", 10, () => "v", null);
+
+        var items = _registry.GetControlBarItems();
+        Assert.Single(items);
+        Assert.Null(items[0].OverlayFactory);
+    }
+
+    [Fact]
+    public void RegisterControlBarItem_SortsByOrder()
+    {
+        _registry.RegisterControlBarItem("p1", "low", "L", 100, () => "v", null);
+        _registry.RegisterControlBarItem("p2", "high", "H", 10, () => "v", null);
+
+        var items = _registry.GetControlBarItems();
+        Assert.Equal("high", items[0].ContributionId);
+        Assert.Equal("low", items[1].ContributionId);
+    }
+
+    [Fact]
+    public void RegisterControlBarItem_SamePriority_OrdersByPluginId()
+    {
+        _registry.RegisterControlBarItem("pluginC", "c", "C", 10, () => "v", null);
+        _registry.RegisterControlBarItem("pluginA", "a", "A", 10, () => "v", null);
+        _registry.RegisterControlBarItem("pluginB", "b", "B", 10, () => "v", null);
+
+        var items = _registry.GetControlBarItems();
+        Assert.Equal("pluginA", items[0].PluginId);
+        Assert.Equal("pluginB", items[1].PluginId);
+        Assert.Equal("pluginC", items[2].PluginId);
+    }
+
+    [Fact]
+    public void ToggleControlBarOverlay_FiresEvent()
+    {
+        _registry.RegisterControlBarItem("p1", "beat", "Beat", 10, () => "v", () => "overlay");
+
+        string? firedId = null;
+        bool? firedVisible = null;
+        _registry.ControlBarOverlayToggled += (id, vis) => { firedId = id; firedVisible = vis; };
+
+        _registry.ToggleControlBarOverlay("plugin.p1.beat", true);
+
+        Assert.Equal("plugin.p1.beat", firedId);
+        Assert.True(firedVisible);
+    }
+
+    [Fact]
+    public void ToggleControlBarOverlay_HideFiresEvent()
+    {
+        _registry.RegisterControlBarItem("p1", "beat", "Beat", 10, () => "v", () => "overlay");
+
+        _registry.ToggleControlBarOverlay("plugin.p1.beat", true);
+
+        string? firedId = null;
+        bool? firedVisible = null;
+        _registry.ControlBarOverlayToggled += (id, vis) => { firedId = id; firedVisible = vis; };
+
+        _registry.ToggleControlBarOverlay("plugin.p1.beat", false);
+
+        Assert.Equal("plugin.p1.beat", firedId);
+        Assert.False(firedVisible);
+    }
+
+    [Fact]
+    public void UnregisterAll_RemovesControlBarItems()
+    {
+        _registry.RegisterControlBarItem("p1", "beat", "Beat", 10, () => "v", () => "overlay");
+        _registry.RegisterControlBarItem("p2", "other", "Other", 20, () => "v", null);
+
+        _registry.UnregisterAll("p1");
+
+        var items = _registry.GetControlBarItems();
+        Assert.Single(items);
+        Assert.Equal("p2", items[0].PluginId);
+    }
+
+    [Fact]
+    public void GetControlBarItems_ReturnsSnapshot()
+    {
+        _registry.RegisterControlBarItem("p1", "btn", "Btn", 10, () => "v", null);
+        var first = _registry.GetControlBarItems();
+        _registry.RegisterControlBarItem("p2", "btn2", "Btn2", 20, () => "v", null);
+        var second = _registry.GetControlBarItems();
+
+        Assert.Single(first); // snapshot not affected by later registration
+        Assert.Equal(2, second.Count);
+    }
 }
