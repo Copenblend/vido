@@ -48,6 +48,18 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Reloads the registry URL list from the backing store so the UI
+    /// reflects changes made outside the settings panel (e.g. "Enter Repository Code").
+    /// </summary>
+    public void RefreshRegistryUrls()
+    {
+        var item = AllCategories
+            .SelectMany(c => c.Settings)
+            .FirstOrDefault(s => s.Id == "plugins.registryUrls");
+        item?.Reload();
+    }
+
+    /// <summary>
     /// Rebuilds plugin settings categories. Call after a plugin is
     /// enabled/disabled/installed/uninstalled.
     /// </summary>

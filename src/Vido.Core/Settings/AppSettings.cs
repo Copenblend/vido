@@ -89,6 +89,27 @@ public sealed class AppSettings
     };
 
     /// <summary>
+    /// Resolves a repository code or URL to a registry URL.
+    /// Known codes (e.g. "NSFW") map to predefined URLs.
+    /// Direct URLs (https://, http://, file://) are returned as-is.
+    /// Returns <c>null</c> if the input is not recognised.
+    /// </summary>
+    public static string? ResolveRepositoryCode(string input)
+    {
+        if (string.Equals(input, "NSFW", StringComparison.OrdinalIgnoreCase))
+            return NsfwRegistryUrl;
+
+        if (input.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
+            input.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            input.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
+        {
+            return input;
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Resets every property to its default value.
     /// Call after tests that mutate settings to prevent pollution.
     /// </summary>

@@ -904,6 +904,7 @@ public partial class MainWindow : Window
         // Wire Help menu events
         TitleBar.AboutRequested += ShowAboutDialog;
         TitleBar.CheckForUpdatesRequested += ShowCheckForUpdatesMessage;
+        TitleBar.EnterRepositoryCodeRequested += OnEnterRepositoryCode;
 
         // Wire recent files
         TitleBar.GetRecentFiles = () => _stateService.Current.RecentFiles;
@@ -2720,5 +2721,61 @@ public partial class MainWindow : Window
                 });
             }
         }
+    }
+
+    private void OnEnterRepositoryCode()
+    {
+        var input = InputDialog.ShowInputDialog(
+            this,
+            "Enter Repository Code",
+            "Enter a repository code or URL to add a plugin registry:");
+
+        if (string.IsNullOrWhiteSpace(input)) return;
+
+        var url = AppSettings.ResolveRepositoryCode(input.Trim());
+
+        if (url is null)
+        {
+            MessageBox.Show(
+                this,
+                $"Unknown repository code: '{input}'.\n\n" +
+                "You can enter a known code (e.g. NSFW) or a direct URL " +
+                "(starting with https:// or file://).",
+                "Unknown Code",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        // Check if already added
+        var urls = _settingsService.Current.PluginRegistryUrls;
+        if (urls.Any(u => u.Equals(url, StringComparison.OrdinalIgnoreCase)))
+        {
+            MessageBox.Show(
+                this,
+                "This registry is already in your list.",
+                "Already Added",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        // Add the URL and save
+        urls.Add(url);
+        _settingsService.QueueSave();
+
+        MessageBox.Show(
+            this,
+            "Registry added successfully! The plugin list will refresh.",
+            "Registry Added",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+
+        // Refresh the plugin manager if it's loaded
+        if (_pluginManagerViewModel is not null)
+            _ = _pluginManagerViewModel.RefreshAsync();
+
+        // Refresh the settings panel if it's open so the URL list updates
+        _settingsPage?.RefreshRegistryUrls();
     }
 }

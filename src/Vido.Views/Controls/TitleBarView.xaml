@@ -172,6 +172,10 @@
                 <MenuItem Header="_Check for Updates"
                           Style="{StaticResource DropdownMenuItemStyle}"
                           Click="OnCheckForUpdatesClick" />
+                <Separator Style="{StaticResource MenuSeparatorStyle}" />
+                <MenuItem Header="Enter Repository _Code..."
+                          Style="{StaticResource DropdownMenuItemStyle}"
+                          Click="OnEnterRepositoryCodeClick" />
             </MenuItem>
         </Menu>
 
