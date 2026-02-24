@@ -98,7 +98,22 @@ public partial class FileExplorerPanel : UserControl
         if (sender is not TreeViewItem item || item.DataContext is not FileNode node)
             return;
 
-        if (node.IsDirectory || node.IsVideoFile) return;
+        // Set video file icon from embedded image
+        if (node.IsVideoFile)
+        {
+            var videoPresenter = FindVisualChild<ContentPresenter>(item);
+            if (videoPresenter?.ContentTemplate is { } videoTemplate)
+            {
+                var videoIcon = videoTemplate.FindName("VideoIcon", videoPresenter) as System.Windows.Controls.Image;
+                if (videoIcon is not null)
+                {
+                    videoIcon.Source = Services.VideoIconProvider.GetVideoFileIcon();
+                }
+            }
+            return;
+        }
+
+        if (node.IsDirectory) return;
         if (ContributionRegistry is null) return;
 
         var ext = Path.GetExtension(node.Name);
