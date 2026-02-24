@@ -1912,7 +1912,7 @@ public partial class MainWindow : Window
                     Height = 24,
                     Stretch = Stretch.Uniform,
                     SnapsToDevicePixels = true,
-                    Opacity = 0.85
+                    Opacity = 0.6
                 };
             }
             catch

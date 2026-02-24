@@ -117,6 +117,8 @@ public partial class ActivityBarView : UserControl
     /// <summary>
     /// Sets all stroke elements inside a button's Canvas to the
     /// active (white) or inactive (grey) icon brush.
+    /// For plugin bitmap icons (Image elements), adjusts opacity
+    /// to simulate the same active/inactive visual states.
     /// Only updates Stroke — Fill is left unchanged to preserve
     /// any background-colored occlusion fills.
     /// </summary>
@@ -135,6 +137,10 @@ public partial class ActivityBarView : UserControl
                 }
             }
         }
+        else if (button.Content is Image image)
+        {
+            image.Opacity = bright ? 1.0 : 0.6;
+        }
     }
 
     // ── Plugin sidebar buttons ──
@@ -149,6 +155,10 @@ public partial class ActivityBarView : UserControl
         // Apply the style from local resources
         if (TryFindResource("ActivityBarButtonStyle") is Style style)
             button.Style = style;
+
+        // Wire hover events so the icon brightens on hover from the start
+        button.MouseEnter += OnIconMouseEnter;
+        button.MouseLeave += OnIconMouseLeave;
 
         // Find the top StackPanel (DockPanel.Dock="Top") and add the button there
         if (Content is DockPanel dock)
