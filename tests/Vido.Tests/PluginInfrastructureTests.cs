@@ -47,6 +47,35 @@ public sealed class PluginInfrastructureTests
         Assert.StartsWith("https://", AppSettings.OfficialRegistryUrl);
     }
 
+    [Fact]
+    public void NsfwRegistryUrl_IsNotEmpty()
+    {
+        Assert.False(string.IsNullOrWhiteSpace(AppSettings.NsfwRegistryUrl));
+        Assert.StartsWith("https://", AppSettings.NsfwRegistryUrl);
+    }
+
+    [Fact]
+    public void OfficialRegistryUrls_Contains_Both_Urls()
+    {
+        Assert.Contains(AppSettings.OfficialRegistryUrl, AppSettings.OfficialRegistryUrls);
+        Assert.Contains(AppSettings.NsfwRegistryUrl, AppSettings.OfficialRegistryUrls);
+        Assert.Equal(2, AppSettings.OfficialRegistryUrls.Count);
+    }
+
+    [Fact]
+    public void OfficialRegistryUrls_IsCaseInsensitive()
+    {
+        Assert.Contains(AppSettings.OfficialRegistryUrl.ToUpperInvariant(), AppSettings.OfficialRegistryUrls);
+        Assert.Contains(AppSettings.NsfwRegistryUrl.ToUpperInvariant(), AppSettings.OfficialRegistryUrls);
+    }
+
+    [Fact]
+    public void PluginRegistryUrls_Default_DoesNotContainNsfwUrl()
+    {
+        var settings = new AppSettings();
+        Assert.DoesNotContain(AppSettings.NsfwRegistryUrl, settings.PluginRegistryUrls);
+    }
+
     // ── SettingContribution model ──
 
     [Fact]

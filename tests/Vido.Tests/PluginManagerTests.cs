@@ -743,6 +743,25 @@ public sealed class PluginManagerTests
         Assert.False(vm.AvailablePlugins[0].IsOfficial);
     }
 
+    [Fact]
+    public async Task LoadAsync_NsfwRegistryUrl_SetsOfficial()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var appSettings = new AppSettings();
+        appSettings.PluginRegistryUrls.Add(AppSettings.NsfwRegistryUrl);
+        settings.Current.Returns(appSettings);
+
+        var entry = MakeEntry(id: "nsfw-plugin");
+        var registry = new PluginRegistry { Name = "NSFW", Plugins = [entry] };
+        installer.FetchRegistryAsync(AppSettings.NsfwRegistryUrl).Returns(Task.FromResult<PluginRegistry?>(registry));
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        var nsfwPlugin = vm.AvailablePlugins.First(p => p.Id == "nsfw-plugin");
+        Assert.True(nsfwPlugin.IsOfficial);
+    }
+
     // ╔══════════════════════════════════════════════════════════════════╗
     // ║ SettingDisplayItem Tests                                        ║
     // ╚══════════════════════════════════════════════════════════════════╝

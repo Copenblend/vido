@@ -177,7 +177,7 @@ public partial class PluginManagerViewModel : ObservableObject
                 if (!RegistrySources.Contains(registryName))
                     RegistrySources.Add(registryName);
 
-                var isOfficial = url.Equals(AppSettings.OfficialRegistryUrl, StringComparison.OrdinalIgnoreCase);
+                var isOfficial = AppSettings.OfficialRegistryUrls.Contains(url);
 
                 foreach (var entry in registry.Plugins)
                 {
