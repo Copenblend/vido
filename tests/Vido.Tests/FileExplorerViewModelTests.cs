@@ -84,6 +84,7 @@ public sealed class FileExplorerViewModelTests
 
         Assert.False(_sut.HasFolderOpen);
         Assert.Empty(_sut.RootNodes);
+        Assert.False(_sut.IsLoading);
     }
 
     [Fact]
@@ -524,6 +525,10 @@ public sealed class FileExplorerViewModelTests
         Assert.False(_sut.IsLoading);
 
         var task = _sut.OpenFolderAsync(testDir);
+
+        // IsLoading is set synchronously before the first await.
+        // Give the method a moment to reach the await.
+        await Task.Delay(100);
         Assert.True(_sut.IsLoading);
 
         tcs.SetResult(new List<FileNode>());

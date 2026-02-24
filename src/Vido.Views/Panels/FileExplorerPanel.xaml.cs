@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using Vido.Core.FileSystem;
 using Vido.Core.Menus;
 using Vido.Core.Plugin;
@@ -21,7 +22,7 @@ public partial class FileExplorerPanel : UserControl
 {
     /// <summary>
     /// Raised when the user clicks "Open Folder" (either the button or via a menu).
-    /// The subscriber should show the folder dialog and call <see cref="FileExplorerViewModel.OpenFolder"/>.
+    /// The subscriber should show the folder dialog and call <see cref="FileExplorerViewModel.OpenFolderAsync"/>.
     /// </summary>
     public event Action? OpenFolderRequested;
 
@@ -71,20 +72,54 @@ public partial class FileExplorerPanel : UserControl
         if (e.NewValue is FileExplorerViewModel newVm)
         {
             newVm.PropertyChanged += OnViewModelPropertyChanged;
-            UpdateVisualState(newVm.HasFolderOpen);
+            UpdateVisualState(newVm.HasFolderOpen, newVm.IsLoading);
         }
     }
 
     private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(FileExplorerViewModel.HasFolderOpen) && sender is FileExplorerViewModel vm)
-            UpdateVisualState(vm.HasFolderOpen);
+        if ((e.PropertyName == nameof(FileExplorerViewModel.HasFolderOpen) ||
+             e.PropertyName == nameof(FileExplorerViewModel.IsLoading)) &&
+            sender is FileExplorerViewModel vm)
+        {
+            UpdateVisualState(vm.HasFolderOpen, vm.IsLoading);
+        }
     }
 
-    private void UpdateVisualState(bool hasFolderOpen)
+    private DispatcherTimer? _spinnerTimer;
+
+    private void UpdateVisualState(bool hasFolderOpen, bool isLoading)
     {
-        EmptyState.Visibility = hasFolderOpen ? Visibility.Collapsed : Visibility.Visible;
-        TreePanel.Visibility = hasFolderOpen ? Visibility.Visible : Visibility.Collapsed;
+        EmptyState.Visibility = !hasFolderOpen && !isLoading ? Visibility.Visible : Visibility.Collapsed;
+        LoadingState.Visibility = isLoading ? Visibility.Visible : Visibility.Collapsed;
+        TreePanel.Visibility = hasFolderOpen && !isLoading ? Visibility.Visible : Visibility.Collapsed;
+
+        if (isLoading)
+            StartSpinner();
+        else
+            StopSpinner();
+    }
+
+    private void StartSpinner()
+    {
+        if (_spinnerTimer is not null) return;
+
+        _spinnerTimer = new DispatcherTimer(DispatcherPriority.Render)
+        {
+            Interval = TimeSpan.FromMilliseconds(16)
+        };
+        _spinnerTimer.Tick += (_, _) =>
+        {
+            SpinnerRotation.Angle = (SpinnerRotation.Angle + 6) % 360;
+        };
+        _spinnerTimer.Start();
+    }
+
+    private void StopSpinner()
+    {
+        _spinnerTimer?.Stop();
+        _spinnerTimer = null;
+        SpinnerRotation.Angle = 0;
     }
 
     // ─── Tree item events ────────────────────────────────────────────

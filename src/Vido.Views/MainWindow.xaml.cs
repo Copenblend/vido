@@ -47,7 +47,6 @@ public partial class MainWindow : Window
     private readonly IKeyboardShortcutService _keyboardShortcutService;
     private readonly IContributionRegistry _contributionRegistry;
     private readonly IContextMenuRegistry _contextMenuRegistry;
-    private readonly IPluginInstaller _pluginInstaller;
     private readonly IPluginHost _pluginHost;
 
     private string[]? _pendingCommandLineArgs;
@@ -116,7 +115,6 @@ public partial class MainWindow : Window
         _keyboardShortcutService = keyboardShortcutService;
         _contributionRegistry = contributionRegistry;
         _contextMenuRegistry = contextMenuRegistry;
-        _pluginInstaller = pluginInstaller;
         _pluginHost = pluginHost;
         _fileExplorerViewModel = fileExplorerViewModel;
         _videoPlayerViewModel = videoPlayerViewModel;
@@ -1003,7 +1001,7 @@ public partial class MainWindow : Window
 
         // Sync explorer root to video player for skip prev/next across all folders
         if (_fileExplorerViewModel.FolderPath is not null)
-            _videoPlayerViewModel.SetExplorerRoot(_fileExplorerViewModel.FolderPath);
+            await _videoPlayerViewModel.SetExplorerRootAsync(_fileExplorerViewModel.FolderPath);
     }
 
     private void ShowOpenFolderDialog()
@@ -1068,7 +1066,7 @@ public partial class MainWindow : Window
     private async void OnFolderOpened(string path)
     {
         await _fileExplorerViewModel.OpenFolderAsync(path);
-        _videoPlayerViewModel.SetExplorerRoot(path);
+        await _videoPlayerViewModel.SetExplorerRootAsync(path);
 
         // Ensure sidebar is visible and Explorer panel is active
         if (_activityBarViewModel is not null)
@@ -1079,10 +1077,10 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OnFolderClosed()
+    private async void OnFolderClosed()
     {
         _fileExplorerViewModel.CloseFolder();
-        _videoPlayerViewModel.SetExplorerRoot(null);
+        await _videoPlayerViewModel.SetExplorerRootAsync(null);
     }
 
     private async void OnFolderRescanned()

@@ -537,7 +537,7 @@ public class VideoPlayerViewModelTests : IDisposable
         return root;
     }
 
-    // ── SetExplorerRoot + nested folder scanning ──
+    // ── SetExplorerRootAsync + nested folder scanning ──
 
     [Fact]
     public async Task SetExplorerRoot_ScansNestedFolders()
@@ -550,7 +550,7 @@ public class VideoPlayerViewModelTests : IDisposable
         {
             _engine.Duration.Returns(TimeSpan.FromMinutes(5));
 
-            _sut.SetExplorerRoot(root);
+            await _sut.SetExplorerRootAsync(root);
             await _sut.LoadAndPlayAsync(Path.Combine(root, "a.mp4"));
 
             // Should find all 3 files across nested folders
@@ -579,7 +579,7 @@ public class VideoPlayerViewModelTests : IDisposable
         {
             _engine.Duration.Returns(TimeSpan.FromMinutes(5));
 
-            _sut.SetExplorerRoot(root);
+            await _sut.SetExplorerRootAsync(root);
             await _sut.LoadAndPlayAsync(Path.Combine(root, "a.mp4"));
 
             var next = _sut.GetAdjacentVideoFile(1);
@@ -590,11 +590,39 @@ public class VideoPlayerViewModelTests : IDisposable
     }
 
     [Fact]
-    public void SetExplorerRoot_Null_ClearsList()
+    public async Task SetExplorerRoot_Null_ClearsList()
     {
-        _sut.SetExplorerRoot(null);
+        await _sut.SetExplorerRootAsync(null);
         var result = _sut.GetAdjacentVideoFile(1);
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task SetExplorerRootAsync_NonExistentPath_ClearsList()
+    {
+        await _sut.SetExplorerRootAsync(@"C:\NonExistent_" + Guid.NewGuid());
+        var result = _sut.GetAdjacentVideoFile(1);
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task SetExplorerRootAsync_SkipsHiddenVideoFiles()
+    {
+        var root = CreateTempNestedVideoDir("visible.mp4", "hidden.mp4");
+        try
+        {
+            File.SetAttributes(Path.Combine(root, "hidden.mp4"), FileAttributes.Hidden);
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            await _sut.SetExplorerRootAsync(root);
+            await _sut.LoadAndPlayAsync(Path.Combine(root, "visible.mp4"));
+
+            // Only the visible file should be in the sibling list
+            var next = _sut.GetAdjacentVideoFile(1);
+            // Wraps back to itself since it's the only file
+            Assert.Equal(Path.Combine(root, "visible.mp4"), next);
+        }
+        finally { Directory.Delete(root, true); }
     }
 
     // ── Dispose ──
