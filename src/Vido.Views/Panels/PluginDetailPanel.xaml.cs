@@ -397,6 +397,17 @@ public partial class PluginDetailPanel : UserControl
     }
 
     /// <summary>
+    /// Re-populates the header, metadata, and reloads content (including settings).
+    /// Use after install/uninstall/update to reflect the new plugin state.
+    /// </summary>
+    public void Refresh()
+    {
+        PopulateHeader();
+        PopulateMetadata();
+        _ = LoadContentAsync();
+    }
+
+    /// <summary>
     /// Switches to the Settings tab.
     /// </summary>
     public void SwitchToSettings()
