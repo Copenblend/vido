@@ -180,6 +180,8 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         _engine.PositionChanged += OnEnginePositionChanged;
         _engine.FrameReady += OnEngineFrameReady;
         _engine.MediaEnded += OnEngineMediaEnded;
+
+        _eventBus.Subscribe<PlayFileRequestedEvent>(e => _ = LoadAndPlayAsync(e.FilePath));
     }
 
     // ── Engine event handlers ──
