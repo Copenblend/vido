@@ -236,6 +236,28 @@ public sealed class PluginContext : IPluginContext
         _contributions.RequestShowBottomPanel(fullId);
     }
 
+    public void RegisterControlBarItem(string contributionId, Func<object> viewFactory, Func<object>? overlayFactory = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
+        ArgumentNullException.ThrowIfNull(viewFactory);
+
+        var contrib = FindControlBarContribution(contributionId);
+        _contributions.RegisterControlBarItem(
+            Manifest.Id, contributionId,
+            contrib?.Tooltip ?? contributionId,
+            contrib?.Order ?? 100,
+            viewFactory,
+            overlayFactory);
+        Logger.Debug($"Plugin '{Manifest.Id}' registered control bar item '{contributionId}'", "PluginHost");
+    }
+
+    public void ToggleControlBarOverlay(string contributionId, bool visible)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
+        var fullId = $"plugin.{Manifest.Id}.{contributionId}";
+        _contributions.ToggleControlBarOverlay(fullId, visible);
+    }
+
     /// <summary>
     /// Cleans up all registrations made by this plugin context.
     /// Called during plugin deactivation.
@@ -275,6 +297,9 @@ public sealed class PluginContext : IPluginContext
 
     private ContextMenuContribution? FindContextMenuContribution(string id) =>
         Manifest.Contributes.ContextMenu.FirstOrDefault(c => c.Id == id);
+
+    private ControlBarContribution? FindControlBarContribution(string id) =>
+        Manifest.Contributes.ControlBar.FirstOrDefault(c => c.Id == id);
 
     private string? ResolveIconPath(string? relativeIconPath)
     {

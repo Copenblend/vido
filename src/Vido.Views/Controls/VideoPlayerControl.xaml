@@ -56,6 +56,11 @@
                RenderOptions.BitmapScalingMode="LowQuality"
                Visibility="Collapsed" />
 
+        <!-- Plugin video overlays (e.g. beat bars) -->
+        <Grid x:Name="PluginOverlayContainer"
+              Grid.Row="0"
+              IsHitTestVisible="False" />
+
         <!-- Loading indicator overlay -->
         <StackPanel x:Name="LoadingOverlay"
                     Grid.Row="0"
@@ -261,6 +266,16 @@
                     <StackPanel Grid.Column="2"
                                 Orientation="Horizontal"
                                 VerticalAlignment="Center">
+                        <!-- Plugin control bar items (inserted by plugins, left of loop) -->
+                        <ItemsControl x:Name="PluginControlBarPanel"
+                                      VerticalAlignment="Center">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                        </ItemsControl>
+
                         <!-- Loop toggle -->
                         <ToggleButton Style="{StaticResource TransportToggleButtonStyle}"
                                       IsChecked="{Binding IsLooping}"

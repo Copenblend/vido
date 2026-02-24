@@ -21,6 +21,7 @@ public sealed class ContributionRegistry : IContributionRegistry
     private readonly List<ToolbarButtonRegistration> _toolbarButtons = [];
     private readonly List<ContextMenuRegistration> _contextMenuItems = [];
     private readonly List<FileHandlerRegistration> _fileHandlers = [];
+    private readonly List<ControlBarRegistration> _controlBarItems = [];
     private readonly Dictionary<string, string> _fileIcons = new(StringComparer.OrdinalIgnoreCase);
 
     // Track which plugin registered which file icon extensions for cleanup
@@ -33,6 +34,7 @@ public sealed class ContributionRegistry : IContributionRegistry
     public event Action<string, bool>? ToolbarButtonHighlightChanged;
     public event Action<string>? RightPanelShowRequested;
     public event Action<string>? BottomPanelShowRequested;
+    public event Action<string, bool>? ControlBarOverlayToggled;
 
     // Track highlighted toolbar buttons
     private readonly HashSet<string> _highlightedToolbarButtons = new(StringComparer.OrdinalIgnoreCase);
@@ -174,6 +176,26 @@ public sealed class ContributionRegistry : IContributionRegistry
         // This method exists to satisfy the IContributionRegistry interface contract.
     }
 
+    public void RegisterControlBarItem(string pluginId, string contributionId, string tooltip,
+        int order, Func<object> viewFactory, Func<object>? overlayFactory)
+    {
+        InsertSorted(_controlBarItems,
+            new ControlBarRegistration(pluginId, contributionId, tooltip, order, viewFactory, overlayFactory),
+            (a, b) =>
+            {
+                var cmp = a.Order.CompareTo(b.Order);
+                return cmp != 0 ? cmp : string.Compare(a.PluginId, b.PluginId, StringComparison.OrdinalIgnoreCase);
+            });
+    }
+
+    /// <summary>
+    /// Toggles visibility of a control bar overlay.
+    /// </summary>
+    public void ToggleControlBarOverlay(string fullId, bool visible)
+    {
+        ControlBarOverlayToggled?.Invoke(fullId, visible);
+    }
+
     // ── Status bar item updates ──
 
     public void SetStatusBarItemReference(string fullId, StatusBarItem item)
@@ -234,6 +256,11 @@ public sealed class ContributionRegistry : IContributionRegistry
         lock (_lock) return new Dictionary<string, string>(_fileIcons, StringComparer.OrdinalIgnoreCase);
     }
 
+    public IReadOnlyList<ControlBarRegistration> GetControlBarItems()
+    {
+        lock (_lock) return _controlBarItems.ToList();
+    }
+
     /// <summary>
     /// Requests that the host show and expand the specified right panel.
     /// </summary>
@@ -263,6 +290,7 @@ public sealed class ContributionRegistry : IContributionRegistry
             _toolbarButtons.RemoveAll(r => r.PluginId == pluginId);
             _contextMenuItems.RemoveAll(r => r.PluginId == pluginId);
             _fileHandlers.RemoveAll(r => r.PluginId == pluginId);
+            _controlBarItems.RemoveAll(r => r.PluginId == pluginId);
 
             // Remove file icons registered by this plugin
             if (_pluginFileIconKeys.TryGetValue(pluginId, out var iconKeys))

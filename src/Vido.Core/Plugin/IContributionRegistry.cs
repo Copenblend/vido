@@ -45,6 +45,10 @@ public interface IContributionRegistry
     /// <summary>Registers a keyboard binding for a plugin command.</summary>
     void RegisterKeyBinding(string pluginId, KeyBinding binding, string commandId, Action handler);
 
+    /// <summary>Registers a control bar item contribution (shown left of loop button).</summary>
+    void RegisterControlBarItem(string pluginId, string contributionId, string tooltip, int order,
+        Func<object> viewFactory, Func<object>? overlayFactory);
+
     // ── Query (called by UI layer) ──
 
     /// <summary>Gets all registered sidebar panel contributions, ordered by priority.</summary>
@@ -70,6 +74,9 @@ public interface IContributionRegistry
 
     /// <summary>Gets the merged file icon map from all plugins (extension → icon path).</summary>
     IReadOnlyDictionary<string, string> GetFileIcons();
+
+    /// <summary>Gets all registered control bar item contributions, ordered by priority.</summary>
+    IReadOnlyList<ControlBarRegistration> GetControlBarItems();
 
     // ── Unregistration (called when plugin deactivates) ──
 
@@ -111,6 +118,12 @@ public interface IContributionRegistry
     /// The argument is the full panel ID (e.g. "plugin.{pluginId}.{contributionId}").
     /// </summary>
     event Action<string>? BottomPanelShowRequested;
+
+    /// <summary>
+    /// Raised when a plugin toggles a control bar overlay's visibility.
+    /// Arguments: full ID ("plugin.{pluginId}.{contributionId}"), visible.
+    /// </summary>
+    event Action<string, bool>? ControlBarOverlayToggled;
 }
 
 // ── Registration records ──
@@ -164,3 +177,12 @@ public sealed record FileHandlerRegistration(
     string PluginId,
     string[] Extensions,
     Action<FileNode> Handler);
+
+/// <summary>A control bar item contributed by a plugin (shown left of the loop button).</summary>
+public sealed record ControlBarRegistration(
+    string PluginId,
+    string ContributionId,
+    string Tooltip,
+    int Order,
+    Func<object> ViewFactory,
+    Func<object>? OverlayFactory);
