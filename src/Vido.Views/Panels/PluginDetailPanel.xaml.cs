@@ -67,14 +67,35 @@ public partial class PluginDetailPanel : UserControl
             {
                 var bitmap = new BitmapImage();
                 bitmap.BeginInit();
-                bitmap.UriSource = new Uri(_item.IconSource, UriKind.Absolute);
-                bitmap.DecodePixelWidth = 56;
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-                bitmap.Freeze();
-                HeaderIconImage.Source = bitmap;
-                HeaderIconImage.Visibility = Visibility.Visible;
-                HeaderIconPlaceholder.Visibility = Visibility.Collapsed;
+
+                if (_item.IconSource.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                {
+                    // HTTP URL — let WPF download asynchronously (don't use OnLoad/Freeze)
+                    bitmap.UriSource = new Uri(_item.IconSource, UriKind.Absolute);
+                    bitmap.DecodePixelWidth = 56;
+                    bitmap.EndInit();
+                }
+                else if (File.Exists(_item.IconSource))
+                {
+                    // Local file — load and freeze for thread safety
+                    bitmap.UriSource = new Uri(_item.IconSource, UriKind.Absolute);
+                    bitmap.DecodePixelWidth = 56;
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+                }
+                else
+                {
+                    // Path doesn't exist — keep placeholder
+                    bitmap = null;
+                }
+
+                if (bitmap is not null)
+                {
+                    HeaderIconImage.Source = bitmap;
+                    HeaderIconImage.Visibility = Visibility.Visible;
+                    HeaderIconPlaceholder.Visibility = Visibility.Collapsed;
+                }
             }
             catch
             {
