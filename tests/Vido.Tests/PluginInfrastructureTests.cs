@@ -79,13 +79,14 @@ public sealed class PluginInfrastructureTests
     // ── SettingContribution model ──
 
     [Fact]
-    public void ValidTypes_ContainsAllFourTypes()
+    public void ValidTypes_ContainsAllFiveTypes()
     {
         Assert.Contains("boolean", SettingContribution.ValidTypes);
         Assert.Contains("string", SettingContribution.ValidTypes);
         Assert.Contains("number", SettingContribution.ValidTypes);
         Assert.Contains("enum", SettingContribution.ValidTypes);
-        Assert.Equal(4, SettingContribution.ValidTypes.Count);
+        Assert.Contains("folderPath", SettingContribution.ValidTypes);
+        Assert.Equal(5, SettingContribution.ValidTypes.Count);
     }
 
     [Fact]
@@ -93,6 +94,7 @@ public sealed class PluginInfrastructureTests
     {
         Assert.Contains("Boolean", SettingContribution.ValidTypes);
         Assert.Contains("STRING", SettingContribution.ValidTypes);
+        Assert.Contains("FolderPath", SettingContribution.ValidTypes);
     }
 
     [Fact]

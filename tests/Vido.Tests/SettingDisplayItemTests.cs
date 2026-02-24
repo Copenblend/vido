@@ -271,4 +271,68 @@ public sealed class SettingDisplayItemTests
         Assert.Single(item.ListItems);
         Assert.Equal(string.Empty, item.ValidationError);
     }
+
+    // ── FolderPath type ──
+
+    [Fact]
+    public void IsFolderPath_TrueForFolderPathType()
+    {
+        var store = Substitute.For<IPluginSettingsStore>();
+        store.Get(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
+        var def = new SettingContribution { Id = "test.folder", Type = "folderPath", Title = "Dir", Description = "D" };
+        var item = new SettingDisplayItem(def, store);
+        Assert.True(item.IsFolderPath);
+        Assert.False(item.IsString);
+    }
+
+    [Fact]
+    public void IsFolderPath_FalseForStringType()
+    {
+        var store = Substitute.For<IPluginSettingsStore>();
+        store.Get(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
+        var def = new SettingContribution { Id = "test.str", Type = "string", Title = "T", Description = "D" };
+        var item = new SettingDisplayItem(def, store);
+        Assert.False(item.IsFolderPath);
+        Assert.True(item.IsString);
+    }
+
+    [Fact]
+    public void SetFolderPath_UpdatesStringValue()
+    {
+        var store = Substitute.For<IPluginSettingsStore>();
+        store.Get(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
+        var def = new SettingContribution { Id = "test.folder", Type = "folderPath", Title = "Dir", Description = "D" };
+        var item = new SettingDisplayItem(def, store);
+
+        item.SetFolderPath(@"C:\Users\test\Screenshots");
+        Assert.Equal(@"C:\Users\test\Screenshots", item.StringValue);
+        store.Received().Set("test.folder", @"C:\Users\test\Screenshots");
+    }
+
+    [Fact]
+    public void SetFolderPath_NullDoesNothing()
+    {
+        var store = Substitute.For<IPluginSettingsStore>();
+        store.Get(Arg.Any<string>(), Arg.Any<string>()).Returns(@"C:\existing");
+        var def = new SettingContribution { Id = "test.folder", Type = "folderPath", Title = "Dir", Description = "D" };
+        var item = new SettingDisplayItem(def, store);
+
+        item.SetFolderPath(null);
+        Assert.Equal(@"C:\existing", item.StringValue);
+    }
+
+    [Fact]
+    public void BrowseFolder_RaisesBrowseFolderRequestedEvent()
+    {
+        var store = Substitute.For<IPluginSettingsStore>();
+        store.Get(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
+        var def = new SettingContribution { Id = "test.folder", Type = "folderPath", Title = "Dir", Description = "D" };
+        var item = new SettingDisplayItem(def, store);
+
+        SettingDisplayItem? received = null;
+        item.BrowseFolderRequested += s => received = s;
+        item.BrowseFolderCommand.Execute(null);
+
+        Assert.Same(item, received);
+    }
 }

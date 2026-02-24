@@ -318,6 +318,52 @@
                                                      Width="300" HorizontalAlignment="Left"
                                                      Style="{StaticResource SettingsTextBoxStyle}" />
 
+                                            <!-- FolderPath → TextBox + Browse button -->
+                                            <Grid Visibility="{Binding IsFolderPath, Converter={StaticResource BoolToVis}}"
+                                                  HorizontalAlignment="Left" Width="400">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBox Grid.Column="0"
+                                                         Text="{Binding StringValue, UpdateSourceTrigger=PropertyChanged}"
+                                                         Style="{StaticResource SettingsTextBoxStyle}"
+                                                         IsReadOnly="True" />
+                                                <Button Grid.Column="1"
+                                                        Content="Browse..."
+                                                        Margin="6,0,0,0"
+                                                        Padding="12,4"
+                                                        Cursor="Hand"
+                                                        Click="OnBrowseFolderClick">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button">
+                                                            <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}" />
+                                                            <Setter Property="Foreground" Value="{DynamicResource PrimaryForegroundBrush}" />
+                                                            <Setter Property="BorderThickness" Value="0" />
+                                                            <Setter Property="FontFamily" Value="Segoe UI" />
+                                                            <Setter Property="FontSize" Value="12" />
+                                                            <Setter Property="Template">
+                                                                <Setter.Value>
+                                                                    <ControlTemplate TargetType="Button">
+                                                                        <Border Background="{TemplateBinding Background}"
+                                                                                CornerRadius="3"
+                                                                                Padding="{TemplateBinding Padding}">
+                                                                            <ContentPresenter HorizontalAlignment="Center"
+                                                                                              VerticalAlignment="Center" />
+                                                                        </Border>
+                                                                    </ControlTemplate>
+                                                                </Setter.Value>
+                                                            </Setter>
+                                                            <Style.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Background" Value="{DynamicResource ButtonHoverBackgroundBrush}" />
+                                                                </Trigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
+                                            </Grid>
+
                                             <!-- Enum → ComboBox -->
                                             <ComboBox ItemsSource="{Binding EnumValues}"
                                                       SelectedItem="{Binding SelectedEnumValue}"

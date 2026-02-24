@@ -25,6 +25,8 @@ public sealed class AppSettingsStore : IPluginSettingsStore
             ["playback.speed"] = () => FormatSpeed(Settings.PlaybackSpeed),
             ["playback.loop"] = () => Settings.LoopPlayback,
             ["explorer.showHiddenFiles"] = () => Settings.ShowHiddenFiles,
+            ["screenshot.enabled"] = () => Settings.ScreenshotEnabled,
+            ["screenshot.directory"] = () => Settings.ScreenshotDirectory,
             ["plugins.registryUrls"] = () => GetCustomRegistryUrls(),
         };
 
@@ -48,6 +50,16 @@ public sealed class AppSettingsStore : IPluginSettingsStore
             ["explorer.showHiddenFiles"] = v =>
             {
                 Settings.ShowHiddenFiles = Convert.ToBoolean(v);
+                _settingsService.QueueSave();
+            },
+            ["screenshot.enabled"] = v =>
+            {
+                Settings.ScreenshotEnabled = Convert.ToBoolean(v);
+                _settingsService.QueueSave();
+            },
+            ["screenshot.directory"] = v =>
+            {
+                Settings.ScreenshotDirectory = v?.ToString() ?? string.Empty;
                 _settingsService.QueueSave();
             },
             ["plugins.registryUrls"] = v =>

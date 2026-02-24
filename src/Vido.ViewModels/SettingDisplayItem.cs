@@ -50,6 +50,23 @@ public partial class SettingDisplayItem : ObservableObject
     /// <summary>Whether this is a string list setting (e.g., multiple URLs).</summary>
     public bool IsStringList => SettingType.Equals("stringList", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>Whether this is a folder path setting (browse button).</summary>
+    public bool IsFolderPath => SettingType.Equals("folderPath", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Raised when the user clicks the Browse button for a <c>folderPath</c> setting.
+    /// The handler should show a folder browser dialog and call <see cref="SetFolderPath"/>
+    /// with the selected path (or null to cancel).
+    /// </summary>
+    public event Action<SettingDisplayItem>? BrowseFolderRequested;
+
+    /// <summary>
+    /// Controls visibility of this setting in the UI. Used for conditional settings
+    /// that depend on another setting's value (e.g., directory path only shown when feature enabled).
+    /// </summary>
+    [ObservableProperty]
+    private bool _isSettingVisible = true;
+
     /// <summary>Boolean value options for the ComboBox.</summary>
     public static IReadOnlyList<string> BooleanOptions { get; } = ["True", "False"];
 
@@ -65,7 +82,7 @@ public partial class SettingDisplayItem : ObservableObject
             if (double.TryParse(value, out var num))
                 _store.Set(Id, num);
         }
-        else if (IsString)
+        else if (IsString || IsFolderPath)
         {
             _store.Set(Id, value);
         }
@@ -143,6 +160,23 @@ public partial class SettingDisplayItem : ObservableObject
         _store.Set(Id, ListItems.ToList());
     }
 
+    /// <summary>Requests the view to show a folder browser dialog.</summary>
+    [RelayCommand]
+    public void BrowseFolder()
+    {
+        BrowseFolderRequested?.Invoke(this);
+    }
+
+    /// <summary>
+    /// Sets the folder path from a browse dialog result.
+    /// Called by the view after the user selects a folder.
+    /// </summary>
+    public void SetFolderPath(string? path)
+    {
+        if (path is null) return;
+        StringValue = path;
+    }
+
     public SettingDisplayItem(SettingContribution definition, IPluginSettingsStore store)
     {
         _definition = definition ?? throw new ArgumentNullException(nameof(definition));
@@ -174,7 +208,7 @@ public partial class SettingDisplayItem : ObservableObject
             var val = _store.Get(Id, defaultVal);
             SelectedBooleanValue = val ? "True" : "False";
         }
-        else if (IsString)
+        else if (IsString || IsFolderPath)
         {
             var defaultVal = ConvertDefault(_definition.Default)?.ToString() ?? string.Empty;
             StringValue = _store.Get(Id, defaultVal);

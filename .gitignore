@@ -24,6 +24,7 @@ bld/
 [Ll]ogs/
 publish/
 context/
+screenshots/
 
 # .NET Core
 project.lock.json
