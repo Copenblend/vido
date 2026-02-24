@@ -10,6 +10,7 @@ using Vido.Core.Menus;
 using Vido.Core.Plugin;
 using Vido.Core.Settings;
 using Vido.Core.State;
+using Vido.Core.Updates;
 using Vido.Services.Events;
 using Vido.Services.FileSystem;
 using Vido.Services.Keyboard;
@@ -17,6 +18,7 @@ using Vido.Services.Logging;
 using Vido.Services.Menus;
 using Vido.Services.Settings;
 using Vido.Services.State;
+using Vido.Services.Updates;
 using Vido.Services.Video;
 using Vido.ViewModels;
 using Vido.Views;
@@ -143,6 +145,16 @@ public partial class App : Application
         services.AddSingleton<IContributionRegistry>(sp => sp.GetRequiredService<PluginHost.ContributionRegistry>());
         services.AddSingleton<IPluginHost, PluginHost.PluginHost>();
         services.AddSingleton<IPluginInstaller, Vido.Services.Plugin.PluginInstaller>();
+
+        // Update checking
+        var vidoVersion = typeof(App).Assembly
+            .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+            .OfType<System.Reflection.AssemblyInformationalVersionAttribute>()
+            .FirstOrDefault()?.InformationalVersion ?? "0.0.0";
+        // Strip any +commit suffix (e.g. "0.6.0+abc123" → "0.6.0")
+        var plusIndex = vidoVersion.IndexOf('+');
+        if (plusIndex >= 0) vidoVersion = vidoVersion[..plusIndex];
+        services.AddSingleton<IUpdateService>(new GitHubUpdateService(vidoVersion));
 
         // ViewModels
         services.AddSingleton<FileExplorerViewModel>();
