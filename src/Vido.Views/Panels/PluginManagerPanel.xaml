@@ -466,11 +466,41 @@
                                                     </StackPanel>
                                                 </StackPanel>
 
-                                                <!-- Right side: status pill top, settings cog bottom -->
+                                                <!-- Right side: status pill / update button top, settings cog bottom -->
                                                 <DockPanel Grid.Column="2" VerticalAlignment="Stretch"
                                                             HorizontalAlignment="Right" Margin="0,2,0,0">
-                                                    <!-- Enable/Disable status pill (top) -->
-                                                    <Border DockPanel.Dock="Top" Style="{StaticResource StatusPillStyle}">
+                                                    <!-- Update button (shows when update available, replaces status pill) -->
+                                                    <Button DockPanel.Dock="Top"
+                                                            Content="Update"
+                                                            Click="OnUpdateClick"
+                                                            VerticalAlignment="Top"
+                                                            Margin="0,0,0,2"
+                                                            ToolTip="{Binding AvailableVersion, StringFormat='Update to v{0}'}"
+                                                            Cursor="Hand">
+                                                        <Button.Style>
+                                                            <Style TargetType="Button" BasedOn="{StaticResource InstallButtonStyle}">
+                                                                <Setter Property="Background" Value="#B800CC" />
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding HasUpdate}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Button.Style>
+                                                    </Button>
+
+                                                    <!-- Enable/Disable status pill (top, hidden when update available) -->
+                                                    <Border DockPanel.Dock="Top">
+                                                        <Border.Style>
+                                                            <Style TargetType="Border" BasedOn="{StaticResource StatusPillStyle}">
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding HasUpdate}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </Border.Style>
                                                         <Border.Background>
                                                             <SolidColorBrush Color="{StaticResource SubtleBackgroundColor}" />
                                                         </Border.Background>

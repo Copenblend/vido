@@ -86,6 +86,19 @@ public partial class PluginManagerPanel : UserControl
         }
     }
 
+    /// <summary>
+    /// Updates a plugin when the Update button is clicked.
+    /// </summary>
+    private async void OnUpdateClick(object sender, RoutedEventArgs e)
+    {
+        e.Handled = true; // Prevent bubbling to OnPluginItemClick
+        if (sender is FrameworkElement fe && fe.DataContext is PluginItemViewModel item
+            && DataContext is PluginManagerViewModel vm)
+        {
+            await vm.UpdatePluginAsync(item);
+        }
+    }
+
     // ── Focus highlight helpers ──
 
     private static readonly SolidColorBrush FocusBrush = new(Color.FromRgb(0x00, 0x7a, 0xcc));

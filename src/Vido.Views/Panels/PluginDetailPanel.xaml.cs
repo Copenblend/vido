@@ -92,6 +92,17 @@ public partial class PluginDetailPanel : UserControl
     {
         if (_item is null) return;
 
+        // Update button
+        if (_item.HasUpdate)
+        {
+            UpdateButton.Content = $"Update to v{_item.AvailableVersion}";
+            UpdateButton.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            UpdateButton.Visibility = Visibility.Collapsed;
+        }
+
         if (_item.IsInstalled)
         {
             InstallUninstallButton.Content = "Uninstall";
@@ -355,7 +366,9 @@ public partial class PluginDetailPanel : UserControl
         _item.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName is nameof(PluginItemViewModel.IsInstalled)
-                or nameof(PluginItemViewModel.IsEnabled))
+                or nameof(PluginItemViewModel.IsEnabled)
+                or nameof(PluginItemViewModel.HasUpdate)
+                or nameof(PluginItemViewModel.AvailableVersion))
             {
                 Dispatcher.Invoke(UpdateActionButtons);
             }
@@ -405,6 +418,12 @@ public partial class PluginDetailPanel : UserControl
             await _managerVm.UninstallPluginAsync(_item);
         else
             await _managerVm.InstallPluginAsync(_item);
+    }
+
+    private async void OnUpdateClick(object sender, RoutedEventArgs e)
+    {
+        if (_item is null || _managerVm is null) return;
+        await _managerVm.UpdatePluginAsync(_item);
     }
 
     private void OnEnableDisableClick(object sender, RoutedEventArgs e)

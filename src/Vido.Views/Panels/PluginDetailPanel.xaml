@@ -72,6 +72,24 @@
                 </Style.Triggers>
             </Style>
 
+            <!-- Update button style (purple) -->
+            <Style x:Key="ActionButtonUpdateStyle" TargetType="Button" BasedOn="{StaticResource ActionButtonBlueStyle}">
+                <Setter Property="Background">
+                    <Setter.Value>
+                        <SolidColorBrush Color="#B800CC" />
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <Trigger Property="IsMouseOver" Value="True">
+                        <Setter Property="Background">
+                            <Setter.Value>
+                                <SolidColorBrush Color="#D000EE" />
+                            </Setter.Value>
+                        </Setter>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
             <!-- Detail tab header style -->
             <Style x:Key="DetailTabStyle" TargetType="Border">
                 <Setter Property="Padding" Value="12,6" />
@@ -174,6 +192,10 @@
 
                     <!-- Action buttons -->
                     <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button x:Name="UpdateButton"
+                                Style="{StaticResource ActionButtonUpdateStyle}"
+                                Click="OnUpdateClick"
+                                Visibility="Collapsed" />
                         <Button x:Name="InstallUninstallButton"
                                 Style="{StaticResource ActionButtonBlueStyle}"
                                 Click="OnInstallUninstallClick" />
