@@ -1445,13 +1445,22 @@ public partial class MainWindow : Window
         _pluginManagerViewModel.OpenDetailRequested += item =>
         {
             var tabId = $"plugin.detail.{item.Id}";
-            // Create the panel now with the actual item (don't rely on re-lookup)
-            var panel = new PluginDetailPanel(item, _pluginManagerViewModel, _pluginHost, _logService);
-            _pluginDetailPanels[item.Id] = panel;
+            var tabAlreadyOpen = _mainWindowViewModel.Tabs.Any(t => t.Id == tabId);
 
-            // OpenTab will trigger PropertyChanged → UpdateTabContent,
-            // which will find the cached panel. No need to call UpdateTabContent again.
-            _mainWindowViewModel.OpenTab(tabId, item.DisplayName, isClosable: true);
+            if (tabAlreadyOpen && _pluginDetailPanels.TryGetValue(item.Id, out var existingPanel))
+            {
+                // Tab already open — refresh the existing panel to reflect
+                // install/uninstall/update state changes (e.g. settings tab)
+                existingPanel.Refresh();
+                _mainWindowViewModel.OpenTab(tabId, item.DisplayName, isClosable: true);
+            }
+            else
+            {
+                // Create a new panel with the current item state
+                var panel = new PluginDetailPanel(item, _pluginManagerViewModel, _pluginHost, _logService);
+                _pluginDetailPanels[item.Id] = panel;
+                _mainWindowViewModel.OpenTab(tabId, item.DisplayName, isClosable: true);
+            }
         };
 
         _pluginManagerViewModel.OpenSettingsRequested += item =>
