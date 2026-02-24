@@ -61,7 +61,11 @@ public sealed class ContributionRegistry : IContributionRegistry
     {
         InsertSorted(_sidebars,
             new SidebarRegistration(pluginId, contributionId, title, iconPath, order, viewFactory),
-            (a, b) => a.Order.CompareTo(b.Order));
+            (a, b) =>
+            {
+                var cmp = a.Order.CompareTo(b.Order);
+                return cmp != 0 ? cmp : string.Compare(a.PluginId, b.PluginId, StringComparison.OrdinalIgnoreCase);
+            });
     }
 
     public void RegisterBottomPanel(string pluginId, string contributionId, string title,
@@ -69,7 +73,11 @@ public sealed class ContributionRegistry : IContributionRegistry
     {
         InsertSorted(_bottomPanels,
             new PanelRegistration(pluginId, contributionId, title, order, viewFactory),
-            (a, b) => a.Order.CompareTo(b.Order));
+            (a, b) =>
+            {
+                var cmp = a.Order.CompareTo(b.Order);
+                return cmp != 0 ? cmp : string.Compare(a.PluginId, b.PluginId, StringComparison.OrdinalIgnoreCase);
+            });
     }
 
     public void RegisterRightPanel(string pluginId, string contributionId, string title,
@@ -77,17 +85,23 @@ public sealed class ContributionRegistry : IContributionRegistry
     {
         InsertSorted(_rightPanels,
             new PanelRegistration(pluginId, contributionId, title, order, viewFactory),
-            (a, b) => a.Order.CompareTo(b.Order));
+            (a, b) =>
+            {
+                var cmp = a.Order.CompareTo(b.Order);
+                return cmp != 0 ? cmp : string.Compare(a.PluginId, b.PluginId, StringComparison.OrdinalIgnoreCase);
+            });
     }
 
     public void RegisterStatusBarItem(string pluginId, string contributionId, string name, string position,
         int order, Func<object> viewFactory)
     {
-        lock (_lock)
-        {
-            _statusBarItems.Add(new StatusBarRegistration(pluginId, contributionId, name, position, order, viewFactory));
-        }
-        ContributionsChanged?.Invoke();
+        InsertSorted(_statusBarItems,
+            new StatusBarRegistration(pluginId, contributionId, name, position, order, viewFactory),
+            (a, b) =>
+            {
+                var cmp = a.Order.CompareTo(b.Order);
+                return cmp != 0 ? cmp : string.Compare(a.PluginId, b.PluginId, StringComparison.OrdinalIgnoreCase);
+            });
     }
 
     public void RegisterToolbarButton(string pluginId, string contributionId, string tooltip,
@@ -95,7 +109,11 @@ public sealed class ContributionRegistry : IContributionRegistry
     {
         InsertSorted(_toolbarButtons,
             new ToolbarButtonRegistration(pluginId, contributionId, tooltip, iconPath, order, clickHandler),
-            (a, b) => a.Order.CompareTo(b.Order));
+            (a, b) =>
+            {
+                var cmp = a.Order.CompareTo(b.Order);
+                return cmp != 0 ? cmp : string.Compare(a.PluginId, b.PluginId, StringComparison.OrdinalIgnoreCase);
+            });
     }
 
     public void SetToolbarButtonHighlight(string pluginId, string contributionId, bool highlighted)
@@ -116,7 +134,11 @@ public sealed class ContributionRegistry : IContributionRegistry
     {
         InsertSorted(_contextMenuItems,
             new ContextMenuRegistration(pluginId, contributionId, label, fileExtensions, order, handler),
-            (a, b) => a.Order.CompareTo(b.Order));
+            (a, b) =>
+            {
+                var cmp = a.Order.CompareTo(b.Order);
+                return cmp != 0 ? cmp : string.Compare(a.PluginId, b.PluginId, StringComparison.OrdinalIgnoreCase);
+            });
     }
 
     public void RegisterFileHandler(string pluginId, string[] extensions, Action<FileNode> handler)
