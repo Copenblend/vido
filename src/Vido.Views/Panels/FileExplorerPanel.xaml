@@ -168,23 +168,13 @@
                                               ItemsSource="{Binding Children}">
                         <StackPanel x:Name="NodeRow"
                                     Orientation="Horizontal" Margin="2,0,8,0">
-                            <!-- Video file icon -->
-                            <Canvas x:Name="VideoIcon"
-                                    Width="16" Height="16"
-                                    Margin="0,0,6,0"
-                                    VerticalAlignment="Center"
-                                    Visibility="Collapsed">
-                                <Path Data="{StaticResource VideoFileGeometry}"
-                                      Stroke="{StaticResource VideoIconBrush}"
-                                      StrokeThickness="1"
-                                      Fill="Transparent"
-                                      Stretch="Uniform"
-                                      Width="16" Height="16" />
-                                <Path Data="{StaticResource VideoPlayOverlay}"
-                                      Fill="{StaticResource VideoIconBrush}"
-                                      Stretch="Uniform"
-                                      Width="16" Height="16" />
-                            </Canvas>
+                            <!-- Video file icon (pre-generated embedded PNG) -->
+                            <Image x:Name="VideoIcon"
+                                   Width="16" Height="16"
+                                   Margin="0,0,6,0"
+                                   VerticalAlignment="Center"
+                                   RenderOptions.BitmapScalingMode="HighQuality"
+                                   Visibility="Collapsed" />
 
                             <!-- Generic file icon -->
                             <Path x:Name="GenericFileIcon"
