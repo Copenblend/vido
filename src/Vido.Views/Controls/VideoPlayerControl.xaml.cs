@@ -441,6 +441,9 @@ public partial class VideoPlayerControl : UserControl
         // Black background behind video for cinema-style letterboxing
         Background = System.Windows.Media.Brushes.Black;
 
+        // Move controls into the video row so they overlay
+        Grid.SetRow(ControlsOverlay, 0);
+
         // Use cached gradient background for overlay appearance
         ControlsOverlay.Background = FullscreenOverlayGradient;
         ControlsOverlay.BorderThickness = new Thickness(0);
@@ -455,6 +458,9 @@ public partial class VideoPlayerControl : UserControl
     {
         // Restore background from fullscreen black
         SetResourceReference(BackgroundProperty, "EditorBackgroundBrush");
+
+        // Move controls back to their own row below the video
+        Grid.SetRow(ControlsOverlay, 1);
 
         ControlsOverlay.SetResourceReference(Border.BackgroundProperty, "EditorBackgroundBrush");
         ControlsOverlay.BorderBrush = (Brush)FindResource("PrimaryBorderBrush");

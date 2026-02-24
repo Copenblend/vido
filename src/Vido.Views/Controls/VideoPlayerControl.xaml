@@ -18,10 +18,19 @@
           AllowDrop="True"
           DragEnter="OnDragEnter" DragOver="OnDragOver"
           DragLeave="OnDragLeave" Drop="OnDrop">
+
+        <Grid.RowDefinitions>
+            <!-- Video display area -->
+            <RowDefinition Height="*" />
+            <!-- Transport controls (docked below video in windowed mode) -->
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
         <!-- Video display area fills entire control -->
 
         <!-- Empty state: no video loaded -->
         <StackPanel x:Name="EmptyState"
+                    Grid.Row="0"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
                     Visibility="Visible">
@@ -42,12 +51,14 @@
 
         <!-- Video display surface -->
         <Image x:Name="VideoSurface"
+               Grid.Row="0"
                Stretch="Uniform"
                RenderOptions.BitmapScalingMode="LowQuality"
                Visibility="Collapsed" />
 
         <!-- Loading indicator overlay -->
         <StackPanel x:Name="LoadingOverlay"
+                    Grid.Row="0"
                     VerticalAlignment="Center"
                     HorizontalAlignment="Center"
                     Visibility="Collapsed">
@@ -78,6 +89,7 @@
 
         <!-- ═══ Resume playback bar ═══ -->
         <Border x:Name="ResumeBar"
+                Grid.Row="0"
                 VerticalAlignment="Top"
                 HorizontalAlignment="Stretch"
                 Background="{DynamicResource StatusBarBackgroundBrush}"
@@ -127,9 +139,10 @@
             </DockPanel>
         </Border>
 
-        <!-- ═══ Transport controls overlay ═══ -->
-        <!-- In normal mode: docked at bottom with solid bg. In fullscreen: overlaid with gradient bg. -->
+        <!-- ═══ Transport controls ═══ -->
+        <!-- In normal mode: docked below video in Row 1. In fullscreen: overlaid in Row 0. -->
         <Border x:Name="ControlsOverlay"
+                Grid.Row="1"
                 VerticalAlignment="Bottom"
                 Background="{DynamicResource EditorBackgroundBrush}"
                 BorderBrush="{DynamicResource PrimaryBorderBrush}"
@@ -344,6 +357,7 @@
         </Border>
         <!-- Drag-over overlay -->
         <Border x:Name="DragOverlay"
+                Grid.Row="0" Grid.RowSpan="2"
                 BorderBrush="{DynamicResource FocusBorderBrush}"
                 BorderThickness="2"
                 Background="#180078D4"
