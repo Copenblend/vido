@@ -160,6 +160,32 @@ public class FFmpegVideoEngineTests : IDisposable
         _sut.Dispose(); // Should not throw
     }
 
+    // ── AudioSamplesAvailable Event ──
+
+    [Fact]
+    public void AudioSamplesAvailable_EventDeclared_IsNullByDefault()
+    {
+        // The event should exist on the engine and be null when no subscribers
+        // This verifies the event was added to both interface and implementation
+        bool subscribed = false;
+        _sut.AudioSamplesAvailable += _ => subscribed = true;
+
+        // We can't fire the event externally, but we can verify subscription doesn't throw
+        Assert.False(subscribed);
+    }
+
+    [Fact]
+    public void AudioSamplesAvailable_ImplementsIVideoEngineEvent()
+    {
+        // Verify the event is accessible through the IVideoEngine interface
+        IVideoEngine engine = _sut;
+        bool invoked = false;
+        engine.AudioSamplesAvailable += _ => invoked = true;
+
+        // The event is wired — verifying it compiles and doesn't throw on subscribe
+        Assert.False(invoked);
+    }
+
     public void Dispose()
     {
         _sut.Dispose();

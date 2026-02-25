@@ -67,4 +67,11 @@ public interface IVideoEngine : IDisposable
 
     /// <summary>Fires after a seek operation has completed on the decode thread.</summary>
     event Action? SeekCompleted;
+
+    /// <summary>
+    /// Fires on the decode thread when decoded audio samples are available.
+    /// The <see cref="AudioSampleEventArgs.Buffer"/> is a zero-copy slice that is only
+    /// valid for the duration of the callback — consumers must copy if they need to retain it.
+    /// </summary>
+    event Action<AudioSampleEventArgs>? AudioSamplesAvailable;
 }
