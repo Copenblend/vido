@@ -177,6 +177,7 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     public event Action<FrameData>? FrameReady;
     public event Action? MediaEnded;
     public event Action? SeekCompleted;
+    public event Action<AudioSampleEventArgs>? AudioSamplesAvailable;
 
     // ── Commands ──
 
@@ -811,6 +812,14 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
                 {
                     var actualSize = converted * _audioOutChannels * sizeof(float);
                     _audioRenderer.SubmitSamples(outBuffer, 0, actualSize);
+
+                    AudioSamplesAvailable?.Invoke(new AudioSampleEventArgs
+                    {
+                        Buffer = new ReadOnlyMemory<byte>(outBuffer, 0, actualSize),
+                        SampleCount = converted,
+                        SampleRate = _audioOutSampleRate,
+                        Channels = _audioOutChannels
+                    });
                 }
             }
 
