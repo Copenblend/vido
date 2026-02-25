@@ -138,9 +138,13 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     private int _shuffleIndex = -1;
 
     /// <summary>
-    /// Cancels the delayed loading-indicator timer when a load completes quickly.
+    /// Version counter for the loading-indicator delay.  Bumping the version
+    /// suppresses any in-flight delay whose captured version no longer matches,
+    /// avoiding the first-chance <see cref="TaskCanceledException"/> noise that
+    /// a <see cref="CancellationTokenSource"/> + <c>Task.Delay(delay, ct)</c>
+    /// approach would produce in the debugger output.
     /// </summary>
-    private CancellationTokenSource? _loadingIndicatorCts;
+    private int _loadingIndicatorVersion;
 
     /// <summary>
     /// Timestamp (via <see cref="Stopwatch.GetTimestamp"/>) recorded when the
@@ -268,12 +272,11 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         // Only show the loading indicator if the load takes longer than the
         // threshold. Fast local loads complete before the delay elapses,
         // avoiding any UI overhead from showing and immediately hiding the
-        // spinner.
-        _loadingIndicatorCts?.Cancel();
-        _loadingIndicatorCts = new CancellationTokenSource();
-        var cts = _loadingIndicatorCts;
+        // spinner.  Uses a version counter instead of CancellationTokenSource
+        // to avoid first-chance TaskCanceledException noise in the debugger.
+        var loadVersion = Interlocked.Increment(ref _loadingIndicatorVersion);
         _loadingShownTimestamp = 0;
-        _ = ShowLoadingIndicatorAfterDelayAsync(cts.Token);
+        _ = ShowLoadingIndicatorAfterDelayAsync(loadVersion);
 
         try
         {
@@ -301,7 +304,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         }
         finally
         {
-            cts.Cancel();
+            Interlocked.Increment(ref _loadingIndicatorVersion);
 
             if (_loadingShownTimestamp != 0)
             {
@@ -324,29 +327,20 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// Sets <see cref="IsLoadingMedia"/> to <c>true</c> after a short delay.
-    /// If the token is cancelled before the delay elapses (i.e. the load
+    /// If the version has been bumped before the delay elapses (i.e. the load
     /// finished quickly), the indicator is never shown.
     /// </summary>
-    private async Task ShowLoadingIndicatorAfterDelayAsync(CancellationToken ct)
+    private async Task ShowLoadingIndicatorAfterDelayAsync(int version)
     {
-        try
-        {
-            await Task.Delay(LoadingIndicatorDelay, ct);
+        await Task.Delay(LoadingIndicatorDelay);
 
-            // Guard against race: Task.Delay can complete just before
-            // the finally block calls Cancel(). By the time this
-            // continuation runs the token will be cancelled, so
-            // re-check to avoid setting the flag after the load
-            // already finished.
-            if (!ct.IsCancellationRequested)
-            {
-                _loadingShownTimestamp = Stopwatch.GetTimestamp();
-                IsLoadingMedia = true;
-            }
-        }
-        catch (OperationCanceledException)
+        // Only show the indicator if no newer load has started and the
+        // original load hasn't finished yet (the finally block bumps the
+        // version when the load completes).
+        if (Volatile.Read(ref _loadingIndicatorVersion) == version)
         {
-            // Load completed before the delay — nothing to show.
+            _loadingShownTimestamp = Stopwatch.GetTimestamp();
+            IsLoadingMedia = true;
         }
     }
 
