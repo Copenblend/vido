@@ -434,4 +434,136 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Equal(3, mode.EnumValues.Count);
         Assert.Contains("auto", mode.EnumValues);
     }
+
+    // ── Dependency Validation Tests ──
+
+    [Fact]
+    public void Validate_ValidDependencies_NoErrors()
+    {
+        var m = ValidManifest();
+        m.Dependencies =
+        [
+            new PluginDependency { Id = "com.vido.osr2-plus", MinVersion = "4.0.0" },
+            new PluginDependency { Id = "com.vido.other", MinVersion = "1.0.0" }
+        ];
+
+        var errors = PluginManifestLoader.Validate(m);
+
+        Assert.Empty(errors);
+    }
+
+    [Fact]
+    public void Validate_DependencyEmptyId_ReturnsError()
+    {
+        var m = ValidManifest();
+        m.Dependencies =
+        [
+            new PluginDependency { Id = "", MinVersion = "1.0.0" }
+        ];
+
+        var errors = PluginManifestLoader.Validate(m);
+
+        Assert.Contains(errors, e => e.Contains("empty 'id'"));
+    }
+
+    [Fact]
+    public void Validate_DependencyEmptyMinVersion_ReturnsError()
+    {
+        var m = ValidManifest();
+        m.Dependencies =
+        [
+            new PluginDependency { Id = "com.test.dep", MinVersion = "" }
+        ];
+
+        var errors = PluginManifestLoader.Validate(m);
+
+        Assert.Contains(errors, e => e.Contains("empty 'minVersion'"));
+    }
+
+    [Fact]
+    public void Validate_DependencyInvalidMinVersion_ReturnsError()
+    {
+        var m = ValidManifest();
+        m.Dependencies =
+        [
+            new PluginDependency { Id = "com.test.dep", MinVersion = "not-a-version" }
+        ];
+
+        var errors = PluginManifestLoader.Validate(m);
+
+        Assert.Contains(errors, e => e.Contains("invalid minVersion"));
+    }
+
+    [Fact]
+    public void Validate_DuplicateDependency_ReturnsError()
+    {
+        var m = ValidManifest();
+        m.Dependencies =
+        [
+            new PluginDependency { Id = "com.test.dep", MinVersion = "1.0.0" },
+            new PluginDependency { Id = "com.test.dep", MinVersion = "2.0.0" }
+        ];
+
+        var errors = PluginManifestLoader.Validate(m);
+
+        Assert.Contains(errors, e => e.Contains("Duplicate"));
+    }
+
+    [Fact]
+    public void Validate_EmptyDependenciesArray_NoErrors()
+    {
+        var m = ValidManifest();
+        m.Dependencies = [];
+
+        var errors = PluginManifestLoader.Validate(m);
+
+        Assert.Empty(errors);
+    }
+
+    [Fact]
+    public void Load_ManifestWithDependencies_ParsesCorrectly()
+    {
+        var dir = CreatePluginDir("""
+        {
+            "id": "com.test.with-deps",
+            "name": "deps-plugin",
+            "version": "1.0.0",
+            "entryPoint": "Test.dll",
+            "pluginClass": "Test.Plugin",
+            "dependencies": [
+                { "id": "com.vido.osr2-plus", "minVersion": "4.0.0" },
+                { "id": "com.vido.other", "minVersion": "1.2.0" }
+            ]
+        }
+        """, "deps-plugin");
+
+        var manifest = PluginManifestLoader.Load(dir, _logger);
+
+        Assert.NotNull(manifest);
+        Assert.Equal(2, manifest.Dependencies.Count);
+        Assert.Equal("com.vido.osr2-plus", manifest.Dependencies[0].Id);
+        Assert.Equal("4.0.0", manifest.Dependencies[0].MinVersion);
+        Assert.Equal("com.vido.other", manifest.Dependencies[1].Id);
+        Assert.Equal("1.2.0", manifest.Dependencies[1].MinVersion);
+    }
+
+    [Fact]
+    public void Load_ManifestWithoutDependencies_DefaultsToEmptyList()
+    {
+        var dir = CreatePluginDir("""
+        {
+            "id": "com.test.no-deps",
+            "name": "no-deps",
+            "version": "1.0.0",
+            "entryPoint": "Test.dll",
+            "pluginClass": "Test.Plugin"
+        }
+        """, "no-deps-plugin");
+
+        var manifest = PluginManifestLoader.Load(dir, _logger);
+
+        Assert.NotNull(manifest);
+        Assert.NotNull(manifest.Dependencies);
+        Assert.Empty(manifest.Dependencies);
+    }
 }

@@ -62,6 +62,13 @@ public sealed class PluginManifest
     /// <summary>UI contributions declared by the plugin.</summary>
     [JsonPropertyName("contributes")]
     public PluginContributions Contributes { get; set; } = new();
+
+    /// <summary>
+    /// Plugin dependencies — other plugins that must be installed and activated before this one.
+    /// Evaluated during activation for topological ordering and version validation.
+    /// </summary>
+    [JsonPropertyName("dependencies")]
+    public List<PluginDependency> Dependencies { get; set; } = [];
 }
 
 /// <summary>

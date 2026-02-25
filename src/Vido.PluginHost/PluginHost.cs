@@ -79,7 +79,7 @@ public sealed class PluginHost : IPluginHost
 
     /// <summary>
     /// Discovers and loads all plugins from configured directories,
-    /// then activates all that are not disabled.
+    /// then activates all that are not disabled, in dependency order.
     /// </summary>
     public void ActivateAll()
     {
@@ -90,16 +90,36 @@ public sealed class PluginHost : IPluginHost
         var disabledIds = new HashSet<string>(
             _settingsService.Current.DisabledPluginIds, StringComparer.OrdinalIgnoreCase);
 
+        // Mark disabled plugins before dependency resolution
         foreach (var info in _plugins)
         {
-            if (info.State == PluginState.Error || info.State == PluginState.Disabled
-                || info.State == PluginState.Active)
+            if (info.State == PluginState.Error || info.State == PluginState.Active)
                 continue;
 
             if (disabledIds.Contains(info.Manifest.Id))
             {
                 info.State = PluginState.Disabled;
                 _logService.Info($"Plugin '{info.Manifest.Id}' is disabled", "PluginHost");
+            }
+        }
+
+        // Topological sort — dependencies activated before dependants
+        var activationOrder = TopologicalSort(_plugins);
+
+        // Validate dependencies and activate in order
+        foreach (var info in activationOrder)
+        {
+            if (info.State == PluginState.Error || info.State == PluginState.Disabled
+                || info.State == PluginState.Active)
+                continue;
+
+            // Validate all declared dependencies before activation
+            var depError = ValidateDependencies(info);
+            if (depError is not null)
+            {
+                info.State = PluginState.Error;
+                info.ErrorMessage = depError;
+                _logService.Error($"Plugin '{info.Manifest.Id}': {depError}", "PluginHost");
                 continue;
             }
 
@@ -118,16 +138,19 @@ public sealed class PluginHost : IPluginHost
     }
 
     /// <summary>
-    /// Deactivates all active plugins in reverse activation order.
+    /// Deactivates all active plugins in reverse topological order
+    /// (dependants are deactivated before their dependencies).
     /// </summary>
     public void DeactivateAll()
     {
         _logService.Info("Deactivating all plugins...", "PluginHost");
 
-        // Deactivate in reverse order to handle dependencies gracefully
-        for (int i = _plugins.Count - 1; i >= 0; i--)
+        // Reverse topological order: dependants deactivated before dependencies
+        var deactivationOrder = TopologicalSort(_plugins);
+        deactivationOrder.Reverse();
+
+        foreach (var info in deactivationOrder)
         {
-            var info = _plugins[i];
             if (info.State == PluginState.Active)
                 DeactivatePlugin(info);
         }
@@ -465,5 +488,136 @@ public sealed class PluginHost : IPluginHost
                 $"Plugin '{manifest.Id}': forceOverride applied for setting '{setting.Id}'",
                 "PluginHost");
         }
+    }
+
+    // ── Dependency Resolution ──
+
+    /// <summary>
+    /// Validates that all declared dependencies for a plugin are present, enabled/active,
+    /// and meet the minimum version requirement. Returns null on success or an error message.
+    /// </summary>
+    private string? ValidateDependencies(PluginInfo info)
+    {
+        if (info.Manifest.Dependencies is not { Count: > 0 })
+            return null;
+
+        foreach (var dep in info.Manifest.Dependencies)
+        {
+            var depPlugin = _plugins.FirstOrDefault(p =>
+                string.Equals(p.Manifest.Id, dep.Id, StringComparison.OrdinalIgnoreCase));
+
+            if (depPlugin is null)
+                return $"Missing dependency: {dep.Id} ≥{dep.MinVersion}";
+
+            if (depPlugin.State == PluginState.Disabled)
+                return $"Dependency '{dep.Id}' is disabled — enable it first";
+
+            if (depPlugin.State == PluginState.Error)
+                return $"Dependency '{dep.Id}' is in error state";
+
+            if (depPlugin.State != PluginState.Active && depPlugin.State != PluginState.Loaded)
+                return $"Dependency '{dep.Id}' is not available (state: {depPlugin.State})";
+
+            // Version check
+            if (!string.IsNullOrWhiteSpace(dep.MinVersion)
+                && Version.TryParse(dep.MinVersion, out var minVer)
+                && Version.TryParse(depPlugin.Manifest.Version, out var actualVer)
+                && actualVer < minVer)
+            {
+                return $"Dependency '{dep.Id}' version {depPlugin.Manifest.Version} " +
+                       $"does not meet minimum required version {dep.MinVersion}";
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Performs a topological sort of plugins using Kahn's algorithm (BFS).
+    /// Dependencies are placed before the plugins that depend on them.
+    /// If a cycle is detected, the remaining plugins are appended in discovery order
+    /// and will fail during dependency validation.
+    /// </summary>
+    internal static List<PluginInfo> TopologicalSort(List<PluginInfo> plugins)
+    {
+        if (plugins.Count <= 1)
+            return new List<PluginInfo>(plugins);
+
+        // Build adjacency list and in-degree map (case-insensitive IDs)
+        var idLookup = new Dictionary<string, PluginInfo>(StringComparer.OrdinalIgnoreCase);
+        foreach (var p in plugins)
+        {
+            // Use first-seen for duplicate IDs (shouldn't happen, but be safe)
+            idLookup.TryAdd(p.Manifest.Id, p);
+        }
+
+        var inDegree = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var dependants = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var p in plugins)
+        {
+            inDegree.TryAdd(p.Manifest.Id, 0);
+            dependants.TryAdd(p.Manifest.Id, []);
+        }
+
+        foreach (var p in plugins)
+        {
+            if (p.Manifest.Dependencies is not { Count: > 0 })
+                continue;
+
+            foreach (var dep in p.Manifest.Dependencies)
+            {
+                // Only count edges to known plugins (unknown deps will fail validation later)
+                if (!idLookup.ContainsKey(dep.Id))
+                    continue;
+
+                inDegree[p.Manifest.Id]++;
+
+                if (!dependants.ContainsKey(dep.Id))
+                    dependants[dep.Id] = [];
+                dependants[dep.Id].Add(p.Manifest.Id);
+            }
+        }
+
+        // Kahn's algorithm
+        var queue = new Queue<string>();
+        foreach (var (id, degree) in inDegree)
+        {
+            if (degree == 0)
+                queue.Enqueue(id);
+        }
+
+        var sorted = new List<PluginInfo>(plugins.Count);
+        while (queue.Count > 0)
+        {
+            var id = queue.Dequeue();
+            if (idLookup.TryGetValue(id, out var info))
+                sorted.Add(info);
+
+            if (dependants.TryGetValue(id, out var deps))
+            {
+                foreach (var depId in deps)
+                {
+                    inDegree[depId]--;
+                    if (inDegree[depId] == 0)
+                        queue.Enqueue(depId);
+                }
+            }
+        }
+
+        // If cycle detected, append remaining plugins (they'll fail validation)
+        if (sorted.Count < plugins.Count)
+        {
+            var sortedIds = new HashSet<string>(
+                sorted.Select(p => p.Manifest.Id), StringComparer.OrdinalIgnoreCase);
+
+            foreach (var p in plugins)
+            {
+                if (!sortedIds.Contains(p.Manifest.Id))
+                    sorted.Add(p);
+            }
+        }
+
+        return sorted;
     }
 }

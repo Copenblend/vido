@@ -274,4 +274,83 @@ public class PluginManifestTests
         var fileHandler = new FileHandlerContribution();
         Assert.Equal("open", fileHandler.Action);
     }
+
+    // ── Dependency Deserialization Tests ──
+
+    [Fact]
+    public void Deserialize_WithDependencies_ParsesAll()
+    {
+        var json = """
+        {
+            "id": "com.test.with-deps",
+            "name": "deps-plugin",
+            "version": "1.0.0",
+            "entryPoint": "Test.dll",
+            "pluginClass": "Test.Plugin",
+            "dependencies": [
+                { "id": "com.vido.osr2-plus", "minVersion": "4.0.0" },
+                { "id": "com.vido.other", "minVersion": "1.2.3" }
+            ]
+        }
+        """;
+
+        var manifest = JsonSerializer.Deserialize<PluginManifest>(json);
+
+        Assert.NotNull(manifest);
+        Assert.Equal(2, manifest.Dependencies.Count);
+        Assert.Equal("com.vido.osr2-plus", manifest.Dependencies[0].Id);
+        Assert.Equal("4.0.0", manifest.Dependencies[0].MinVersion);
+        Assert.Equal("com.vido.other", manifest.Dependencies[1].Id);
+        Assert.Equal("1.2.3", manifest.Dependencies[1].MinVersion);
+    }
+
+    [Fact]
+    public void Deserialize_WithoutDependencies_DefaultsToEmptyList()
+    {
+        var json = """
+        {
+            "id": "com.test.no-deps",
+            "name": "no-deps",
+            "version": "1.0.0",
+            "entryPoint": "Test.dll",
+            "pluginClass": "Test.Plugin"
+        }
+        """;
+
+        var manifest = JsonSerializer.Deserialize<PluginManifest>(json);
+
+        Assert.NotNull(manifest);
+        Assert.NotNull(manifest.Dependencies);
+        Assert.Empty(manifest.Dependencies);
+    }
+
+    [Fact]
+    public void Deserialize_EmptyDependencies_ParsesAsEmptyList()
+    {
+        var json = """
+        {
+            "id": "com.test.empty-deps",
+            "name": "empty-deps",
+            "version": "1.0.0",
+            "entryPoint": "Test.dll",
+            "pluginClass": "Test.Plugin",
+            "dependencies": []
+        }
+        """;
+
+        var manifest = JsonSerializer.Deserialize<PluginManifest>(json);
+
+        Assert.NotNull(manifest);
+        Assert.NotNull(manifest.Dependencies);
+        Assert.Empty(manifest.Dependencies);
+    }
+
+    [Fact]
+    public void PluginDependency_DefaultValues_AreEmptyStrings()
+    {
+        var dep = new PluginDependency();
+
+        Assert.Equal(string.Empty, dep.Id);
+        Assert.Equal(string.Empty, dep.MinVersion);
+    }
 }
