@@ -102,6 +102,9 @@ public static class PluginManifestLoader
         // Validate settings contributions
         ValidateSettings(manifest.Contributes.Settings, contributionIds, errors);
 
+        // Validate dependencies
+        ValidateDependencies(manifest.Dependencies, errors);
+
         return errors;
     }
 
@@ -180,6 +183,34 @@ public static class PluginManifestLoader
 
             if (string.IsNullOrWhiteSpace(setting.Title))
                 errors.Add($"Setting '{setting.Id}' has empty 'title'");
+        }
+    }
+
+    /// <summary>
+    /// Validates the dependencies array: each entry must have a valid plugin ID and
+    /// a parseable version string, and no plugin may depend on itself.
+    /// </summary>
+    private static void ValidateDependencies(List<PluginDependency> dependencies, List<string> errors)
+    {
+        if (dependencies is not { Count: > 0 })
+            return;
+
+        var seenDepIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var dep in dependencies)
+        {
+            if (string.IsNullOrWhiteSpace(dep.Id))
+            {
+                errors.Add("Dependency has empty 'id'");
+                continue;
+            }
+
+            if (!seenDepIds.Add(dep.Id))
+                errors.Add($"Duplicate dependency on '{dep.Id}'");
+
+            if (string.IsNullOrWhiteSpace(dep.MinVersion))
+                errors.Add($"Dependency '{dep.Id}' has empty 'minVersion'");
+            else if (!Version.TryParse(dep.MinVersion, out _))
+                errors.Add($"Dependency '{dep.Id}' has invalid minVersion '{dep.MinVersion}' — must be a valid version (e.g. '1.0.0')");
         }
     }
 }

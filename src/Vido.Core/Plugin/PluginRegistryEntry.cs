@@ -60,6 +60,12 @@ public sealed class PluginRegistryEntry
     public string? LastUpdated { get; set; }
 
     /// <summary>
+    /// Dependencies required by this plugin (must be installed before this plugin).
+    /// </summary>
+    [JsonPropertyName("dependencies")]
+    public List<PluginDependency> Dependencies { get; set; } = [];
+
+    /// <summary>
     /// The registry URL this entry was fetched from.
     /// Set at runtime during registry loading — not serialized from registry JSON.
     /// </summary>
