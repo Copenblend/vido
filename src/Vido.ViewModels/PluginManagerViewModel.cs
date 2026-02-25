@@ -83,6 +83,12 @@ public partial class PluginManagerViewModel : ObservableObject
     /// </summary>
     public event Action<string>? RestartRequired;
 
+    /// <summary>
+    /// Fired when an uninstall is blocked because other installed plugins depend on this one.
+    /// The parameter is a user-facing message listing the dependants.
+    /// </summary>
+    public event Action<string>? UninstallBlocked;
+
     public PluginManagerViewModel(
         IPluginHost pluginHost,
         IPluginInstaller pluginInstaller,
@@ -263,6 +269,7 @@ public partial class PluginManagerViewModel : ObservableObject
 
     /// <summary>
     /// Installs a plugin and updates the lists.
+    /// Automatically installs any required dependencies from the registry first.
     /// </summary>
     [RelayCommand]
     public async Task InstallPluginAsync(PluginItemViewModel item)
@@ -272,6 +279,35 @@ public partial class PluginManagerViewModel : ObservableObject
         item.IsBusy = true;
         try
         {
+            // Auto-install dependencies before installing the target plugin
+            if (item.RegistryEntry.Dependencies is { Count: > 0 })
+            {
+                var depEntries = ResolveDependencies(item.RegistryEntry);
+                foreach (var depEntry in depEntries)
+                {
+                    // Check if already installed
+                    if (_pluginHost.GetPlugin(depEntry.Id) is not null)
+                        continue;
+
+                    _logService.Info($"Auto-installing dependency '{depEntry.Id}' for '{item.Id}'...", "PluginManager");
+                    var depSuccess = await _pluginInstaller.InstallAsync(depEntry);
+                    if (!depSuccess)
+                    {
+                        _logService.Error($"Failed to install dependency '{depEntry.Id}' — aborting install of '{item.Id}'.", "PluginManager");
+                        return;
+                    }
+
+                    // Update the corresponding PluginItemViewModel if it exists
+                    var depItem = _allPlugins.FirstOrDefault(p =>
+                        string.Equals(p.Id, depEntry.Id, StringComparison.OrdinalIgnoreCase));
+                    if (depItem is not null)
+                    {
+                        depItem.IsInstalled = true;
+                        depItem.IsEnabled = true;
+                    }
+                }
+            }
+
             var success = await _pluginInstaller.InstallAsync(item.RegistryEntry);
             if (success)
             {
@@ -285,7 +321,7 @@ public partial class PluginManagerViewModel : ObservableObject
                     // stale from a previous session or prior uninstall)
                     _pluginHost.RemovePlugin(item.Id);
 
-                    _pluginHost.ActivateAll(); // Will pick up the newly installed plugin
+                    _pluginHost.ActivateAll(); // Will pick up the newly installed plugin + deps
                     var info = _pluginHost.GetPlugin(item.Id);
                     if (info is not null)
                         item.PluginInfo = info;
@@ -309,11 +345,23 @@ public partial class PluginManagerViewModel : ObservableObject
 
     /// <summary>
     /// Uninstalls a plugin and updates the lists.
+    /// Blocks removal if other installed plugins depend on this one.
     /// </summary>
     [RelayCommand]
     public async Task UninstallPluginAsync(PluginItemViewModel item)
     {
         if (!item.IsInstalled || item.IsBusy) return;
+
+        // Block uninstall if other installed plugins depend on this one
+        var dependants = GetInstalledDependants(item.Id);
+        if (dependants.Count > 0)
+        {
+            var names = string.Join(", ", dependants);
+            var msg = $"Cannot remove {item.DisplayName} — the following installed plugins depend on it: {names}";
+            _logService.Warning(msg, "PluginManager");
+            UninstallBlocked?.Invoke(msg);
+            return;
+        }
 
         item.IsBusy = true;
         try
@@ -421,6 +469,81 @@ public partial class PluginManagerViewModel : ObservableObject
         if (Version.TryParse(latest, out var latestVer) && Version.TryParse(current, out var currentVer))
             return latestVer > currentVer;
         return false; // Can't parse — assume no update
+    }
+
+    /// <summary>
+    /// Resolves all transitive dependencies for a registry entry, returning them
+    /// in installation order (leaf dependencies first). Only includes dependencies
+    /// that are not already installed.
+    /// </summary>
+    internal List<PluginRegistryEntry> ResolveDependencies(PluginRegistryEntry entry)
+    {
+        var result = new List<PluginRegistryEntry>();
+        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { entry.Id };
+
+        CollectDependencies(entry, visited, result);
+        return result;
+    }
+
+    private void CollectDependencies(
+        PluginRegistryEntry entry,
+        HashSet<string> visited,
+        List<PluginRegistryEntry> result)
+    {
+        if (entry.Dependencies is not { Count: > 0 })
+            return;
+
+        foreach (var dep in entry.Dependencies)
+        {
+            if (!visited.Add(dep.Id))
+                continue; // Already visited (or is the root plugin)
+
+            // Already installed — skip
+            if (_pluginHost.GetPlugin(dep.Id) is not null)
+                continue;
+
+            // Find registry entry in cached data
+            var depItem = _allPlugins.FirstOrDefault(p =>
+                string.Equals(p.Id, dep.Id, StringComparison.OrdinalIgnoreCase));
+
+            if (depItem?.RegistryEntry is null)
+            {
+                _logService.Warning(
+                    $"Dependency '{dep.Id}' not found in any configured registry.", "PluginManager");
+                continue;
+            }
+
+            // Recurse into transitive dependencies first
+            CollectDependencies(depItem.RegistryEntry, visited, result);
+
+            result.Add(depItem.RegistryEntry);
+        }
+    }
+
+    /// <summary>
+    /// Returns the display names of all installed plugins that declare a dependency
+    /// on the given plugin ID. Used to block uninstalls when dependants exist.
+    /// </summary>
+    internal List<string> GetInstalledDependants(string pluginId)
+    {
+        var dependants = new List<string>();
+
+        foreach (var info in _pluginHost.Plugins)
+        {
+            if (info.Manifest.Dependencies is not { Count: > 0 })
+                continue;
+
+            if (info.Manifest.Dependencies.Any(d =>
+                    string.Equals(d.Id, pluginId, StringComparison.OrdinalIgnoreCase)))
+            {
+                var name = !string.IsNullOrWhiteSpace(info.Manifest.DisplayName)
+                    ? info.Manifest.DisplayName
+                    : info.Manifest.Id;
+                dependants.Add(name);
+            }
+        }
+
+        return dependants;
     }
 
     /// <summary>
