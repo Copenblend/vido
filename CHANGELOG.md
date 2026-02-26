@@ -2,7 +2,7 @@
 
 All notable changes to the Vido project will be documented in this file.
 
-## [Unreleased]
+## [0.10.0] - 2026-02-26
 
 ### vi-024
 - **Portable distribution**: Added `build-release.ps1` PowerShell script that publishes a self-contained win-x64 application and packages it as a portable zip (~142 MB compressed, ~355 MB uncompressed)

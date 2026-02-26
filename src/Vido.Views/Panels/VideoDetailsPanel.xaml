@@ -61,7 +61,8 @@
         </TextBlock>
 
         <!-- Metadata content -->
-        <ScrollViewer VerticalScrollBarVisibility="Auto"
+        <ScrollViewer Style="{StaticResource ThinScrollViewerStyle}"
+                      VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Visibility="{Binding HasMetadata, Converter={StaticResource BoolToVis}}">
             <StackPanel Margin="12,4,12,12">

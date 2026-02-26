@@ -20,7 +20,7 @@
     <Color x:Key="SelectionBackgroundColor">#04395e</Color>
     <Color x:Key="ButtonBackgroundColor">#0078d4</Color>
     <Color x:Key="ButtonHoverBackgroundColor">#026ec1</Color>
-    <Color x:Key="ScrollbarBackgroundColor">#4a4a4a80</Color>
+    <Color x:Key="ScrollbarBackgroundColor">#007ACC</Color>
     <Color x:Key="ContextMenuBackgroundColor">#1f1f1f</Color>
 
     <!-- Window Control Hover Colors -->

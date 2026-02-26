@@ -8,6 +8,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="../Themes/Brushes.xaml" />
+                <ResourceDictionary Source="../Themes/ScrollBarStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -249,7 +250,8 @@
                 </Border>
 
                 <!-- Tab content area -->
-                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto"
+                <ScrollViewer Grid.Row="1" Style="{StaticResource ThinScrollViewerStyle}"
+                              VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
                     <Grid>
                         <!-- Details tab content -->
@@ -385,7 +387,8 @@
                     Background="{DynamicResource PrimaryBorderBrush}" />
 
             <!-- RIGHT: Metadata pane -->
-            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto"
+            <ScrollViewer Grid.Column="1" Style="{StaticResource ThinScrollViewerStyle}"
+                          VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
                 <StackPanel Margin="16,12">
                     <TextBlock Text="Version" Style="{StaticResource MetadataLabelStyle}" />

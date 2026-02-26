@@ -8,6 +8,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="../Themes/Brushes.xaml" />
+                <ResourceDictionary Source="../Themes/ScrollBarStyles.xaml" />
                 <ResourceDictionary Source="../Themes/SettingsControlStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
@@ -120,6 +121,7 @@
 
         <!-- Settings list -->
         <ScrollViewer Grid.Row="1"
+                      Style="{StaticResource ThinScrollViewerStyle}"
                       VerticalScrollBarVisibility="Auto"
                       HorizontalScrollBarVisibility="Disabled"
                       Padding="0">
