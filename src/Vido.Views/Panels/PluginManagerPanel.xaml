@@ -9,6 +9,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="../Themes/Brushes.xaml" />
+                <ResourceDictionary Source="../Themes/ScrollBarStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
 
             <BooleanToVisibilityConverter x:Key="BoolToVis" />
@@ -349,7 +350,8 @@
                        Visibility="{Binding IsLoading, Converter={StaticResource BoolToVis}}" />
 
             <!-- Scrollable content area -->
-            <ScrollViewer VerticalScrollBarVisibility="Auto"
+            <ScrollViewer Style="{StaticResource ThinScrollViewerStyle}"
+                          VerticalScrollBarVisibility="Auto"
                           HorizontalScrollBarVisibility="Disabled">
                 <StackPanel>
                     <!-- â•â•â• INSTALLED Section â•â•â• -->

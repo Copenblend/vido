@@ -1302,7 +1302,7 @@ public partial class MainWindow : Window
 
                 RightPanelSplitter.Visibility = Visibility.Collapsed;
                 RightPanelSplitterColumn.Width = new GridLength(0);
-                RightPanelColumn.Width = new GridLength(44); // Tab strip width only (50% wider for chevron spacing)
+                RightPanelColumn.Width = new GridLength(29); // Match bottom panel collapsed height
                 RightPanelColumn.MinWidth = 0;
                 RightPanelColumn.MaxWidth = double.PositiveInfinity;
                 RightPanelContent.Visibility = Visibility.Collapsed;
