@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.Loader;
 using Vido.Core.Events;
 using Vido.Core.Keyboard;
 using Vido.Core.Logging;
@@ -26,6 +27,11 @@ public sealed class PluginHost : IPluginHost
     private readonly List<PluginInfo> _plugins = [];
     private readonly Dictionary<string, PluginContext> _contexts = [];
     private readonly Dictionary<string, PluginSettingsStore> _settingsStores = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Cache of assemblies resolved from plugin directories (keyed by simple name).</summary>
+    private readonly Dictionary<string, Assembly> _resolvedAssemblies = new(StringComparer.OrdinalIgnoreCase);
+
+    private bool _resolverRegistered;
 
     /// <summary>List of directories to scan for plugins.</summary>
     private readonly List<string> _scanDirectories = [];
@@ -273,11 +279,67 @@ public sealed class PluginHost : IPluginHost
     }
 
     /// <summary>
+    /// Registers an assembly resolver on the default <see cref="AssemblyLoadContext"/>
+    /// so that dependency DLLs located in plugin directories can be found at runtime.
+    /// Called once before any plugin assemblies are loaded.
+    /// </summary>
+    private void EnsureAssemblyResolver()
+    {
+        if (_resolverRegistered) return;
+        _resolverRegistered = true;
+        AssemblyLoadContext.Default.Resolving += ResolvePluginAssembly;
+    }
+
+    /// <summary>
+    /// Resolving handler: searches all discovered plugin directories for a matching DLL.
+    /// Results are cached to prevent duplicate loads (which would break type identity).
+    /// </summary>
+    private Assembly? ResolvePluginAssembly(AssemblyLoadContext context, AssemblyName name)
+    {
+        if (name.Name is null) return null;
+
+        // Return cached assembly if already resolved from a plugin directory
+        if (_resolvedAssemblies.TryGetValue(name.Name, out var cached))
+            return cached;
+
+        // Search all discovered plugin directories
+        foreach (var info in _plugins)
+        {
+            var candidate = Path.Combine(info.Directory, name.Name + ".dll");
+            if (!File.Exists(candidate)) continue;
+
+            try
+            {
+                var bytes = File.ReadAllBytes(candidate);
+                var pdbPath = Path.ChangeExtension(candidate, ".pdb");
+                var pdbBytes = File.Exists(pdbPath) ? File.ReadAllBytes(pdbPath) : null;
+
+                var assembly = pdbBytes is not null
+                    ? Assembly.Load(bytes, pdbBytes)
+                    : Assembly.Load(bytes);
+
+                _resolvedAssemblies[name.Name] = assembly;
+                _logService.Debug($"Resolved assembly '{name.Name}' from plugin '{info.Manifest.Id}'", "PluginHost");
+                return assembly;
+            }
+            catch (Exception ex)
+            {
+                _logService.Warning($"Failed to load '{candidate}': {ex.Message}", "PluginHost");
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Loads the plugin's entry-point assembly and instantiates the <see cref="IVidoPlugin"/> class.
     /// Returns true on success, false on failure (info.State set to Error).
     /// </summary>
     private bool LoadPluginAssembly(PluginInfo info)
     {
+        // Ensure the resolver is active before loading any plugin assembly
+        EnsureAssemblyResolver();
+
         var dllPath = Path.Combine(info.Directory, info.Manifest.EntryPoint);
 
         if (!File.Exists(dllPath))
