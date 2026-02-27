@@ -46,6 +46,7 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     private Thread? _decodeThread;
     private CancellationTokenSource _decodeCts = new();
     private readonly ManualResetEventSlim _pauseEvent = new(true);
+    private readonly SemaphoreSlim _loadLock = new(1, 1);
 
     // ── Timing ──
     private readonly Stopwatch _playbackClock = new();
@@ -191,18 +192,28 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
 
         return Task.Run(() =>
         {
-            // Stop and cleanup run on the thread pool so the UI thread stays free.
-            // Stop() joins the decode thread (up to 2 s), CleanupMedia() frees FFmpeg contexts.
-            Stop();
-            CleanupMedia();
+            // Serialize concurrent loads — if two rapid Skip-Next calls arrive,
+            // the second waits for the first to complete before proceeding.
+            _loadLock.Wait();
+            try
+            {
+                // Stop and cleanup run on the thread pool so the UI thread stays free.
+                // Stop() joins the decode thread (up to 2 s), CleanupMedia() frees FFmpeg contexts.
+                Stop();
+                CleanupMedia();
 
-            var loadTimer = Stopwatch.StartNew();
-            OpenMedia(filePath);
-            loadTimer.Stop();
-            _logService.Info(
-                $"Loaded: {Path.GetFileName(filePath)} ({_currentMetadata?.Resolution}, " +
-                $"{_currentMetadata?.Duration:hh\\:mm\\:ss}) in {loadTimer.ElapsedMilliseconds} ms" +
-                (_hwDecodingActive ? " [HW accel]" : ""));
+                var loadTimer = Stopwatch.StartNew();
+                OpenMedia(filePath);
+                loadTimer.Stop();
+                _logService.Info(
+                    $"Loaded: {Path.GetFileName(filePath)} ({_currentMetadata?.Resolution}, " +
+                    $"{_currentMetadata?.Duration:hh\\:mm\\:ss}) in {loadTimer.ElapsedMilliseconds} ms" +
+                    (_hwDecodingActive ? " [HW accel]" : ""));
+            }
+            finally
+            {
+                _loadLock.Release();
+            }
         });
     }
 
@@ -695,6 +706,7 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         // If a seek arrived since this packet was read, discard immediately.
         if (_seekGeneration != generation) return;
 
+        if (_videoCodecContext == null) return;
         var result = ffmpeg.avcodec_send_packet(_videoCodecContext, packet);
         if (result < 0) return;
 
@@ -788,7 +800,7 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
 
     private void DecodeAudioPacket(AVPacket* packet, AVFrame* frame)
     {
-        if (_swrContext == null) return;
+        if (_swrContext == null || _audioCodecContext == null) return;
 
         var result = ffmpeg.avcodec_send_packet(_audioCodecContext, packet);
         if (result < 0) return;
@@ -965,23 +977,24 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
 
     private void HandleMediaEnded()
     {
+        // Do not call Stop() here — the decode loop will exit naturally
+        // after this method returns (readResult < 0 → break).
+        // The MediaEnded subscriber (ViewModel) calls LoadAsync which calls Stop().
+        // Calling Stop from the decode thread causes a deadlock on Join().
+        _audioRenderer.Stop();
+        _playbackClock.Stop();
+        StopPositionTimer();
+        StopMetricsTimer();
+        State = PlaybackState.Stopped;
         MediaEnded?.Invoke();
-        Stop();
     }
 
     // ── Cleanup ──
 
     private void CleanupMedia()
     {
-        // Stop decode thread
-        _decodeCts.Cancel();
-        _pauseEvent.Set();
-        _decodeThread?.Join(TimeSpan.FromSeconds(2));
-
-        // Reset CTS so the next decode thread gets a fresh, non-cancelled token
-        _decodeCts.Dispose();
-        _decodeCts = new CancellationTokenSource();
-
+        // Do not cancel/join decode thread or reset CTS here — Stop() already
+        // handles that. CleanupMedia is only responsible for freeing FFmpeg resources.
         StopPositionTimer();
         StopMetricsTimer();
         _audioRenderer.Stop();
@@ -1059,5 +1072,6 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         _audioRenderer.Dispose();
         _decodeCts.Dispose();
         _pauseEvent.Dispose();
+        _loadLock.Dispose();
     }
 }

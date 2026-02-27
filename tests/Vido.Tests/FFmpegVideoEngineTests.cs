@@ -160,6 +160,61 @@ public class FFmpegVideoEngineTests : IDisposable
         _sut.Dispose(); // Should not throw
     }
 
+    // ── vb-001: Stop safety ──
+
+    [Fact]
+    public void Stop_CalledTwice_DoesNotThrow()
+    {
+        // Stop() disposes and recreates CTS. Calling twice should not throw
+        // (double-dispose was a crash vector before vb-001 fix).
+        _sut.Stop();
+        _sut.Stop();
+
+        Assert.Equal(PlaybackState.None, _sut.State);
+    }
+
+    [Fact]
+    public void Stop_ThenDispose_DoesNotThrow()
+    {
+        // After Stop() resets CTS, Dispose() should cleanly free everything.
+        _sut.Stop();
+        _sut.Dispose();
+    }
+
+    // ── vb-001: LoadAsync semaphore precondition checks ──
+
+    [Fact]
+    public async Task LoadAsync_CalledConcurrently_PreconditionFailsDoNotDeadlock()
+    {
+        if (FFmpegInitializer.IsInitialized)
+            return; // Skip if FFmpeg available — would take a different path
+
+        // Two concurrent LoadAsync calls both fail on precondition.
+        // If the semaphore were acquired before the check and not released on exception,
+        // the second call would deadlock. This verifies the lock is not held across throws.
+        var t1 = Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.LoadAsync(@"C:\nonexistent\a.mp4"));
+        var t2 = Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.LoadAsync(@"C:\nonexistent\b.mp4"));
+
+        await Task.WhenAll(t1, t2);
+    }
+
+    [Fact]
+    public async Task LoadAsync_AfterFailedLoad_CanBeCalledAgain()
+    {
+        if (FFmpegInitializer.IsInitialized)
+            return;
+
+        // First call fails
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.LoadAsync(@"C:\nonexistent\video.mp4"));
+
+        // Second call should also fail with same exception (not deadlock on semaphore)
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => _sut.LoadAsync(@"C:\nonexistent\video2.mp4"));
+    }
+
     // ── AudioSamplesAvailable Event ──
 
     [Fact]
