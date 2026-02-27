@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using Vido.Core.Layout;
@@ -143,12 +144,15 @@ public partial class ActivityBarView : UserControl
         }
     }
 
-    // ── Plugin sidebar buttons ──
+    // ── Plugin sidebar buttons (vb-007: drag-drop reordering) ──
+
+    private Point _dragStartPoint;
+    private Button? _dragSourceButton;
 
     /// <summary>
-    /// Adds a plugin button to the activity bar, positioned between the built-in
-    /// top buttons (Explorer, Extensions) and the bottom Settings button.
-    /// Applies the local ActivityBarButtonStyle since it's not in the global resources.
+    /// Adds a plugin button to the dedicated plugin buttons panel.
+    /// The button's <see cref="FrameworkElement.Uid"/> is used as the panel ID
+    /// for drag-drop identification.
     /// </summary>
     public void AddPluginButton(Button button)
     {
@@ -160,36 +164,39 @@ public partial class ActivityBarView : UserControl
         button.MouseEnter += OnIconMouseEnter;
         button.MouseLeave += OnIconMouseLeave;
 
-        // Find the top StackPanel (DockPanel.Dock="Top") and add the button there
-        if (Content is DockPanel dock)
-        {
-            foreach (var child in dock.Children)
-            {
-                if (child is StackPanel panel && DockPanel.GetDock(panel) == Dock.Top)
-                {
-                    panel.Children.Add(button);
-                    return;
-                }
-            }
-        }
+        // Wire drag-drop initiation
+        button.PreviewMouseLeftButtonDown += OnPluginButtonMouseDown;
+        button.PreviewMouseMove += OnPluginButtonMouseMove;
+
+        PluginButtonsPanel.Children.Add(button);
     }
 
     /// <summary>
-    /// Removes a plugin button from the activity bar.
+    /// Inserts a plugin button at a specific index within the plugin buttons panel.
+    /// Used when adding buttons in a persisted order.
+    /// </summary>
+    public void InsertPluginButton(Button button, int index)
+    {
+        if (TryFindResource("ActivityBarButtonStyle") is Style style)
+            button.Style = style;
+
+        button.MouseEnter += OnIconMouseEnter;
+        button.MouseLeave += OnIconMouseLeave;
+        button.PreviewMouseLeftButtonDown += OnPluginButtonMouseDown;
+        button.PreviewMouseMove += OnPluginButtonMouseMove;
+
+        var clampedIndex = Math.Clamp(index, 0, PluginButtonsPanel.Children.Count);
+        PluginButtonsPanel.Children.Insert(clampedIndex, button);
+    }
+
+    /// <summary>
+    /// Removes a plugin button from the plugin buttons panel.
     /// </summary>
     public void RemovePluginButton(Button button)
     {
-        if (Content is DockPanel dock)
-        {
-            foreach (var child in dock.Children)
-            {
-                if (child is StackPanel panel && DockPanel.GetDock(panel) == Dock.Top)
-                {
-                    panel.Children.Remove(button);
-                    return;
-                }
-            }
-        }
+        button.PreviewMouseLeftButtonDown -= OnPluginButtonMouseDown;
+        button.PreviewMouseMove -= OnPluginButtonMouseMove;
+        PluginButtonsPanel.Children.Remove(button);
     }
 
     /// <summary>
@@ -199,5 +206,97 @@ public partial class ActivityBarView : UserControl
     public void SetPluginButtonActive(Button button, bool isActive)
     {
         SetButtonActive(button, isActive);
+    }
+
+    // ── Drag-and-drop for plugin button reordering ──
+
+    /// <summary>Raised after a successful drag-drop reorder of plugin buttons.</summary>
+    public event Action<int, int>? PluginButtonReordered;
+
+    private void OnPluginButtonMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        _dragStartPoint = e.GetPosition(null);
+        _dragSourceButton = sender as Button;
+    }
+
+    private void OnPluginButtonMouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed || _dragSourceButton is null)
+            return;
+
+        var currentPos = e.GetPosition(null);
+        var diff = _dragStartPoint - currentPos;
+
+        // Only start drag after a minimum distance to avoid accidental drags
+        if (Math.Abs(diff.X) < SystemParameters.MinimumHorizontalDragDistance &&
+            Math.Abs(diff.Y) < SystemParameters.MinimumVerticalDragDistance)
+            return;
+
+        var data = new DataObject("PluginButton", _dragSourceButton);
+        DragDrop.DoDragDrop(_dragSourceButton, data, DragDropEffects.Move);
+        _dragSourceButton = null;
+    }
+
+    private void OnPluginDragOver(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent("PluginButton"))
+        {
+            e.Effects = DragDropEffects.None;
+            e.Handled = true;
+            return;
+        }
+
+        e.Effects = DragDropEffects.Move;
+        e.Handled = true;
+    }
+
+    private void OnPluginDrop(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent("PluginButton"))
+            return;
+
+        var source = e.Data.GetData("PluginButton") as Button;
+        if (source is null) return;
+
+        var oldIndex = PluginButtonsPanel.Children.IndexOf(source);
+        if (oldIndex < 0) return;
+
+        // Determine drop target index based on mouse Y position
+        var newIndex = GetDropIndex(e.GetPosition(PluginButtonsPanel));
+        if (newIndex < 0) newIndex = PluginButtonsPanel.Children.Count - 1;
+
+        // Clamp to valid range
+        newIndex = Math.Clamp(newIndex, 0, PluginButtonsPanel.Children.Count - 1);
+
+        if (oldIndex == newIndex) return;
+
+        // Physically reorder in the panel
+        PluginButtonsPanel.Children.RemoveAt(oldIndex);
+        PluginButtonsPanel.Children.Insert(newIndex, source);
+
+        // Notify MainWindow to persist the new order
+        PluginButtonReordered?.Invoke(oldIndex, newIndex);
+
+        e.Handled = true;
+    }
+
+    /// <summary>
+    /// Determines the drop index based on the Y position within the PluginButtonsPanel.
+    /// Returns the index of the slot the item should be inserted at.
+    /// </summary>
+    private int GetDropIndex(Point position)
+    {
+        for (var i = 0; i < PluginButtonsPanel.Children.Count; i++)
+        {
+            if (PluginButtonsPanel.Children[i] is FrameworkElement child)
+            {
+                var childTop = child.TranslatePoint(new Point(0, 0), PluginButtonsPanel).Y;
+                var childMid = childTop + child.ActualHeight / 2;
+                if (position.Y < childMid)
+                    return i;
+            }
+        }
+
+        return PluginButtonsPanel.Children.Count - 1;
     }
 }

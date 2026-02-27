@@ -80,6 +80,13 @@ public sealed class AppSettings
     public List<string> DisabledPluginIds { get; set; } = [];
 
     /// <summary>
+    /// Persisted display order of plugin sidebar icons.
+    /// Stores full panel IDs in the user's preferred order.
+    /// When empty, the default registration order is used.
+    /// </summary>
+    public List<string> PluginSidebarOrder { get; set; } = [];
+
+    /// <summary>
     /// Plugin registry URLs. The official Vido registry is always the first entry
     /// and cannot be removed. Users may add custom URLs (including <c>file://</c>
     /// paths for local development).
@@ -146,6 +153,7 @@ public sealed class AppSettings
         PluginAvailableSectionExpanded = true;
         PluginDirectories = [];
         DisabledPluginIds = [];
+        PluginSidebarOrder = [];
         PluginRegistryUrls = [OfficialRegistryUrl];
     }
 }
