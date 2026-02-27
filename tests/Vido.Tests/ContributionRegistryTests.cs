@@ -457,4 +457,38 @@ public class ContributionRegistryTests
         Assert.Single(first); // snapshot not affected by later registration
         Assert.Equal(2, second.Count);
     }
+
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║ vb-017 — Overlay toggle before materialization                 ║
+    // ╚══════════════════════════════════════════════════════════════════╝
+
+    [Fact]
+    public void ToggleControlBarOverlay_BeforeRegistration_StillFiresEvent()
+    {
+        // A plugin may call ToggleControlBarOverlay before the control bar
+        // item has been wired in the UI. The event must still fire so the
+        // view layer can store a pending visibility state.
+        string? firedId = null;
+        bool? firedVisible = null;
+        _registry.ControlBarOverlayToggled += (id, vis) => { firedId = id; firedVisible = vis; };
+
+        _registry.ToggleControlBarOverlay("plugin.p1.beat", true);
+
+        Assert.Equal("plugin.p1.beat", firedId);
+        Assert.True(firedVisible);
+    }
+
+    [Fact]
+    public void ToggleControlBarOverlay_MultipleCallsBeforeRegistration_LastWins()
+    {
+        var calls = new List<(string id, bool visible)>();
+        _registry.ControlBarOverlayToggled += (id, vis) => calls.Add((id, vis));
+
+        _registry.ToggleControlBarOverlay("plugin.p1.beat", true);
+        _registry.ToggleControlBarOverlay("plugin.p1.beat", false);
+        _registry.ToggleControlBarOverlay("plugin.p1.beat", true);
+
+        Assert.Equal(3, calls.Count);
+        Assert.True(calls[^1].visible); // last call wins
+    }
 }

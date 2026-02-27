@@ -475,6 +475,7 @@ public partial class VideoPlayerControl : UserControl
 
     private readonly Dictionary<string, UIElement> _pluginControlBarItems = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, UIElement> _pluginOverlays = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, bool> _pendingOverlayVisibility = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Adds a plugin-provided control bar item (left of the loop button).
@@ -504,7 +505,14 @@ public partial class VideoPlayerControl : UserControl
     public void AddPluginOverlay(string fullId, UIElement overlay)
     {
         if (_pluginOverlays.ContainsKey(fullId)) return;
-        overlay.Visibility = Visibility.Collapsed;
+
+        // Apply pending visibility if a toggle was requested before the overlay
+        // was materialized (vb-017: plugin activation order race).
+        if (_pendingOverlayVisibility.Remove(fullId, out var pendingVisible))
+            overlay.Visibility = pendingVisible ? Visibility.Visible : Visibility.Collapsed;
+        else
+            overlay.Visibility = Visibility.Collapsed;
+
         _pluginOverlays[fullId] = overlay;
         PluginOverlayContainer.Children.Add(overlay);
     }
@@ -526,6 +534,9 @@ public partial class VideoPlayerControl : UserControl
     {
         if (_pluginOverlays.TryGetValue(fullId, out var overlay))
             overlay.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+        else
+            // Overlay not yet materialized — store for when AddPluginOverlay is called (vb-017)
+            _pendingOverlayVisibility[fullId] = visible;
     }
 
     /// <summary>
