@@ -54,8 +54,9 @@ internal sealed class AudioRenderer : IDisposable
         var waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
         _waveProvider = new BufferedWaveProvider(waveFormat)
         {
-            // Buffer up to 1 second of audio — prevents underruns while limiting latency
-            BufferLength = sampleRate * channels * sizeof(float),
+            // Buffer up to 2 seconds of audio — larger buffer reduces underruns and
+            // crackling, especially over Bluetooth or with high-latency devices.
+            BufferLength = sampleRate * channels * sizeof(float) * 2,
             DiscardOnBufferOverflow = true
         };
 
@@ -63,7 +64,7 @@ internal sealed class AudioRenderer : IDisposable
         {
             _waveOut = new WasapiOut(
                 NAudio.CoreAudioApi.AudioClientShareMode.Shared,
-                latency: 50); // 50ms latency for responsive playback
+                latency: 100); // 100ms latency — more headroom for Bluetooth / USB audio
 
             _waveOut.Init(_waveProvider);
             ApplyVolume();

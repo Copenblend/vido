@@ -84,6 +84,11 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     // decoded silently. Set to -1 when no preroll is active.
     private long _prerollTargetPts = -1;
 
+    // After a seek, the first few decoded audio frames may contain garbled
+    // samples from the codec flush. We squelch (discard) a small number of
+    // audio frames to prevent audible pops/clicks.
+    private volatile int _audioPrerollFrames;
+
     // ── Performance metrics ──
     // Tracks frame delivery rate and dropped frames for performance monitoring.
     private long _framesRendered;
@@ -523,7 +528,15 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     {
         if (_audioCodecContext == null) return;
 
-        _audioOutSampleRate = _audioCodecContext->sample_rate;
+        // Normalize uncommon sample rates to standard rates. Files with unusual
+        // rates (e.g. 22050, 11025, 8000) can cause distortion when the WASAPI
+        // output device expects 44100 or 48000 Hz.
+        _audioOutSampleRate = _audioCodecContext->sample_rate switch
+        {
+            <= 22050 => 44100,
+            <= 44100 => 44100,
+            _ => 48000
+        };
         _audioOutChannels = _audioCodecContext->ch_layout.nb_channels;
         if (_audioOutChannels <= 0) _audioOutChannels = 2;
 
@@ -802,6 +815,13 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     {
         if (_swrContext == null || _audioCodecContext == null) return;
 
+        // Skip garbled audio frames immediately after a seek.
+        if (_audioPrerollFrames > 0)
+        {
+            Interlocked.Decrement(ref _audioPrerollFrames);
+            return;
+        }
+
         var result = ffmpeg.avcodec_send_packet(_audioCodecContext, packet);
         if (result < 0) return;
 
@@ -946,6 +966,10 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         if (_formatContext == null) return;
 
         _audioRenderer.Flush();
+
+        // Squelch the first 2 audio frames after seeking — they often contain
+        // garbled samples from the codec flush that cause audible pops.
+        _audioPrerollFrames = 2;
 
         // Seek to the target position (lands on nearest keyframe BEFORE target)
         var timestamp = (long)(position.TotalSeconds * ffmpeg.AV_TIME_BASE);
