@@ -2477,4 +2477,192 @@ public sealed class PluginManagerTests
         var item = vm.AvailablePlugins.First(p => p.Id == entry.Id);
         Assert.False(item.RequiresNewerVido);
     }
+
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║ vb-005 — Dependency Resolution During Update                   ║
+    // ╚══════════════════════════════════════════════════════════════════╝
+
+    [Fact]
+    public async Task UpdatePluginAsync_WithOutdatedDependency_UpdatesDependencyFirst()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+
+        // Installed: target v1.0, dep v1.0
+        var targetInfo = MakePluginInfo(id: "com.test.target", displayName: "Target");
+        var depInfo = MakePluginInfo(id: "com.test.dep", displayName: "Dep");
+        host.Plugins.Returns(new[] { targetInfo, depInfo });
+        host.GetPlugin("com.test.dep").Returns(depInfo);
+        host.GetPlugin("com.test.target").Returns(targetInfo);
+
+        // Registry: target v2.0 depends on dep >= 2.0, dep v2.0
+        var depEntry = MakeEntry(id: "com.test.dep", displayName: "Dep", version: "2.0.0");
+        var targetEntry = MakeEntry(id: "com.test.target", displayName: "Target", version: "2.0.0");
+        targetEntry.Dependencies =
+        [
+            new PluginDependency { Id = "com.test.dep", MinVersion = "2.0.0" }
+        ];
+
+        var registry = new PluginRegistry { Name = "R", Plugins = [targetEntry, depEntry] };
+        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
+        installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        var targetItem = vm.InstalledPlugins.Single(p => p.Id == "com.test.target");
+        Assert.True(targetItem.HasUpdate);
+
+        await vm.UpdatePluginAsync(targetItem);
+
+        // Dependency should have been removed and reinstalled
+        host.Received(1).RemovePlugin("com.test.dep");
+        await installer.Received(1).InstallAsync(Arg.Is<PluginRegistryEntry>(e => e.Id == "com.test.dep"));
+
+        // Target should have been removed and reinstalled
+        host.Received(1).RemovePlugin("com.test.target");
+        await installer.Received(1).InstallAsync(Arg.Is<PluginRegistryEntry>(e => e.Id == "com.test.target"));
+
+        Assert.False(targetItem.HasUpdate);
+    }
+
+    [Fact]
+    public async Task UpdatePluginAsync_DependencyUpdateFails_AbortsTargetUpdate()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+
+        // Installed: target v1.0, dep v1.0
+        var targetInfo = MakePluginInfo(id: "com.test.target", displayName: "Target");
+        var depInfo = MakePluginInfo(id: "com.test.dep", displayName: "Dep");
+        host.Plugins.Returns(new[] { targetInfo, depInfo });
+        host.GetPlugin("com.test.dep").Returns(depInfo);
+        host.GetPlugin("com.test.target").Returns(targetInfo);
+
+        // Registry: target v2.0 depends on dep >= 2.0, dep v2.0
+        var depEntry = MakeEntry(id: "com.test.dep", displayName: "Dep", version: "2.0.0");
+        var targetEntry = MakeEntry(id: "com.test.target", displayName: "Target", version: "2.0.0");
+        targetEntry.Dependencies =
+        [
+            new PluginDependency { Id = "com.test.dep", MinVersion = "2.0.0" }
+        ];
+
+        var registry = new PluginRegistry { Name = "R", Plugins = [targetEntry, depEntry] };
+        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
+
+        // Dep install fails
+        installer.InstallAsync(Arg.Is<PluginRegistryEntry>(e => e.Id == "com.test.dep"))
+            .Returns(Task.FromResult(false));
+        installer.InstallAsync(Arg.Is<PluginRegistryEntry>(e => e.Id == "com.test.target"))
+            .Returns(Task.FromResult(true));
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        var targetItem = vm.InstalledPlugins.Single(p => p.Id == "com.test.target");
+        Assert.True(targetItem.HasUpdate);
+
+        await vm.UpdatePluginAsync(targetItem);
+
+        // Dep was attempted (removed + install)
+        host.Received(1).RemovePlugin("com.test.dep");
+
+        // Target update should NOT have been attempted
+        host.DidNotReceive().RemovePlugin("com.test.target");
+        await installer.DidNotReceive().InstallAsync(Arg.Is<PluginRegistryEntry>(e => e.Id == "com.test.target"));
+
+        // Target should still show as having an update
+        Assert.True(targetItem.HasUpdate);
+    }
+
+    [Fact]
+    public async Task UpdatePluginAsync_DependencyAlreadyMeetsVersion_SkipsIt()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+
+        // Installed: target v1.0, dep v2.0 (already meets requirement)
+        var targetInfo = MakePluginInfo(id: "com.test.target", displayName: "Target");
+        var depInfo = MakePluginInfo(id: "com.test.dep", displayName: "Dep");
+        depInfo.Manifest.Version = "2.0.0"; // Already at v2.0
+        host.Plugins.Returns(new[] { targetInfo, depInfo });
+        host.GetPlugin("com.test.dep").Returns(depInfo);
+        host.GetPlugin("com.test.target").Returns(targetInfo);
+
+        // Registry: target v2.0 depends on dep >= 1.0 (already satisfied), dep v2.0
+        var depEntry = MakeEntry(id: "com.test.dep", displayName: "Dep", version: "2.0.0");
+        var targetEntry = MakeEntry(id: "com.test.target", displayName: "Target", version: "2.0.0");
+        targetEntry.Dependencies =
+        [
+            new PluginDependency { Id = "com.test.dep", MinVersion = "1.0.0" }
+        ];
+
+        var registry = new PluginRegistry { Name = "R", Plugins = [targetEntry, depEntry] };
+        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
+        installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        var targetItem = vm.InstalledPlugins.Single(p => p.Id == "com.test.target");
+        Assert.True(targetItem.HasUpdate);
+
+        await vm.UpdatePluginAsync(targetItem);
+
+        // Dependency should NOT have been removed or reinstalled (already meets version)
+        host.DidNotReceive().RemovePlugin("com.test.dep");
+        await installer.DidNotReceive().InstallAsync(Arg.Is<PluginRegistryEntry>(e => e.Id == "com.test.dep"));
+
+        // Target should have been updated normally
+        host.Received(1).RemovePlugin("com.test.target");
+        await installer.Received(1).InstallAsync(Arg.Is<PluginRegistryEntry>(e => e.Id == "com.test.target"));
+        Assert.False(targetItem.HasUpdate);
+    }
+
+    [Fact]
+    public async Task UpdatePluginAsync_DependencyNotInstalled_InstallsIt()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+
+        // Installed: target v1.0 only (dep NOT installed)
+        var targetInfo = MakePluginInfo(id: "com.test.target", displayName: "Target");
+        host.Plugins.Returns(new[] { targetInfo });
+        host.GetPlugin("com.test.dep").Returns((PluginInfo?)null);
+        host.GetPlugin("com.test.target").Returns(targetInfo);
+
+        // Registry: target v2.0 depends on dep >= 1.0, dep v1.0
+        var depEntry = MakeEntry(id: "com.test.dep", displayName: "Dep", version: "1.0.0");
+        var targetEntry = MakeEntry(id: "com.test.target", displayName: "Target", version: "2.0.0");
+        targetEntry.Dependencies =
+        [
+            new PluginDependency { Id = "com.test.dep", MinVersion = "1.0.0" }
+        ];
+
+        var registry = new PluginRegistry { Name = "R", Plugins = [targetEntry, depEntry] };
+        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
+        installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        var targetItem = vm.InstalledPlugins.Single(p => p.Id == "com.test.target");
+        Assert.True(targetItem.HasUpdate);
+
+        // Find the dep item (should be in available plugins, not installed)
+        var depItem = vm.AvailablePlugins.SingleOrDefault(p => p.Id == "com.test.dep");
+        Assert.NotNull(depItem);
+        Assert.False(depItem.IsInstalled);
+
+        await vm.UpdatePluginAsync(targetItem);
+
+        // Dependency should have been auto-installed
+        await installer.Received(1).InstallAsync(Arg.Is<PluginRegistryEntry>(e => e.Id == "com.test.dep"));
+        Assert.True(depItem.IsInstalled);
+
+        // Target should have been updated
+        host.Received(1).RemovePlugin("com.test.target");
+        await installer.Received(1).InstallAsync(Arg.Is<PluginRegistryEntry>(e => e.Id == "com.test.target"));
+        Assert.False(targetItem.HasUpdate);
+    }
 }

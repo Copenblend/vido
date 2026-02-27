@@ -457,6 +457,7 @@ public partial class PluginManagerViewModel : ObservableObject
     /// <summary>
     /// Updates a plugin to the latest version from the registry.
     /// Removes the old version, installs the new one, and re-activates.
+    /// Automatically updates or installs any required dependencies first.
     /// </summary>
     [RelayCommand]
     public async Task UpdatePluginAsync(PluginItemViewModel item)
@@ -478,6 +479,66 @@ public partial class PluginManagerViewModel : ObservableObject
         item.IsBusy = true;
         try
         {
+            // Resolve and update/install dependencies first
+            if (item.RegistryEntry.Dependencies is { Count: > 0 })
+            {
+                foreach (var dep in item.RegistryEntry.Dependencies)
+                {
+                    var depItem = _allPlugins.FirstOrDefault(p =>
+                        string.Equals(p.Id, dep.Id, StringComparison.OrdinalIgnoreCase));
+
+                    if (depItem?.RegistryEntry is null)
+                    {
+                        _logService.Warning(
+                            $"Dependency '{dep.Id}' not found in any configured registry.", "PluginManager");
+                        continue;
+                    }
+
+                    var installedInfo = _pluginHost.GetPlugin(dep.Id);
+                    if (installedInfo is null)
+                    {
+                        // Dependency not installed — install it
+                        _logService.Info(
+                            $"Auto-installing dependency '{dep.Id}' for update of '{item.Id}'...", "PluginManager");
+                        var depSuccess = await _pluginInstaller.InstallAsync(depItem.RegistryEntry);
+                        if (!depSuccess)
+                        {
+                            _logService.Error(
+                                $"Failed to install dependency '{dep.Id}' — aborting update of '{item.Id}'.", "PluginManager");
+                            return;
+                        }
+
+                        depItem.IsInstalled = true;
+                        depItem.IsEnabled = true;
+                        continue;
+                    }
+
+                    // Check if installed version meets minimum
+                    if (!string.IsNullOrEmpty(dep.MinVersion)
+                        && Version.TryParse(dep.MinVersion, out var requiredVer)
+                        && Version.TryParse(installedInfo.Manifest.Version, out var installedVer)
+                        && installedVer < requiredVer)
+                    {
+                        _logService.Info(
+                            $"Updating dependency '{dep.Id}' from v{installedVer} to v{depItem.RegistryEntry.Version} for '{item.Id}'...",
+                            "PluginManager");
+
+                        _pluginHost.RemovePlugin(dep.Id);
+                        var depSuccess = await _pluginInstaller.InstallAsync(depItem.RegistryEntry);
+                        if (!depSuccess)
+                        {
+                            _logService.Error(
+                                $"Failed to update dependency '{dep.Id}' — aborting update of '{item.Id}'.", "PluginManager");
+                            return;
+                        }
+
+                        depItem.HasUpdate = false;
+                        depItem.AvailableVersion = null;
+                    }
+                }
+            }
+
+            // Now update the target plugin
             _pluginHost.RemovePlugin(item.Id);
 
             var success = await _pluginInstaller.InstallAsync(item.RegistryEntry);
@@ -489,6 +550,7 @@ public partial class PluginManagerViewModel : ObservableObject
                     item.PluginInfo = info;
                 item.HasUpdate = false;
                 item.AvailableVersion = null;
+                ApplyFilter();
                 _logService.Info($"Plugin '{item.DisplayName}' updated successfully.", "PluginManager");
                 RestartRequired?.Invoke($"Plugin '{item.DisplayName}' was updated. A restart is recommended.");
             }
