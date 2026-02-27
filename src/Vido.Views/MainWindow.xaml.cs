@@ -265,6 +265,12 @@ public partial class MainWindow : Window
         // Settings gear opens as a tab, not in the sidebar
         ActivityBar.SettingsRequested += (_, _) => _mainWindowViewModel.OpenSettings();
 
+        // Plugin sidebar button drag-and-drop reordering (vb-007)
+        ActivityBar.PluginButtonReordered += (oldIndex, newIndex) =>
+        {
+            _activityBarViewModel!.MovePluginItem(oldIndex, newIndex);
+        };
+
         // Initialize visual states
         ActivityBar.UpdateActiveStates();
     }
@@ -1647,6 +1653,7 @@ public partial class MainWindow : Window
                 _pluginSidebarButtons.Remove(id);
             }
             _pluginSidebarContents.Remove(id);
+            _activityBarViewModel?.RemovePluginItem(id);
             if (_activePluginSidebarId == id)
             {
                 _activePluginSidebarId = null;
@@ -1876,10 +1883,16 @@ public partial class MainWindow : Window
                 {
                     OnPluginSidebarButtonClick(panelId, panel.Title);
                 });
+                button.Uid = fullId;
                 _pluginSidebarButtons[fullId] = button;
 
-                // Add to activity bar top section
-                ActivityBar.AddPluginButton(button);
+                // Register with ViewModel for ordering (vb-007)
+                var item = new Core.Layout.PluginSidebarItem { Id = fullId, Order = panel.Order };
+                _activityBarViewModel!.AddPluginItem(item);
+
+                // Determine visual insertion index from ViewModel order
+                var vmIndex = _activityBarViewModel.PluginItems.IndexOf(item);
+                ActivityBar.InsertPluginButton(button, vmIndex);
             });
         }
     }

@@ -13,7 +13,7 @@
     </UserControl.Resources>
 
     <DockPanel LastChildFill="False">
-        <!-- Top group: Explorer, Extensions -->
+        <!-- Top group: Explorer, Extensions, then plugin buttons -->
         <StackPanel DockPanel.Dock="Top">
             <!-- Explorer (VS Code codicon: files) -->
             <Button x:Name="ExplorerButton"
@@ -87,6 +87,12 @@
                                Fill="{DynamicResource InactiveIconBrush}" />
                 </Canvas>
             </Button>
+
+            <!-- Plugin sidebar buttons — separate container for drag-and-drop reordering (vb-007) -->
+            <StackPanel x:Name="PluginButtonsPanel"
+                        AllowDrop="True"
+                        DragOver="OnPluginDragOver"
+                        Drop="OnPluginDrop" />
         </StackPanel>
 
         <!-- Bottom group: Settings -->
