@@ -45,6 +45,7 @@ public partial class PluginItemViewModel : ObservableObject
     /// <summary>Whether the plugin is currently installed locally.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusText))]
+    [NotifyPropertyChangedFor(nameof(ActionText))]
     private bool _isInstalled;
 
     /// <summary>Whether the plugin is enabled (only relevant when installed).</summary>
@@ -54,11 +55,14 @@ public partial class PluginItemViewModel : ObservableObject
 
     /// <summary>Whether an install/uninstall operation is in progress.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ActionText))]
+    [NotifyPropertyChangedFor(nameof(IsActionEnabled))]
     private bool _isBusy;
 
     /// <summary>Whether an update is available (registry version > installed version).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusText))]
+    [NotifyPropertyChangedFor(nameof(ActionText))]
     private bool _hasUpdate;
 
     /// <summary>The version available for update from the registry.</summary>
@@ -72,6 +76,34 @@ public partial class PluginItemViewModel : ObservableObject
     /// <summary>Whether this plugin requires a newer version of Vido than is currently running.</summary>
     [ObservableProperty]
     private bool _requiresNewerVido;
+
+    /// <summary>Tracks which action is in progress (e.g. "Installing...", "Updating...").</summary>
+    private string? _busyAction;
+
+    /// <summary>Dynamic button label based on current state.</summary>
+    public string ActionText
+    {
+        get
+        {
+            if (IsBusy)
+                return _busyAction ?? "Working...";
+            if (IsInstalled && HasUpdate)
+                return "Update";
+            if (IsInstalled)
+                return "Uninstall";
+            return "Install";
+        }
+    }
+
+    /// <summary>Whether the action button should be enabled (false when busy).</summary>
+    public bool IsActionEnabled => !IsBusy;
+
+    /// <summary>Sets the busy action label and raises PropertyChanged for ActionText.</summary>
+    public void SetBusyAction(string action)
+    {
+        _busyAction = action;
+        OnPropertyChanged(nameof(ActionText));
+    }
 
     /// <summary>Status text: "Update Available", "Enabled", "Disabled", or empty for available plugins.</summary>
     public string StatusText => IsInstalled

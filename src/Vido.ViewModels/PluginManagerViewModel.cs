@@ -293,6 +293,7 @@ public partial class PluginManagerViewModel : ObservableObject
             return;
         }
 
+        item.SetBusyAction("Installing...");
         item.IsBusy = true;
         try
         {
@@ -479,6 +480,7 @@ public partial class PluginManagerViewModel : ObservableObject
             return;
         }
 
+        item.SetBusyAction("Updating...");
         item.IsBusy = true;
         try
         {

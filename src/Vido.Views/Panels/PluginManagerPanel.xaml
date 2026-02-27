@@ -491,7 +491,8 @@
                                                             HorizontalAlignment="Right" Margin="0,2,0,0">
                                                     <!-- Update button (shows when update available, replaces status pill) -->
                                                     <Button DockPanel.Dock="Top"
-                                                            Content="Update"
+                                                            Content="{Binding ActionText}"
+                                                            IsEnabled="{Binding IsActionEnabled}"
                                                             Click="OnUpdateClick"
                                                             VerticalAlignment="Top"
                                                             Margin="0,0,0,2"
@@ -689,7 +690,8 @@
 
                                                 <!-- Install button -->
                                                 <Button Grid.Column="2"
-                                                        Content="Install"
+                                                        Content="{Binding ActionText}"
+                                                        IsEnabled="{Binding IsActionEnabled}"
                                                         Click="OnInstallClick"
                                                         VerticalAlignment="Bottom"
                                                         Margin="0,0,0,2"
