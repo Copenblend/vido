@@ -56,6 +56,11 @@ public static class FFmpegInitializer
             {
                 DynamicallyLoadedBindings.LibrariesPath = ffmpegPath;
                 DynamicallyLoadedBindings.Initialize();
+
+                // Suppress benign FFmpeg warnings (e.g. "mmco: unref short failure")
+                // that clutter the output log. Errors are still reported. (vb-006)
+                ffmpeg.av_log_set_level(ffmpeg.AV_LOG_ERROR);
+
                 _isInitialized = true;
 
                 // Capture FFmpeg version string
