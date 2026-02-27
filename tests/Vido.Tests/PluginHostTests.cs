@@ -712,5 +712,96 @@ public class PluginHostTests : IDisposable
         Assert.NotNull(plugin);
         Assert.DoesNotContain("dependency", plugin.ErrorMessage ?? "");
     }
+
+    // ── Assembly Resolver Runtime Probing Tests ──
+
+    [Fact]
+    public void FindRuntimeSpecificAssembly_PrefersRuntimeOverRoot()
+    {
+        // Arrange: place a DLL at root and in runtimes/win/lib/net8.0/
+        var pluginDir = Path.Combine(_tempDir, "runtime-probe-test");
+        var arch = System.Runtime.InteropServices.RuntimeInformation.OSArchitecture
+            .ToString().ToLowerInvariant();
+        var rid = OperatingSystem.IsWindows() ? "win"
+                : OperatingSystem.IsLinux() ? "linux"
+                : OperatingSystem.IsMacOS() ? "osx"
+                : "unknown";
+
+        var runtimeLibDir = Path.Combine(pluginDir, "runtimes", rid, "lib", "net8.0");
+        Directory.CreateDirectory(runtimeLibDir);
+        File.WriteAllText(Path.Combine(runtimeLibDir, "TestLib.dll"), "runtime-specific");
+
+        // Also place a root-level DLL
+        File.WriteAllText(Path.Combine(pluginDir, "TestLib.dll"), "root-ref");
+
+        // Act
+        var result = PluginHost.PluginHost.FindRuntimeSpecificAssembly(pluginDir, "TestLib");
+
+        // Assert — should find the runtime-specific one, not root
+        Assert.NotNull(result);
+        Assert.Contains(Path.Combine("runtimes", rid), result);
+    }
+
+    [Fact]
+    public void FindRuntimeSpecificAssembly_ReturnsNull_WhenNoRuntimesDir()
+    {
+        var pluginDir = Path.Combine(_tempDir, "no-runtimes");
+        Directory.CreateDirectory(pluginDir);
+        File.WriteAllText(Path.Combine(pluginDir, "SomeLib.dll"), "root-only");
+
+        var result = PluginHost.PluginHost.FindRuntimeSpecificAssembly(pluginDir, "SomeLib");
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void FindRootAssembly_ReturnsPath_WhenDllExists()
+    {
+        var pluginDir = Path.Combine(_tempDir, "root-test");
+        Directory.CreateDirectory(pluginDir);
+        File.WriteAllText(Path.Combine(pluginDir, "MyLib.dll"), "content");
+
+        var result = PluginHost.PluginHost.FindRootAssembly(pluginDir, "MyLib");
+
+        Assert.NotNull(result);
+        Assert.EndsWith("MyLib.dll", result);
+    }
+
+    [Fact]
+    public void FindRootAssembly_ReturnsNull_WhenDllMissing()
+    {
+        var pluginDir = Path.Combine(_tempDir, "root-missing");
+        Directory.CreateDirectory(pluginDir);
+
+        var result = PluginHost.PluginHost.FindRootAssembly(pluginDir, "Missing");
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void FindRuntimeSpecificAssembly_ArchSpecific_PreferredOverGenericRid()
+    {
+        var pluginDir = Path.Combine(_tempDir, "arch-probe-test");
+        var arch = System.Runtime.InteropServices.RuntimeInformation.OSArchitecture
+            .ToString().ToLowerInvariant();
+        var rid = OperatingSystem.IsWindows() ? "win"
+                : OperatingSystem.IsLinux() ? "linux"
+                : OperatingSystem.IsMacOS() ? "osx"
+                : "unknown";
+
+        // Create both arch-specific and generic RID directories
+        var archDir = Path.Combine(pluginDir, "runtimes", $"{rid}-{arch}", "lib", "net8.0");
+        var genericDir = Path.Combine(pluginDir, "runtimes", rid, "lib", "net8.0");
+        Directory.CreateDirectory(archDir);
+        Directory.CreateDirectory(genericDir);
+        File.WriteAllText(Path.Combine(archDir, "Dep.dll"), "arch-specific");
+        File.WriteAllText(Path.Combine(genericDir, "Dep.dll"), "generic");
+
+        var result = PluginHost.PluginHost.FindRuntimeSpecificAssembly(pluginDir, "Dep");
+
+        // Should prefer the arch-specific one (e.g. win-x64 over win)
+        Assert.NotNull(result);
+        Assert.Contains($"{rid}-{arch}", result);
+    }
 }
 

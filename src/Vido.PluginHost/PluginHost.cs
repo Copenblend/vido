@@ -291,7 +291,40 @@ public sealed class PluginHost : IPluginHost
     }
 
     /// <summary>
+    /// Runtime identifier (RID) probe paths used to locate platform-specific
+    /// managed assemblies inside a plugin's <c>runtimes/</c> folder.
+    /// Ordered from most-specific to least-specific so the best match wins.
+    /// </summary>
+    private static readonly string[] RuntimeProbePaths = BuildRuntimeProbePaths();
+
+    private static string[] BuildRuntimeProbePaths()
+    {
+        var arch = System.Runtime.InteropServices.RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
+        if (OperatingSystem.IsWindows())
+            return [
+                Path.Combine("runtimes", $"win-{arch}", "lib"),
+                Path.Combine("runtimes", "win", "lib")
+            ];
+        if (OperatingSystem.IsLinux())
+            return [
+                Path.Combine("runtimes", $"linux-{arch}", "lib"),
+                Path.Combine("runtimes", "linux", "lib"),
+                Path.Combine("runtimes", "unix", "lib")
+            ];
+        if (OperatingSystem.IsMacOS())
+            return [
+                Path.Combine("runtimes", $"osx-{arch}", "lib"),
+                Path.Combine("runtimes", "osx", "lib"),
+                Path.Combine("runtimes", "unix", "lib")
+            ];
+        return [];
+    }
+
+    /// <summary>
     /// Resolving handler: searches all discovered plugin directories for a matching DLL.
+    /// Prefers platform-specific assemblies under <c>runtimes/{rid}/lib/</c> over
+    /// root-level DLLs, because NuGet packages often place a small reference/facade
+    /// assembly at the root while the real implementation lives under <c>runtimes/</c>.
     /// Results are cached to prevent duplicate loads (which would break type identity).
     /// </summary>
     private Assembly? ResolvePluginAssembly(AssemblyLoadContext context, AssemblyName name)
@@ -305,8 +338,11 @@ public sealed class PluginHost : IPluginHost
         // Search all discovered plugin directories
         foreach (var info in _plugins)
         {
-            var candidate = Path.Combine(info.Directory, name.Name + ".dll");
-            if (!File.Exists(candidate)) continue;
+            // 1. Probe runtime-specific paths first (e.g. runtimes/win-x64/lib/net8.0/)
+            var candidate = FindRuntimeSpecificAssembly(info.Directory, name.Name)
+                         ?? FindRootAssembly(info.Directory, name.Name);
+
+            if (candidate is null) continue;
 
             try
             {
@@ -329,6 +365,46 @@ public sealed class PluginHost : IPluginHost
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Searches the <c>runtimes/{rid}/lib/{tfm}/</c> directory structure for a
+    /// platform-specific managed assembly. Returns the first matching path, or null.
+    /// </summary>
+    internal static string? FindRuntimeSpecificAssembly(string pluginDir, string assemblyName)
+    {
+        var dllName = assemblyName + ".dll";
+
+        foreach (var probePath in RuntimeProbePaths)
+        {
+            var libDir = Path.Combine(pluginDir, probePath);
+            if (!Directory.Exists(libDir)) continue;
+
+            // Check TFM sub-folders (e.g. net8.0, net6.0) — prefer highest version
+            foreach (var tfmDir in Directory.GetDirectories(libDir)
+                         .OrderByDescending(d => Path.GetFileName(d)))
+            {
+                var candidate = Path.Combine(tfmDir, dllName);
+                if (File.Exists(candidate))
+                    return candidate;
+            }
+
+            // Also check directly under lib/ (some packages omit the TFM folder)
+            var direct = Path.Combine(libDir, dllName);
+            if (File.Exists(direct))
+                return direct;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Checks the plugin's root directory for the assembly DLL.
+    /// </summary>
+    internal static string? FindRootAssembly(string pluginDir, string assemblyName)
+    {
+        var candidate = Path.Combine(pluginDir, assemblyName + ".dll");
+        return File.Exists(candidate) ? candidate : null;
     }
 
     /// <summary>
