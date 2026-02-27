@@ -65,6 +65,14 @@ public partial class PluginItemViewModel : ObservableObject
     [ObservableProperty]
     private string? _availableVersion;
 
+    /// <summary>Inline status/error message shown below the description.</summary>
+    [ObservableProperty]
+    private string? _statusMessage;
+
+    /// <summary>Whether this plugin requires a newer version of Vido than is currently running.</summary>
+    [ObservableProperty]
+    private bool _requiresNewerVido;
+
     /// <summary>Status text: "Update Available", "Enabled", "Disabled", or empty for available plugins.</summary>
     public string StatusText => IsInstalled
         ? (HasUpdate ? "Update Available" : (IsEnabled ? "Enabled" : "Disabled"))

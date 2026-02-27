@@ -466,6 +466,24 @@
                                                                    Foreground="{DynamicResource SecondaryForegroundBrush}"
                                                                    FontFamily="Segoe UI" FontSize="10.5" />
                                                     </StackPanel>
+
+                                                    <!-- Status message (e.g. "Requires Vido v2.0+") -->
+                                                    <TextBlock Text="{Binding StatusMessage}"
+                                                               Foreground="#E53935"
+                                                               FontFamily="Segoe UI" FontSize="10"
+                                                               TextWrapping="Wrap"
+                                                               Margin="0,2,0,0">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding RequiresNewerVido}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
                                                 </StackPanel>
 
                                                 <!-- Right side: status pill / update button top, settings cog bottom -->
@@ -649,16 +667,44 @@
                                                                    Foreground="{DynamicResource SecondaryForegroundBrush}"
                                                                    FontFamily="Segoe UI" FontSize="10.5" />
                                                     </StackPanel>
+
+                                                    <!-- Status message (e.g. "Requires Vido v2.0+") -->
+                                                    <TextBlock Text="{Binding StatusMessage}"
+                                                               Foreground="#E53935"
+                                                               FontFamily="Segoe UI" FontSize="10"
+                                                               TextWrapping="Wrap"
+                                                               Margin="0,2,0,0">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding RequiresNewerVido}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Visible" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
                                                 </StackPanel>
 
                                                 <!-- Install button -->
                                                 <Button Grid.Column="2"
-                                                        Style="{StaticResource InstallButtonStyle}"
                                                         Content="Install"
                                                         Click="OnInstallClick"
                                                         VerticalAlignment="Bottom"
                                                         Margin="0,0,0,2"
-                                                        ToolTip="Install plugin" />
+                                                        ToolTip="Install plugin">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button" BasedOn="{StaticResource InstallButtonStyle}">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding RequiresNewerVido}" Value="True">
+                                                                    <Setter Property="IsEnabled" Value="False" />
+                                                                    <Setter Property="ToolTip" Value="{Binding StatusMessage}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>

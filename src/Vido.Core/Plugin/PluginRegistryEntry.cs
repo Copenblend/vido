@@ -65,6 +65,10 @@ public sealed class PluginRegistryEntry
     [JsonPropertyName("dependencies")]
     public List<PluginDependency> Dependencies { get; set; } = [];
 
+    /// <summary>Minimum Vido version required to run this plugin.</summary>
+    [JsonPropertyName("minVidoVersion")]
+    public string? MinVidoVersion { get; set; }
+
     /// <summary>
     /// The registry URL this entry was fetched from.
     /// Set at runtime during registry loading — not serialized from registry JSON.
