@@ -196,6 +196,7 @@ public partial class PluginManagerViewModel : ObservableObject
                         // Update installed plugin with registry info
                         installed.RegistryEntry = entry;
                         installed.IsOfficial = isOfficial;
+                        installed.RequiresNewerVido = !MeetsMinVidoVersion(entry.MinVidoVersion);
 
                         // Detect available updates
                         if (installed.IsInstalled && IsNewerVersion(entry.Version, installed.Version))
@@ -208,6 +209,7 @@ public partial class PluginManagerViewModel : ObservableObject
                     {
                         // New available plugin (first registry wins for dedup)
                         var item = PluginItemViewModel.FromRegistryEntry(entry);
+                        item.RequiresNewerVido = !MeetsMinVidoVersion(entry.MinVidoVersion);
                         _allPlugins.Add(item);
                     }
                 }
@@ -275,6 +277,18 @@ public partial class PluginManagerViewModel : ObservableObject
     public async Task InstallPluginAsync(PluginItemViewModel item)
     {
         if (item.IsInstalled || item.IsBusy || item.RegistryEntry is null) return;
+
+        // Block install when the plugin requires a newer Vido version
+        var requiredVersion = item.RegistryEntry.MinVidoVersion;
+        if (!MeetsMinVidoVersion(requiredVersion))
+        {
+            var current = GetCurrentVidoVersion();
+            _logService.Warning(
+                $"Plugin '{item.DisplayName}' requires Vido v{requiredVersion} or later. " +
+                $"Current version: {current}. Please update Vido first.", "PluginManager");
+            item.StatusMessage = $"Requires Vido v{requiredVersion}+";
+            return;
+        }
 
         item.IsBusy = true;
         try
@@ -400,8 +414,24 @@ public partial class PluginManagerViewModel : ObservableObject
         if (!item.IsInstalled) return;
 
         var newState = !item.IsEnabled;
+
+        // Block enabling when the plugin requires a newer Vido version
+        if (newState)
+        {
+            var minVersion = item.PluginInfo?.Manifest.MinVidoVersion
+                          ?? item.RegistryEntry?.MinVidoVersion;
+            if (!MeetsMinVidoVersion(minVersion))
+            {
+                _logService.Warning(
+                    $"Plugin '{item.DisplayName}' requires Vido v{minVersion}+. Cannot enable.", "PluginManager");
+                item.StatusMessage = $"Requires Vido v{minVersion}+";
+                return;
+            }
+        }
+
         _pluginHost.SetEnabled(item.Id, newState);
         item.IsEnabled = newState;
+        item.StatusMessage = null; // Clear any previous message
 
         _logService.Info($"Plugin '{item.DisplayName}' {(newState ? "enabled" : "disabled")}.", "PluginManager");
     }
@@ -432,6 +462,18 @@ public partial class PluginManagerViewModel : ObservableObject
     public async Task UpdatePluginAsync(PluginItemViewModel item)
     {
         if (!item.HasUpdate || item.IsBusy || item.RegistryEntry is null) return;
+
+        // Block update when the new version requires a newer Vido version
+        var requiredVersion = item.RegistryEntry.MinVidoVersion;
+        if (!MeetsMinVidoVersion(requiredVersion))
+        {
+            var current = GetCurrentVidoVersion();
+            _logService.Warning(
+                $"Plugin '{item.DisplayName}' update requires Vido v{requiredVersion} or later. " +
+                $"Current version: {current}. Please update Vido first.", "PluginManager");
+            item.StatusMessage = $"Update requires Vido v{requiredVersion}+";
+            return;
+        }
 
         item.IsBusy = true;
         try
@@ -469,6 +511,33 @@ public partial class PluginManagerViewModel : ObservableObject
         if (Version.TryParse(latest, out var latestVer) && Version.TryParse(current, out var currentVer))
             return latestVer > currentVer;
         return false; // Can't parse — assume no update
+    }
+
+    /// <summary>
+    /// Returns true if the current Vido version meets the specified minimum version requirement.
+    /// Returns true for null/empty/unparseable values (don't block on bad data).
+    /// </summary>
+    internal static bool MeetsMinVidoVersion(string? minVidoVersion)
+    {
+        if (string.IsNullOrWhiteSpace(minVidoVersion))
+            return true;
+
+        if (!Version.TryParse(minVidoVersion, out var required))
+            return true; // Can't parse → don't block
+
+        var current = typeof(PluginManagerViewModel).Assembly.GetName().Version
+                      ?? new Version(0, 0, 0);
+
+        return current >= required;
+    }
+
+    /// <summary>
+    /// Returns the current Vido version string for display in messages.
+    /// </summary>
+    private static string GetCurrentVidoVersion()
+    {
+        var v = typeof(PluginManagerViewModel).Assembly.GetName().Version;
+        return v is not null ? $"{v.Major}.{v.Minor}.{v.Build}" : "unknown";
     }
 
     /// <summary>

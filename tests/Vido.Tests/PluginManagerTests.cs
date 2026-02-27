@@ -2304,4 +2304,177 @@ public sealed class PluginManagerTests
         Assert.True(depItem.IsInstalled);
         Assert.True(depItem.IsEnabled);
     }
+
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║ vb-004 — Block install/update/enable when minVidoVersion not met║
+    // ╚══════════════════════════════════════════════════════════════════╝
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void MeetsMinVidoVersion_NullOrEmpty_ReturnsTrue(string? minVersion)
+    {
+        Assert.True(PluginManagerViewModel.MeetsMinVidoVersion(minVersion));
+    }
+
+    [Fact]
+    public void MeetsMinVidoVersion_UnparseableVersion_ReturnsTrue()
+    {
+        Assert.True(PluginManagerViewModel.MeetsMinVidoVersion("not-a-version"));
+    }
+
+    [Fact]
+    public void MeetsMinVidoVersion_FutureVersion_ReturnsFalse()
+    {
+        // A version far in the future should not be met
+        Assert.False(PluginManagerViewModel.MeetsMinVidoVersion("999.0.0"));
+    }
+
+    [Fact]
+    public void MeetsMinVidoVersion_CurrentOrOlderVersion_ReturnsTrue()
+    {
+        // Version 0.0.1 should always be met
+        Assert.True(PluginManagerViewModel.MeetsMinVidoVersion("0.0.1"));
+    }
+
+    [Fact]
+    public async Task InstallPluginAsync_WhenMinVidoVersionNotMet_DoesNotInstall()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var entry = MakeEntry();
+        entry.MinVidoVersion = "999.0.0"; // Far in the future
+        var item = PluginItemViewModel.FromRegistryEntry(entry);
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.InstallPluginAsync(item);
+
+        await installer.DidNotReceive().InstallAsync(Arg.Any<PluginRegistryEntry>());
+        Assert.False(item.IsInstalled);
+        Assert.NotNull(item.StatusMessage);
+        Assert.Contains("999.0.0", item.StatusMessage);
+    }
+
+    [Fact]
+    public async Task InstallPluginAsync_WhenMinVidoVersionMet_Installs()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var entry = MakeEntry();
+        entry.MinVidoVersion = "0.0.1"; // Always met
+        var item = PluginItemViewModel.FromRegistryEntry(entry);
+
+        installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.InstallPluginAsync(item);
+
+        await installer.Received(1).InstallAsync(entry);
+        Assert.True(item.IsInstalled);
+    }
+
+    [Fact]
+    public async Task UpdatePluginAsync_WhenMinVidoVersionNotMet_DoesNotUpdate()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var entry = MakeEntry(version: "2.0.0");
+        entry.MinVidoVersion = "999.0.0";
+        var item = PluginItemViewModel.FromPluginInfo(MakePluginInfo());
+        item.RegistryEntry = entry;
+        item.HasUpdate = true;
+        item.AvailableVersion = "2.0.0";
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.UpdatePluginAsync(item);
+
+        await installer.DidNotReceive().InstallAsync(Arg.Any<PluginRegistryEntry>());
+        Assert.True(item.HasUpdate); // Still has update (not cleared)
+        Assert.NotNull(item.StatusMessage);
+        Assert.Contains("999.0.0", item.StatusMessage);
+    }
+
+    [Fact]
+    public void ToggleEnabled_WhenMinVidoVersionNotMet_DoesNotEnable()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var info = MakePluginInfo(state: PluginState.Disabled);
+        info.Manifest.MinVidoVersion = "999.0.0";
+        var item = PluginItemViewModel.FromPluginInfo(info);
+        item.IsEnabled = false;
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        vm.ToggleEnabled(item);
+
+        Assert.False(item.IsEnabled);
+        host.DidNotReceive().SetEnabled(Arg.Any<string>(), true);
+        Assert.NotNull(item.StatusMessage);
+        Assert.Contains("999.0.0", item.StatusMessage);
+    }
+
+    [Fact]
+    public void ToggleEnabled_WhenMinVidoVersionMet_Enables()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var info = MakePluginInfo(state: PluginState.Disabled);
+        info.Manifest.MinVidoVersion = "0.0.1";
+        var item = PluginItemViewModel.FromPluginInfo(info);
+        item.IsEnabled = false;
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        vm.ToggleEnabled(item);
+
+        Assert.True(item.IsEnabled);
+        host.Received(1).SetEnabled(item.Id, true);
+    }
+
+    [Fact]
+    public void ToggleEnabled_Disable_AlwaysAllowedEvenWithFutureMinVersion()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var info = MakePluginInfo();
+        info.Manifest.MinVidoVersion = "999.0.0";
+        var item = PluginItemViewModel.FromPluginInfo(info);
+        Assert.True(item.IsEnabled);
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        vm.ToggleEnabled(item);
+
+        Assert.False(item.IsEnabled);
+        host.Received(1).SetEnabled(item.Id, false);
+    }
+
+    [Fact]
+    public async Task LoadAsync_SetsRequiresNewerVido_ForAvailablePlugins()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var entry = MakeEntry();
+        entry.MinVidoVersion = "999.0.0";
+
+        var registry = new PluginRegistry { Name = "R", Plugins = [entry] };
+        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        var item = vm.AvailablePlugins.First(p => p.Id == entry.Id);
+        Assert.True(item.RequiresNewerVido);
+    }
+
+    [Fact]
+    public async Task LoadAsync_DoesNotSetRequiresNewerVido_WhenVersionMet()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var entry = MakeEntry();
+        entry.MinVidoVersion = "0.0.1";
+
+        var registry = new PluginRegistry { Name = "R", Plugins = [entry] };
+        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        var item = vm.AvailablePlugins.First(p => p.Id == entry.Id);
+        Assert.False(item.RequiresNewerVido);
+    }
 }
