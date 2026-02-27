@@ -241,6 +241,61 @@ public class FFmpegVideoEngineTests : IDisposable
         Assert.False(invoked);
     }
 
+    // ── SpeedRatio / Time-Stretch (vb-003) ──
+
+    [Fact]
+    public void SpeedRatio_DefaultIs1()
+    {
+        Assert.Equal(1.0, _sut.SpeedRatio);
+    }
+
+    [Theory]
+    [InlineData(0.25)]
+    [InlineData(0.5)]
+    [InlineData(1.0)]
+    [InlineData(2.0)]
+    [InlineData(4.0)]
+    public void SpeedRatio_Set_ClampedWithinRange(double speed)
+    {
+        _sut.SpeedRatio = speed;
+        Assert.Equal(speed, _sut.SpeedRatio, precision: 3);
+    }
+
+    [Fact]
+    public void SpeedRatio_BelowMinimum_ClampedTo025()
+    {
+        _sut.SpeedRatio = 0.1;
+        Assert.Equal(0.25, _sut.SpeedRatio, precision: 3);
+    }
+
+    [Fact]
+    public void SpeedRatio_AboveMaximum_ClampedTo4()
+    {
+        _sut.SpeedRatio = 10.0;
+        Assert.Equal(4.0, _sut.SpeedRatio, precision: 3);
+    }
+
+    [Fact]
+    public void SpeedRatio_RapidChanges_DoesNotThrow()
+    {
+        // Simulate rapid speed toggling — should not throw or deadlock
+        for (int i = 0; i < 20; i++)
+        {
+            _sut.SpeedRatio = 2.0;
+            _sut.SpeedRatio = 0.5;
+            _sut.SpeedRatio = 1.0;
+        }
+    }
+
+    [Fact]
+    public void SpeedRatio_SameValue_NoOp()
+    {
+        _sut.SpeedRatio = 1.5;
+        // Setting same value again should be a no-op (no exception)
+        _sut.SpeedRatio = 1.5;
+        Assert.Equal(1.5, _sut.SpeedRatio, precision: 3);
+    }
+
     public void Dispose()
     {
         _sut.Dispose();

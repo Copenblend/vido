@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Buffers;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using FFmpeg.AutoGen.Abstractions;
 using Vido.Core.Logging;
@@ -22,10 +23,11 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     private int _audioStreamIndex = -1;
     private AVStream* _videoStream;
 
-    // ── Audio resampling ──
+    // ── Audio resampling & time-stretch ──
     private SwrContext* _swrContext;
     private int _audioOutSampleRate;
     private int _audioOutChannels;
+    private TimeStretchProcessor? _timeStretch;
 
     // ── Conversion & rendering ──
     private readonly FrameConverter _frameConverter = new();
@@ -172,6 +174,19 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
             }
 
             _speedRatio = clamped;
+
+            // Update SoundTouch tempo so audio is time-stretched to match video speed.
+            // Clear internal buffers to prevent stale stretched samples from playing.
+            if (_timeStretch is not null)
+            {
+                _timeStretch.Tempo = clamped;
+                _timeStretch.Clear();
+            }
+
+            // Flush the audio renderer buffer to avoid leftover samples at the
+            // old tempo bleeding through during the transition.
+            if (_state == PlaybackState.Playing)
+                _audioRenderer.Flush();
         }
     }
 
@@ -564,6 +579,12 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         }
 
         _swrContext = swr;
+
+        // Create (or recreate) the SoundTouch time-stretch processor so that
+        // non-1x playback speeds produce pitch-corrected audio.
+        _timeStretch?.Dispose();
+        _timeStretch = new TimeStretchProcessor(_audioOutSampleRate, _audioOutChannels);
+        _timeStretch.Tempo = _speedRatio;
     }
 
     private void InitializeAudioRenderer()
@@ -829,33 +850,92 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         {
             // Resample to float interleaved
             var outSamples = ffmpeg.swr_get_out_samples(_swrContext, frame->nb_samples);
-            var outBufferSize = outSamples * _audioOutChannels * sizeof(float);
-            var outBuffer = new byte[outBufferSize];
+            var floatCount = outSamples * _audioOutChannels;
+            var resampledFloats = ArrayPool<float>.Shared.Rent(floatCount);
 
-            fixed (byte* pOut = outBuffer)
+            try
             {
-                var outPtr = pOut;
-                var converted = ffmpeg.swr_convert(
-                    _swrContext,
-                    &outPtr, outSamples,
-                    frame->extended_data, frame->nb_samples);
-
-                if (converted > 0)
+                fixed (float* pOut = resampledFloats)
                 {
-                    var actualSize = converted * _audioOutChannels * sizeof(float);
-                    _audioRenderer.SubmitSamples(outBuffer, 0, actualSize);
+                    var outPtr = (byte*)pOut;
+                    var converted = ffmpeg.swr_convert(
+                        _swrContext,
+                        &outPtr, outSamples,
+                        frame->extended_data, frame->nb_samples);
 
-                    AudioSamplesAvailable?.Invoke(new AudioSampleEventArgs
+                    if (converted > 0)
                     {
-                        Buffer = new ReadOnlyMemory<byte>(outBuffer, 0, actualSize),
-                        SampleCount = converted,
-                        SampleRate = _audioOutSampleRate,
-                        Channels = _audioOutChannels
-                    });
+                        var convertedFloats = converted * _audioOutChannels;
+
+                        if (_timeStretch is not null && Math.Abs(_timeStretch.Tempo - 1.0) > 0.001)
+                        {
+                            // Route through SoundTouch for pitch-corrected time-stretch.
+                            _timeStretch.PutSamples(
+                                new ReadOnlySpan<float>(resampledFloats, 0, convertedFloats),
+                                converted);
+
+                            // Pull as many stretched samples as are available.
+                            var stretchBuf = ArrayPool<float>.Shared.Rent(floatCount * 4);
+                            try
+                            {
+                                int received;
+                                while ((received = _timeStretch.ReceiveSamples(
+                                    new Span<float>(stretchBuf), stretchBuf.Length / _audioOutChannels)) > 0)
+                                {
+                                    var stretchedFloats = received * _audioOutChannels;
+                                    _audioRenderer.SubmitSamples(stretchBuf, 0, stretchedFloats);
+
+                                    EmitAudioSamples(stretchBuf, stretchedFloats, received);
+                                }
+                            }
+                            finally
+                            {
+                                ArrayPool<float>.Shared.Return(stretchBuf);
+                            }
+                        }
+                        else
+                        {
+                            // 1x speed — bypass SoundTouch, submit directly.
+                            _audioRenderer.SubmitSamples(resampledFloats, 0, convertedFloats);
+
+                            EmitAudioSamples(resampledFloats, convertedFloats, converted);
+                        }
+                    }
                 }
+            }
+            finally
+            {
+                ArrayPool<float>.Shared.Return(resampledFloats);
             }
 
             ffmpeg.av_frame_unref(frame);
+        }
+    }
+
+    /// <summary>
+    /// Fires the <see cref="AudioSamplesAvailable"/> event with the given float buffer.
+    /// </summary>
+    private void EmitAudioSamples(float[] floats, int floatCount, int sampleFrames)
+    {
+        if (AudioSamplesAvailable is null) return;
+
+        // Convert float[] → byte[] for the event (consumers expect byte buffers).
+        var byteCount = floatCount * sizeof(float);
+        var bytes = ArrayPool<byte>.Shared.Rent(byteCount);
+        try
+        {
+            Buffer.BlockCopy(floats, 0, bytes, 0, byteCount);
+            AudioSamplesAvailable.Invoke(new AudioSampleEventArgs
+            {
+                Buffer = new ReadOnlyMemory<byte>(bytes, 0, byteCount),
+                SampleCount = sampleFrames,
+                SampleRate = _audioOutSampleRate,
+                Channels = _audioOutChannels
+            });
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(bytes);
         }
     }
 
@@ -1022,6 +1102,9 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         StopPositionTimer();
         StopMetricsTimer();
         _audioRenderer.Stop();
+
+        _timeStretch?.Dispose();
+        _timeStretch = null;
 
         // Free FFmpeg contexts
         if (_swrContext != null)

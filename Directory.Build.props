@@ -20,6 +20,7 @@
     <FFmpegAutoGenVersion>8.0.0</FFmpegAutoGenVersion>
     <FFmpegLGPLVersion>20260220.1.0</FFmpegLGPLVersion>
     <NAudioVersion>2.2.1</NAudioVersion>
+    <SoundTouchNetVersion>2.3.2</SoundTouchNetVersion>
   </PropertyGroup>
 
   <PropertyGroup Label="Package Versions - UI/MVVM">

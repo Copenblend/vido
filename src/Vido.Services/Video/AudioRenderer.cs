@@ -90,6 +90,28 @@ internal sealed class AudioRenderer : IDisposable
     }
 
     /// <summary>
+    /// Submits decoded audio samples from a float buffer.
+    /// <paramref name="floatCount"/> is the number of individual float values (samples × channels).
+    /// </summary>
+    public void SubmitSamples(float[] data, int offset, int floatCount)
+    {
+        if (_waveProvider == null || _disposed)
+            return;
+
+        var byteCount = floatCount * sizeof(float);
+        var bytes = System.Buffers.ArrayPool<byte>.Shared.Rent(byteCount);
+        try
+        {
+            Buffer.BlockCopy(data, offset * sizeof(float), bytes, 0, byteCount);
+            _waveProvider.AddSamples(bytes, 0, byteCount);
+        }
+        finally
+        {
+            System.Buffers.ArrayPool<byte>.Shared.Return(bytes);
+        }
+    }
+
+    /// <summary>
     /// Starts audio playback.
     /// </summary>
     public void Play()

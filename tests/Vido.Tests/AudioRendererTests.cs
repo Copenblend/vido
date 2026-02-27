@@ -121,6 +121,33 @@ public class AudioRendererTests : IDisposable
         _sut.SubmitSamples(data, 0, data.Length); // Graceful no-op
     }
 
+    // ── Float overload (vb-003) ──
+
+    [Fact]
+    public void SubmitSamples_FloatOverload_BeforeInitialize_DoesNotThrow()
+    {
+        var floats = new float[256];
+        _sut.SubmitSamples(floats, 0, floats.Length);
+    }
+
+    [Fact]
+    public void SubmitSamples_FloatOverload_AfterInitialize_DoesNotThrow()
+    {
+        _sut.Initialize(48000, 2);
+        var floats = new float[256];
+        _sut.SubmitSamples(floats, 0, floats.Length);
+    }
+
+    [Fact]
+    public void SubmitSamples_FloatOverload_AfterDispose_DoesNotThrow()
+    {
+        _sut.Initialize(48000, 2);
+        _sut.Dispose();
+
+        var floats = new float[256];
+        _sut.SubmitSamples(floats, 0, floats.Length); // Graceful no-op
+    }
+
     public void Dispose()
     {
         _sut.Dispose();
