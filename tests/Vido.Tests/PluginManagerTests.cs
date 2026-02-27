@@ -2665,4 +2665,68 @@ public sealed class PluginManagerTests
         await installer.Received(1).InstallAsync(Arg.Is<PluginRegistryEntry>(e => e.Id == "com.test.target"));
         Assert.False(targetItem.HasUpdate);
     }
+
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║ vb-008 — Installed Plugin Immediately Shown After Install      ║
+    // ╚══════════════════════════════════════════════════════════════════╝
+
+    [Fact]
+    public async Task InstallPluginAsync_Success_PluginAppearsInInstalledList()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+
+        // Registry has one available plugin
+        var entry = MakeEntry(id: "com.test.new", displayName: "New Plugin", version: "1.0.0");
+        var registry = new PluginRegistry { Name = "R", Plugins = [entry] };
+        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
+        installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
+        host.GetPlugin("com.test.new").Returns((PluginInfo?)null);
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        // Verify it starts in Available, not Installed
+        Assert.Single(vm.AvailablePlugins, p => p.Id == "com.test.new");
+        Assert.DoesNotContain(vm.InstalledPlugins, p => p.Id == "com.test.new");
+
+        var item = vm.AvailablePlugins.Single(p => p.Id == "com.test.new");
+        await vm.InstallPluginAsync(item);
+
+        // After install, it should appear in InstalledPlugins
+        Assert.Contains(vm.InstalledPlugins, p => p.Id == "com.test.new");
+        Assert.Equal(1, vm.InstalledCount);
+    }
+
+    [Fact]
+    public async Task InstallPluginAsync_Success_PluginRemovedFromAvailableList()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+
+        // Registry has two available plugins
+        var entry1 = MakeEntry(id: "com.test.one", displayName: "Plugin One", version: "1.0.0");
+        var entry2 = MakeEntry(id: "com.test.two", displayName: "Plugin Two", version: "1.0.0");
+        var registry = new PluginRegistry { Name = "R", Plugins = [entry1, entry2] };
+        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
+        installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
+        host.GetPlugin(Arg.Any<string>()).Returns((PluginInfo?)null);
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        // Both plugins start in Available
+        Assert.Equal(2, vm.AvailablePlugins.Count);
+        Assert.Empty(vm.InstalledPlugins);
+
+        var item = vm.AvailablePlugins.Single(p => p.Id == "com.test.one");
+        await vm.InstallPluginAsync(item);
+
+        // Plugin One should no longer be in AvailablePlugins
+        Assert.DoesNotContain(vm.AvailablePlugins, p => p.Id == "com.test.one");
+        Assert.Equal(1, vm.AvailableCount);
+
+        // Plugin Two should still be available
+        Assert.Contains(vm.AvailablePlugins, p => p.Id == "com.test.two");
+    }
 }
