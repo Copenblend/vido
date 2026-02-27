@@ -21,7 +21,8 @@ public class MainWindowViewModelTests
         _settingsService.Current.Returns(new AppSettings
         {
             BottomPanelVisible = true,
-            RightPanelVisible = true
+            RightPanelVisible = true,
+            LogOutputVisible = true
         });
         _sut = new MainWindowViewModel(_settingsService);
     }
@@ -796,5 +797,140 @@ public class MainWindowViewModelTests
         _sut.ToggleBottomPanel();
 
         _settingsService.Received().QueueSave();
+    }
+
+    // ── vido-008: Log Output Toggle ──
+
+    [Fact]
+    public void LogOutput_HiddenByDefault()
+    {
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings { LogOutputVisible = false });
+        var vm = new MainWindowViewModel(settingsSvc);
+
+        Assert.Null(vm.FindBottomPanelTab(MainWindowViewModel.OutputTabId));
+        Assert.False(vm.IsLogOutputVisible);
+    }
+
+    [Fact]
+    public void LogOutput_VisibleFromSettings()
+    {
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings { LogOutputVisible = true });
+        var vm = new MainWindowViewModel(settingsSvc);
+
+        Assert.NotNull(vm.FindBottomPanelTab(MainWindowViewModel.OutputTabId));
+        Assert.True(vm.IsLogOutputVisible);
+    }
+
+    [Fact]
+    public void ToggleLogOutput_ShowsTab()
+    {
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings { LogOutputVisible = false });
+        var vm = new MainWindowViewModel(settingsSvc);
+
+        vm.ToggleLogOutput();
+
+        Assert.NotNull(vm.FindBottomPanelTab(MainWindowViewModel.OutputTabId));
+        Assert.True(vm.IsLogOutputVisible);
+        Assert.True(settingsSvc.Current.LogOutputVisible);
+        settingsSvc.Received().QueueSave();
+    }
+
+    [Fact]
+    public void ToggleLogOutput_HidesTab()
+    {
+        // Start with log output visible
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings { LogOutputVisible = true });
+        var vm = new MainWindowViewModel(settingsSvc);
+
+        vm.ToggleLogOutput();
+
+        Assert.Null(vm.FindBottomPanelTab(MainWindowViewModel.OutputTabId));
+        Assert.False(vm.IsLogOutputVisible);
+        Assert.False(settingsSvc.Current.LogOutputVisible);
+        settingsSvc.Received().QueueSave();
+    }
+
+    [Fact]
+    public void ToggleLogOutput_PersistsSetting()
+    {
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings { LogOutputVisible = false });
+        var vm = new MainWindowViewModel(settingsSvc);
+
+        vm.ToggleLogOutput();
+        Assert.True(settingsSvc.Current.LogOutputVisible);
+        settingsSvc.Received(1).QueueSave();
+
+        settingsSvc.ClearReceivedCalls();
+        vm.ToggleLogOutput();
+        Assert.False(settingsSvc.Current.LogOutputVisible);
+        settingsSvc.Received(1).QueueSave();
+    }
+
+    [Fact]
+    public void ActivateBottomPanelTab_LogOutput_CreatesIfMissing()
+    {
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings { LogOutputVisible = false });
+        var vm = new MainWindowViewModel(settingsSvc);
+
+        Assert.Null(vm.FindBottomPanelTab(MainWindowViewModel.OutputTabId));
+
+        vm.ActivateBottomPanelTab(MainWindowViewModel.OutputTabId);
+
+        Assert.NotNull(vm.FindBottomPanelTab(MainWindowViewModel.OutputTabId));
+        Assert.Equal(MainWindowViewModel.OutputTabId, vm.ActiveBottomPanelTab!.Id);
+        Assert.True(settingsSvc.Current.LogOutputVisible);
+    }
+
+    [Fact]
+    public void ToggleLogOutput_HideTab_ActivatesNeighbor()
+    {
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings { LogOutputVisible = true });
+        var vm = new MainWindowViewModel(settingsSvc);
+
+        // Add a second tab and switch back to log output
+        vm.OpenBottomPanelTab("custom1", "CUSTOM");
+        vm.ActivateBottomPanelTab(MainWindowViewModel.OutputTabId);
+
+        vm.ToggleLogOutput();
+
+        // Log output removed, custom1 should become active
+        Assert.Null(vm.FindBottomPanelTab(MainWindowViewModel.OutputTabId));
+        Assert.Equal("custom1", vm.ActiveBottomPanelTab!.Id);
+    }
+
+    [Fact]
+    public void ToggleLogOutput_ShowTab_InsertsAtStart()
+    {
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings { LogOutputVisible = false });
+        var vm = new MainWindowViewModel(settingsSvc);
+
+        vm.OpenBottomPanelTab("custom1", "CUSTOM");
+
+        vm.ToggleLogOutput();
+
+        Assert.Equal(MainWindowViewModel.OutputTabId, vm.BottomPanelTabs[0].Id);
+        Assert.Equal(MainWindowViewModel.OutputTabId, vm.ActiveBottomPanelTab!.Id);
+    }
+
+    [Fact]
+    public void LogOutput_RecreatedViaOpenBottomPanelTab_IsNotClosable()
+    {
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings { LogOutputVisible = false });
+        var vm = new MainWindowViewModel(settingsSvc);
+
+        vm.ActivateBottomPanelTab(MainWindowViewModel.OutputTabId);
+
+        var tab = vm.FindBottomPanelTab(MainWindowViewModel.OutputTabId);
+        Assert.NotNull(tab);
+        Assert.False(tab!.IsClosable);
     }
 }

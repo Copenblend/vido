@@ -195,6 +195,9 @@ public partial class TitleBarView : UserControl
     /// <summary>Raised when View > Bottom Panel > Log Output is clicked to show the output panel.</summary>
     public event Action? ShowOutputRequested;
 
+    /// <summary>Raised when View > Bottom Panel > Show/Hide Log Output is toggled.</summary>
+    public event Action? ToggleLogOutputRequested;
+
     /// <summary>Raised when View > Right Panel > Show/Hide is clicked.</summary>
     public event Action? ToggleRightPanelRequested;
 
@@ -273,6 +276,9 @@ public partial class TitleBarView : UserControl
     /// <summary>Whether the bottom panel is currently visible. Used to update the submenu text.</summary>
     private bool _isBottomPanelVisible;
 
+    /// <summary>Whether the Log Output tab is currently visible. Used to update the submenu text.</summary>
+    private bool _isLogOutputVisible;
+
     /// <summary>Whether the right panel is currently visible. Used to update the submenu text.</summary>
     private bool _isRightPanelVisible;
 
@@ -289,6 +295,15 @@ public partial class TitleBarView : UserControl
     public void SetBottomPanelVisible(bool visible)
     {
         _isBottomPanelVisible = visible;
+    }
+
+    /// <summary>
+    /// Updates the Log Output submenu state based on current tab visibility.
+    /// Called by MainWindow when the Log Output tab is toggled.
+    /// </summary>
+    public void SetLogOutputVisible(bool visible)
+    {
+        _isLogOutputVisible = visible;
     }
 
     /// <summary>
@@ -323,6 +338,9 @@ public partial class TitleBarView : UserControl
         ShowHideBottomPanelMenuItem.Header = _isBottomPanelVisible
             ? "_Hide Bottom Panel"
             : "_Show Bottom Panel";
+        ShowHideLogOutputMenuItem.Header = _isLogOutputVisible
+            ? "Hide _Log Output"
+            : "Show _Log Output";
     }
 
     private void OnStatusBarSubmenuOpened(object sender, RoutedEventArgs e)
@@ -347,6 +365,11 @@ public partial class TitleBarView : UserControl
     private void OnShowOutputClick(object sender, RoutedEventArgs e)
     {
         ShowOutputRequested?.Invoke();
+    }
+
+    private void OnToggleLogOutputClick(object sender, RoutedEventArgs e)
+    {
+        ToggleLogOutputRequested?.Invoke();
     }
 
     private void OnToggleRightPanelClick(object sender, RoutedEventArgs e)

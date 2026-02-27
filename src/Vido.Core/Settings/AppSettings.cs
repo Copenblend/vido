@@ -49,6 +49,9 @@ public sealed class AppSettings
     /// <summary>Width of the right panel in pixels.</summary>
     public double RightPanelWidth { get; set; } = 300;
 
+    /// <summary>Whether the Log Output tab is visible in the bottom panel. Default: false (hidden).</summary>
+    public bool LogOutputVisible { get; set; } = false;
+
     // --- File Explorer ---
 
     /// <summary>Whether hidden (user-removed) files are displayed in the explorer.</summary>
@@ -146,6 +149,7 @@ public sealed class AppSettings
         RightPanelVisible = true;
         RightPanelCollapsed = false;
         RightPanelWidth = 300;
+        LogOutputVisible = false;
         ShowHiddenFiles = false;
         ScreenshotEnabled = false;
         ScreenshotDirectory = string.Empty;
