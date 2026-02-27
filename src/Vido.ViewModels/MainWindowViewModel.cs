@@ -116,13 +116,17 @@ public partial class MainWindowViewModel : ObservableObject
         Tabs.Add(playerTab);
         ActiveTab = playerTab;
 
-        // Initialize bottom panel tabs
-        var outputTab = new BottomPanelTabItem(OutputTabId, "LOG OUTPUT") { IsClosable = false };
-        BottomPanelTabs.Add(outputTab);
-        ActiveBottomPanelTab = outputTab;
-
         // Initialize panel state from persisted settings (use backing fields to avoid triggering saves)
         var s = settingsService.Current;
+
+        // Initialize bottom panel tabs — only add Log Output if persisted as visible
+        if (s.LogOutputVisible)
+        {
+            var outputTab = new BottomPanelTabItem(OutputTabId, "LOG OUTPUT") { IsClosable = false };
+            BottomPanelTabs.Add(outputTab);
+            ActiveBottomPanelTab = outputTab;
+        }
+
         _isBottomPanelVisible = s.BottomPanelVisible;
         _isBottomPanelCollapsed = s.BottomPanelCollapsed;
         _isRightPanelVisible = s.RightPanelVisible;
@@ -311,6 +315,40 @@ public partial class MainWindowViewModel : ObservableObject
         _settingsService.QueueSave();
     }
 
+    // ── Log Output Toggle ──
+
+    /// <summary>Whether the Log Output tab is currently visible.</summary>
+    public bool IsLogOutputVisible => FindBottomPanelTab(OutputTabId) is not null;
+
+    /// <summary>
+    /// Toggles the Log Output tab visibility. When shown, activates it.
+    /// When hidden, removes it from the tab strip.
+    /// </summary>
+    public void ToggleLogOutput()
+    {
+        var existing = FindBottomPanelTab(OutputTabId);
+        if (existing is not null)
+        {
+            // Hide: remove the tab
+            BottomPanelTabs.Remove(existing);
+            if (ActiveBottomPanelTab == existing)
+                ActiveBottomPanelTab = BottomPanelTabs.FirstOrDefault();
+
+            _settingsService.Current.LogOutputVisible = false;
+        }
+        else
+        {
+            // Show: add and activate the tab
+            var outputTab = new BottomPanelTabItem(OutputTabId, "LOG OUTPUT") { IsClosable = false };
+            BottomPanelTabs.Insert(0, outputTab);
+            ActiveBottomPanelTab = outputTab;
+            IsBottomPanelVisible = true;
+
+            _settingsService.Current.LogOutputVisible = true;
+        }
+        _settingsService.QueueSave();
+    }
+
     // ── Bottom Panel Tab Commands ──
 
     /// <summary>
@@ -358,13 +396,20 @@ public partial class MainWindowViewModel : ObservableObject
             _ => (customTitle ?? tabId.ToUpperInvariant(), BottomPanelTabs.Count)
         };
 
-        var tab = new BottomPanelTabItem(tabId, title) { IsClosable = true };
+        var tab = new BottomPanelTabItem(tabId, title) { IsClosable = tabId != OutputTabId };
 
         // Insert at the canonical position (or at end if past current count)
         var insertIndex = Math.Min(canonicalIndex, BottomPanelTabs.Count);
         BottomPanelTabs.Insert(insertIndex, tab);
         ActiveBottomPanelTab = tab;
         IsBottomPanelVisible = true;
+
+        // Persist Log Output visibility when it's re-added via Show Output
+        if (tabId == OutputTabId)
+        {
+            _settingsService.Current.LogOutputVisible = true;
+            _settingsService.QueueSave();
+        }
     }
 
     /// <summary>

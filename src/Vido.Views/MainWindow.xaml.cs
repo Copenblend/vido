@@ -288,10 +288,13 @@ public partial class MainWindow : Window
             DataContext = _outputLogViewModel
         };
 
-        BottomPanelContent.Content = outputLogPanel;
-
         // Store panel content mapping for bottom panel tab switching
+        // (don't set BottomPanelContent.Content here — let UpdateBottomPanelContent
+        //  choose the right content based on active tab, which may not be Log Output)
         _bottomPanelContents[MainWindowViewModel.OutputTabId] = outputLogPanel;
+
+        // Show whatever tab is currently active (may be nothing if log is hidden)
+        UpdateBottomPanelContent();
 
         // Wire bottom panel tab content switching
         _mainWindowViewModel.PropertyChanged += (_, e) =>
@@ -822,7 +825,11 @@ public partial class MainWindow : Window
     private void UpdateBottomPanelContent()
     {
         var activeTab = _mainWindowViewModel.ActiveBottomPanelTab;
-        if (activeTab is null) return;
+        if (activeTab is null)
+        {
+            BottomPanelContent.Content = null;
+            return;
+        }
 
         if (!_bottomPanelContents.TryGetValue(activeTab.Id, out var content))
         {
@@ -905,6 +912,11 @@ public partial class MainWindow : Window
         TitleBar.ToggleBottomPanelRequested += () => _mainWindowViewModel.ToggleBottomPanel();
         TitleBar.ToggleRightPanelRequested += () => _mainWindowViewModel.ToggleRightPanel();
         TitleBar.ShowOutputRequested += () => _mainWindowViewModel.ActivateBottomPanelTab(MainWindowViewModel.OutputTabId);
+        TitleBar.ToggleLogOutputRequested += () =>
+        {
+            _mainWindowViewModel.ToggleLogOutput();
+            TitleBar.SetLogOutputVisible(_mainWindowViewModel.IsLogOutputVisible);
+        };
         TitleBar.ShowVideoInfoRequested += () => SwitchRightPanel("vido.videoInfo");
         TitleBar.ToggleStatusBarRequested += () => _mainWindowViewModel.ToggleStatusBar();
         TitleBar.ToggleSidebarRequested += ToggleSidebar;
@@ -979,6 +991,7 @@ public partial class MainWindow : Window
         TitleBar.SetBottomPanelVisible(_mainWindowViewModel.IsBottomPanelVisible);
         TitleBar.SetRightPanelVisible(_mainWindowViewModel.IsRightPanelVisible);
         TitleBar.SetStatusBarVisible(_mainWindowViewModel.IsStatusBarVisible);
+        TitleBar.SetLogOutputVisible(_mainWindowViewModel.IsLogOutputVisible);
 
         // Wire the "Open Folder" button inside the explorer panel
         _fileExplorerPanel.OpenFolderRequested += ShowOpenFolderDialog;

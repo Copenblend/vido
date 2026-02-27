@@ -103,6 +103,10 @@
                           Header="_Bottom Panel"
                           Style="{StaticResource SubmenuParentItemStyle}"
                           SubmenuOpened="OnBottomPanelSubmenuOpened">
+                    <MenuItem x:Name="ShowHideLogOutputMenuItem"
+                              Header="Show _Log Output"
+                              Style="{StaticResource DropdownMenuItemStyle}"
+                              Click="OnToggleLogOutputClick" />
                     <MenuItem x:Name="ShowHideBottomPanelMenuItem"
                               Header="_Show Bottom Panel" InputGestureText="Ctrl+J"
                               Style="{StaticResource DropdownMenuItemStyle}"
