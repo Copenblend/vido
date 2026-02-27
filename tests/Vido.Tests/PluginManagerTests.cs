@@ -2729,4 +2729,72 @@ public sealed class PluginManagerTests
         // Plugin Two should still be available
         Assert.Contains(vm.AvailablePlugins, p => p.Id == "com.test.two");
     }
+
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║ vb-009 — Install/Update Button State Transitions               ║
+    // ╚══════════════════════════════════════════════════════════════════╝
+
+    [Fact]
+    public void ActionText_WhenNotInstalled_ReturnsInstall()
+    {
+        var item = PluginItemViewModel.FromRegistryEntry(MakeEntry());
+        Assert.Equal("Install", item.ActionText);
+    }
+
+    [Fact]
+    public void ActionText_WhenInstalled_ReturnsUninstall()
+    {
+        var item = PluginItemViewModel.FromPluginInfo(MakePluginInfo());
+        Assert.Equal("Uninstall", item.ActionText);
+    }
+
+    [Fact]
+    public void ActionText_WhenHasUpdate_ReturnsUpdate()
+    {
+        var item = PluginItemViewModel.FromPluginInfo(MakePluginInfo());
+        item.HasUpdate = true;
+        Assert.Equal("Update", item.ActionText);
+    }
+
+    [Fact]
+    public void ActionText_WhenBusyInstalling_ReturnsInstalling()
+    {
+        var item = PluginItemViewModel.FromRegistryEntry(MakeEntry());
+        item.SetBusyAction("Installing...");
+        item.IsBusy = true;
+        Assert.Equal("Installing...", item.ActionText);
+    }
+
+    [Fact]
+    public void ActionText_WhenBusyUpdating_ReturnsUpdating()
+    {
+        var item = PluginItemViewModel.FromPluginInfo(MakePluginInfo());
+        item.HasUpdate = true;
+        item.SetBusyAction("Updating...");
+        item.IsBusy = true;
+        Assert.Equal("Updating...", item.ActionText);
+    }
+
+    [Fact]
+    public void IsActionEnabled_WhenBusy_ReturnsFalse()
+    {
+        var item = PluginItemViewModel.FromRegistryEntry(MakeEntry());
+        Assert.True(item.IsActionEnabled);
+        item.IsBusy = true;
+        Assert.False(item.IsActionEnabled);
+    }
+
+    [Fact]
+    public void ActionText_WhenBusyCleared_RevertsToOriginal()
+    {
+        var item = PluginItemViewModel.FromRegistryEntry(MakeEntry());
+        Assert.Equal("Install", item.ActionText);
+
+        item.SetBusyAction("Installing...");
+        item.IsBusy = true;
+        Assert.Equal("Installing...", item.ActionText);
+
+        item.IsBusy = false;
+        Assert.Equal("Install", item.ActionText);
+    }
 }
