@@ -4,7 +4,6 @@ using CommunityToolkit.Mvvm.Input;
 using Vido.Core.Logging;
 using Vido.Core.Plugin;
 using Vido.Core.Settings;
-using System.Threading;
 
 namespace Vido.ViewModels;
 
@@ -18,7 +17,6 @@ public partial class PluginManagerViewModel : ObservableObject
     private readonly IPluginInstaller _pluginInstaller;
     private readonly ISettingsService _settingsService;
     private readonly ILogService _logService;
-    private readonly SynchronizationContext? _syncContext;
 
     /// <summary>All plugin items (both installed and available).</summary>
     private readonly List<PluginItemViewModel> _allPlugins = [];
@@ -101,7 +99,6 @@ public partial class PluginManagerViewModel : ObservableObject
         _pluginInstaller = pluginInstaller;
         _settingsService = settingsService;
         _logService = logService;
-        _syncContext = SynchronizationContext.Current;
 
         // Restore collapsed/expanded state from persisted settings
         var s = _settingsService.Current;
@@ -687,13 +684,6 @@ public partial class PluginManagerViewModel : ObservableObject
     /// </summary>
     private void ApplyFilter()
     {
-        // Ensure collection mutations happen on the UI thread (vb-008)
-        if (_syncContext is not null && SynchronizationContext.Current != _syncContext)
-        {
-            _syncContext.Post(_ => ApplyFilter(), null);
-            return;
-        }
-
         InstalledPlugins.Clear();
         AvailablePlugins.Clear();
 

@@ -62,6 +62,16 @@ public partial class FileExplorerPanel : UserControl
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
+
+        // Re-apply visual state when the panel becomes visible (vb-016).
+        // During startup, UpdateVisualState may run before the panel is in
+        // the visual tree, so Visibility setters are lost. This ensures the
+        // correct state is applied when the panel is first shown.
+        IsVisibleChanged += (_, _) =>
+        {
+            if (IsVisible && DataContext is FileExplorerViewModel vm)
+                UpdateVisualState(vm.HasFolderOpen, vm.IsLoading);
+        };
     }
 
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)

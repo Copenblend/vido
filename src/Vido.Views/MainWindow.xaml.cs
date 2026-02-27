@@ -2431,7 +2431,6 @@ public partial class MainWindow : Window
             if (Enum.TryParse<SidebarPanelKind>(state.ActiveSidebarPanel, out var panel))
             {
                 _activityBarViewModel.SetActivePanel(panel);
-                // Refresh sidebar content and activity bar highlight to match the restored panel
                 OnPanelChanged(this, new RoutedEventArgs());
                 ActivityBar.UpdateActiveStates();
             }

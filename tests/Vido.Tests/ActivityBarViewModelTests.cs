@@ -127,4 +127,40 @@ public class ActivityBarViewModelTests
 
         Assert.Equal(panel, vm.ActivePanel);
     }
+
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║ vb-016 — Explorer Panel Empty on App Restore                   ║
+    // ╚══════════════════════════════════════════════════════════════════╝
+
+    [Fact]
+    public void SetActivePanel_SetsActivePanelWithoutTogglingSidebar()
+    {
+        var vm = new ActivityBarViewModel();
+        Assert.True(vm.IsSidebarVisible);
+
+        // SetActivePanel should set the panel without toggling sidebar
+        vm.SetActivePanel(SidebarPanelKind.Extensions);
+
+        Assert.Equal(SidebarPanelKind.Extensions, vm.ActivePanel);
+        Assert.True(vm.IsSidebarVisible); // sidebar stays visible
+    }
+
+    [Fact]
+    public void SetActivePanel_Explorer_IsAssignedEvenWhenAlreadyDefault()
+    {
+        var vm = new ActivityBarViewModel();
+        Assert.Equal(SidebarPanelKind.Explorer, vm.ActivePanel);
+
+        var changedProperties = new List<string>();
+        vm.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName!);
+
+        // Setting Explorer when it's already the default — the property setter
+        // should still accept it (ObservableProperty skips if equal, which is
+        // expected; the important thing is the field value is correct).
+        vm.SetActivePanel(SidebarPanelKind.Explorer);
+
+        Assert.Equal(SidebarPanelKind.Explorer, vm.ActivePanel);
+        // IsSidebarVisible should NOT have been toggled
+        Assert.True(vm.IsSidebarVisible);
+    }
 }
