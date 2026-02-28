@@ -67,7 +67,7 @@ public static class FileAssociationHelper
         }
 
         // Notify the shell that associations have changed.
-        NativeMethods.SHChangeNotify(0x08000000, 0x0000, IntPtr.Zero, IntPtr.Zero);
+        FileAssociationNativeMethods.SHChangeNotify(0x08000000, 0x0000, IntPtr.Zero, IntPtr.Zero);
     }
 
     /// <summary>
@@ -100,12 +100,13 @@ public static class FileAssociationHelper
         // Remove the ProgID key.
         Registry.CurrentUser.DeleteSubKeyTree($@"Software\Classes\{ProgId}", throwOnMissingSubKey: false);
 
-        NativeMethods.SHChangeNotify(0x08000000, 0x0000, IntPtr.Zero, IntPtr.Zero);
+        FileAssociationNativeMethods.SHChangeNotify(0x08000000, 0x0000, IntPtr.Zero, IntPtr.Zero);
     }
 
     /// <summary>
     /// Checks whether the specified extension is currently associated with Vido.
     /// </summary>
+    /// <param name="extension">The file extension to check (with or without leading dot).</param>
     public static bool IsAssociated(string extension)
     {
         var normalizedExt = extension.StartsWith('.') ? extension : $".{extension}";
@@ -114,12 +115,4 @@ public static class FileAssociationHelper
         return string.Equals(current, ProgId, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>
-    /// P/Invoke for shell change notification.
-    /// </summary>
-    private static class NativeMethods
-    {
-        [System.Runtime.InteropServices.DllImport("shell32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
-        internal static extern void SHChangeNotify(int wEventId, int uFlags, IntPtr dwItem1, IntPtr dwItem2);
-    }
 }

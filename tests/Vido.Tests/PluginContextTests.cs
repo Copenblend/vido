@@ -54,6 +54,9 @@ public class PluginContextTests
             _keyboardShortcutService);
     }
 
+    /// <summary>
+    /// Verifies that Properties expose injected services.
+    /// </summary>
     [Fact]
     public void Properties_ExposeInjectedServices()
     {
@@ -68,6 +71,9 @@ public class PluginContextTests
         Assert.NotNull(context.Settings);
     }
 
+    /// <summary>
+    /// Verifies that Register Sidebar Panel uses manifest metadata.
+    /// </summary>
     [Fact]
     public void RegisterSidebarPanel_UsesManifestMetadata()
     {
@@ -84,6 +90,9 @@ public class PluginContextTests
         Assert.Equal(50, panels[0].Order);
     }
 
+    /// <summary>
+    /// Verifies that Register Sidebar Panel unknown contribution uses defaults.
+    /// </summary>
     [Fact]
     public void RegisterSidebarPanel_UnknownContribution_UsesDefaults()
     {
@@ -98,6 +107,9 @@ public class PluginContextTests
         Assert.Equal(100, panels[0].Order);
     }
 
+    /// <summary>
+    /// Verifies that Register Bottom Panel uses manifest metadata.
+    /// </summary>
     [Fact]
     public void RegisterBottomPanel_UsesManifestMetadata()
     {
@@ -111,6 +123,9 @@ public class PluginContextTests
         Assert.Equal(30, panels[0].Order);
     }
 
+    /// <summary>
+    /// Verifies that Register Right Panel uses manifest metadata.
+    /// </summary>
     [Fact]
     public void RegisterRightPanel_UsesManifestMetadata()
     {
@@ -124,6 +139,9 @@ public class PluginContextTests
         Assert.Equal(40, panels[0].Order);
     }
 
+    /// <summary>
+    /// Verifies that Register Status Bar Item uses manifest metadata.
+    /// </summary>
     [Fact]
     public void RegisterStatusBarItem_UsesManifestMetadata()
     {
@@ -137,6 +155,9 @@ public class PluginContextTests
         Assert.Equal(10, items[0].Order);
     }
 
+    /// <summary>
+    /// Verifies that Register Toolbar Button Handler uses manifest metadata.
+    /// </summary>
     [Fact]
     public void RegisterToolbarButtonHandler_UsesManifestMetadata()
     {
@@ -154,6 +175,9 @@ public class PluginContextTests
         Assert.True(clicked);
     }
 
+    /// <summary>
+    /// Verifies that Register Context Menu Handler registers in both registries.
+    /// </summary>
     [Fact]
     public void RegisterContextMenuHandler_RegistersInBothRegistries()
     {
@@ -175,6 +199,9 @@ public class PluginContextTests
             Arg.Is<ContextMenuEntry>(e => e.Id == "plugin.com.test.plugin.ctx1"));
     }
 
+    /// <summary>
+    /// Verifies that Register File Handler delegates to contributions.
+    /// </summary>
     [Fact]
     public void RegisterFileHandler_DelegatesToContributions()
     {
@@ -188,6 +215,9 @@ public class PluginContextTests
         Assert.Contains(".special", handlers[0].Extensions);
     }
 
+    /// <summary>
+    /// Verifies that Register File Icons resolves relative paths.
+    /// </summary>
     [Fact]
     public void RegisterFileIcons_ResolvesRelativePaths()
     {
@@ -203,6 +233,9 @@ public class PluginContextTests
         Assert.Equal(Path.Combine(@"C:\plugins\test-plugin", "icons/abc.png"), icons[".abc"]);
     }
 
+    /// <summary>
+    /// Verifies that Register Key Binding delegates to service.
+    /// </summary>
     [Fact]
     public void RegisterKeyBinding_DelegatesToService()
     {
@@ -218,6 +251,9 @@ public class PluginContextTests
             Arg.Any<Action>());
     }
 
+    /// <summary>
+    /// Verifies that Register Key Binding failed registration logs warning.
+    /// </summary>
     [Fact]
     public void RegisterKeyBinding_FailedRegistration_LogsWarning()
     {
@@ -232,6 +268,9 @@ public class PluginContextTests
             "PluginHost");
     }
 
+    /// <summary>
+    /// Verifies that Cleanup unregisters context menu items.
+    /// </summary>
     [Fact]
     public void Cleanup_UnregistersContextMenuItems()
     {
@@ -243,6 +282,9 @@ public class PluginContextTests
         _contextMenuRegistry.Received(1).Unregister("plugin.com.test.plugin.ctx1");
     }
 
+    /// <summary>
+    /// Verifies that Cleanup unregisters key bindings.
+    /// </summary>
     [Fact]
     public void Cleanup_UnregistersKeyBindings()
     {
@@ -257,6 +299,9 @@ public class PluginContextTests
             Arg.Is<string>(s => s.StartsWith("plugin.com.test.plugin.")));
     }
 
+    /// <summary>
+    /// Verifies that Cleanup unregisters all contributions.
+    /// </summary>
     [Fact]
     public void Cleanup_UnregistersAllContributions()
     {
@@ -278,6 +323,9 @@ public class PluginContextTests
 
     // ── Input validation ──
 
+    /// <summary>
+    /// Verifies that Register Sidebar Panel null id throws.
+    /// </summary>
     [Fact]
     public void RegisterSidebarPanel_NullId_Throws()
     {
@@ -285,6 +333,9 @@ public class PluginContextTests
         Assert.Throws<ArgumentNullException>(() => ctx.RegisterSidebarPanel(null!, () => "v"));
     }
 
+    /// <summary>
+    /// Verifies that Register Sidebar Panel empty id throws.
+    /// </summary>
     [Fact]
     public void RegisterSidebarPanel_EmptyId_Throws()
     {
@@ -292,6 +343,9 @@ public class PluginContextTests
         Assert.Throws<ArgumentException>(() => ctx.RegisterSidebarPanel("", () => "v"));
     }
 
+    /// <summary>
+    /// Verifies that Register Sidebar Panel null factory throws.
+    /// </summary>
     [Fact]
     public void RegisterSidebarPanel_NullFactory_Throws()
     {
@@ -299,6 +353,9 @@ public class PluginContextTests
         Assert.Throws<ArgumentNullException>(() => ctx.RegisterSidebarPanel("sidebar1", null!));
     }
 
+    /// <summary>
+    /// Verifies that Register Bottom Panel null factory throws.
+    /// </summary>
     [Fact]
     public void RegisterBottomPanel_NullFactory_Throws()
     {
@@ -306,6 +363,9 @@ public class PluginContextTests
         Assert.Throws<ArgumentNullException>(() => ctx.RegisterBottomPanel("bottom1", null!));
     }
 
+    /// <summary>
+    /// Verifies that Register Right Panel empty id throws.
+    /// </summary>
     [Fact]
     public void RegisterRightPanel_EmptyId_Throws()
     {
@@ -313,6 +373,9 @@ public class PluginContextTests
         Assert.Throws<ArgumentException>(() => ctx.RegisterRightPanel(" ", () => "v"));
     }
 
+    /// <summary>
+    /// Verifies that Register Status Bar Item null factory throws.
+    /// </summary>
     [Fact]
     public void RegisterStatusBarItem_NullFactory_Throws()
     {
@@ -320,6 +383,9 @@ public class PluginContextTests
         Assert.Throws<ArgumentNullException>(() => ctx.RegisterStatusBarItem("status1", null!));
     }
 
+    /// <summary>
+    /// Verifies that Register Toolbar Button Handler null handler throws.
+    /// </summary>
     [Fact]
     public void RegisterToolbarButtonHandler_NullHandler_Throws()
     {
@@ -327,6 +393,9 @@ public class PluginContextTests
         Assert.Throws<ArgumentNullException>(() => ctx.RegisterToolbarButtonHandler("btn1", null!));
     }
 
+    /// <summary>
+    /// Verifies that Register Context Menu Handler null handler throws.
+    /// </summary>
     [Fact]
     public void RegisterContextMenuHandler_NullHandler_Throws()
     {
@@ -334,6 +403,9 @@ public class PluginContextTests
         Assert.Throws<ArgumentNullException>(() => ctx.RegisterContextMenuHandler("ctx1", null!));
     }
 
+    /// <summary>
+    /// Verifies that Register File Handler empty extensions throws.
+    /// </summary>
     [Fact]
     public void RegisterFileHandler_EmptyExtensions_Throws()
     {
@@ -341,6 +413,9 @@ public class PluginContextTests
         Assert.Throws<ArgumentException>(() => ctx.RegisterFileHandler([], _ => { }));
     }
 
+    /// <summary>
+    /// Verifies that Register File Handler null handler throws.
+    /// </summary>
     [Fact]
     public void RegisterFileHandler_NullHandler_Throws()
     {
@@ -348,6 +423,9 @@ public class PluginContextTests
         Assert.Throws<ArgumentNullException>(() => ctx.RegisterFileHandler([".txt"], null!));
     }
 
+    /// <summary>
+    /// Verifies that Register File Icons empty dict throws.
+    /// </summary>
     [Fact]
     public void RegisterFileIcons_EmptyDict_Throws()
     {
@@ -355,6 +433,9 @@ public class PluginContextTests
         Assert.Throws<ArgumentException>(() => ctx.RegisterFileIcons(new Dictionary<string, string>()));
     }
 
+    /// <summary>
+    /// Verifies that Register Key Binding null binding throws.
+    /// </summary>
     [Fact]
     public void RegisterKeyBinding_NullBinding_Throws()
     {
@@ -362,6 +443,9 @@ public class PluginContextTests
         Assert.Throws<ArgumentNullException>(() => ctx.RegisterKeyBinding(null!, () => { }));
     }
 
+    /// <summary>
+    /// Verifies that Register Key Binding null handler throws.
+    /// </summary>
     [Fact]
     public void RegisterKeyBinding_NullHandler_Throws()
     {
@@ -369,6 +453,9 @@ public class PluginContextTests
         Assert.Throws<ArgumentNullException>(() => ctx.RegisterKeyBinding(new KeyBinding("F5"), null!));
     }
 
+    /// <summary>
+    /// Verifies that Set Toolbar Button Highlight delegates to registry.
+    /// </summary>
     [Fact]
     public void SetToolbarButtonHighlight_DelegatesToRegistry()
     {
@@ -385,6 +472,9 @@ public class PluginContextTests
         Assert.True(firedState);
     }
 
+    /// <summary>
+    /// Verifies that Set Toolbar Button Highlight empty id throws.
+    /// </summary>
     [Fact]
     public void SetToolbarButtonHighlight_EmptyId_Throws()
     {

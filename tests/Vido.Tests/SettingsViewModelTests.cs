@@ -15,6 +15,9 @@ public sealed class SettingsViewModelTests
     private readonly ISettingsService _settingsService;
     private readonly AppSettingsStore _appSettingsStore;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public SettingsViewModelTests()
     {
         var settings = new AppSettings();
@@ -28,6 +31,9 @@ public sealed class SettingsViewModelTests
 
     // ── Category construction ──
 
+    /// <summary>
+    /// Verifies that Constructor creates app settings categories.
+    /// </summary>
     [Fact]
     public void Constructor_CreatesAppSettingsCategories()
     {
@@ -39,6 +45,9 @@ public sealed class SettingsViewModelTests
         Assert.Contains(vm.AllCategories, c => c.Name == "Plugins");
     }
 
+    /// <summary>
+    /// Verifies that Constructor playback category has expected settings.
+    /// </summary>
     [Fact]
     public void Constructor_PlaybackCategory_HasExpectedSettings()
     {
@@ -51,6 +60,9 @@ public sealed class SettingsViewModelTests
         Assert.Contains(playback.Settings, s => s.Id == "playback.loop");
     }
 
+    /// <summary>
+    /// Verifies that Constructor file explorer category has expected settings.
+    /// </summary>
     [Fact]
     public void Constructor_FileExplorerCategory_HasExpectedSettings()
     {
@@ -61,6 +73,9 @@ public sealed class SettingsViewModelTests
         Assert.Equal("explorer.showHiddenFiles", explorer.Settings[0].Id);
     }
 
+    /// <summary>
+    /// Verifies that Constructor plugins category has expected settings.
+    /// </summary>
     [Fact]
     public void Constructor_PluginsCategory_HasExpectedSettings()
     {
@@ -71,6 +86,9 @@ public sealed class SettingsViewModelTests
         Assert.Equal("plugins.registryUrls", plugins.Settings[0].Id);
     }
 
+    /// <summary>
+    /// Verifies that Constructor app categories are not marked as plugin.
+    /// </summary>
     [Fact]
     public void Constructor_AppCategories_AreNotMarkedAsPlugin()
     {
@@ -80,6 +98,9 @@ public sealed class SettingsViewModelTests
 
     // ── Filtering ──
 
+    /// <summary>
+    /// Verifies that Filtered Categories shows all when search empty.
+    /// </summary>
     [Fact]
     public void FilteredCategories_ShowsAll_WhenSearchEmpty()
     {
@@ -88,6 +109,9 @@ public sealed class SettingsViewModelTests
         Assert.Equal(vm.AllCategories.Count, vm.FilteredCategories.Count);
     }
 
+    /// <summary>
+    /// Verifies that Search Text filters settings by title.
+    /// </summary>
     [Fact]
     public void SearchText_FiltersSettingsByTitle()
     {
@@ -100,6 +124,9 @@ public sealed class SettingsViewModelTests
         Assert.Contains(vm.FilteredCategories[0].Settings, s => s.Title.Contains("Volume"));
     }
 
+    /// <summary>
+    /// Verifies that Search Text filters settings by description.
+    /// </summary>
     [Fact]
     public void SearchText_FiltersSettingsByDescription()
     {
@@ -111,6 +138,9 @@ public sealed class SettingsViewModelTests
         Assert.Equal("File Explorer", vm.FilteredCategories[0].Name);
     }
 
+    /// <summary>
+    /// Verifies that Search Text matches category name shows entire category.
+    /// </summary>
     [Fact]
     public void SearchText_MatchesCategoryName_ShowsEntireCategory()
     {
@@ -123,6 +153,9 @@ public sealed class SettingsViewModelTests
         Assert.Equal(3, playback.Settings.Count); // All playback settings shown
     }
 
+    /// <summary>
+    /// Verifies that Search Text no match shows no categories.
+    /// </summary>
     [Fact]
     public void SearchText_NoMatch_ShowsNoCategories()
     {
@@ -134,6 +167,9 @@ public sealed class SettingsViewModelTests
         Assert.True(vm.NoResults);
     }
 
+    /// <summary>
+    /// Verifies that Search Text empty after filter shows all.
+    /// </summary>
     [Fact]
     public void SearchText_EmptyAfterFilter_ShowsAll()
     {
@@ -146,6 +182,9 @@ public sealed class SettingsViewModelTests
         Assert.Equal(vm.AllCategories.Count, vm.FilteredCategories.Count);
     }
 
+    /// <summary>
+    /// Verifies that Search Text is case insensitive.
+    /// </summary>
     [Fact]
     public void SearchText_IsCaseInsensitive()
     {
@@ -156,6 +195,9 @@ public sealed class SettingsViewModelTests
         Assert.NotEmpty(vm.FilteredCategories);
     }
 
+    /// <summary>
+    /// Verifies that No Results false when search empty.
+    /// </summary>
     [Fact]
     public void NoResults_FalseWhenSearchEmpty()
     {
@@ -166,6 +208,9 @@ public sealed class SettingsViewModelTests
 
     // ── Plugin settings integration ──
 
+    /// <summary>
+    /// Verifies that Constructor with plugin host adds plugin categories.
+    /// </summary>
     [Fact]
     public void Constructor_WithPluginHost_AddsPluginCategories()
     {
@@ -175,6 +220,9 @@ public sealed class SettingsViewModelTests
         Assert.Contains(vm.AllCategories, c => c.Name == "Test Plugin" && c.IsPlugin);
     }
 
+    /// <summary>
+    /// Verifies that Constructor with plugin host plugin category has correct settings.
+    /// </summary>
     [Fact]
     public void Constructor_WithPluginHost_PluginCategoryHasCorrectSettings()
     {
@@ -186,6 +234,9 @@ public sealed class SettingsViewModelTests
         Assert.Equal("test.setting1", pluginCategory.Settings[0].Id);
     }
 
+    /// <summary>
+    /// Verifies that Constructor skips inactive plugins.
+    /// </summary>
     [Fact]
     public void Constructor_SkipsInactivePlugins()
     {
@@ -195,6 +246,9 @@ public sealed class SettingsViewModelTests
         Assert.DoesNotContain(vm.AllCategories, c => c.IsPlugin);
     }
 
+    /// <summary>
+    /// Verifies that Constructor skips plugins with no settings.
+    /// </summary>
     [Fact]
     public void Constructor_SkipsPluginsWithNoSettings()
     {
@@ -204,6 +258,9 @@ public sealed class SettingsViewModelTests
         Assert.DoesNotContain(vm.AllCategories, c => c.IsPlugin);
     }
 
+    /// <summary>
+    /// Verifies that Refresh Plugin Settings rebuilds plugin categories.
+    /// </summary>
     [Fact]
     public void RefreshPluginSettings_RebuildsPluginCategories()
     {
@@ -219,6 +276,9 @@ public sealed class SettingsViewModelTests
         Assert.Contains(vm.AllCategories, c => c.IsPlugin);
     }
 
+    /// <summary>
+    /// Verifies that Search Text filters plugin settings.
+    /// </summary>
     [Fact]
     public void SearchText_FiltersPluginSettings()
     {
@@ -232,6 +292,9 @@ public sealed class SettingsViewModelTests
 
     // ── Constructor validation ──
 
+    /// <summary>
+    /// Verifies that Constructor throws on null settings service.
+    /// </summary>
     [Fact]
     public void Constructor_ThrowsOnNullSettingsService()
     {
@@ -239,6 +302,9 @@ public sealed class SettingsViewModelTests
             new SettingsViewModel(null!, _appSettingsStore));
     }
 
+    /// <summary>
+    /// Verifies that Constructor throws on null app settings store.
+    /// </summary>
     [Fact]
     public void Constructor_ThrowsOnNullAppSettingsStore()
     {
@@ -246,6 +312,9 @@ public sealed class SettingsViewModelTests
             new SettingsViewModel(_settingsService, null!));
     }
 
+    /// <summary>
+    /// Verifies that Constructor allows null plugin host.
+    /// </summary>
     [Fact]
     public void Constructor_AllowsNullPluginHost()
     {

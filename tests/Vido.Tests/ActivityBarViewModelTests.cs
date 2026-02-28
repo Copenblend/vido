@@ -11,6 +11,9 @@ namespace Vido.Tests;
 /// </summary>
 public class ActivityBarViewModelTests
 {
+    /// <summary>
+    /// Verifies that Default State explorer active sidebar visible.
+    /// </summary>
     [Fact]
     public void DefaultState_ExplorerActive_SidebarVisible()
     {
@@ -20,6 +23,9 @@ public class ActivityBarViewModelTests
         Assert.True(vm.IsSidebarVisible);
     }
 
+    /// <summary>
+    /// Verifies that Select Panel different panel switches active.
+    /// </summary>
     [Fact]
     public void SelectPanel_DifferentPanel_SwitchesActive()
     {
@@ -31,6 +37,9 @@ public class ActivityBarViewModelTests
         Assert.True(vm.IsSidebarVisible);
     }
 
+    /// <summary>
+    /// Verifies that Select Panel same active panel toggles sidebar off.
+    /// </summary>
     [Fact]
     public void SelectPanel_SameActivePanel_TogglesSidebarOff()
     {
@@ -42,6 +51,9 @@ public class ActivityBarViewModelTests
         Assert.False(vm.IsSidebarVisible);
     }
 
+    /// <summary>
+    /// Verifies that Select Panel same panel when sidebar hidden shows sidebar again.
+    /// </summary>
     [Fact]
     public void SelectPanel_SamePanel_WhenSidebarHidden_ShowsSidebarAgain()
     {
@@ -56,6 +68,9 @@ public class ActivityBarViewModelTests
         Assert.True(vm.IsSidebarVisible);
     }
 
+    /// <summary>
+    /// Verifies that Select Panel different panel when sidebar hidden shows sidebar.
+    /// </summary>
     [Fact]
     public void SelectPanel_DifferentPanel_WhenSidebarHidden_ShowsSidebar()
     {
@@ -71,6 +86,9 @@ public class ActivityBarViewModelTests
         Assert.Equal(SidebarPanelKind.Settings, vm.ActivePanel);
     }
 
+    /// <summary>
+    /// Verifies that Is Panel Active returns true for active panel.
+    /// </summary>
     [Fact]
     public void IsPanelActive_ReturnsTrue_ForActivePanel()
     {
@@ -81,6 +99,9 @@ public class ActivityBarViewModelTests
         Assert.False(vm.IsPanelActive(SidebarPanelKind.Settings));
     }
 
+    /// <summary>
+    /// Verifies that Is Panel Active updates after switch.
+    /// </summary>
     [Fact]
     public void IsPanelActive_UpdatesAfterSwitch()
     {
@@ -92,6 +113,9 @@ public class ActivityBarViewModelTests
         Assert.True(vm.IsPanelActive(SidebarPanelKind.Settings));
     }
 
+    /// <summary>
+    /// Verifies that Select Panel raises property changed for active panel.
+    /// </summary>
     [Fact]
     public void SelectPanel_RaisesPropertyChanged_ForActivePanel()
     {
@@ -104,6 +128,9 @@ public class ActivityBarViewModelTests
         Assert.Contains("ActivePanel", changedProperties);
     }
 
+    /// <summary>
+    /// Verifies that Select Panel raises property changed for is sidebar visible.
+    /// </summary>
     [Fact]
     public void SelectPanel_RaisesPropertyChanged_ForIsSidebarVisible()
     {
@@ -117,6 +144,10 @@ public class ActivityBarViewModelTests
         Assert.Contains("IsSidebarVisible", changedProperties);
     }
 
+    /// <summary>
+    /// Verifies that Select Panel all panels work.
+    /// </summary>
+    /// <param name="panel">The sidebar panel kind.</param>
     [Theory]
     [InlineData(SidebarPanelKind.Explorer)]
     [InlineData(SidebarPanelKind.Extensions)]
@@ -134,6 +165,9 @@ public class ActivityBarViewModelTests
     // ║ vb-016 — Explorer Panel Empty on App Restore                   ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Set Active Panel sets active panel without toggling sidebar.
+    /// </summary>
     [Fact]
     public void SetActivePanel_SetsActivePanelWithoutTogglingSidebar()
     {
@@ -147,6 +181,9 @@ public class ActivityBarViewModelTests
         Assert.True(vm.IsSidebarVisible); // sidebar stays visible
     }
 
+    /// <summary>
+    /// Verifies that Set Active Panel explorer is assigned even when already default.
+    /// </summary>
     [Fact]
     public void SetActivePanel_Explorer_IsAssignedEvenWhenAlreadyDefault()
     {
@@ -170,6 +207,9 @@ public class ActivityBarViewModelTests
     // ║ vb-007 — Drag-and-Drop Sidebar Icon Reordering                 ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Add Plugin Item with no saved order uses default order.
+    /// </summary>
     [Fact]
     public void AddPluginItem_WithNoSavedOrder_UsesDefaultOrder()
     {
@@ -184,6 +224,9 @@ public class ActivityBarViewModelTests
         Assert.Equal("plugin.c", vm.PluginItems[2].Id);
     }
 
+    /// <summary>
+    /// Verifies that Add Plugin Item with saved order restores order.
+    /// </summary>
     [Fact]
     public void AddPluginItem_WithSavedOrder_RestoresOrder()
     {
@@ -205,6 +248,9 @@ public class ActivityBarViewModelTests
         Assert.Equal("plugin.b", vm.PluginItems[2].Id);
     }
 
+    /// <summary>
+    /// Verifies that Remove Plugin Item removes by id.
+    /// </summary>
     [Fact]
     public void RemovePluginItem_RemovesById()
     {
@@ -220,6 +266,9 @@ public class ActivityBarViewModelTests
         Assert.Equal("plugin.c", vm.PluginItems[1].Id);
     }
 
+    /// <summary>
+    /// Verifies that Remove Plugin Item non existent id does nothing.
+    /// </summary>
     [Fact]
     public void RemovePluginItem_NonExistentId_DoesNothing()
     {
@@ -231,6 +280,9 @@ public class ActivityBarViewModelTests
         Assert.Single(vm.PluginItems);
     }
 
+    /// <summary>
+    /// Verifies that Move Plugin Item reorders items.
+    /// </summary>
     [Fact]
     public void MovePluginItem_ReordersItems()
     {
@@ -250,6 +302,9 @@ public class ActivityBarViewModelTests
         Assert.Equal("plugin.a", vm.PluginItems[2].Id);
     }
 
+    /// <summary>
+    /// Verifies that Move Plugin Item persists order.
+    /// </summary>
     [Fact]
     public void MovePluginItem_PersistsOrder()
     {
@@ -269,6 +324,9 @@ public class ActivityBarViewModelTests
         settings.Received().QueueSave();
     }
 
+    /// <summary>
+    /// Verifies that Move Plugin Item invalid indices does nothing.
+    /// </summary>
     [Fact]
     public void MovePluginItem_InvalidIndices_DoesNothing()
     {
@@ -283,6 +341,9 @@ public class ActivityBarViewModelTests
         Assert.Equal("plugin.a", vm.PluginItems[0].Id);
     }
 
+    /// <summary>
+    /// Verifies that Move Plugin Item updates order values.
+    /// </summary>
     [Fact]
     public void MovePluginItem_UpdatesOrderValues()
     {

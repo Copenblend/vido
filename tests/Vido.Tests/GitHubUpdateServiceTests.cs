@@ -3,10 +3,19 @@ using Xunit;
 
 namespace Vido.Tests;
 
+/// <summary>
+/// Verifies the behavior of <see cref="GitHubUpdateService"/>.
+/// </summary>
 public class GitHubUpdateServiceTests
 {
     // ── IsNewerVersion ──
 
+    /// <summary>
+    /// Verifies that Is Newer Version compares correctly.
+    /// </summary>
+    /// <param name="latest">The latest available version string.</param>
+    /// <param name="current">The current installed version string.</param>
+    /// <param name="expected">The expected result value.</param>
     [Theory]
     [InlineData("1.0.0", "0.6.0", true)]
     [InlineData("0.7.0", "0.6.0", true)]
@@ -21,18 +30,27 @@ public class GitHubUpdateServiceTests
         Assert.Equal(expected, GitHubUpdateService.IsNewerVersion(latest, current));
     }
 
+    /// <summary>
+    /// Verifies that Is Newer Version different unparseable strings returns true.
+    /// </summary>
     [Fact]
     public void IsNewerVersion_DifferentUnparseableStrings_ReturnsTrue()
     {
         Assert.True(GitHubUpdateService.IsNewerVersion("abc", "def"));
     }
 
+    /// <summary>
+    /// Verifies that Is Newer Version same unparseable strings returns false.
+    /// </summary>
     [Fact]
     public void IsNewerVersion_SameUnparseableStrings_ReturnsFalse()
     {
         Assert.False(GitHubUpdateService.IsNewerVersion("abc", "abc"));
     }
 
+    /// <summary>
+    /// Verifies that Is Newer Version case insensitive for unparseable.
+    /// </summary>
     [Fact]
     public void IsNewerVersion_CaseInsensitiveForUnparseable()
     {
@@ -41,6 +59,9 @@ public class GitHubUpdateServiceTests
 
     // ── CheckForUpdateAsync with mock HTTP ──
 
+    /// <summary>
+    /// Verifies that Check For Update Async parses git hub response.
+    /// </summary>
     [Fact]
     public async Task CheckForUpdateAsync_ParsesGitHubResponse()
     {
@@ -79,6 +100,9 @@ public class GitHubUpdateServiceTests
         Assert.Null(result.ErrorMessage);
     }
 
+    /// <summary>
+    /// Verifies that Check For Update Async same version not available.
+    /// </summary>
     [Fact]
     public async Task CheckForUpdateAsync_SameVersion_NotAvailable()
     {
@@ -103,6 +127,9 @@ public class GitHubUpdateServiceTests
         Assert.Null(result.ErrorMessage);
     }
 
+    /// <summary>
+    /// Verifies that Check For Update Async older version not available.
+    /// </summary>
     [Fact]
     public async Task CheckForUpdateAsync_OlderVersion_NotAvailable()
     {
@@ -124,6 +151,9 @@ public class GitHubUpdateServiceTests
         Assert.False(result.IsUpdateAvailable);
     }
 
+    /// <summary>
+    /// Verifies that Check For Update Async network error returns error message.
+    /// </summary>
     [Fact]
     public async Task CheckForUpdateAsync_NetworkError_ReturnsErrorMessage()
     {
@@ -140,6 +170,9 @@ public class GitHubUpdateServiceTests
         Assert.Contains("Network unreachable", result.ErrorMessage);
     }
 
+    /// <summary>
+    /// Verifies that Check For Update Async no installer asset returns null installer url.
+    /// </summary>
     [Fact]
     public async Task CheckForUpdateAsync_NoInstallerAsset_ReturnsNullInstallerUrl()
     {
@@ -167,6 +200,9 @@ public class GitHubUpdateServiceTests
         Assert.Null(result.InstallerDownloadUrl);
     }
 
+    /// <summary>
+    /// Verifies that Check For Update Async strips leading v from tag.
+    /// </summary>
     [Fact]
     public async Task CheckForUpdateAsync_StripsLeadingV_FromTag()
     {
@@ -188,6 +224,9 @@ public class GitHubUpdateServiceTests
         Assert.Equal("2.1.3", result.LatestVersion);
     }
 
+    /// <summary>
+    /// Verifies that Check For Update Async no body returns null release notes.
+    /// </summary>
     [Fact]
     public async Task CheckForUpdateAsync_NoBody_ReturnsNullReleaseNotes()
     {

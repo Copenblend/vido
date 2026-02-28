@@ -12,18 +12,32 @@ public class KeyboardShortcutService : IKeyboardShortcutService
 {
     private readonly ILogService _logService;
 
-    /// <summary>Maps key combinations to (commandId, handler) pairs.</summary>
+    /// <summary>
+    /// Maps key combinations to (commandId, handler) pairs.
+    /// </summary>
     private readonly Dictionary<KeyBinding, (string CommandId, Action Handler)> _bindings = new();
 
-    /// <summary>Reverse lookup: commandId → KeyBinding.</summary>
+    /// <summary>
+    /// Reverse lookup: commandId → KeyBinding.
+    /// </summary>
     private readonly Dictionary<string, KeyBinding> _commandToBinding = new(StringComparer.OrdinalIgnoreCase);
-
+    
+    /// <summary>
+    /// Creates a keyboard shortcut service that logs binding conflicts through the provided log service.
+    /// </summary>
+    /// <param name="logService">The logging service used to report shortcut conflicts and warnings.</param>
     public KeyboardShortcutService(ILogService logService)
     {
         _logService = logService;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Binds a key combination to a command, replacing any prior binding for the same command.
+    /// Returns <c>false</c> if the key was already bound to a different command (that binding is overridden).
+    /// </summary>
+    /// <param name="binding">The key combination to bind.</param>
+    /// <param name="commandId">The unique identifier of the command to associate with the key.</param>
+    /// <param name="handler">The action to execute when the key combination is pressed.</param>
     public bool Register(KeyBinding binding, string commandId, Action handler)
     {
         ArgumentNullException.ThrowIfNull(binding);
@@ -58,7 +72,11 @@ public class KeyboardShortcutService : IKeyboardShortcutService
         return !isConflict;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Removes the key binding associated with the specified command.
+    /// Returns <c>false</c> if no binding existed for the command.
+    /// </summary>
+    /// <param name="commandId">The unique identifier of the command whose binding should be removed.</param>
     public bool Unregister(string commandId)
     {
         if (!_commandToBinding.TryGetValue(commandId, out var binding))
@@ -69,7 +87,11 @@ public class KeyboardShortcutService : IKeyboardShortcutService
         return true;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Looks up the handler registered for the given key combination and invokes it.
+    /// Returns <c>false</c> if no binding matches.
+    /// </summary>
+    /// <param name="binding">The key combination that was pressed.</param>
     public bool TryExecute(KeyBinding binding)
     {
         if (!_bindings.TryGetValue(binding, out var entry))
@@ -79,19 +101,27 @@ public class KeyboardShortcutService : IKeyboardShortcutService
         return true;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Returns the key combination currently assigned to the specified command, or <c>null</c> if the command has no binding.
+    /// </summary>
+    /// <param name="commandId">The unique identifier of the command to look up.</param>
     public KeyBinding? FindBinding(string commandId)
     {
         return _commandToBinding.TryGetValue(commandId, out var binding) ? binding : null;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Returns the identifiers of all commands that currently have a key binding registered.
+    /// </summary>
     public IReadOnlyList<string> GetAllCommandIds()
     {
         return _commandToBinding.Keys.ToList().AsReadOnly();
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Returns the command identifier bound to the given key combination, or <c>null</c> if the key is unbound.
+    /// </summary>
+    /// <param name="binding">The key combination to look up.</param>
     public string? GetCommandId(KeyBinding binding)
     {
         return _bindings.TryGetValue(binding, out var entry) ? entry.CommandId : null;

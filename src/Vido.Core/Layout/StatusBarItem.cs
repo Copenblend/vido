@@ -9,10 +9,14 @@ namespace Vido.Core.Layout;
 /// </summary>
 public class StatusBarItem : INotifyPropertyChanged
 {
-    /// <summary>Unique identifier for this status bar item.</summary>
+    /// <summary>
+    /// Unique identifier for this status bar item.
+    /// </summary>
     public string Id { get; }
 
-    /// <summary>Which side of the status bar this item is placed on.</summary>
+    /// <summary>
+    /// Which side of the status bar this item is placed on.
+    /// </summary>
     public StatusBarAlignment Alignment { get; }
 
     /// <summary>
@@ -23,7 +27,9 @@ public class StatusBarItem : INotifyPropertyChanged
 
     private string _text = string.Empty;
 
-    /// <summary>The text displayed in the status bar for this item.</summary>
+    /// <summary>
+    /// The text displayed in the status bar for this item.
+    /// </summary>
     public string Text
     {
         get => _text;
@@ -37,7 +43,9 @@ public class StatusBarItem : INotifyPropertyChanged
 
     private string? _tooltip;
 
-    /// <summary>Optional tooltip shown on hover.</summary>
+    /// <summary>
+    /// Optional tooltip shown on hover.
+    /// </summary>
     public string? Tooltip
     {
         get => _tooltip;
@@ -51,7 +59,9 @@ public class StatusBarItem : INotifyPropertyChanged
 
     private bool _isVisible = true;
 
-    /// <summary>Whether this item is currently visible.</summary>
+    /// <summary>
+    /// Whether this item is currently visible.
+    /// </summary>
     public bool IsVisible
     {
         get => _isVisible;
@@ -82,7 +92,9 @@ public class StatusBarItem : INotifyPropertyChanged
         }
     }
 
-    /// <summary>Whether <see cref="ContentView"/> is set (non-null).</summary>
+    /// <summary>
+    /// Whether <see cref="ContentView"/> is set (non-null).
+    /// </summary>
     public bool HasContentView => _contentView is not null;
 
     private bool _showSeparator;
@@ -101,13 +113,21 @@ public class StatusBarItem : INotifyPropertyChanged
             OnPropertyChanged(nameof(ShowSeparator));
         }
     }
-
+    /// <summary>
+    /// Creates a status bar item positioned on the specified side with the given sort priority.
+    /// </summary>
+    /// <param name="id">Unique identifier for this status bar item.</param>
+    /// <param name="alignment">Which side of the status bar (left or right) to place the item.</param>
+    /// <param name="priority">Sort priority within the alignment group; lower values appear first.</param>
     public StatusBarItem(string id, StatusBarAlignment alignment, int priority)
     {
         Id = id;
         Alignment = alignment;
         Priority = priority;
     }
+    /// <summary>
+    /// Occurs when PropertyChanged is raised.
+    /// </summary>
 
     public event PropertyChangedEventHandler? PropertyChanged;
 

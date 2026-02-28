@@ -12,6 +12,9 @@ public sealed class ResetToDefaultsTests
 {
     // ── AppSettings ──
 
+    /// <summary>
+    /// Verifies that App Settings reset to defaults restores all properties.
+    /// </summary>
     [Fact]
     public void AppSettings_ResetToDefaults_RestoresAllProperties()
     {
@@ -54,6 +57,9 @@ public sealed class ResetToDefaultsTests
         Assert.Equal(AppSettings.OfficialRegistryUrl, settings.PluginRegistryUrls[0]);
     }
 
+    /// <summary>
+    /// Verifies that App Settings reset to defaults matches fresh instance.
+    /// </summary>
     [Fact]
     public void AppSettings_ResetToDefaults_MatchesFreshInstance()
     {
@@ -86,6 +92,9 @@ public sealed class ResetToDefaultsTests
         Assert.Equal(fresh.PluginRegistryUrls, mutated.PluginRegistryUrls);
     }
 
+    /// <summary>
+    /// Verifies that App Settings reset to defaults is idempotent.
+    /// </summary>
     [Fact]
     public void AppSettings_ResetToDefaults_IsIdempotent()
     {
@@ -100,6 +109,9 @@ public sealed class ResetToDefaultsTests
 
     // ── AppState ──
 
+    /// <summary>
+    /// Verifies that App State reset to defaults restores all properties.
+    /// </summary>
     [Fact]
     public void AppState_ResetToDefaults_RestoresAllProperties()
     {
@@ -133,6 +145,9 @@ public sealed class ResetToDefaultsTests
         Assert.Empty(state.RecentFiles);
     }
 
+    /// <summary>
+    /// Verifies that App State reset to defaults matches fresh instance.
+    /// </summary>
     [Fact]
     public void AppState_ResetToDefaults_MatchesFreshInstance()
     {
@@ -157,6 +172,9 @@ public sealed class ResetToDefaultsTests
         Assert.Equal(fresh.RecentFiles.Count, mutated.RecentFiles.Count);
     }
 
+    /// <summary>
+    /// Verifies that App State reset to defaults is idempotent.
+    /// </summary>
     [Fact]
     public void AppState_ResetToDefaults_IsIdempotent()
     {
@@ -169,6 +187,9 @@ public sealed class ResetToDefaultsTests
         Assert.Equal("Explorer", state.ActiveSidebarPanel);
     }
 
+    /// <summary>
+    /// Verifies that App State reset to defaults clears collections.
+    /// </summary>
     [Fact]
     public void AppState_ResetToDefaults_ClearsCollections()
     {

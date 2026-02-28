@@ -14,6 +14,9 @@ public sealed class SettingsServiceTests : IDisposable
     private readonly string _tempDir;
     private readonly string _settingsPath;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public SettingsServiceTests()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), "Vido_Tests_" + Guid.NewGuid().ToString("N"));
@@ -21,6 +24,9 @@ public sealed class SettingsServiceTests : IDisposable
         _settingsPath = Path.Combine(_tempDir, "settings.json");
     }
 
+    /// <summary>
+    /// Cleans up test resources after each test run.
+    /// </summary>
     public void Dispose()
     {
         try { Directory.Delete(_tempDir, recursive: true); }
@@ -29,6 +35,9 @@ public sealed class SettingsServiceTests : IDisposable
 
     private SettingsService CreateService() => new SettingsService(_tempDir);
 
+    /// <summary>
+    /// Verifies that Current has sensible defaults.
+    /// </summary>
     [Fact]
     public void Current_HasSensibleDefaults()
     {
@@ -46,6 +55,9 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.False(svc.Current.ShowHiddenFiles);
     }
 
+    /// <summary>
+    /// Verifies that Save And Load round trips.
+    /// </summary>
     [Fact]
     public async Task SaveAndLoad_RoundTrips()
     {
@@ -69,6 +81,9 @@ public sealed class SettingsServiceTests : IDisposable
         await svc.SaveAsync();
     }
 
+    /// <summary>
+    /// Verifies that Load Async with missing file keeps defaults.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_WithMissingFile_KeepsDefaults()
     {
@@ -80,6 +95,9 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal(0.50, svc.Current.Volume); // still defaults
     }
 
+    /// <summary>
+    /// Verifies that Save Async creates directory if missing.
+    /// </summary>
     [Fact]
     public async Task SaveAsync_CreatesDirectoryIfMissing()
     {
@@ -90,6 +108,9 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.True(Directory.Exists(newDir));
     }
 
+    /// <summary>
+    /// Verifies that Queue Save does not throw.
+    /// </summary>
     [Fact]
     public void QueueSave_DoesNotThrow()
     {
@@ -98,6 +119,9 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Null(ex);
     }
 
+    /// <summary>
+    /// Verifies that Dispose does not throw.
+    /// </summary>
     [Fact]
     public void Dispose_DoesNotThrow()
     {
@@ -107,6 +131,9 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Null(ex);
     }
 
+    /// <summary>
+    /// Verifies that Load Async ensures official registry url when missing.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_EnsuresOfficialRegistryUrl_WhenMissing()
     {
@@ -127,6 +154,9 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal("file:///C:/custom/registry.json", svc.Current.PluginRegistryUrls[1]);
     }
 
+    /// <summary>
+    /// Verifies that Load Async does not duplicate official url when present.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_DoesNotDuplicateOfficialUrl_WhenPresent()
     {

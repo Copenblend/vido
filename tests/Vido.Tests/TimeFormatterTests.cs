@@ -8,6 +8,11 @@ namespace Vido.Tests;
 /// </summary>
 public class TimeFormatterTests
 {
+    /// <summary>
+    /// Verifies that Format produces expected output.
+    /// </summary>
+    /// <param name="seconds">The number of seconds.</param>
+    /// <param name="expected">The expected result value.</param>
     [Theory]
     [InlineData(0, "00:00")]
     [InlineData(5, "00:05")]
@@ -21,6 +26,11 @@ public class TimeFormatterTests
         Assert.Equal(expected, TimeFormatter.Format(TimeSpan.FromSeconds(seconds)));
     }
 
+    /// <summary>
+    /// Verifies that Format Padded produces expected output.
+    /// </summary>
+    /// <param name="seconds">The number of seconds.</param>
+    /// <param name="expected">The expected result value.</param>
     [Theory]
     [InlineData(0, "00:00")]
     [InlineData(65, "01:05")]

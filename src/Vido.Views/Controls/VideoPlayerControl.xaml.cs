@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -21,7 +20,9 @@ public partial class VideoPlayerControl : UserControl
     private VideoPlayerViewModel? _viewModel;
     private DispatcherTimer? _loadingSpinnerTimer;
 
-    /// <summary>Cached gradient brush for fullscreen overlay (transparent→black).</summary>
+    /// <summary>
+    /// Cached gradient brush for fullscreen overlay (transparent→black).
+    /// </summary>
     private static readonly LinearGradientBrush FullscreenOverlayGradient = CreateFullscreenGradient();
 
     private static LinearGradientBrush CreateFullscreenGradient()
@@ -38,12 +39,20 @@ public partial class VideoPlayerControl : UserControl
         return gradient;
     }
 
-    /// <summary>Raised when the user double-clicks the video area to toggle fullscreen.</summary>
+    /// <summary>
+    /// Raised when the user double-clicks the video area to toggle fullscreen.
+    /// </summary>
     public event Action? FullscreenToggleRequested;
 
-    /// <summary>Raised when files or folders are dropped onto the player area.</summary>
+    /// <summary>
+    /// Raised when files or folders are dropped onto the player area.
+    /// </summary>
     public event Action<string[]>? FilesDropped;
-
+    
+    /// <summary>
+    /// Sets up the video player control, wiring mouse event handlers for seek/volume sliders,
+    /// double-click fullscreen, and data context change monitoring.
+    /// </summary>
     public VideoPlayerControl()
     {
         InitializeComponent();
@@ -468,7 +477,9 @@ public partial class VideoPlayerControl : UserControl
         ControlsOverlay.Padding = new Thickness(8, 4, 8, 4);
     }
 
-    /// <summary>Gets the controls overlay border for animation purposes.</summary>
+    /// <summary>
+    /// Gets the controls overlay border for animation purposes.
+    /// </summary>
     public Border ControlsOverlayElement => ControlsOverlay;
 
     // ── Plugin control bar items ──
@@ -480,6 +491,8 @@ public partial class VideoPlayerControl : UserControl
     /// <summary>
     /// Adds a plugin-provided control bar item (left of the loop button).
     /// </summary>
+    /// <param name="fullId">Unique identifier for the control bar item (e.g. "plugin.myPlugin.beatbar").</param>
+    /// <param name="element">The UI element to display in the control bar.</param>
     public void AddPluginControlBarItem(string fullId, UIElement element)
     {
         if (_pluginControlBarItems.ContainsKey(fullId)) return;
@@ -490,6 +503,7 @@ public partial class VideoPlayerControl : UserControl
     /// <summary>
     /// Removes a plugin control bar item by its full ID.
     /// </summary>
+    /// <param name="fullId">The unique identifier of the control bar item to remove.</param>
     public void RemovePluginControlBarItem(string fullId)
     {
         if (!_pluginControlBarItems.TryGetValue(fullId, out var element)) return;
@@ -502,6 +516,8 @@ public partial class VideoPlayerControl : UserControl
     /// Overlays are layered on top of the video surface and are
     /// not hit-test visible by default.
     /// </summary>
+    /// <param name="fullId">Unique identifier for the overlay (e.g. "plugin.myPlugin.beatbar").</param>
+    /// <param name="overlay">The UI element to layer on top of the video surface.</param>
     public void AddPluginOverlay(string fullId, UIElement overlay)
     {
         if (_pluginOverlays.ContainsKey(fullId)) return;
@@ -520,6 +536,7 @@ public partial class VideoPlayerControl : UserControl
     /// <summary>
     /// Removes a plugin overlay by its full ID.
     /// </summary>
+    /// <param name="fullId">The unique identifier of the overlay to remove.</param>
     public void RemovePluginOverlay(string fullId)
     {
         if (!_pluginOverlays.TryGetValue(fullId, out var overlay)) return;
@@ -530,6 +547,8 @@ public partial class VideoPlayerControl : UserControl
     /// <summary>
     /// Toggles visibility of a plugin overlay.
     /// </summary>
+    /// <param name="fullId">The unique identifier of the overlay to show or hide.</param>
+    /// <param name="visible">Whether the overlay should be visible.</param>
     public void SetPluginOverlayVisible(string fullId, bool visible)
     {
         if (_pluginOverlays.TryGetValue(fullId, out var overlay))
@@ -542,6 +561,7 @@ public partial class VideoPlayerControl : UserControl
     /// <summary>
     /// Returns whether a plugin control bar item with the given ID exists.
     /// </summary>
+    /// <param name="fullId">The unique identifier to look up.</param>
     public bool HasPluginControlBarItem(string fullId) =>
         _pluginControlBarItems.ContainsKey(fullId);
 }

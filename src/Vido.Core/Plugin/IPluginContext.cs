@@ -12,22 +12,34 @@ namespace Vido.Core.Plugin;
 /// </summary>
 public interface IPluginContext
 {
-    /// <summary>Plugin's own manifest data.</summary>
+    /// <summary>
+    /// Plugin's own manifest data.
+    /// </summary>
     PluginManifest Manifest { get; }
 
-    /// <summary>Path to the plugin's installation directory on disk.</summary>
+    /// <summary>
+    /// Path to the plugin's installation directory on disk.
+    /// </summary>
     string PluginDirectory { get; }
 
-    /// <summary>Access to the Vido event bus for subscribing/publishing events.</summary>
+    /// <summary>
+    /// Access to the Vido event bus for subscribing/publishing events.
+    /// </summary>
     IEventBus Events { get; }
 
-    /// <summary>Access to the video playback engine.</summary>
+    /// <summary>
+    /// Access to the video playback engine.
+    /// </summary>
     IVideoEngine VideoEngine { get; }
 
-    /// <summary>Access to application logging.</summary>
+    /// <summary>
+    /// Access to application logging.
+    /// </summary>
     ILogService Logger { get; }
 
-    /// <summary>Access to the settings store (for reading/writing plugin settings).</summary>
+    /// <summary>
+    /// Access to the settings store (for reading/writing plugin settings).
+    /// </summary>
     IPluginSettingsStore Settings { get; }
 
     // ── UI Contribution Registration ──
@@ -68,7 +80,9 @@ public interface IPluginContext
     /// <param name="text">Display text.</param>
     void UpdateStatusBarItem(string contributionId, string text);
 
-    /// <summary>Register a toolbar button click handler.</summary>
+    /// <summary>
+    /// Register a toolbar button click handler.
+    /// </summary>
     void RegisterToolbarButtonHandler(string contributionId, Action clickHandler);
 
     /// <summary>
@@ -78,10 +92,14 @@ public interface IPluginContext
     /// </summary>
     void SetToolbarButtonHighlight(string contributionId, bool highlighted);
 
-    /// <summary>Register a context menu action handler.</summary>
+    /// <summary>
+    /// Register a context menu action handler.
+    /// </summary>
     void RegisterContextMenuHandler(string contributionId, Action<FileNode> handler);
 
-    /// <summary>Register a file double-click handler for specific extensions.</summary>
+    /// <summary>
+    /// Register a file double-click handler for specific extensions.
+    /// </summary>
     void RegisterFileHandler(string[] extensions, Action<FileNode> handler);
 
     /// <summary>
@@ -91,7 +109,9 @@ public interface IPluginContext
     /// </summary>
     void RegisterFileIcons(Dictionary<string, string> extensionToIconPath);
 
-    /// <summary>Register a keyboard shortcut.</summary>
+    /// <summary>
+    /// Register a keyboard shortcut.
+    /// </summary>
     void RegisterKeyBinding(KeyBinding binding, Action handler);
 
     /// <summary>

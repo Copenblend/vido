@@ -18,50 +18,74 @@ public partial class PluginManagerViewModel : ObservableObject
     private readonly ISettingsService _settingsService;
     private readonly ILogService _logService;
 
-    /// <summary>All plugin items (both installed and available).</summary>
+    /// <summary>
+    /// All plugin items (both installed and available).
+    /// </summary>
     private readonly List<PluginItemViewModel> _allPlugins = [];
 
-    /// <summary>Map of registry URL → display name for the dropdown.</summary>
+    /// <summary>
+    /// Map of registry URL → display name for the dropdown.
+    /// </summary>
     private readonly Dictionary<string, string> _registryNames = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Installed plugins filtered by search and registry.</summary>
+    /// <summary>
+    /// Installed plugins filtered by search and registry.
+    /// </summary>
     public ObservableCollection<PluginItemViewModel> InstalledPlugins { get; } = [];
 
-    /// <summary>Available plugins filtered by search and registry.</summary>
+    /// <summary>
+    /// Available plugins filtered by search and registry.
+    /// </summary>
     public ObservableCollection<PluginItemViewModel> AvailablePlugins { get; } = [];
 
-    /// <summary>Registry source options for the dropdown.</summary>
+    /// <summary>
+    /// Registry source options for the dropdown.
+    /// </summary>
     public ObservableCollection<string> RegistrySources { get; } = ["All"];
 
-    /// <summary>Search query for filtering.</summary>
+    /// <summary>
+    /// Search query for filtering.
+    /// </summary>
     [ObservableProperty]
     private string _searchQuery = string.Empty;
 
     partial void OnSearchQueryChanged(string value) => ApplyFilter();
 
-    /// <summary>Selected registry source.</summary>
+    /// <summary>
+    /// Selected registry source.
+    /// </summary>
     [ObservableProperty]
     private string _selectedRegistrySource = "All";
 
     partial void OnSelectedRegistrySourceChanged(string value) => ApplyFilter();
 
-    /// <summary>Whether the registry is loading.</summary>
+    /// <summary>
+    /// Whether the registry is loading.
+    /// </summary>
     [ObservableProperty]
     private bool _isLoading;
 
-    /// <summary>Count of installed plugins (for badge).</summary>
+    /// <summary>
+    /// Count of installed plugins (for badge).
+    /// </summary>
     [ObservableProperty]
     private int _installedCount;
 
-    /// <summary>Count of available plugins (for badge).</summary>
+    /// <summary>
+    /// Count of available plugins (for badge).
+    /// </summary>
     [ObservableProperty]
     private int _availableCount;
 
-    /// <summary>Whether the installed section is expanded.</summary>
+    /// <summary>
+    /// Whether the installed section is expanded.
+    /// </summary>
     [ObservableProperty]
     private bool _isInstalledExpanded = true;
 
-    /// <summary>Whether the available section is expanded.</summary>
+    /// <summary>
+    /// Whether the available section is expanded.
+    /// </summary>
     [ObservableProperty]
     private bool _isAvailableExpanded = true;
 
@@ -88,7 +112,14 @@ public partial class PluginManagerViewModel : ObservableObject
     /// The parameter is a user-facing message listing the dependants.
     /// </summary>
     public event Action<string>? UninstallBlocked;
-
+    
+    /// <summary>
+    /// Creates the plugin manager view model, restoring section expansion state from settings.
+    /// </summary>
+    /// <param name="pluginHost">Host managing loaded plugin instances and activation.</param>
+    /// <param name="pluginInstaller">Service for fetching registries and installing/uninstalling plugins.</param>
+    /// <param name="settingsService">Service for persisting plugin manager UI preferences.</param>
+    /// <param name="logService">Logging service for plugin operation diagnostics.</param>
     public PluginManagerViewModel(
         IPluginHost pluginHost,
         IPluginInstaller pluginInstaller,
@@ -273,6 +304,7 @@ public partial class PluginManagerViewModel : ObservableObject
     /// Installs a plugin and updates the lists.
     /// Automatically installs any required dependencies from the registry first.
     /// </summary>
+    /// <param name="item">Plugin item to install from the registry.</param>
     [RelayCommand]
     public async Task InstallPluginAsync(PluginItemViewModel item)
     {
@@ -362,6 +394,7 @@ public partial class PluginManagerViewModel : ObservableObject
     /// Uninstalls a plugin and updates the lists.
     /// Blocks removal if other installed plugins depend on this one.
     /// </summary>
+    /// <param name="item">Plugin item to uninstall.</param>
     [RelayCommand]
     public async Task UninstallPluginAsync(PluginItemViewModel item)
     {
@@ -409,6 +442,7 @@ public partial class PluginManagerViewModel : ObservableObject
     /// <summary>
     /// Toggles a plugin's enabled/disabled state.
     /// </summary>
+    /// <param name="item">Plugin item whose enabled state should be toggled.</param>
     [RelayCommand]
     public void ToggleEnabled(PluginItemViewModel item)
     {
@@ -440,6 +474,7 @@ public partial class PluginManagerViewModel : ObservableObject
     /// <summary>
     /// Opens the detail panel for a plugin.
     /// </summary>
+    /// <param name="item">Plugin item whose detail view should be displayed.</param>
     [RelayCommand]
     public void OpenDetail(PluginItemViewModel item)
     {
@@ -449,6 +484,7 @@ public partial class PluginManagerViewModel : ObservableObject
     /// <summary>
     /// Opens the settings for a plugin.
     /// </summary>
+    /// <param name="item">Plugin item whose settings should be opened.</param>
     [RelayCommand]
     public void OpenPluginSettings(PluginItemViewModel item)
     {
@@ -460,6 +496,7 @@ public partial class PluginManagerViewModel : ObservableObject
     /// Removes the old version, installs the new one, and re-activates.
     /// Automatically updates or installs any required dependencies first.
     /// </summary>
+    /// <param name="item">Plugin item to update to the latest registry version.</param>
     [RelayCommand]
     public async Task UpdatePluginAsync(PluginItemViewModel item)
     {

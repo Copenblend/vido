@@ -13,12 +13,18 @@ public class PlaylistProviderRegistryTests
 {
     private readonly ContributionRegistry _registry = new();
 
+    /// <summary>
+    /// Verifies that Get Playlist Provider returns null when none registered.
+    /// </summary>
     [Fact]
     public void GetPlaylistProvider_ReturnsNull_WhenNoneRegistered()
     {
         Assert.Null(_registry.GetPlaylistProvider());
     }
 
+    /// <summary>
+    /// Verifies that Register Playlist Provider makes it available.
+    /// </summary>
     [Fact]
     public void RegisterPlaylistProvider_MakesItAvailable()
     {
@@ -29,6 +35,9 @@ public class PlaylistProviderRegistryTests
         Assert.Same(provider, _registry.GetPlaylistProvider());
     }
 
+    /// <summary>
+    /// Verifies that Unregister Playlist Provider removes it.
+    /// </summary>
     [Fact]
     public void UnregisterPlaylistProvider_RemovesIt()
     {
@@ -40,6 +49,9 @@ public class PlaylistProviderRegistryTests
         Assert.Null(_registry.GetPlaylistProvider());
     }
 
+    /// <summary>
+    /// Verifies that Unregister Playlist Provider no op when different plugin.
+    /// </summary>
     [Fact]
     public void UnregisterPlaylistProvider_NoOp_WhenDifferentPlugin()
     {
@@ -51,6 +63,9 @@ public class PlaylistProviderRegistryTests
         Assert.Same(provider, _registry.GetPlaylistProvider());
     }
 
+    /// <summary>
+    /// Verifies that Register Playlist Provider last write wins.
+    /// </summary>
     [Fact]
     public void RegisterPlaylistProvider_LastWriteWins()
     {
@@ -63,6 +78,9 @@ public class PlaylistProviderRegistryTests
         Assert.Same(provider2, _registry.GetPlaylistProvider());
     }
 
+    /// <summary>
+    /// Verifies that Unregister All removes playlist provider.
+    /// </summary>
     [Fact]
     public void UnregisterAll_RemovesPlaylistProvider()
     {
@@ -74,6 +92,9 @@ public class PlaylistProviderRegistryTests
         Assert.Null(_registry.GetPlaylistProvider());
     }
 
+    /// <summary>
+    /// Verifies that Unregister All does not remove other plugin provider.
+    /// </summary>
     [Fact]
     public void UnregisterAll_DoesNotRemoveOtherPluginProvider()
     {

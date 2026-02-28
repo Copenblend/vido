@@ -13,16 +13,24 @@ public sealed class FileNode : INotifyPropertyChanged
 {
     private bool _isHidden;
 
-    /// <summary>Full path to the file or directory.</summary>
+    /// <summary>
+    /// Full path to the file or directory.
+    /// </summary>
     public string FullPath { get; }
 
-    /// <summary>Display name (file/folder name only, not full path).</summary>
+    /// <summary>
+    /// Display name (file/folder name only, not full path).
+    /// </summary>
     public string Name { get; }
 
-    /// <summary>Whether this node is a directory.</summary>
+    /// <summary>
+    /// Whether this node is a directory.
+    /// </summary>
     public bool IsDirectory { get; }
 
-    /// <summary>Whether this is a recognized video file.</summary>
+    /// <summary>
+    /// Whether this is a recognized video file.
+    /// </summary>
     public bool IsVideoFile { get; }
 
     /// <summary>
@@ -57,13 +65,24 @@ public sealed class FileNode : INotifyPropertyChanged
         ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm"
     };
 
-    /// <summary>Sentinel child used to show the expand arrow before real children are loaded.</summary>
+    /// <summary>
+    /// Sentinel child used to show the expand arrow before real children are loaded.
+    /// </summary>
     internal static readonly FileNode DummyChild = new(string.Empty, false);
 
-    /// <summary>Whether this directory still has the sentinel and needs real children loaded.</summary>
+    /// <summary>
+    /// Whether this directory still has the sentinel and needs real children loaded.
+    /// </summary>
     public bool NeedsLoading => IsDirectory && Children.Count == 1
                                 && ReferenceEquals(Children[0], DummyChild);
-
+                           
+    /// <summary>
+    /// Creates a file or directory node for the explorer tree, extracting the display
+    /// name from the path and detecting whether it is a recognized video file.
+    /// Directories receive a sentinel child so the TreeView renders an expand arrow.
+    /// </summary>
+    /// <param name="fullPath">Absolute path to the file or directory on disk.</param>
+    /// <param name="isDirectory">True if this node represents a directory; false for a file.</param>
     public FileNode(string fullPath, bool isDirectory)
     {
         FullPath = fullPath;

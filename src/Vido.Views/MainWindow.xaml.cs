@@ -1,5 +1,4 @@
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -96,7 +95,26 @@ public partial class MainWindow : Window
     private bool _controlsVisible = true;
     private const int FullscreenHideDelayMs = 3000;
     private const int ControlsFadeDurationMs = 200;
-
+    
+    /// <summary>
+    /// Creates the main application window, wiring up all services, view models, and UI subsystems
+    /// including the video player, file explorer, plugin host, keyboard shortcuts, and layout persistence.
+    /// </summary>
+    /// <param name="stateService">Persists and restores application state (window position, recent files).</param>
+    /// <param name="settingsService">Persists and restores user-configurable application settings.</param>
+    /// <param name="logService">Centralized logging service for writing diagnostic messages.</param>
+    /// <param name="keyboardShortcutService">Manages registration and dispatch of keyboard shortcuts.</param>
+    /// <param name="contributionRegistry">Registry of plugin UI contributions (panels, buttons, status bar items).</param>
+    /// <param name="contextMenuRegistry">Registry of plugin context menu items for the file explorer.</param>
+    /// <param name="pluginInstaller">Service for installing and uninstalling plugins from registries.</param>
+    /// <param name="pluginHost">Host managing plugin lifecycle (activation, deactivation, discovery).</param>
+    /// <param name="updateService">Service for checking and downloading application updates.</param>
+    /// <param name="fileExplorerViewModel">View model for the file explorer sidebar panel.</param>
+    /// <param name="videoPlayerViewModel">View model controlling video playback and transport.</param>
+    /// <param name="mainWindowViewModel">View model managing tabs, panels, and overall window layout.</param>
+    /// <param name="outputLogViewModel">View model for the output log bottom panel.</param>
+    /// <param name="videoDetailsViewModel">View model for the video details right panel.</param>
+    /// <param name="statusBarViewModel">View model for the status bar at the bottom of the window.</param>
     public MainWindow(
         IStateService stateService,
         ISettingsService settingsService,
@@ -160,6 +178,7 @@ public partial class MainWindow : Window
     /// Stores command-line arguments for deferred processing after the window
     /// has fully loaded (so the video engine and UI are ready).
     /// </summary>
+    /// <param name="args">Command-line arguments passed to the application (file paths or folder paths).</param>
     public void ProcessCommandLineArgs(string[] args)
     {
         if (args.Length == 0) return;
@@ -304,7 +323,9 @@ public partial class MainWindow : Window
         };
     }
 
-    /// <summary>Map of bottom panel tab IDs to their content controls.</summary>
+    /// <summary>
+    /// Map of bottom panel tab IDs to their content controls.
+    /// </summary>
     private readonly Dictionary<string, UIElement> _bottomPanelContents = [];
 
     private void SetupVideoDetails()
@@ -455,7 +476,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Maps a WPF <see cref=\"Key\"/> to the string representation used by <see cref=\"KeyBinding\"/>.
+    /// Maps a WPF <see cref="Key"/> to the string representation used by <see cref="KeyBinding"/>.
     /// Returns null for keys we don't handle.
     /// </summary>
     private static string? MapWpfKey(Key key)
@@ -802,7 +823,9 @@ public partial class MainWindow : Window
             : Visibility.Collapsed;
     }
 
-    /// <summary>Creates a placeholder panel for tabs without real content yet.</summary>
+    /// <summary>
+    /// Creates a placeholder panel for tabs without real content yet.
+    /// </summary>
     private static Border CreatePlaceholderPanel(string tabTitle)
     {
         var border = new Border { Padding = new Thickness(12, 8, 12, 8) };
@@ -841,7 +864,9 @@ public partial class MainWindow : Window
         BottomPanelContent.Content = content;
     }
 
-    /// <summary>Bottom panel tab click handler — activates the clicked tab.</summary>
+    /// <summary>
+    /// Bottom panel tab click handler — activates the clicked tab.
+    /// </summary>
     private void OnBottomPanelTabClick(object sender, MouseButtonEventArgs e)
     {
         if (sender is FrameworkElement fe && fe.DataContext is BottomPanelTabItem tab)
@@ -850,13 +875,17 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Bottom panel collapse/expand chevron click handler.</summary>
+    /// <summary>
+    /// Bottom panel collapse/expand chevron click handler.
+    /// </summary>
     private void OnBottomPanelCollapseClick(object sender, RoutedEventArgs e)
     {
         _mainWindowViewModel.ToggleBottomPanelCollapse();
     }
 
-    /// <summary>Right panel collapse/expand chevron click handler.</summary>
+    /// <summary>
+    /// Right panel collapse/expand chevron click handler.
+    /// </summary>
     private void OnRightPanelCollapseClick(object sender, RoutedEventArgs e)
     {
         _mainWindowViewModel.ToggleRightPanelCollapse();
@@ -1417,6 +1446,10 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Finalizes native window initialization and installs Win32 message hooks.
+    /// </summary>
+    /// <param name="e">Event arguments for source initialization.</param>
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
@@ -1428,6 +1461,10 @@ public partial class MainWindow : Window
         ApplyDarkDwmSurface(hwnd);
     }
 
+    /// <summary>
+    /// Persists application state and settings before the window closes.
+    /// </summary>
+    /// <param name="e">Cancel event arguments for the close operation.</param>
     protected override async void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
         _logService.Info("Vido shutting down", "App");
@@ -1439,7 +1476,9 @@ public partial class MainWindow : Window
 
     // ── Drag and drop ──
 
-    /// <summary>Timer for auto-hiding the unsupported file notification.</summary>
+    /// <summary>
+    /// Timer for auto-hiding the unsupported file notification.
+    /// </summary>
     private DispatcherTimer? _notificationTimer;
 
     /// <summary>
@@ -1715,7 +1754,9 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Tracking sets for idempotent wiring — prevent re-adding contributions.</summary>
+    /// <summary>
+    /// Tracking sets for idempotent wiring — prevent re-adding contributions.
+    /// </summary>
     private readonly HashSet<string> _wiredBottomPanelIds = [];
     private readonly HashSet<string> _wiredStatusBarIds = [];
     private readonly HashSet<string> _wiredSidebarPanelIds = [];
@@ -1740,7 +1781,9 @@ public partial class MainWindow : Window
         };
     }
 
-    /// <summary>Creates a themed TextBlock for displaying plugin text content.</summary>
+    /// <summary>
+    /// Creates a themed TextBlock for displaying plugin text content.
+    /// </summary>
     private static TextBlock CreatePluginTextBlock(string text)
     {
         return new TextBlock
@@ -1867,13 +1910,19 @@ public partial class MainWindow : Window
 
     // ── Sidebar Panel wiring ──
 
-    /// <summary>Map of plugin sidebar panel ID → content UIElement.</summary>
+    /// <summary>
+    /// Map of plugin sidebar panel ID → content UIElement.
+    /// </summary>
     private readonly Dictionary<string, UIElement> _pluginSidebarContents = [];
 
-    /// <summary>Map of plugin sidebar panel ID → dynamically-added activity bar Button.</summary>
+    /// <summary>
+    /// Map of plugin sidebar panel ID → dynamically-added activity bar Button.
+    /// </summary>
     private readonly Dictionary<string, Button> _pluginSidebarButtons = [];
 
-    /// <summary>The currently active plugin sidebar panel ID, or null if none is active.</summary>
+    /// <summary>
+    /// The currently active plugin sidebar panel ID, or null if none is active.
+    /// </summary>
     private string? _activePluginSidebarId;
 
     private void WirePluginSidebarPanels()
@@ -1961,7 +2010,9 @@ public partial class MainWindow : Window
         return button;
     }
 
-    /// <summary>Creates a 24×24 puzzle-piece Canvas icon for plugins without a custom icon.</summary>
+    /// <summary>
+    /// Creates a 24×24 puzzle-piece Canvas icon for plugins without a custom icon.
+    /// </summary>
     private static Canvas CreatePuzzlePieceIcon24()
     {
         var canvas = new Canvas { Width = 24, Height = 24 };
@@ -1977,7 +2028,9 @@ public partial class MainWindow : Window
         return canvas;
     }
 
-    /// <summary>Handles click on a plugin sidebar panel button in the activity bar.</summary>
+    /// <summary>
+    /// Handles click on a plugin sidebar panel button in the activity bar.
+    /// </summary>
     private void OnPluginSidebarButtonClick(string panelId, string title)
     {
         if (_activePluginSidebarId == panelId && Sidebar.Visibility == Visibility.Visible)
@@ -2017,7 +2070,9 @@ public partial class MainWindow : Window
         ActivityBar.UpdateActiveStates();
     }
 
-    /// <summary>Updates visual active state for all plugin sidebar buttons.</summary>
+    /// <summary>
+    /// Updates visual active state for all plugin sidebar buttons.
+    /// </summary>
     private void UpdatePluginSidebarButtonStates()
     {
         foreach (var (id, button) in _pluginSidebarButtons)
@@ -2030,7 +2085,9 @@ public partial class MainWindow : Window
 
     // ── Toolbar Button wiring ──
 
-    /// <summary>Map of toolbar button ID → Button element for removal.</summary>
+    /// <summary>
+    /// Map of toolbar button ID → Button element for removal.
+    /// </summary>
     private readonly Dictionary<string, Button> _pluginToolbarButtons = [];
 
     private void WirePluginToolbarButtons()
@@ -2051,7 +2108,9 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Creates a small toolbar button for the title bar with menu-matching hover highlight.</summary>
+    /// <summary>
+    /// Creates a small toolbar button for the title bar with menu-matching hover highlight.
+    /// </summary>
     private static Button CreatePluginToolbarButton(string tooltip, string? iconPath, Action clickHandler)
     {
         UIElement icon;
@@ -2131,7 +2190,9 @@ public partial class MainWindow : Window
         return button;
     }
 
-    /// <summary>Creates a 16×16 puzzle-piece Canvas icon for plugins without a custom icon.</summary>
+    /// <summary>
+    /// Creates a 16×16 puzzle-piece Canvas icon for plugins without a custom icon.
+    /// </summary>
     private static Canvas CreatePuzzlePieceIcon16()
     {
         var canvas = new Canvas { Width = 16, Height = 16 };
@@ -2149,10 +2210,14 @@ public partial class MainWindow : Window
 
     // ── Right Panel wiring ──
 
-    /// <summary>Map of right panel ID → content UIElement.</summary>
+    /// <summary>
+    /// Map of right panel ID → content UIElement.
+    /// </summary>
     private readonly Dictionary<string, UIElement> _rightPanelContents = [];
 
-    /// <summary>Map of right panel ID → display title.</summary>
+    /// <summary>
+    /// Map of right panel ID → display title.
+    /// </summary>
     private readonly Dictionary<string, string> _rightPanelTitles = [];
 
     private void WirePluginRightPanels()
@@ -2176,7 +2241,9 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Switches the right panel to show the specified panel's content.</summary>
+    /// <summary>
+    /// Switches the right panel to show the specified panel's content.
+    /// </summary>
     private void SwitchRightPanel(string panelId)
     {
         _mainWindowViewModel.IsRightPanelVisible = true;
@@ -2232,7 +2299,9 @@ public partial class MainWindow : Window
 
     // ── File Handler wiring ──
 
-    /// <summary>Registered plugin file handlers, keyed by extension (lowercase).</summary>
+    /// <summary>
+    /// Registered plugin file handlers, keyed by extension (lowercase).
+    /// </summary>
     private readonly Dictionary<string, Action<FileNode>> _pluginFileHandlers = new(StringComparer.OrdinalIgnoreCase);
 
     private void WirePluginFileHandlers()
@@ -2635,38 +2704,6 @@ public partial class MainWindow : Window
     private static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
 
     private const uint MONITOR_DEFAULTTONEAREST = 2;
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct POINT
-    {
-        public int X;
-        public int Y;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct RECT
-    {
-        public int Left, Top, Right, Bottom;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct MONITORINFO
-    {
-        public int cbSize;
-        public RECT rcMonitor;
-        public RECT rcWork;
-        public uint dwFlags;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct MINMAXINFO
-    {
-        public POINT ptReserved;
-        public POINT ptMaxSize;
-        public POINT ptMaxPosition;
-        public POINT ptMinTrackSize;
-        public POINT ptMaxTrackSize;
-    }
 
     #endregion
 

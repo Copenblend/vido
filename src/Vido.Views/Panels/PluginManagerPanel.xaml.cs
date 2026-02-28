@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -12,6 +12,9 @@ namespace Vido.Views.Panels;
 /// </summary>
 public partial class PluginManagerPanel : UserControl
 {
+    /// <summary>
+    /// Sets up the plugin manager sidebar panel and its XAML-defined event handlers.
+    /// </summary>
     public PluginManagerPanel()
     {
         InitializeComponent();
@@ -99,7 +102,7 @@ public partial class PluginManagerPanel : UserControl
         }
     }
 
-    // ── Focus highlight helpers ──
+    // â”€â”€ Focus highlight helpers â”€â”€
 
     private static readonly SolidColorBrush FocusBrush = new(Color.FromRgb(0x00, 0x7a, 0xcc));
 

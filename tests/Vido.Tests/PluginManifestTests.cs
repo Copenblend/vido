@@ -10,6 +10,9 @@ namespace Vido.Tests;
 /// </summary>
 public class PluginManifestTests
 {
+    /// <summary>
+    /// Verifies that Deserialize minimal manifest sets required fields.
+    /// </summary>
     [Fact]
     public void Deserialize_MinimalManifest_SetsRequiredFields()
     {
@@ -41,6 +44,9 @@ public class PluginManifestTests
         Assert.Equal("TestPlugin.Plugin", manifest.PluginClass);
     }
 
+    /// <summary>
+    /// Verifies that Deserialize optional fields default correctly.
+    /// </summary>
     [Fact]
     public void Deserialize_OptionalFields_DefaultCorrectly()
     {
@@ -66,6 +72,9 @@ public class PluginManifestTests
         Assert.Empty(manifest.Contributes.FileIcons);
     }
 
+    /// <summary>
+    /// Verifies that Deserialize full manifest all contributions parsed.
+    /// </summary>
     [Fact]
     public void Deserialize_FullManifest_AllContributionsParsed()
     {
@@ -168,6 +177,9 @@ public class PluginManifestTests
         Assert.Equal("boolean", manifest.Contributes.Settings[0].Type);
     }
 
+    /// <summary>
+    /// Verifies that Deserialize file icons case insensitive keys.
+    /// </summary>
     [Fact]
     public void Deserialize_FileIcons_CaseInsensitiveKeys()
     {
@@ -193,6 +205,9 @@ public class PluginManifestTests
         Assert.Equal(2, manifest.Contributes.FileIcons.Count);
     }
 
+    /// <summary>
+    /// Verifies that Deserialize empty contributes defaults to empty collections.
+    /// </summary>
     [Fact]
     public void Deserialize_EmptyContributes_DefaultsToEmptyCollections()
     {
@@ -221,6 +236,9 @@ public class PluginManifestTests
         Assert.Empty(manifest.Contributes.Settings);
     }
 
+    /// <summary>
+    /// Verifies that Roundtrip manifest serializes and deserializes.
+    /// </summary>
     [Fact]
     public void Roundtrip_ManifestSerializesAndDeserializes()
     {
@@ -252,6 +270,9 @@ public class PluginManifestTests
         Assert.Equal("left", deserialized.Contributes.StatusBar[0].Position);
     }
 
+    /// <summary>
+    /// Verifies that Contribution Defaults order is100 position is right.
+    /// </summary>
     [Fact]
     public void ContributionDefaults_OrderIs100_PositionIsRight()
     {
@@ -277,6 +298,9 @@ public class PluginManifestTests
 
     // ── Dependency Deserialization Tests ──
 
+    /// <summary>
+    /// Verifies that Deserialize with dependencies parses all.
+    /// </summary>
     [Fact]
     public void Deserialize_WithDependencies_ParsesAll()
     {
@@ -304,6 +328,9 @@ public class PluginManifestTests
         Assert.Equal("1.2.3", manifest.Dependencies[1].MinVersion);
     }
 
+    /// <summary>
+    /// Verifies that Deserialize without dependencies defaults to empty list.
+    /// </summary>
     [Fact]
     public void Deserialize_WithoutDependencies_DefaultsToEmptyList()
     {
@@ -324,6 +351,9 @@ public class PluginManifestTests
         Assert.Empty(manifest.Dependencies);
     }
 
+    /// <summary>
+    /// Verifies that Deserialize empty dependencies parses as empty list.
+    /// </summary>
     [Fact]
     public void Deserialize_EmptyDependencies_ParsesAsEmptyList()
     {
@@ -345,6 +375,9 @@ public class PluginManifestTests
         Assert.Empty(manifest.Dependencies);
     }
 
+    /// <summary>
+    /// Verifies that Plugin Dependency default values are empty strings.
+    /// </summary>
     [Fact]
     public void PluginDependency_DefaultValues_AreEmptyStrings()
     {

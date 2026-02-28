@@ -3,14 +3,23 @@ using Xunit;
 
 namespace Vido.Tests;
 
+/// <summary>
+/// Verifies the behavior of <see cref="UpdateDownloader"/>.
+/// </summary>
 public class UpdateDownloaderTests
 {
+    /// <summary>
+    /// Verifies that Launch Installer returns false when file missing.
+    /// </summary>
     [Fact]
     public void LaunchInstaller_ReturnsFalse_WhenFileMissing()
     {
         Assert.False(UpdateDownloader.LaunchInstaller(@"C:\nonexistent\fake.msi"));
     }
 
+    /// <summary>
+    /// Verifies that Download Installer Async creates file.
+    /// </summary>
     [Fact]
     public async Task DownloadInstallerAsync_CreatesFile()
     {
@@ -39,6 +48,9 @@ public class UpdateDownloaderTests
         }
     }
 
+    /// <summary>
+    /// Verifies that Download Installer Async reports progress.
+    /// </summary>
     [Fact]
     public async Task DownloadInstallerAsync_ReportsProgress()
     {
@@ -66,6 +78,9 @@ public class UpdateDownloaderTests
         }
     }
 
+    /// <summary>
+    /// Verifies that Download Installer Async overwrites existing file.
+    /// </summary>
     [Fact]
     public async Task DownloadInstallerAsync_OverwritesExistingFile()
     {

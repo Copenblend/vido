@@ -9,6 +9,9 @@ namespace Vido.Tests;
 /// </summary>
 public class SidebarViewModelTests
 {
+    /// <summary>
+    /// Verifies that Default Header is explorer.
+    /// </summary>
     [Fact]
     public void DefaultHeader_IsExplorer()
     {
@@ -17,6 +20,11 @@ public class SidebarViewModelTests
         Assert.Equal("EXPLORER", vm.HeaderText);
     }
 
+    /// <summary>
+    /// Verifies that Set Panel updates header text.
+    /// </summary>
+    /// <param name="panel">The sidebar panel kind.</param>
+    /// <param name="expected">The expected result value.</param>
     [Theory]
     [InlineData(SidebarPanelKind.Explorer, "EXPLORER")]
     [InlineData(SidebarPanelKind.Extensions, "EXTENSIONS")]
@@ -30,6 +38,9 @@ public class SidebarViewModelTests
         Assert.Equal(expected, vm.HeaderText);
     }
 
+    /// <summary>
+    /// Verifies that Set Panel raises property changed.
+    /// </summary>
     [Fact]
     public void SetPanel_RaisesPropertyChanged()
     {

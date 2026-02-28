@@ -4,7 +4,7 @@ namespace Vido.Core.Settings;
 
 /// <summary>
 /// Adapts <see cref="AppSettings"/> properties to the <see cref="IPluginSettingsStore"/>
-/// interface, allowing reuse of <see cref="SettingDisplayItem"/> for app settings display.
+/// interface, allowing reuse of SettingDisplayItem for app settings display.
 /// Each setting key maps to a specific strongly-typed property on <see cref="AppSettings"/>.
 /// </summary>
 public sealed class AppSettingsStore : IPluginSettingsStore
@@ -12,9 +12,17 @@ public sealed class AppSettingsStore : IPluginSettingsStore
     private readonly ISettingsService _settingsService;
     private readonly Dictionary<string, Func<object>> _getters;
     private readonly Dictionary<string, Action<object>> _setters;
+    /// <summary>
+    /// Occurs when SettingChanged is raised.
+    /// </summary>
 
     public event Action<string>? SettingChanged;
-
+    /// <summary>
+    /// Creates the settings store, wiring up getter/setter maps for each
+    /// supported setting key to the underlying <see cref="AppSettings"/> properties.
+    /// </summary>
+    /// <param name="settingsService">The settings service providing the live <see cref="AppSettings"/> instance.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="settingsService"/> is null.</exception>
     public AppSettingsStore(ISettingsService settingsService)
     {
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
@@ -70,9 +78,16 @@ public sealed class AppSettingsStore : IPluginSettingsStore
         };
     }
 
-    /// <summary>Current settings instance (resolved live to handle reloads).</summary>
+    /// <summary>
+    /// Current settings instance (resolved live to handle reloads).
+    /// </summary>
     private AppSettings Settings => _settingsService.Current;
-
+    /// <summary>
+    /// Retrieves the current value of a setting by key, converting it to <typeparamref name="T"/>.
+    /// Returns <paramref name="defaultValue"/> if the key is unknown or conversion fails.
+    /// </summary>
+    /// <param name="key">The setting key (e.g. "playback.volume").</param>
+    /// <param name="defaultValue">Value returned when the key is not found or conversion fails.</param>
     public T Get<T>(string key, T defaultValue)
     {
         if (!_getters.TryGetValue(key, out var getter))
@@ -91,7 +106,12 @@ public sealed class AppSettingsStore : IPluginSettingsStore
             return defaultValue;
         }
     }
-
+    /// <summary>
+    /// Updates a setting value by key, persists the change, and raises <see cref="SettingChanged"/>.
+    /// No-ops if the key is unrecognized or the value is null.
+    /// </summary>
+    /// <param name="key">The setting key (e.g. "playback.volume").</param>
+    /// <param name="value">The new value to apply.</param>
     public void Set<T>(string key, T value)
     {
         if (value is null || !_setters.TryGetValue(key, out var setter))
@@ -100,13 +120,19 @@ public sealed class AppSettingsStore : IPluginSettingsStore
         setter(value);
         SettingChanged?.Invoke(key);
     }
-
+    /// <summary>
+    /// Attempts to reset a single setting to its default. Currently unsupported
+    /// for app settings; always returns false.
+    /// </summary>
+    /// <param name="key">The setting key to reset.</param>
     public bool Reset(string key)
     {
         // App settings don't support individual reset via this interface.
         return false;
     }
-
+    /// <summary>
+    /// Resets all settings to defaults. Currently a no-op for app settings.
+    /// </summary>
     public void ResetAll()
     {
         // App settings don't support bulk reset via this interface.

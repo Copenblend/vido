@@ -6,18 +6,31 @@ namespace Vido.Core.Plugin;
 /// </summary>
 public interface IPluginSettingsStore
 {
-    /// <summary>Get a setting value by key, returning <paramref name="defaultValue"/> if not set.</summary>
+    /// <summary>
+    /// Gets a setting value by key, returning <paramref name="defaultValue"/> if not persisted.
+    /// </summary>
+    /// <param name="key">The setting key to look up.</param>
+    /// <param name="defaultValue">The fallback value returned when no persisted value exists for <paramref name="key"/>.</param>
     T Get<T>(string key, T defaultValue);
 
-    /// <summary>Set a setting value by key. Persisted automatically.</summary>
+    /// <summary>
+    /// Set a setting value by key. Persisted automatically.
+    /// </summary>
     void Set<T>(string key, T value);
 
-    /// <summary>Remove a single setting by key and fire <see cref="SettingChanged"/>.</summary>
+    /// <summary>
+    /// Removes a single setting by key and raises <see cref="SettingChanged"/>.
+    /// </summary>
+    /// <param name="key">The setting key to remove.</param>
     bool Reset(string key);
 
-    /// <summary>Remove all settings for this plugin.</summary>
+    /// <summary>
+    /// Remove all settings for this plugin.
+    /// </summary>
     void ResetAll();
 
-    /// <summary>Event raised when any setting changes. The string argument is the key.</summary>
+    /// <summary>
+    /// Event raised when any setting changes. The string argument is the key.
+    /// </summary>
     event Action<string>? SettingChanged;
 }

@@ -15,21 +15,36 @@ public partial class SettingsViewModel : ObservableObject
     private readonly IPluginHost? _pluginHost;
     private readonly IPluginSettingsStore _appSettingsStore;
 
-    /// <summary>Current search filter text.</summary>
+    /// <summary>
+    /// Current search filter text.
+    /// </summary>
     [ObservableProperty]
     private string _searchText = string.Empty;
 
-    /// <summary>All settings categories (app + plugin), unfiltered.</summary>
+    /// <summary>
+    /// All settings categories (app + plugin), unfiltered.
+    /// </summary>
     public ObservableCollection<SettingsCategoryViewModel> AllCategories { get; } = [];
 
-    /// <summary>Filtered settings categories (visible in the UI after search).</summary>
+    /// <summary>
+    /// Filtered settings categories (visible in the UI after search).
+    /// </summary>
     public ObservableCollection<SettingsCategoryViewModel> FilteredCategories { get; } = [];
 
     /// <summary>
     /// Whether there are no results matching the current search.
     /// </summary>
     public bool NoResults => FilteredCategories.Count == 0 && !string.IsNullOrEmpty(SearchText);
-
+    
+    /// <summary>
+    /// Creates the settings view model, building app and plugin setting categories
+    /// and applying the initial filter.
+    /// </summary>
+    /// <param name="settingsService">Service for reading application-level settings.</param>
+    /// <param name="appSettingsStore">Backing store for application settings values.</param>
+    /// <param name="pluginHost">Optional plugin host for discovering plugin-contributed settings.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="settingsService"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="appSettingsStore"/> is null.</exception>
     public SettingsViewModel(ISettingsService settingsService, IPluginSettingsStore appSettingsStore, IPluginHost? pluginHost = null)
     {
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
@@ -59,7 +74,9 @@ public partial class SettingsViewModel : ObservableObject
         item?.Reload();
     }
 
-    /// <summary>Reference to the screenshot directory setting item for conditional visibility.</summary>
+    /// <summary>
+    /// Reference to the screenshot directory setting item for conditional visibility.
+    /// </summary>
     private SettingDisplayItem? _screenshotDirectoryItem;
 
     private void OnAppSettingChanged(string key)

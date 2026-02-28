@@ -17,6 +17,9 @@ public sealed class OutputLogViewModelTests
     // Captured EntryAdded callback so tests can simulate log events
     private Action<LogEntry>? _entryAddedCallback;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public OutputLogViewModelTests()
     {
         _logService = Substitute.For<ILogService>();
@@ -30,6 +33,9 @@ public sealed class OutputLogViewModelTests
 
     // ── Initial State ──
 
+    /// <summary>
+    /// Verifies that Initial State has no entries.
+    /// </summary>
     [Fact]
     public void InitialState_HasNoEntries()
     {
@@ -37,12 +43,18 @@ public sealed class OutputLogViewModelTests
         Assert.False(_sut.HasEntries);
     }
 
+    /// <summary>
+    /// Verifies that Initial State auto scroll enabled.
+    /// </summary>
     [Fact]
     public void InitialState_AutoScrollEnabled()
     {
         Assert.True(_sut.IsAutoScrollEnabled);
     }
 
+    /// <summary>
+    /// Verifies that Initial State filter is all.
+    /// </summary>
     [Fact]
     public void InitialState_FilterIsAll()
     {
@@ -51,6 +63,9 @@ public sealed class OutputLogViewModelTests
 
     // ── Loading existing entries ──
 
+    /// <summary>
+    /// Verifies that Constructor loads existing entries.
+    /// </summary>
     [Fact]
     public void Constructor_LoadsExistingEntries()
     {
@@ -70,6 +85,9 @@ public sealed class OutputLogViewModelTests
 
     // ── New entry via callback ──
 
+    /// <summary>
+    /// Verifies that Entry Added appends to entries.
+    /// </summary>
     [Fact]
     public void EntryAdded_AppendsToEntries()
     {
@@ -84,6 +102,9 @@ public sealed class OutputLogViewModelTests
         Assert.Equal("Source", _sut.Entries[0].Source);
     }
 
+    /// <summary>
+    /// Verifies that Entry Added sets has entries.
+    /// </summary>
     [Fact]
     public void EntryAdded_SetsHasEntries()
     {
@@ -96,6 +117,9 @@ public sealed class OutputLogViewModelTests
 
     // ── Clear ──
 
+    /// <summary>
+    /// Verifies that Clear Log removes all entries.
+    /// </summary>
     [Fact]
     public void ClearLog_RemovesAllEntries()
     {
@@ -112,6 +136,9 @@ public sealed class OutputLogViewModelTests
 
     // ── Auto-scroll toggle ──
 
+    /// <summary>
+    /// Verifies that Toggle Auto Scroll toggles state.
+    /// </summary>
     [Fact]
     public void ToggleAutoScroll_TogglesState()
     {
@@ -126,6 +153,9 @@ public sealed class OutputLogViewModelTests
 
     // ── Filter cycling ──
 
+    /// <summary>
+    /// Verifies that Cycle Filter cycles from all to info plus to warn plus to errors to all.
+    /// </summary>
     [Fact]
     public void CycleFilter_CyclesFromAllToInfoPlusToWarnPlusToErrorsToAll()
     {
@@ -145,6 +175,9 @@ public sealed class OutputLogViewModelTests
         Assert.Equal("All", _sut.FilterText);
     }
 
+    /// <summary>
+    /// Verifies that Cycle Filter rebuilds list only shows matching entries.
+    /// </summary>
     [Fact]
     public void CycleFilter_RebuildsList_OnlyShowsMatchingEntries()
     {
@@ -182,6 +215,9 @@ public sealed class OutputLogViewModelTests
         Assert.Equal(4, vm.Entries.Count);
     }
 
+    /// <summary>
+    /// Verifies that Filter excludes new entries below level.
+    /// </summary>
     [Fact]
     public void Filter_ExcludesNewEntriesBelowLevel()
     {
@@ -207,6 +243,9 @@ public sealed class OutputLogViewModelTests
 
     // ── SetFilter ──
 
+    /// <summary>
+    /// Verifies that Set Filter sets level and text.
+    /// </summary>
     [Fact]
     public void SetFilter_SetsLevelAndText()
     {
@@ -215,6 +254,9 @@ public sealed class OutputLogViewModelTests
         Assert.Equal("Errors", _sut.FilterText);
     }
 
+    /// <summary>
+    /// Verifies that Set Filter debug shows all.
+    /// </summary>
     [Fact]
     public void SetFilter_Debug_ShowsAll()
     {
@@ -225,6 +267,9 @@ public sealed class OutputLogViewModelTests
 
     // ── LogEntryViewModel formatting ──
 
+    /// <summary>
+    /// Verifies that Log Entry View Model formats timestamp.
+    /// </summary>
     [Fact]
     public void LogEntryViewModel_FormatsTimestamp()
     {
@@ -239,6 +284,9 @@ public sealed class OutputLogViewModelTests
         Assert.Matches(@"\d{2}:\d{2}:\d{2}\.\d{3}", vm.Timestamp);
     }
 
+    /// <summary>
+    /// Verifies that Log Entry View Model formatted line without source.
+    /// </summary>
     [Fact]
     public void LogEntryViewModel_FormattedLine_WithoutSource()
     {
@@ -250,6 +298,9 @@ public sealed class OutputLogViewModelTests
         Assert.DoesNotContain("[null]", vm.FormattedLine);
     }
 
+    /// <summary>
+    /// Verifies that Log Entry View Model formatted line with source.
+    /// </summary>
     [Fact]
     public void LogEntryViewModel_FormattedLine_WithSource()
     {
@@ -261,6 +312,11 @@ public sealed class OutputLogViewModelTests
         Assert.Contains("hello", vm.FormattedLine);
     }
 
+    /// <summary>
+    /// Verifies that Log Entry View Model level tags.
+    /// </summary>
+    /// <param name="level">The log level to verify.</param>
+    /// <param name="expectedTag">The expected tag value.</param>
     [Theory]
     [InlineData(LogLevel.Debug, "DBG")]
     [InlineData(LogLevel.Info, "INF")]

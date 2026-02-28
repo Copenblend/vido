@@ -28,12 +28,16 @@ public sealed class PluginHost : IPluginHost
     private readonly Dictionary<string, PluginContext> _contexts = [];
     private readonly Dictionary<string, PluginSettingsStore> _settingsStores = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Cache of assemblies resolved from plugin directories (keyed by simple name).</summary>
+    /// <summary>
+    /// Cache of assemblies resolved from plugin directories (keyed by simple name).
+    /// </summary>
     private readonly Dictionary<string, Assembly> _resolvedAssemblies = new(StringComparer.OrdinalIgnoreCase);
 
     private bool _resolverRegistered;
 
-    /// <summary>List of directories to scan for plugins.</summary>
+    /// <summary>
+    /// List of directories to scan for plugins.
+    /// </summary>
     private readonly List<string> _scanDirectories = [];
 
     /// <summary>
@@ -42,6 +46,9 @@ public sealed class PluginHost : IPluginHost
     /// </summary>
     public static string DefaultPluginDirectory => PluginPaths.DefaultPluginDirectory;
 
+    /// <summary>
+    /// Provides a read-only snapshot of all discovered plugins and their current lifecycle states.
+    /// </summary>
     public IReadOnlyList<PluginInfo> Plugins => _plugins.AsReadOnly();
 
     /// <summary>
@@ -49,6 +56,18 @@ public sealed class PluginHost : IPluginHost
     /// </summary>
     public IContributionRegistry ContributionRegistry => _contributions;
 
+    /// <summary>
+    /// Creates a new plugin host wired to the application's core services.
+    /// Optionally skips scanning the default plugin directory (useful for testing).
+    /// </summary>
+    /// <param name="eventBus">Application-wide event bus shared with plugins.</param>
+    /// <param name="videoEngine">Video playback engine exposed to plugins.</param>
+    /// <param name="logService">Logging service for plugin lifecycle messages.</param>
+    /// <param name="settingsService">Application settings service used to persist disabled-plugin list.</param>
+    /// <param name="contributions">Central registry where plugins register UI contributions.</param>
+    /// <param name="contextMenuRegistry">Registry for context menu entries.</param>
+    /// <param name="keyboardShortcutService">Service for registering keyboard shortcuts.</param>
+    /// <param name="scanDefaultDirectory">When false, the default <c>%APPDATA%/Vido/plugins/</c> directory is not scanned.</param>
     public PluginHost(
         IEventBus eventBus,
         IVideoEngine videoEngine,
@@ -164,10 +183,21 @@ public sealed class PluginHost : IPluginHost
         _logService.Info("All plugins deactivated", "PluginHost");
     }
 
+    /// <summary>
+    /// Looks up a discovered plugin by its unique identifier (case-insensitive).
+    /// Returns null if no plugin with that ID was found.
+    /// </summary>
+    /// <param name="pluginId">The unique plugin identifier to search for.</param>
     public PluginInfo? GetPlugin(string pluginId) =>
         _plugins.FirstOrDefault(p =>
             string.Equals(p.Manifest.Id, pluginId, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>
+    /// Enables or disables a plugin at runtime. Enabling an inactive plugin activates it
+    /// immediately; disabling an active plugin deactivates it and persists the choice.
+    /// </summary>
+    /// <param name="pluginId">The unique identifier of the plugin to enable or disable.</param>
+    /// <param name="enabled">True to enable and activate; false to deactivate and disable.</param>
     public void SetEnabled(string pluginId, bool enabled)
     {
         var info = GetPlugin(pluginId);
@@ -205,6 +235,9 @@ public sealed class PluginHost : IPluginHost
         _settingsService.QueueSave();
     }
 
+    /// <summary>
+    /// Returns the list of plugin IDs that are currently marked as disabled in application settings.
+    /// </summary>
     public IReadOnlyList<string> GetDisabledPluginIds() =>
         _settingsService.Current.DisabledPluginIds.ToList().AsReadOnly();
 

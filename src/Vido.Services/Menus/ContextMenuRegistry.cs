@@ -11,7 +11,10 @@ public sealed class ContextMenuRegistry : IContextMenuRegistry
     private readonly List<ContextMenuEntry> _entries = [];
     private readonly object _lock = new();
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Adds a context menu entry to the registry so it appears when the matching target is right-clicked.
+    /// </summary>
+    /// <param name="entry">The menu entry to register, including its target, group, and click handler.</param>
     public void Register(ContextMenuEntry entry)
     {
         lock (_lock)
@@ -20,7 +23,10 @@ public sealed class ContextMenuRegistry : IContextMenuRegistry
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Removes all context menu entries whose <see cref="ContextMenuEntry.Id"/> matches the specified value.
+    /// </summary>
+    /// <param name="id">The identifier of the menu entry (or entries) to remove.</param>
     public void Unregister(string id)
     {
         lock (_lock)
@@ -29,7 +35,10 @@ public sealed class ContextMenuRegistry : IContextMenuRegistry
         }
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Returns all registered menu entries matching the given target, ordered by group then display order.
+    /// </summary>
+    /// <param name="target">The UI context (e.g. file browser, playlist) for which to retrieve menu entries.</param>
     public IReadOnlyList<ContextMenuEntry> GetEntries(ContextMenuTarget target)
     {
         lock (_lock)

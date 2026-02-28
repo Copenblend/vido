@@ -1,4 +1,4 @@
-using SoundTouch;
+﻿using SoundTouch;
 
 namespace Vido.Services.Video;
 
@@ -12,6 +12,12 @@ internal sealed class TimeStretchProcessor : IDisposable
     private readonly SoundTouchProcessor _processor;
     private bool _disposed;
 
+    /// <summary>
+    /// Creates a time-stretch processor configured for the given audio format,
+    /// using SoundTouch with quick-seek and anti-alias filtering enabled.
+    /// </summary>
+    /// <param name="sampleRate">The audio sample rate in Hz (e.g. 44100, 48000).</param>
+    /// <param name="channels">The number of audio channels (e.g. 2 for stereo).</param>
     public TimeStretchProcessor(int sampleRate, int channels)
     {
         _processor = new SoundTouchProcessor
@@ -20,7 +26,7 @@ internal sealed class TimeStretchProcessor : IDisposable
             Channels = channels
         };
 
-        // Quick-seek trades a little quality for lower CPU — acceptable for
+        // Quick-seek trades a little quality for lower CPU â€” acceptable for
         // real-time video playback.
         _processor.SetSetting(SettingId.UseQuickSeek, 1);
         _processor.SetSetting(SettingId.UseAntiAliasFilter, 1);
@@ -70,7 +76,10 @@ internal sealed class TimeStretchProcessor : IDisposable
     {
         _processor.Clear();
     }
-
+    
+    /// <summary>
+    /// Clears internal SoundTouch buffers and marks this processor as disposed.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed) return;

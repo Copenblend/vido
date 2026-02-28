@@ -16,6 +16,9 @@ public sealed class StatePersistenceTests
 {
     // ── AppState.AddRecentFile ──
 
+    /// <summary>
+    /// Verifies that Add Recent File adds to front.
+    /// </summary>
     [Fact]
     public void AddRecentFile_AddsToFront()
     {
@@ -28,6 +31,9 @@ public sealed class StatePersistenceTests
         Assert.Equal(@"C:\a.mp4", state.RecentFiles[1]);
     }
 
+    /// <summary>
+    /// Verifies that Add Recent File moves duplicate to front.
+    /// </summary>
     [Fact]
     public void AddRecentFile_MovesDuplicateToFront()
     {
@@ -41,6 +47,9 @@ public sealed class StatePersistenceTests
         Assert.Equal(@"C:\b.mp4", state.RecentFiles[1]);
     }
 
+    /// <summary>
+    /// Verifies that Add Recent File trims to max.
+    /// </summary>
     [Fact]
     public void AddRecentFile_TrimsToMax()
     {
@@ -52,6 +61,9 @@ public sealed class StatePersistenceTests
         Assert.Equal(@"C:\video14.mp4", state.RecentFiles[0]);
     }
 
+    /// <summary>
+    /// Verifies that Add Recent File case insensitive dedupe.
+    /// </summary>
     [Fact]
     public void AddRecentFile_CaseInsensitiveDedupe()
     {
@@ -65,6 +77,9 @@ public sealed class StatePersistenceTests
 
     // ── MainWindowViewModel persists panel visibility ──
 
+    /// <summary>
+    /// Verifies that Main Window VM toggle bottom panel saves settings.
+    /// </summary>
     [Fact]
     public void MainWindowVM_ToggleBottomPanel_SavesSettings()
     {
@@ -77,6 +92,9 @@ public sealed class StatePersistenceTests
         Assert.False(settingsService.Current.BottomPanelVisible);
     }
 
+    /// <summary>
+    /// Verifies that Main Window VM toggle right panel saves settings.
+    /// </summary>
     [Fact]
     public void MainWindowVM_ToggleRightPanel_SavesSettings()
     {
@@ -89,6 +107,9 @@ public sealed class StatePersistenceTests
         Assert.False(settingsService.Current.RightPanelVisible);
     }
 
+    /// <summary>
+    /// Verifies that Main Window VM toggle status bar saves settings.
+    /// </summary>
     [Fact]
     public void MainWindowVM_ToggleStatusBar_SavesSettings()
     {
@@ -101,6 +122,9 @@ public sealed class StatePersistenceTests
         Assert.False(settingsService.Current.StatusBarVisible);
     }
 
+    /// <summary>
+    /// Verifies that Main Window VM restores panel state from settings.
+    /// </summary>
     [Fact]
     public void MainWindowVM_RestoresPanelState_FromSettings()
     {
@@ -121,6 +145,9 @@ public sealed class StatePersistenceTests
 
     // ── ActivityBarViewModel persists sidebar visibility ──
 
+    /// <summary>
+    /// Verifies that Activity Bar VM restores sidebar visibility.
+    /// </summary>
     [Fact]
     public void ActivityBarVM_RestoresSidebarVisibility()
     {
@@ -132,6 +159,9 @@ public sealed class StatePersistenceTests
         Assert.False(vm.IsSidebarVisible);
     }
 
+    /// <summary>
+    /// Verifies that Activity Bar VM sidebar toggle saves settings.
+    /// </summary>
     [Fact]
     public void ActivityBarVM_SidebarToggle_SavesSettings()
     {
@@ -144,6 +174,9 @@ public sealed class StatePersistenceTests
         Assert.False(settingsService.Current.SidebarVisible);
     }
 
+    /// <summary>
+    /// Verifies that Activity Bar VM set active panel does not toggle visibility.
+    /// </summary>
     [Fact]
     public void ActivityBarVM_SetActivePanel_DoesNotToggleVisibility()
     {
@@ -157,6 +190,9 @@ public sealed class StatePersistenceTests
 
     // ── State round-trip with RecentFiles ──
 
+    /// <summary>
+    /// Verifies that State Service save and load round trips recent files.
+    /// </summary>
     [Fact]
     public async Task StateService_SaveAndLoad_RoundTripsRecentFiles()
     {
@@ -188,6 +224,9 @@ public sealed class StatePersistenceTests
 
     // ── Settings round-trip ──
 
+    /// <summary>
+    /// Verifies that Settings Service save and load round trips.
+    /// </summary>
     [Fact]
     public async Task SettingsService_SaveAndLoad_RoundTrips()
     {
@@ -240,6 +279,9 @@ public sealed class StatePersistenceTests
 
     // ── PluginManagerViewModel persists section expanded state ──
 
+    /// <summary>
+    /// Verifies that Plugin Manager VM restores section state from settings.
+    /// </summary>
     [Fact]
     public void PluginManagerVM_RestoresSectionState_FromSettings()
     {
@@ -256,6 +298,9 @@ public sealed class StatePersistenceTests
         Assert.False(vm.IsAvailableExpanded);
     }
 
+    /// <summary>
+    /// Verifies that Plugin Manager VM toggle installed expanded saves settings.
+    /// </summary>
     [Fact]
     public void PluginManagerVM_ToggleInstalledExpanded_SavesSettings()
     {
@@ -272,6 +317,9 @@ public sealed class StatePersistenceTests
         settings.Received().QueueSave();
     }
 
+    /// <summary>
+    /// Verifies that Plugin Manager VM toggle available expanded saves settings.
+    /// </summary>
     [Fact]
     public void PluginManagerVM_ToggleAvailableExpanded_SavesSettings()
     {

@@ -20,6 +20,8 @@ public static class PluginManifestLoader
     /// Loads a <see cref="PluginManifest"/> from the specified plugin directory.
     /// Returns null and logs the reason if loading or validation fails.
     /// </summary>
+    /// <param name="pluginDirectory">Absolute path to the directory containing <c>plugin.json</c>.</param>
+    /// <param name="logger">Logger used to report warnings and errors during loading.</param>
     public static PluginManifest? Load(string pluginDirectory, ILogService logger)
     {
         var manifestPath = Path.Combine(pluginDirectory, "plugin.json");
@@ -67,6 +69,7 @@ public static class PluginManifestLoader
     /// Validates a <see cref="PluginManifest"/> and returns a list of validation errors.
     /// An empty list means the manifest is valid.
     /// </summary>
+    /// <param name="manifest">The manifest to validate.</param>
     public static List<string> Validate(PluginManifest manifest)
     {
         var errors = new List<string>();

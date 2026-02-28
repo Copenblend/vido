@@ -7,9 +7,13 @@ namespace Vido.Core.Events;
 /// </summary>
 public sealed class VideoLoadedEvent
 {
-    /// <summary>Full path to the loaded video file.</summary>
+    /// <summary>
+    /// Full path to the loaded video file.
+    /// </summary>
     public required string FilePath { get; init; }
 
-    /// <summary>Metadata extracted from the video file.</summary>
+    /// <summary>
+    /// Metadata extracted from the video file.
+    /// </summary>
     public required VideoMetadata Metadata { get; init; }
 }

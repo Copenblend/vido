@@ -21,6 +21,9 @@ public sealed class AddItemsTests : IDisposable
     private readonly ILogService _logService = Substitute.For<ILogService>();
     private readonly FileExplorerViewModel _sut;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public AddItemsTests()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), $"VidoAddItemsTests_{Guid.NewGuid():N}");
@@ -31,6 +34,9 @@ public sealed class AddItemsTests : IDisposable
         _sut = new FileExplorerViewModel(_fileSystemService, _stateService, _settingsService, _logService);
     }
 
+    /// <summary>
+    /// Cleans up test resources after each test run.
+    /// </summary>
     public void Dispose()
     {
         try { Directory.Delete(_tempDir, recursive: true); } catch { }
@@ -38,6 +44,9 @@ public sealed class AddItemsTests : IDisposable
 
     // ── Basic additive behaviour ──
 
+    /// <summary>
+    /// Verifies that Add Items single video file adds to root.
+    /// </summary>
     [Fact]
     public void AddItems_SingleVideoFile_AddsToRoot()
     {
@@ -51,6 +60,9 @@ public sealed class AddItemsTests : IDisposable
         Assert.True(_sut.HasFolderOpen);
     }
 
+    /// <summary>
+    /// Verifies that Add Items single folder adds to root.
+    /// </summary>
     [Fact]
     public void AddItems_SingleFolder_AddsToRoot()
     {
@@ -64,6 +76,9 @@ public sealed class AddItemsTests : IDisposable
         Assert.True(_sut.HasFolderOpen);
     }
 
+    /// <summary>
+    /// Verifies that Add Items is additive does not clear existing.
+    /// </summary>
     [Fact]
     public void AddItems_IsAdditive_DoesNotClearExisting()
     {
@@ -77,6 +92,9 @@ public sealed class AddItemsTests : IDisposable
         Assert.Equal(2, _sut.RootNodes.Count);
     }
 
+    /// <summary>
+    /// Verifies that Add Items skips duplicate paths.
+    /// </summary>
     [Fact]
     public void AddItems_SkipsDuplicatePaths()
     {
@@ -88,6 +106,9 @@ public sealed class AddItemsTests : IDisposable
         Assert.Single(_sut.RootNodes);
     }
 
+    /// <summary>
+    /// Verifies that Add Items skips duplicate paths case insensitive.
+    /// </summary>
     [Fact]
     public void AddItems_SkipsDuplicatePathsCaseInsensitive()
     {
@@ -102,6 +123,9 @@ public sealed class AddItemsTests : IDisposable
 
     // ── Filtering ──
 
+    /// <summary>
+    /// Verifies that Add Items returns true when unsupported file present.
+    /// </summary>
     [Fact]
     public void AddItems_ReturnsTrue_WhenUnsupportedFilePresent()
     {
@@ -113,6 +137,9 @@ public sealed class AddItemsTests : IDisposable
         Assert.Empty(_sut.RootNodes); // txt not added
     }
 
+    /// <summary>
+    /// Verifies that Add Items returns false when all supported.
+    /// </summary>
     [Fact]
     public void AddItems_ReturnsFalse_WhenAllSupported()
     {
@@ -123,6 +150,9 @@ public sealed class AddItemsTests : IDisposable
         Assert.False(hasUnsupported);
     }
 
+    /// <summary>
+    /// Verifies that Add Items skips non existent paths.
+    /// </summary>
     [Fact]
     public void AddItems_SkipsNonExistentPaths()
     {
@@ -133,6 +163,9 @@ public sealed class AddItemsTests : IDisposable
         Assert.Empty(_sut.RootNodes);
     }
 
+    /// <summary>
+    /// Verifies that Add Items skips empty and whitespace.
+    /// </summary>
     [Fact]
     public void AddItems_SkipsEmptyAndWhitespace()
     {
@@ -141,6 +174,9 @@ public sealed class AddItemsTests : IDisposable
         Assert.Empty(_sut.RootNodes);
     }
 
+    /// <summary>
+    /// Verifies that Add Items mixed batch adds valid only.
+    /// </summary>
     [Fact]
     public void AddItems_MixedBatch_AddsValidOnly()
     {
@@ -157,6 +193,9 @@ public sealed class AddItemsTests : IDisposable
 
     // ── Sorting ──
 
+    /// <summary>
+    /// Verifies that Add Items sorts folders first then files alpha.
+    /// </summary>
     [Fact]
     public void AddItems_SortsFoldersFirst_ThenFilesAlpha()
     {
@@ -180,6 +219,9 @@ public sealed class AddItemsTests : IDisposable
         Assert.False(_sut.RootNodes[3].IsDirectory);
     }
 
+    /// <summary>
+    /// Verifies that Add Items preserves sort after multiple adds.
+    /// </summary>
     [Fact]
     public void AddItems_PreservesSortAfterMultipleAdds()
     {
@@ -199,6 +241,9 @@ public sealed class AddItemsTests : IDisposable
 
     // ── FolderName and HasFolderOpen ──
 
+    /// <summary>
+    /// Verifies that Add Items sets folder name to custom when no folder open.
+    /// </summary>
     [Fact]
     public void AddItems_SetsFolderNameToCustom_WhenNoFolderOpen()
     {
@@ -209,6 +254,9 @@ public sealed class AddItemsTests : IDisposable
         Assert.Equal("CUSTOM", _sut.FolderName);
     }
 
+    /// <summary>
+    /// Verifies that Add Items changes folder name to custom when folder already open.
+    /// </summary>
     [Fact]
     public async Task AddItems_ChangesFolderNameToCustom_WhenFolderAlreadyOpen()
     {
@@ -229,6 +277,9 @@ public sealed class AddItemsTests : IDisposable
 
     // ── Folder nodes have dummy child for lazy loading ──
 
+    /// <summary>
+    /// Verifies that Add Items folder nodes have dummy child.
+    /// </summary>
     [Fact]
     public void AddItems_FolderNodes_HaveDummyChild()
     {
@@ -244,6 +295,10 @@ public sealed class AddItemsTests : IDisposable
 
     // ── All video extensions are accepted ──
 
+    /// <summary>
+    /// Verifies that Add Items accepts all video extensions.
+    /// </summary>
+    /// <param name="ext">The file extension to test.</param>
     [Theory]
     [InlineData(".mp4")]
     [InlineData(".avi")]
@@ -264,6 +319,9 @@ public sealed class AddItemsTests : IDisposable
 
     // ── RemoveFile ──
 
+    /// <summary>
+    /// Verifies that Remove File removes node from tree.
+    /// </summary>
     [Fact]
     public void RemoveFile_RemovesNodeFromTree()
     {
@@ -277,6 +335,9 @@ public sealed class AddItemsTests : IDisposable
         Assert.Empty(_sut.RootNodes);
     }
 
+    /// <summary>
+    /// Verifies that Remove File resets state when last node removed.
+    /// </summary>
     [Fact]
     public void RemoveFile_ResetsState_WhenLastNodeRemoved()
     {
@@ -290,6 +351,9 @@ public sealed class AddItemsTests : IDisposable
         Assert.Null(_sut.FolderName);
     }
 
+    /// <summary>
+    /// Verifies that Remove File keeps other nodes.
+    /// </summary>
     [Fact]
     public void RemoveFile_KeepsOtherNodes()
     {
@@ -306,6 +370,9 @@ public sealed class AddItemsTests : IDisposable
         Assert.True(_sut.HasFolderOpen);
     }
 
+    /// <summary>
+    /// Verifies that Remove File does not add to hidden state.
+    /// </summary>
     [Fact]
     public void RemoveFile_DoesNotAddToHiddenState()
     {
@@ -317,6 +384,9 @@ public sealed class AddItemsTests : IDisposable
         Assert.Empty(_stateService.Current.HiddenFiles);
     }
 
+    /// <summary>
+    /// Verifies that Remove File null node does nothing.
+    /// </summary>
     [Fact]
     public void RemoveFile_NullNode_DoesNothing()
     {
@@ -330,6 +400,9 @@ public sealed class AddItemsTests : IDisposable
 
     // ── Custom title logic ──
 
+    /// <summary>
+    /// Verifies that Add Items does not change folder name when nothing added.
+    /// </summary>
     [Fact]
     public async Task AddItems_DoesNotChangeFolderName_WhenNothingAdded()
     {
@@ -345,6 +418,9 @@ public sealed class AddItemsTests : IDisposable
         Assert.Equal("Original", _sut.FolderName);
     }
 
+    /// <summary>
+    /// Verifies that Open Folder after custom title restores real name.
+    /// </summary>
     [Fact]
     public async Task OpenFolder_AfterCustomTitle_RestoresRealName()
     {

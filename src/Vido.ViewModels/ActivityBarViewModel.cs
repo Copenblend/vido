@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Vido.Core.Layout;
@@ -26,8 +26,15 @@ public partial class ActivityBarViewModel : ObservableObject
     /// </summary>
     public ObservableCollection<PluginSidebarItem> PluginItems { get; } = new();
 
+    /// <summary>
+    /// Creates an activity bar view model with no settings service (design-time/testing).
+    /// </summary>
     public ActivityBarViewModel() : this(null) { }
-
+    
+    /// <summary>
+    /// Creates an activity bar view model, restoring sidebar visibility from persisted settings.
+    /// </summary>
+    /// <param name="settingsService">Optional settings service used to persist sidebar visibility state.</param>
     public ActivityBarViewModel(ISettingsService? settingsService)
     {
         _settingsService = settingsService;
@@ -83,7 +90,7 @@ public partial class ActivityBarViewModel : ObservableObject
     /// </summary>
     public bool IsPanelActive(SidebarPanelKind panel) => ActivePanel == panel;
 
-    // ── Plugin sidebar ordering (vb-007) ──
+    // â”€â”€ Plugin sidebar ordering (vb-007) â”€â”€
 
     /// <summary>
     /// Adds a plugin sidebar item, inserting it at the position indicated by

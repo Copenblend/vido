@@ -15,6 +15,9 @@ public class KeyboardShortcutServiceTests
     private readonly ILogService _logService;
     private readonly KeyboardShortcutService _sut;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public KeyboardShortcutServiceTests()
     {
         _logService = Substitute.For<ILogService>();
@@ -23,6 +26,9 @@ public class KeyboardShortcutServiceTests
 
     // ── Registration ──
 
+    /// <summary>
+    /// Verifies that Register new binding returns true.
+    /// </summary>
     [Fact]
     public void Register_NewBinding_ReturnsTrue()
     {
@@ -30,6 +36,9 @@ public class KeyboardShortcutServiceTests
         Assert.True(result);
     }
 
+    /// <summary>
+    /// Verifies that Register same command id updates binding.
+    /// </summary>
     [Fact]
     public void Register_SameCommandId_UpdatesBinding()
     {
@@ -42,6 +51,9 @@ public class KeyboardShortcutServiceTests
         Assert.Equal("S", binding.Key);
     }
 
+    /// <summary>
+    /// Verifies that Register conflicting key returns false.
+    /// </summary>
     [Fact]
     public void Register_ConflictingKey_ReturnsFalse()
     {
@@ -51,6 +63,9 @@ public class KeyboardShortcutServiceTests
         Assert.False(result);
     }
 
+    /// <summary>
+    /// Verifies that Register conflicting key logs warning.
+    /// </summary>
     [Fact]
     public void Register_ConflictingKey_LogsWarning()
     {
@@ -62,6 +77,9 @@ public class KeyboardShortcutServiceTests
             "Shortcuts");
     }
 
+    /// <summary>
+    /// Verifies that Register conflicting key new command takes precedence.
+    /// </summary>
     [Fact]
     public void Register_ConflictingKey_NewCommandTakesPrecedence()
     {
@@ -73,6 +91,9 @@ public class KeyboardShortcutServiceTests
         Assert.Equal("b", executed);
     }
 
+    /// <summary>
+    /// Verifies that Register with modifiers returns true.
+    /// </summary>
     [Fact]
     public void Register_WithModifiers_ReturnsTrue()
     {
@@ -80,6 +101,9 @@ public class KeyboardShortcutServiceTests
         Assert.True(result);
     }
 
+    /// <summary>
+    /// Verifies that Register null binding throws argument null exception.
+    /// </summary>
     [Fact]
     public void Register_NullBinding_ThrowsArgumentNullException()
     {
@@ -87,6 +111,9 @@ public class KeyboardShortcutServiceTests
             _sut.Register(null!, "cmd", () => { }));
     }
 
+    /// <summary>
+    /// Verifies that Register null command id throws argument null exception.
+    /// </summary>
     [Fact]
     public void Register_NullCommandId_ThrowsArgumentNullException()
     {
@@ -94,6 +121,9 @@ public class KeyboardShortcutServiceTests
             _sut.Register(new KeyBinding("Space"), null!, () => { }));
     }
 
+    /// <summary>
+    /// Verifies that Register null handler throws argument null exception.
+    /// </summary>
     [Fact]
     public void Register_NullHandler_ThrowsArgumentNullException()
     {
@@ -103,6 +133,9 @@ public class KeyboardShortcutServiceTests
 
     // ── Execution ──
 
+    /// <summary>
+    /// Verifies that Try Execute registered binding executes and returns true.
+    /// </summary>
     [Fact]
     public void TryExecute_RegisteredBinding_ExecutesAndReturnsTrue()
     {
@@ -115,6 +148,9 @@ public class KeyboardShortcutServiceTests
         Assert.True(executed);
     }
 
+    /// <summary>
+    /// Verifies that Try Execute unregistered binding returns false.
+    /// </summary>
     [Fact]
     public void TryExecute_UnregisteredBinding_ReturnsFalse()
     {
@@ -122,6 +158,9 @@ public class KeyboardShortcutServiceTests
         Assert.False(result);
     }
 
+    /// <summary>
+    /// Verifies that Try Execute with modifiers matches correct binding.
+    /// </summary>
     [Fact]
     public void TryExecute_WithModifiers_MatchesCorrectBinding()
     {
@@ -133,6 +172,9 @@ public class KeyboardShortcutServiceTests
         Assert.Equal("ctrlb", executed);
     }
 
+    /// <summary>
+    /// Verifies that Try Execute wrong modifiers returns false.
+    /// </summary>
     [Fact]
     public void TryExecute_WrongModifiers_ReturnsFalse()
     {
@@ -144,6 +186,9 @@ public class KeyboardShortcutServiceTests
 
     // ── Unregistration ──
 
+    /// <summary>
+    /// Verifies that Unregister existing command returns true.
+    /// </summary>
     [Fact]
     public void Unregister_ExistingCommand_ReturnsTrue()
     {
@@ -152,6 +197,9 @@ public class KeyboardShortcutServiceTests
         Assert.True(result);
     }
 
+    /// <summary>
+    /// Verifies that Unregister nonexistent command returns false.
+    /// </summary>
     [Fact]
     public void Unregister_NonexistentCommand_ReturnsFalse()
     {
@@ -159,6 +207,9 @@ public class KeyboardShortcutServiceTests
         Assert.False(result);
     }
 
+    /// <summary>
+    /// Verifies that Unregister binding no longer executes.
+    /// </summary>
     [Fact]
     public void Unregister_BindingNoLongerExecutes()
     {
@@ -171,6 +222,9 @@ public class KeyboardShortcutServiceTests
         Assert.False(executed);
     }
 
+    /// <summary>
+    /// Verifies that Unregister frees key for reuse.
+    /// </summary>
     [Fact]
     public void Unregister_FreesKeyForReuse()
     {
@@ -183,6 +237,9 @@ public class KeyboardShortcutServiceTests
 
     // ── Lookup ──
 
+    /// <summary>
+    /// Verifies that Find Binding registered command returns binding.
+    /// </summary>
     [Fact]
     public void FindBinding_RegisteredCommand_ReturnsBinding()
     {
@@ -194,12 +251,18 @@ public class KeyboardShortcutServiceTests
         Assert.Equal("Space", binding.Key);
     }
 
+    /// <summary>
+    /// Verifies that Find Binding nonexistent command returns null.
+    /// </summary>
     [Fact]
     public void FindBinding_NonexistentCommand_ReturnsNull()
     {
         Assert.Null(_sut.FindBinding("nonexistent"));
     }
 
+    /// <summary>
+    /// Verifies that Get Command Id registered binding returns id.
+    /// </summary>
     [Fact]
     public void GetCommandId_RegisteredBinding_ReturnsId()
     {
@@ -209,12 +272,18 @@ public class KeyboardShortcutServiceTests
         Assert.Equal("test.cmd", id);
     }
 
+    /// <summary>
+    /// Verifies that Get Command Id unregistered binding returns null.
+    /// </summary>
     [Fact]
     public void GetCommandId_UnregisteredBinding_ReturnsNull()
     {
         Assert.Null(_sut.GetCommandId(new KeyBinding("Space")));
     }
 
+    /// <summary>
+    /// Verifies that Get All Command Ids returns registered ids.
+    /// </summary>
     [Fact]
     public void GetAllCommandIds_ReturnsRegisteredIds()
     {
@@ -229,6 +298,9 @@ public class KeyboardShortcutServiceTests
         Assert.Contains("cmd.c", ids);
     }
 
+    /// <summary>
+    /// Verifies that Get All Command Ids after unregister excludes removed.
+    /// </summary>
     [Fact]
     public void GetAllCommandIds_AfterUnregister_ExcludesRemoved()
     {
@@ -243,6 +315,9 @@ public class KeyboardShortcutServiceTests
 
     // ── Case insensitivity ──
 
+    /// <summary>
+    /// Verifies that Key Binding is case insensitive.
+    /// </summary>
     [Fact]
     public void KeyBinding_IsCaseInsensitive()
     {
@@ -252,6 +327,9 @@ public class KeyboardShortcutServiceTests
         Assert.True(result);
     }
 
+    /// <summary>
+    /// Verifies that Command Id is case insensitive.
+    /// </summary>
     [Fact]
     public void CommandId_IsCaseInsensitive()
     {
@@ -263,6 +341,9 @@ public class KeyboardShortcutServiceTests
 
     // ── Re-binding same command to new key ──
 
+    /// <summary>
+    /// Verifies that Register same command new key old key freed.
+    /// </summary>
     [Fact]
     public void Register_SameCommandNewKey_OldKeyFreed()
     {

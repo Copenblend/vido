@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Vido.Core.Windowing;
 
@@ -16,7 +16,11 @@ public partial class TitleBarViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isMaximized;
-
+    
+    /// <summary>
+    /// Creates the title bar view model bound to the given window service for minimize/maximize/close commands.
+    /// </summary>
+    /// <param name="windowService">Service controlling the application window state.</param>
     public TitleBarViewModel(IWindowService windowService)
     {
         _windowService = windowService;
@@ -45,6 +49,7 @@ public partial class TitleBarViewModel : ObservableObject
     /// Synchronizes the <see cref="IsMaximized"/> property with the actual window state.
     /// Called from the view when the window state changes externally (e.g., Aero Snap).
     /// </summary>
+    /// <param name="state">Current window state to synchronize with.</param>
     public void SyncWindowState(AppWindowState state)
     {
         IsMaximized = state == AppWindowState.Maximized;

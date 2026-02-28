@@ -20,27 +20,39 @@ public partial class FileExplorerViewModel : ObservableObject
     private readonly ISettingsService _settingsService;
     private readonly ILogService _logService;
 
-    /// <summary>Root-level nodes displayed in the tree.</summary>
+    /// <summary>
+    /// Root-level nodes displayed in the tree.
+    /// </summary>
     [ObservableProperty]
     private ObservableCollection<FileNode> _rootNodes = [];
 
-    /// <summary>Full path of the currently open folder.</summary>
+    /// <summary>
+    /// Full path of the currently open folder.
+    /// </summary>
     [ObservableProperty]
     private string? _folderPath;
 
-    /// <summary>Display name of the currently open folder.</summary>
+    /// <summary>
+    /// Display name of the currently open folder.
+    /// </summary>
     [ObservableProperty]
     private string? _folderName;
 
-    /// <summary>Whether a folder is currently open.</summary>
+    /// <summary>
+    /// Whether a folder is currently open.
+    /// </summary>
     [ObservableProperty]
     private bool _hasFolderOpen;
 
-    /// <summary>Whether the explorer is currently loading file data.</summary>
+    /// <summary>
+    /// Whether the explorer is currently loading file data.
+    /// </summary>
     [ObservableProperty]
     private bool _isLoading;
 
-    /// <summary>The currently selected node in the tree (set from the view).</summary>
+    /// <summary>
+    /// The currently selected node in the tree (set from the view).
+    /// </summary>
     [ObservableProperty]
     private FileNode? _selectedNode;
 
@@ -57,7 +69,14 @@ public partial class FileExplorerViewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     private bool _showHiddenFiles;
-
+    /// <summary>
+    /// Creates a file explorer view model wired to file system, state, settings, and logging services.
+    /// Restores the hidden-files toggle from persisted settings.
+    /// </summary>
+    /// <param name="fileSystemService">Service for enumerating directory contents.</param>
+    /// <param name="stateService">Service for persisting explorer state (last folder, hidden files).</param>
+    /// <param name="settingsService">Service for persisting user preferences (show hidden files toggle).</param>
+    /// <param name="logService">Logging service for explorer operations.</param>
     public FileExplorerViewModel(IFileSystemService fileSystemService, IStateService stateService,
         ISettingsService settingsService, ILogService logService)
     {

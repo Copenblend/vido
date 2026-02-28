@@ -14,6 +14,9 @@ public class ContributionRegistryTests
 {
     private readonly ContributionRegistry _registry = new();
 
+    /// <summary>
+    /// Verifies that Register Sidebar Panel adds entry.
+    /// </summary>
     [Fact]
     public void RegisterSidebarPanel_AddsEntry()
     {
@@ -29,6 +32,9 @@ public class ContributionRegistryTests
         Assert.Equal(50, panels[0].Order);
     }
 
+    /// <summary>
+    /// Verifies that Register Sidebar Panel sorts by order.
+    /// </summary>
     [Fact]
     public void RegisterSidebarPanel_SortsByOrder()
     {
@@ -44,6 +50,9 @@ public class ContributionRegistryTests
         Assert.Equal("b", panels[2].ContributionId);
     }
 
+    /// <summary>
+    /// Verifies that Register Bottom Panel adds and sorts by order.
+    /// </summary>
     [Fact]
     public void RegisterBottomPanel_AddsAndSortsByOrder()
     {
@@ -57,6 +66,9 @@ public class ContributionRegistryTests
         Assert.Equal("z", panels[1].ContributionId);
     }
 
+    /// <summary>
+    /// Verifies that Register Right Panel adds entry.
+    /// </summary>
     [Fact]
     public void RegisterRightPanel_AddsEntry()
     {
@@ -68,6 +80,9 @@ public class ContributionRegistryTests
         Assert.Equal("info", panels[0].ContributionId);
     }
 
+    /// <summary>
+    /// Verifies that Register Status Bar Item adds entry.
+    /// </summary>
     [Fact]
     public void RegisterStatusBarItem_AddsEntry()
     {
@@ -80,6 +95,9 @@ public class ContributionRegistryTests
         Assert.Equal("left", items[0].Position);
     }
 
+    /// <summary>
+    /// Verifies that Register Toolbar Button adds and sorts by order.
+    /// </summary>
     [Fact]
     public void RegisterToolbarButton_AddsAndSortsByOrder()
     {
@@ -93,6 +111,9 @@ public class ContributionRegistryTests
         Assert.Equal("btn2", buttons[1].ContributionId);
     }
 
+    /// <summary>
+    /// Verifies that Register Context Menu Handler adds entry.
+    /// </summary>
     [Fact]
     public void RegisterContextMenuHandler_AddsEntry()
     {
@@ -111,6 +132,9 @@ public class ContributionRegistryTests
         Assert.True(called);
     }
 
+    /// <summary>
+    /// Verifies that Register File Handler adds entry.
+    /// </summary>
     [Fact]
     public void RegisterFileHandler_AddsEntry()
     {
@@ -123,6 +147,9 @@ public class ContributionRegistryTests
         Assert.Equal(".special", handlers[0].Extensions[0]);
     }
 
+    /// <summary>
+    /// Verifies that Register File Icons adds mappings.
+    /// </summary>
     [Fact]
     public void RegisterFileIcons_AddsMappings()
     {
@@ -139,6 +166,9 @@ public class ContributionRegistryTests
         Assert.Equal("/icons/xyz.png", icons[".xyz"]);
     }
 
+    /// <summary>
+    /// Verifies that Register File Icons case insensitive.
+    /// </summary>
     [Fact]
     public void RegisterFileIcons_CaseInsensitive()
     {
@@ -153,6 +183,9 @@ public class ContributionRegistryTests
         Assert.True(icons.ContainsKey(".ABC"));
     }
 
+    /// <summary>
+    /// Verifies that Unregister All removes all contributions.
+    /// </summary>
     [Fact]
     public void UnregisterAll_RemovesAllContributions()
     {
@@ -178,6 +211,9 @@ public class ContributionRegistryTests
         Assert.Empty(_registry.GetFileIcons());
     }
 
+    /// <summary>
+    /// Verifies that Unregister All only removes specified plugin.
+    /// </summary>
     [Fact]
     public void UnregisterAll_OnlyRemovesSpecifiedPlugin()
     {
@@ -191,6 +227,9 @@ public class ContributionRegistryTests
         Assert.Equal("p2", panels[0].PluginId);
     }
 
+    /// <summary>
+    /// Verifies that Unregister All unknown plugin no op.
+    /// </summary>
     [Fact]
     public void UnregisterAll_UnknownPlugin_NoOp()
     {
@@ -201,6 +240,9 @@ public class ContributionRegistryTests
         Assert.Single(_registry.GetSidebarPanels());
     }
 
+    /// <summary>
+    /// Verifies that Contributions Changed fired on registration.
+    /// </summary>
     [Fact]
     public void ContributionsChanged_FiredOnRegistration()
     {
@@ -214,6 +256,9 @@ public class ContributionRegistryTests
         Assert.Equal(3, count);
     }
 
+    /// <summary>
+    /// Verifies that Contributions Changed fired on unregister.
+    /// </summary>
     [Fact]
     public void ContributionsChanged_FiredOnUnregister()
     {
@@ -227,6 +272,9 @@ public class ContributionRegistryTests
         Assert.Equal(1, count);
     }
 
+    /// <summary>
+    /// Verifies that Get Sidebar Panels returns snapshot.
+    /// </summary>
     [Fact]
     public void GetSidebarPanels_ReturnsSnapshot()
     {
@@ -240,6 +288,9 @@ public class ContributionRegistryTests
         Assert.Equal(2, snapshot2.Count);
     }
 
+    /// <summary>
+    /// Verifies that Multiple Same Plugin Icons overwrite previous.
+    /// </summary>
     [Fact]
     public void MultipleSamePluginIcons_OverwritePrevious()
     {
@@ -256,6 +307,9 @@ public class ContributionRegistryTests
         Assert.Equal("/icons/new.png", icons[".ext"]);
     }
 
+    /// <summary>
+    /// Verifies that Insert Sorted equal order accepts both items.
+    /// </summary>
     [Fact]
     public void InsertSorted_EqualOrder_AcceptsBothItems()
     {
@@ -266,6 +320,9 @@ public class ContributionRegistryTests
         Assert.Equal(2, panels.Count);
     }
 
+    /// <summary>
+    /// Verifies that Insert Sorted multiple equal order maintains valid list.
+    /// </summary>
     [Fact]
     public void InsertSorted_MultipleEqualOrder_MaintainsValidList()
     {
@@ -282,6 +339,9 @@ public class ContributionRegistryTests
         Assert.True(panels.Skip(1).All(p => p.Order == 50));
     }
 
+    /// <summary>
+    /// Verifies that Register Key Binding does not throw.
+    /// </summary>
     [Fact]
     public void RegisterKeyBinding_DoesNotThrow()
     {
@@ -291,6 +351,9 @@ public class ContributionRegistryTests
         Assert.Null(ex);
     }
 
+    /// <summary>
+    /// Verifies that Set Toolbar Button Highlight fires event.
+    /// </summary>
     [Fact]
     public void SetToolbarButtonHighlight_FiresEvent()
     {
@@ -306,6 +369,9 @@ public class ContributionRegistryTests
         Assert.True(firedState);
     }
 
+    /// <summary>
+    /// Verifies that Set Toolbar Button Highlight clear fires event.
+    /// </summary>
     [Fact]
     public void SetToolbarButtonHighlight_ClearFiresEvent()
     {
@@ -325,6 +391,9 @@ public class ContributionRegistryTests
 
     // ── Priority tiebreaking ──
 
+    /// <summary>
+    /// Verifies that Register Status Bar Item same priority orders by plugin id.
+    /// </summary>
     [Fact]
     public void RegisterStatusBarItem_SamePriority_OrdersByPluginId()
     {
@@ -339,6 +408,9 @@ public class ContributionRegistryTests
         Assert.Equal("pluginC", items[2].PluginId);
     }
 
+    /// <summary>
+    /// Verifies that Register Sidebar Panel same priority orders by plugin id.
+    /// </summary>
     [Fact]
     public void RegisterSidebarPanel_SamePriority_OrdersByPluginId()
     {
@@ -352,6 +424,9 @@ public class ContributionRegistryTests
 
     // ── Control bar items ──
 
+    /// <summary>
+    /// Verifies that Register Control Bar Item adds entry.
+    /// </summary>
     [Fact]
     public void RegisterControlBarItem_AddsEntry()
     {
@@ -367,6 +442,9 @@ public class ContributionRegistryTests
         Assert.Equal("overlay", items[0].OverlayFactory!());
     }
 
+    /// <summary>
+    /// Verifies that Register Control Bar Item null overlay allowed.
+    /// </summary>
     [Fact]
     public void RegisterControlBarItem_NullOverlay_Allowed()
     {
@@ -377,6 +455,9 @@ public class ContributionRegistryTests
         Assert.Null(items[0].OverlayFactory);
     }
 
+    /// <summary>
+    /// Verifies that Register Control Bar Item sorts by order.
+    /// </summary>
     [Fact]
     public void RegisterControlBarItem_SortsByOrder()
     {
@@ -388,6 +469,9 @@ public class ContributionRegistryTests
         Assert.Equal("low", items[1].ContributionId);
     }
 
+    /// <summary>
+    /// Verifies that Register Control Bar Item same priority orders by plugin id.
+    /// </summary>
     [Fact]
     public void RegisterControlBarItem_SamePriority_OrdersByPluginId()
     {
@@ -401,6 +485,9 @@ public class ContributionRegistryTests
         Assert.Equal("pluginC", items[2].PluginId);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Control Bar Overlay fires event.
+    /// </summary>
     [Fact]
     public void ToggleControlBarOverlay_FiresEvent()
     {
@@ -416,6 +503,9 @@ public class ContributionRegistryTests
         Assert.True(firedVisible);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Control Bar Overlay hide fires event.
+    /// </summary>
     [Fact]
     public void ToggleControlBarOverlay_HideFiresEvent()
     {
@@ -433,6 +523,9 @@ public class ContributionRegistryTests
         Assert.False(firedVisible);
     }
 
+    /// <summary>
+    /// Verifies that Unregister All removes control bar items.
+    /// </summary>
     [Fact]
     public void UnregisterAll_RemovesControlBarItems()
     {
@@ -446,6 +539,9 @@ public class ContributionRegistryTests
         Assert.Equal("p2", items[0].PluginId);
     }
 
+    /// <summary>
+    /// Verifies that Get Control Bar Items returns snapshot.
+    /// </summary>
     [Fact]
     public void GetControlBarItems_ReturnsSnapshot()
     {
@@ -462,6 +558,9 @@ public class ContributionRegistryTests
     // ║ vb-017 — Overlay toggle before materialization                 ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Toggle Control Bar Overlay before registration still fires event.
+    /// </summary>
     [Fact]
     public void ToggleControlBarOverlay_BeforeRegistration_StillFiresEvent()
     {
@@ -478,6 +577,9 @@ public class ContributionRegistryTests
         Assert.True(firedVisible);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Control Bar Overlay multiple calls before registration last wins.
+    /// </summary>
     [Fact]
     public void ToggleControlBarOverlay_MultipleCallsBeforeRegistration_LastWins()
     {

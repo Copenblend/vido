@@ -15,6 +15,9 @@ public sealed class AppSettingsStoreTests
     private readonly AppSettings _settings;
     private readonly AppSettingsStore _store;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public AppSettingsStoreTests()
     {
         _settings = new AppSettings();
@@ -25,6 +28,9 @@ public sealed class AppSettingsStoreTests
 
     // ── Get ──
 
+    /// <summary>
+    /// Verifies that Get volume returns scaled value.
+    /// </summary>
     [Fact]
     public void Get_Volume_ReturnsScaledValue()
     {
@@ -33,6 +39,9 @@ public sealed class AppSettingsStoreTests
         Assert.Equal(75.0, result);
     }
 
+    /// <summary>
+    /// Verifies that Get volume rounds to whole number.
+    /// </summary>
     [Fact]
     public void Get_Volume_RoundsToWholeNumber()
     {
@@ -41,6 +50,9 @@ public sealed class AppSettingsStoreTests
         Assert.Equal(33.0, result);
     }
 
+    /// <summary>
+    /// Verifies that Get speed returns formatted string.
+    /// </summary>
     [Fact]
     public void Get_Speed_ReturnsFormattedString()
     {
@@ -49,6 +61,9 @@ public sealed class AppSettingsStoreTests
         Assert.Equal("1.5x", result);
     }
 
+    /// <summary>
+    /// Verifies that Get loop returns bool value.
+    /// </summary>
     [Fact]
     public void Get_Loop_ReturnsBoolValue()
     {
@@ -59,6 +74,9 @@ public sealed class AppSettingsStoreTests
         Assert.False(_store.Get("playback.loop", true));
     }
 
+    /// <summary>
+    /// Verifies that Get show hidden files returns bool value.
+    /// </summary>
     [Fact]
     public void Get_ShowHiddenFiles_ReturnsBoolValue()
     {
@@ -66,6 +84,9 @@ public sealed class AppSettingsStoreTests
         Assert.True(_store.Get("explorer.showHiddenFiles", false));
     }
 
+    /// <summary>
+    /// Verifies that Get registry urls returns empty list when no custom urls.
+    /// </summary>
     [Fact]
     public void Get_RegistryUrls_ReturnsEmptyListWhenNoCustomUrls()
     {
@@ -74,6 +95,9 @@ public sealed class AppSettingsStoreTests
         Assert.Empty(result);
     }
 
+    /// <summary>
+    /// Verifies that Get registry urls returns custom urls only.
+    /// </summary>
     [Fact]
     public void Get_RegistryUrls_ReturnsCustomUrlsOnly()
     {
@@ -84,6 +108,9 @@ public sealed class AppSettingsStoreTests
         Assert.Equal("https://custom2.com", result[1]);
     }
 
+    /// <summary>
+    /// Verifies that Get registry urls ensures official url when missing.
+    /// </summary>
     [Fact]
     public void Get_RegistryUrls_EnsuresOfficialUrlWhenMissing()
     {
@@ -96,6 +123,9 @@ public sealed class AppSettingsStoreTests
         Assert.Equal(AppSettings.OfficialRegistryUrl, _settings.PluginRegistryUrls[0]);
     }
 
+    /// <summary>
+    /// Verifies that Get unknown key returns default.
+    /// </summary>
     [Fact]
     public void Get_UnknownKey_ReturnsDefault()
     {
@@ -103,6 +133,9 @@ public sealed class AppSettingsStoreTests
         Assert.Equal("fallback", result);
     }
 
+    /// <summary>
+    /// Verifies that Get is case insensitive.
+    /// </summary>
     [Fact]
     public void Get_IsCaseInsensitive()
     {
@@ -113,6 +146,9 @@ public sealed class AppSettingsStoreTests
 
     // ── Set ──
 
+    /// <summary>
+    /// Verifies that Set volume updates settings and queues save.
+    /// </summary>
     [Fact]
     public void Set_Volume_UpdatesSettingsAndQueuesSave()
     {
@@ -121,6 +157,9 @@ public sealed class AppSettingsStoreTests
         _settingsService.Received(1).QueueSave();
     }
 
+    /// <summary>
+    /// Verifies that Set volume clamps to range.
+    /// </summary>
     [Fact]
     public void Set_Volume_ClampsToRange()
     {
@@ -131,6 +170,9 @@ public sealed class AppSettingsStoreTests
         Assert.Equal(0.0, _settings.Volume, precision: 2);
     }
 
+    /// <summary>
+    /// Verifies that Set speed parses formatted string.
+    /// </summary>
     [Fact]
     public void Set_Speed_ParsesFormattedString()
     {
@@ -139,6 +181,9 @@ public sealed class AppSettingsStoreTests
         _settingsService.Received(1).QueueSave();
     }
 
+    /// <summary>
+    /// Verifies that Set speed unknown value defaults to1.
+    /// </summary>
     [Fact]
     public void Set_Speed_UnknownValueDefaultsTo1()
     {
@@ -146,6 +191,9 @@ public sealed class AppSettingsStoreTests
         Assert.Equal(1.0, _settings.PlaybackSpeed);
     }
 
+    /// <summary>
+    /// Verifies that Set loop updates boolean.
+    /// </summary>
     [Fact]
     public void Set_Loop_UpdatesBoolean()
     {
@@ -154,6 +202,9 @@ public sealed class AppSettingsStoreTests
         _settingsService.Received(1).QueueSave();
     }
 
+    /// <summary>
+    /// Verifies that Set show hidden files updates boolean.
+    /// </summary>
     [Fact]
     public void Set_ShowHiddenFiles_UpdatesBoolean()
     {
@@ -161,6 +212,9 @@ public sealed class AppSettingsStoreTests
         Assert.True(_settings.ShowHiddenFiles);
     }
 
+    /// <summary>
+    /// Verifies that Set registry urls adds custom urls.
+    /// </summary>
     [Fact]
     public void Set_RegistryUrls_AddsCustomUrls()
     {
@@ -172,6 +226,9 @@ public sealed class AppSettingsStoreTests
         Assert.Equal("https://custom2.com", _settings.PluginRegistryUrls[2]);
     }
 
+    /// <summary>
+    /// Verifies that Set registry urls replaces existing custom urls.
+    /// </summary>
     [Fact]
     public void Set_RegistryUrls_ReplacesExistingCustomUrls()
     {
@@ -182,6 +239,9 @@ public sealed class AppSettingsStoreTests
         Assert.Equal("new-url", _settings.PluginRegistryUrls[1]);
     }
 
+    /// <summary>
+    /// Verifies that Set registry urls empty list removes all custom urls.
+    /// </summary>
     [Fact]
     public void Set_RegistryUrls_EmptyListRemovesAllCustomUrls()
     {
@@ -191,6 +251,9 @@ public sealed class AppSettingsStoreTests
         Assert.Equal(AppSettings.OfficialRegistryUrl, _settings.PluginRegistryUrls[0]);
     }
 
+    /// <summary>
+    /// Verifies that Set unknown key does nothing.
+    /// </summary>
     [Fact]
     public void Set_UnknownKey_DoesNothing()
     {
@@ -200,6 +263,9 @@ public sealed class AppSettingsStoreTests
 
     // ── SettingChanged event ──
 
+    /// <summary>
+    /// Verifies that Set fires setting changed event.
+    /// </summary>
     [Fact]
     public void Set_FiresSettingChangedEvent()
     {
@@ -211,6 +277,9 @@ public sealed class AppSettingsStoreTests
         Assert.Equal("playback.loop", changedKey);
     }
 
+    /// <summary>
+    /// Verifies that Set unknown key does not fire event.
+    /// </summary>
     [Fact]
     public void Set_UnknownKey_DoesNotFireEvent()
     {
@@ -224,6 +293,9 @@ public sealed class AppSettingsStoreTests
 
     // ── Reset ──
 
+    /// <summary>
+    /// Verifies that Reset returns false.
+    /// </summary>
     [Fact]
     public void Reset_ReturnsFalse()
     {
@@ -232,6 +304,9 @@ public sealed class AppSettingsStoreTests
 
     // ── Constructor validation ──
 
+    /// <summary>
+    /// Verifies that Constructor throws on null settings service.
+    /// </summary>
     [Fact]
     public void Constructor_ThrowsOnNullSettingsService()
     {

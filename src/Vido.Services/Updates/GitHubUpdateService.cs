@@ -1,5 +1,4 @@
-using System.Net.Http.Json;
-using System.Text.Json;
+﻿using System.Text.Json;
 using Vido.Core.Updates;
 
 namespace Vido.Services.Updates;
@@ -17,6 +16,12 @@ public sealed class GitHubUpdateService : IUpdateService, IDisposable
     private readonly HttpClient _httpClient;
     private readonly bool _ownsHttpClient;
 
+    /// <summary>
+    /// Creates an update service that compares the running application version
+    /// against the latest GitHub release for the <c>Copenblend/vido</c> repository.
+    /// </summary>
+    /// <param name="currentVersion">The semantic version string of the currently running application (e.g. "1.2.3").</param>
+    /// <param name="httpClient">An optional <see cref="HttpClient"/> to use for API requests; if <c>null</c>, a default client is created and owned by this instance.</param>
     public GitHubUpdateService(string currentVersion, HttpClient? httpClient = null)
     {
         _currentVersion = currentVersion;
@@ -100,23 +105,34 @@ public sealed class GitHubUpdateService : IUpdateService, IDisposable
             return latestVer > currentVer;
         }
 
-        // Unparseable — different strings treated as "newer" only if they differ
+        // Unparseable â€” different strings treated as "newer" only if they differ
         return !string.Equals(latest, current, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Downloads the installer from the given URL to a temp directory and returns the local file path.
+    /// </summary>
+    /// <param name="downloadUrl">The URL of the installer asset to download.</param>
+    /// <param name="fileName">The file name to use when saving the downloaded installer locally.</param>
     public async Task<string> DownloadInstallerAsync(string downloadUrl, string fileName)
     {
         var downloader = new UpdateDownloader(_httpClient);
         return await downloader.DownloadInstallerAsync(downloadUrl, fileName);
     }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Starts the installer process via shell execution so the user can complete the update.
+    /// Returns <c>true</c> if the process was launched; the caller should exit the application afterward.
+    /// </summary>
+    /// <param name="installerPath">The local file path of the downloaded installer to launch.</param>
     public bool LaunchInstaller(string installerPath)
     {
         return UpdateDownloader.LaunchInstaller(installerPath);
     }
-
+    
+    /// <summary>
+    /// Releases the internally-created <see cref="HttpClient"/> if this instance owns it.
+    /// </summary>
     public void Dispose()
     {
         if (_ownsHttpClient)

@@ -6,12 +6,18 @@ using Xunit;
 
 namespace Vido.Tests;
 
+/// <summary>
+/// Verifies the behavior of <see cref="FileSystemService"/>.
+/// </summary>
 public sealed class FileSystemServiceTests
 {
     private readonly ILogService _log = Substitute.For<ILogService>();
     private readonly FileSystemService _sut;
     private readonly string _testDir;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public FileSystemServiceTests()
     {
         _sut = new FileSystemService(_log);
@@ -21,6 +27,9 @@ public sealed class FileSystemServiceTests
         Directory.CreateDirectory(_testDir);
     }
 
+    /// <summary>
+    /// Verifies that Get Children returns empty for non existent dir.
+    /// </summary>
     [Fact]
     public void GetChildren_ReturnsEmpty_ForNonExistentDir()
     {
@@ -28,6 +37,9 @@ public sealed class FileSystemServiceTests
         Assert.Empty(result);
     }
 
+    /// <summary>
+    /// Verifies that Get Children returns directories first then files.
+    /// </summary>
     [Fact]
     public void GetChildren_ReturnsDirectoriesFirst_ThenFiles()
     {
@@ -55,6 +67,9 @@ public sealed class FileSystemServiceTests
         Directory.Delete(_testDir, recursive: true);
     }
 
+    /// <summary>
+    /// Verifies that Get Children skips hidden files.
+    /// </summary>
     [Fact]
     public void GetChildren_SkipsHiddenFiles()
     {
@@ -76,6 +91,9 @@ public sealed class FileSystemServiceTests
         Directory.Delete(_testDir, recursive: true);
     }
 
+    /// <summary>
+    /// Verifies that Get Children skips system files.
+    /// </summary>
     [Fact]
     public void GetChildren_SkipsSystemFiles()
     {
@@ -93,6 +111,9 @@ public sealed class FileSystemServiceTests
         Directory.Delete(_testDir, recursive: true);
     }
 
+    /// <summary>
+    /// Verifies that Get Children directory nodes have dummy child.
+    /// </summary>
     [Fact]
     public void GetChildren_DirectoryNodes_HaveDummyChild()
     {
@@ -107,6 +128,9 @@ public sealed class FileSystemServiceTests
         Directory.Delete(_testDir, recursive: true);
     }
 
+    /// <summary>
+    /// Verifies that Get Children returns empty for empty dir.
+    /// </summary>
     [Fact]
     public void GetChildren_ReturnsEmpty_ForEmptyDir()
     {
@@ -116,6 +140,9 @@ public sealed class FileSystemServiceTests
         Directory.Delete(_testDir, recursive: true);
     }
 
+    /// <summary>
+    /// Verifies that Get Children Async returns same result as sync.
+    /// </summary>
     [Fact]
     public async Task GetChildrenAsync_ReturnsSameResultAsSync()
     {

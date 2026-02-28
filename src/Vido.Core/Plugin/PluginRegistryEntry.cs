@@ -7,55 +7,81 @@ namespace Vido.Core.Plugin;
 /// </summary>
 public sealed class PluginRegistryEntry
 {
-    /// <summary>Unique plugin identifier (must match the plugin manifest id).</summary>
+    /// <summary>
+    /// Unique plugin identifier (must match the plugin manifest id).
+    /// </summary>
     [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
 
-    /// <summary>User-facing display name.</summary>
+    /// <summary>
+    /// User-facing display name.
+    /// </summary>
     [JsonPropertyName("displayName")]
     public string DisplayName { get; set; } = string.Empty;
 
-    /// <summary>Short description.</summary>
+    /// <summary>
+    /// Short description.
+    /// </summary>
     [JsonPropertyName("description")]
     public string Description { get; set; } = string.Empty;
 
-    /// <summary>Plugin author / publisher name.</summary>
+    /// <summary>
+    /// Plugin author / publisher name.
+    /// </summary>
     [JsonPropertyName("author")]
     public string Author { get; set; } = string.Empty;
 
-    /// <summary>Current version available in the registry (semver).</summary>
+    /// <summary>
+    /// Current version available in the registry (semver).
+    /// </summary>
     [JsonPropertyName("version")]
     public string Version { get; set; } = string.Empty;
 
-    /// <summary>License identifier.</summary>
+    /// <summary>
+    /// License identifier.
+    /// </summary>
     [JsonPropertyName("license")]
     public string License { get; set; } = string.Empty;
 
-    /// <summary>Tags for search / categorization.</summary>
+    /// <summary>
+    /// Tags for search / categorization.
+    /// </summary>
     [JsonPropertyName("tags")]
     public List<string> Tags { get; set; } = [];
 
-    /// <summary>URL to download the plugin zip archive.</summary>
+    /// <summary>
+    /// URL to download the plugin zip archive.
+    /// </summary>
     [JsonPropertyName("downloadUrl")]
     public string DownloadUrl { get; set; } = string.Empty;
 
-    /// <summary>URL to the plugin icon image.</summary>
+    /// <summary>
+    /// URL to the plugin icon image.
+    /// </summary>
     [JsonPropertyName("iconUrl")]
     public string? IconUrl { get; set; }
 
-    /// <summary>URL to the plugin README.md content (shown in the Details tab).</summary>
+    /// <summary>
+    /// URL to the plugin README.md content (shown in the Details tab).
+    /// </summary>
     [JsonPropertyName("readmeUrl")]
     public string? ReadmeUrl { get; set; }
 
-    /// <summary>URL to the plugin CHANGELOG.md content (shown in the Changelog tab).</summary>
+    /// <summary>
+    /// URL to the plugin CHANGELOG.md content (shown in the Changelog tab).
+    /// </summary>
     [JsonPropertyName("changelogUrl")]
     public string? ChangelogUrl { get; set; }
 
-    /// <summary>Repository URL.</summary>
+    /// <summary>
+    /// Repository URL.
+    /// </summary>
     [JsonPropertyName("repository")]
     public string? Repository { get; set; }
 
-    /// <summary>ISO 8601 date string for last update.</summary>
+    /// <summary>
+    /// ISO 8601 date string for last update.
+    /// </summary>
     [JsonPropertyName("lastUpdated")]
     public string? LastUpdated { get; set; }
 
@@ -65,7 +91,9 @@ public sealed class PluginRegistryEntry
     [JsonPropertyName("dependencies")]
     public List<PluginDependency> Dependencies { get; set; } = [];
 
-    /// <summary>Minimum Vido version required to run this plugin.</summary>
+    /// <summary>
+    /// Minimum Vido version required to run this plugin.
+    /// </summary>
     [JsonPropertyName("minVidoVersion")]
     public string? MinVidoVersion { get; set; }
 
@@ -88,18 +116,4 @@ public sealed class PluginRegistryEntry
     /// </summary>
     [JsonIgnore]
     public bool IsOfficial { get; set; }
-}
-
-/// <summary>
-/// Represents the JSON structure of a plugin registry file.
-/// </summary>
-public sealed class PluginRegistry
-{
-    /// <summary>Display name for this registry.</summary>
-    [JsonPropertyName("name")]
-    public string Name { get; set; } = string.Empty;
-
-    /// <summary>List of available plugins.</summary>
-    [JsonPropertyName("plugins")]
-    public List<PluginRegistryEntry> Plugins { get; set; } = [];
 }

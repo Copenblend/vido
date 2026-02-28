@@ -1,11 +1,11 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Vido.Core.Settings;
 
 namespace Vido.Services.Settings;
 
 /// <summary>
 /// JSON-based settings persistence to %APPDATA%/Vido/settings.json.
-/// Supports debounced saving — multiple rapid <see cref="QueueSave"/> calls
+/// Supports debounced saving â€” multiple rapid <see cref="QueueSave"/> calls
 /// coalesce into a single disk write after 500ms of inactivity.
 /// </summary>
 public sealed class SettingsService : ISettingsService, IDisposable
@@ -35,14 +35,22 @@ public sealed class SettingsService : ISettingsService, IDisposable
     /// Creates a settings service that persists to the specified directory.
     /// Used for testing with isolated temp directories.
     /// </summary>
+    /// <param name="settingsDirectory">The directory path where <c>settings.json</c> will be read from and written to.</param>
     public SettingsService(string settingsDirectory)
     {
         _settingsDir = settingsDirectory;
         _settingsPath = Path.Combine(_settingsDir, "settings.json");
     }
 
+    /// <summary>
+    /// Holds the current application settings, initially loaded from disk or populated with defaults.
+    /// </summary>
     public AppSettings Current { get; private set; } = new();
 
+    /// <summary>
+    /// Reads <c>settings.json</c> from disk and overwrites <see cref="Current"/> with the deserialized values.
+    /// Falls back to defaults if the file is missing, corrupt, or inaccessible.
+    /// </summary>
     public async Task LoadAsync()
     {
         if (!File.Exists(_settingsPath))
@@ -60,7 +68,7 @@ public sealed class SettingsService : ISettingsService, IDisposable
         }
         catch (Exception ex) when (ex is System.Text.Json.JsonException or IOException)
         {
-            // Corrupted or inaccessible file — use defaults
+            // Corrupted or inaccessible file â€” use defaults
             Current = new AppSettings();
         }
     }
@@ -84,6 +92,10 @@ public sealed class SettingsService : ISettingsService, IDisposable
         }
     }
 
+    /// <summary>
+    /// Schedules a debounced save — if no additional <see cref="QueueSave"/> call arrives within 500 ms,
+    /// the current settings are persisted to disk via <see cref="SaveAsync"/>.
+    /// </summary>
     public void QueueSave()
     {
         // Increment the version counter. Any in-flight debounce with an older
@@ -101,6 +113,10 @@ public sealed class SettingsService : ISettingsService, IDisposable
         });
     }
 
+    /// <summary>
+    /// Serializes <see cref="Current"/> to JSON and writes it to <c>settings.json</c> on disk,
+    /// creating the settings directory if it does not exist.
+    /// </summary>
     public async Task SaveAsync()
     {
         await _saveLock.WaitAsync();
@@ -115,7 +131,10 @@ public sealed class SettingsService : ISettingsService, IDisposable
             _saveLock.Release();
         }
     }
-
+    
+    /// <summary>
+    /// Cancels any pending debounced save and releases the internal semaphore.
+    /// </summary>
     public void Dispose()
     {
         // Bump version to suppress any in-flight debounce

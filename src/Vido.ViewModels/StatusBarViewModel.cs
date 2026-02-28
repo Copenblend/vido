@@ -22,10 +22,14 @@ public partial class StatusBarViewModel : ObservableObject, IDisposable
     private readonly VideoPlayerViewModel _playerViewModel;
     private bool _disposed;
 
-    /// <summary>Items aligned to the left side of the status bar.</summary>
+    /// <summary>
+    /// Items aligned to the left side of the status bar.
+    /// </summary>
     public ObservableCollection<StatusBarItem> LeftItems { get; } = [];
 
-    /// <summary>Items aligned to the right side of the status bar.</summary>
+    /// <summary>
+    /// Items aligned to the right side of the status bar.
+    /// </summary>
     public ObservableCollection<StatusBarItem> RightItems { get; } = [];
 
     // ── Built-in items ──
@@ -35,6 +39,11 @@ public partial class StatusBarViewModel : ObservableObject, IDisposable
     private readonly StatusBarItem _durationItem;
     private readonly StatusBarItem _codecItem;
 
+    /// <summary>
+    /// Creates the status bar view model, registering built-in items and
+    /// subscribing to player metadata changes for live updates.
+    /// </summary>
+    /// <param name="playerViewModel">Video player view model whose metadata drives built-in status items.</param>
     public StatusBarViewModel(VideoPlayerViewModel playerViewModel)
     {
         _playerViewModel = playerViewModel;
@@ -124,6 +133,9 @@ public partial class StatusBarViewModel : ObservableObject, IDisposable
     /// Registers a new status bar item. Inserts it in priority order
     /// within its alignment group. Returns the item for further updates.
     /// </summary>
+    /// <param name="id">Unique identifier for the status bar item.</param>
+    /// <param name="alignment">Whether the item appears on the left or right side.</param>
+    /// <param name="priority">Sort priority within its alignment group (lower values appear first).</param>
     /// <exception cref="ArgumentException">Thrown if an item with the same ID already exists.</exception>
     public StatusBarItem RegisterItem(string id, StatusBarAlignment alignment, int priority)
     {
@@ -138,6 +150,7 @@ public partial class StatusBarViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Unregisters a status bar item by ID. No-op if the item doesn't exist.
     /// </summary>
+    /// <param name="id">ID of the status bar item to remove.</param>
     public void UnregisterItem(string id)
     {
         var item = FindItem(id);
@@ -155,7 +168,10 @@ public partial class StatusBarViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>Finds a registered status bar item by ID, or null if not found.</summary>
+    /// <summary>
+    /// Finds a registered status bar item by ID, or null if not found.
+    /// </summary>
+    /// <param name="id">ID of the status bar item to locate.</param>
     public StatusBarItem? FindItem(string id)
     {
         for (int i = 0; i < LeftItems.Count; i++)
@@ -211,7 +227,10 @@ public partial class StatusBarViewModel : ObservableObject, IDisposable
             collection[i].ShowSeparator = i > 0;
         }
     }
-
+    
+    /// <summary>
+    /// Unsubscribes from player property change events to prevent memory leaks.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed) return;

@@ -11,6 +11,9 @@ public class TimeStretchProcessorTests : IDisposable
 {
     private readonly TimeStretchProcessor _sut;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public TimeStretchProcessorTests()
     {
         _sut = new TimeStretchProcessor(44100, 2);
@@ -18,12 +21,20 @@ public class TimeStretchProcessorTests : IDisposable
 
     // ── Construction ──
 
+    /// <summary>
+    /// Verifies that Constructor sets default tempo.
+    /// </summary>
     [Fact]
     public void Constructor_SetsDefaultTempo()
     {
         Assert.Equal(1.0, _sut.Tempo, precision: 3);
     }
 
+    /// <summary>
+    /// Verifies that Constructor various formats does not throw.
+    /// </summary>
+    /// <param name="sampleRate">The audio sample rate in Hz.</param>
+    /// <param name="channels">The number of audio channels.</param>
     [Theory]
     [InlineData(44100, 1)]
     [InlineData(44100, 2)]
@@ -37,6 +48,10 @@ public class TimeStretchProcessorTests : IDisposable
 
     // ── Tempo property ──
 
+    /// <summary>
+    /// Verifies that Tempo set and get round trips.
+    /// </summary>
+    /// <param name="tempo">The tempo multiplier.</param>
     [Theory]
     [InlineData(0.5)]
     [InlineData(1.0)]
@@ -49,6 +64,9 @@ public class TimeStretchProcessorTests : IDisposable
         Assert.Equal(tempo, _sut.Tempo, precision: 3);
     }
 
+    /// <summary>
+    /// Verifies that Tempo set multiple times does not throw.
+    /// </summary>
     [Fact]
     public void Tempo_SetMultipleTimes_DoesNotThrow()
     {
@@ -62,6 +80,9 @@ public class TimeStretchProcessorTests : IDisposable
 
     // ── PutSamples / ReceiveSamples ──
 
+    /// <summary>
+    /// Verifies that Put Samples receive samples at tempo1 returns approximately original count.
+    /// </summary>
     [Fact]
     public void PutSamples_ReceiveSamples_AtTempo1_ReturnsApproximatelyOriginalCount()
     {
@@ -91,6 +112,9 @@ public class TimeStretchProcessorTests : IDisposable
         Assert.True(totalReceived > 0, "Should receive some samples at tempo 1.0");
     }
 
+    /// <summary>
+    /// Verifies that Put Samples at tempo2 eventually produces fewer samples.
+    /// </summary>
     [Fact]
     public void PutSamples_AtTempo2_EventuallyProducesFewerSamples()
     {
@@ -117,6 +141,9 @@ public class TimeStretchProcessorTests : IDisposable
             $"At 2x tempo expected fewer than {sampleFrames} frames, got {totalReceived}");
     }
 
+    /// <summary>
+    /// Verifies that Put Samples at half tempo eventually produces more samples.
+    /// </summary>
     [Fact]
     public void PutSamples_AtHalfTempo_EventuallyProducesMoreSamples()
     {
@@ -143,6 +170,9 @@ public class TimeStretchProcessorTests : IDisposable
 
     // ── Clear ──
 
+    /// <summary>
+    /// Verifies that Clear after put samples discards buffered data.
+    /// </summary>
     [Fact]
     public void Clear_AfterPutSamples_DiscardsBufferedData()
     {
@@ -159,6 +189,9 @@ public class TimeStretchProcessorTests : IDisposable
         Assert.Equal(0, _sut.AvailableSamples);
     }
 
+    /// <summary>
+    /// Verifies that Clear when empty does not throw.
+    /// </summary>
     [Fact]
     public void Clear_WhenEmpty_DoesNotThrow()
     {
@@ -168,6 +201,9 @@ public class TimeStretchProcessorTests : IDisposable
 
     // ── Dispose ──
 
+    /// <summary>
+    /// Verifies that Dispose can be called multiple times.
+    /// </summary>
     [Fact]
     public void Dispose_CanBeCalledMultipleTimes()
     {
@@ -175,6 +211,9 @@ public class TimeStretchProcessorTests : IDisposable
         _sut.Dispose(); // Second dispose should not throw
     }
 
+    /// <summary>
+    /// Cleans up test resources after each test run.
+    /// </summary>
     public void Dispose()
     {
         _sut.Dispose();

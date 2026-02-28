@@ -11,12 +11,18 @@ public class FFmpegInitializerTests : IDisposable
 {
     private readonly string _tempDir;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public FFmpegInitializerTests()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), $"vido_ffmpeg_test_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDir);
     }
 
+    /// <summary>
+    /// Verifies that Contains F Fmpeg Libraries returns false when directory does not exist.
+    /// </summary>
     [Fact]
     public void ContainsFFmpegLibraries_ReturnsFalse_WhenDirectoryDoesNotExist()
     {
@@ -26,6 +32,9 @@ public class FFmpegInitializerTests : IDisposable
         Assert.False(result);
     }
 
+    /// <summary>
+    /// Verifies that Contains F Fmpeg Libraries returns false when directory is empty.
+    /// </summary>
     [Fact]
     public void ContainsFFmpegLibraries_ReturnsFalse_WhenDirectoryIsEmpty()
     {
@@ -34,6 +43,9 @@ public class FFmpegInitializerTests : IDisposable
         Assert.False(result);
     }
 
+    /// <summary>
+    /// Verifies that Contains F Fmpeg Libraries returns false when no avcodec dll.
+    /// </summary>
     [Fact]
     public void ContainsFFmpegLibraries_ReturnsFalse_WhenNoAvcodecDll()
     {
@@ -46,6 +58,9 @@ public class FFmpegInitializerTests : IDisposable
         Assert.False(result);
     }
 
+    /// <summary>
+    /// Verifies that Contains F Fmpeg Libraries returns true when avcodec versioned dll exists.
+    /// </summary>
     [Fact]
     public void ContainsFFmpegLibraries_ReturnsTrue_WhenAvcodecVersionedDllExists()
     {
@@ -56,6 +71,9 @@ public class FFmpegInitializerTests : IDisposable
         Assert.True(result);
     }
 
+    /// <summary>
+    /// Verifies that Contains F Fmpeg Libraries returns true when avcodec dll exists.
+    /// </summary>
     [Fact]
     public void ContainsFFmpegLibraries_ReturnsTrue_WhenAvcodecDllExists()
     {
@@ -66,6 +84,9 @@ public class FFmpegInitializerTests : IDisposable
         Assert.True(result);
     }
 
+    /// <summary>
+    /// Verifies that Contains F Fmpeg Libraries returns true when avcodec wildcard match.
+    /// </summary>
     [Fact]
     public void ContainsFFmpegLibraries_ReturnsTrue_WhenAvcodecWildcardMatch()
     {
@@ -77,6 +98,9 @@ public class FFmpegInitializerTests : IDisposable
         Assert.True(result);
     }
 
+    /// <summary>
+    /// Verifies that Version String is null or non empty.
+    /// </summary>
     [Fact]
     public void VersionString_IsNullOrNonEmpty()
     {
@@ -89,6 +113,9 @@ public class FFmpegInitializerTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// Cleans up test resources after each test run.
+    /// </summary>
     public void Dispose()
     {
         try { Directory.Delete(_tempDir, true); } catch { }

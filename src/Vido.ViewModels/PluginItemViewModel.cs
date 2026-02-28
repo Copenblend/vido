@@ -1,4 +1,3 @@
-using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Vido.Core.Plugin;
 
@@ -11,76 +10,114 @@ namespace Vido.ViewModels;
 /// </summary>
 public partial class PluginItemViewModel : ObservableObject
 {
-    /// <summary>Unique plugin identifier.</summary>
+    /// <summary>
+    /// Unique plugin identifier.
+    /// </summary>
     public string Id { get; }
 
-    /// <summary>Display name of the plugin.</summary>
+    /// <summary>
+    /// Display name of the plugin.
+    /// </summary>
     public string DisplayName { get; }
 
-    /// <summary>Short description of the plugin.</summary>
+    /// <summary>
+    /// Short description of the plugin.
+    /// </summary>
     public string Description { get; }
 
-    /// <summary>Publisher / author name.</summary>
+    /// <summary>
+    /// Publisher / author name.
+    /// </summary>
     public string Publisher { get; }
 
-    /// <summary>Plugin version string.</summary>
+    /// <summary>
+    /// Plugin version string.
+    /// </summary>
     public string Version { get; }
 
-    /// <summary>License identifier.</summary>
+    /// <summary>
+    /// License identifier.
+    /// </summary>
     public string License { get; }
 
-    /// <summary>Tags for search.</summary>
+    /// <summary>
+    /// Tags for search.
+    /// </summary>
     public IReadOnlyList<string> Tags { get; }
 
-    /// <summary>Last updated date string.</summary>
+    /// <summary>
+    /// Last updated date string.
+    /// </summary>
     public string? LastUpdated { get; }
 
-    /// <summary>Which registry this plugin came from.</summary>
+    /// <summary>
+    /// Which registry this plugin came from.
+    /// </summary>
     public string RegistryName { get; }
 
-    /// <summary>Whether this plugin is from the official Vido registry (shows verified badge).</summary>
+    /// <summary>
+    /// Whether this plugin is from the official Vido registry (shows verified badge).
+    /// </summary>
     [ObservableProperty]
     private bool _isOfficial;
 
-    /// <summary>Whether the plugin is currently installed locally.</summary>
+    /// <summary>
+    /// Whether the plugin is currently installed locally.
+    /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusText))]
     [NotifyPropertyChangedFor(nameof(ActionText))]
     private bool _isInstalled;
 
-    /// <summary>Whether the plugin is enabled (only relevant when installed).</summary>
+    /// <summary>
+    /// Whether the plugin is enabled (only relevant when installed).
+    /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusText))]
     private bool _isEnabled = true;
 
-    /// <summary>Whether an install/uninstall operation is in progress.</summary>
+    /// <summary>
+    /// Whether an install/uninstall operation is in progress.
+    /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ActionText))]
     [NotifyPropertyChangedFor(nameof(IsActionEnabled))]
     private bool _isBusy;
 
-    /// <summary>Whether an update is available (registry version > installed version).</summary>
+    /// <summary>
+    /// Whether an update is available (registry version > installed version).
+    /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusText))]
     [NotifyPropertyChangedFor(nameof(ActionText))]
     private bool _hasUpdate;
 
-    /// <summary>The version available for update from the registry.</summary>
+    /// <summary>
+    /// The version available for update from the registry.
+    /// </summary>
     [ObservableProperty]
     private string? _availableVersion;
 
-    /// <summary>Inline status/error message shown below the description.</summary>
+    /// <summary>
+    /// Inline status/error message shown below the description.
+    /// </summary>
     [ObservableProperty]
     private string? _statusMessage;
 
-    /// <summary>Whether this plugin requires a newer version of Vido than is currently running.</summary>
+    /// <summary>
+    /// Whether this plugin requires a newer version of Vido than is currently running.
+    /// </summary>
     [ObservableProperty]
     private bool _requiresNewerVido;
 
-    /// <summary>Tracks which action is in progress (e.g. "Installing...", "Updating...").</summary>
+    /// <summary>
+    /// Tracks which action is in progress (e.g. "Installing...", "Updating...").
+    /// </summary>
     private string? _busyAction;
 
-    /// <summary>Dynamic button label based on current state.</summary>
+    /// <summary>
+    /// Dynamic button label based on current state.
+    /// </summary>
     public string ActionText
     {
         get
@@ -95,40 +132,58 @@ public partial class PluginItemViewModel : ObservableObject
         }
     }
 
-    /// <summary>Whether the action button should be enabled (false when busy).</summary>
+    /// <summary>
+    /// Whether the action button should be enabled (false when busy).
+    /// </summary>
     public bool IsActionEnabled => !IsBusy;
 
-    /// <summary>Sets the busy action label and raises PropertyChanged for ActionText.</summary>
+    /// <summary>
+    /// Sets the busy action label and raises PropertyChanged for ActionText.
+    /// </summary>
+    /// <param name="action">Label describing the in-progress action (e.g. "Installing...").</param>
     public void SetBusyAction(string action)
     {
         _busyAction = action;
         OnPropertyChanged(nameof(ActionText));
     }
 
-    /// <summary>Status text: "Update Available", "Enabled", "Disabled", or empty for available plugins.</summary>
+    /// <summary>
+    /// Status text: "Update Available", "Enabled", "Disabled", or empty for available plugins.
+    /// </summary>
     public string StatusText => IsInstalled
         ? (HasUpdate ? "Update Available" : (IsEnabled ? "Enabled" : "Disabled"))
         : string.Empty;
 
-    /// <summary>Absolute file-system path or URL to the plugin icon image.</summary>
+    /// <summary>
+    /// Absolute file-system path or URL to the plugin icon image.
+    /// </summary>
     [ObservableProperty]
     private string? _iconSource;
 
-    /// <summary>URL to the plugin README.md content (for available-but-not-installed plugins).</summary>
+    /// <summary>
+    /// URL to the plugin README.md content (for available-but-not-installed plugins).
+    /// </summary>
     public string? ReadmeUrl { get; init; }
 
-    /// <summary>URL to the plugin CHANGELOG.md content (for available-but-not-installed plugins).</summary>
+    /// <summary>
+    /// URL to the plugin CHANGELOG.md content (for available-but-not-installed plugins).
+    /// </summary>
     public string? ChangelogUrl { get; init; }
 
-    /// <summary>The PluginInfo from the host (set when installed, null when only in registry).</summary>
+    /// <summary>
+    /// The PluginInfo from the host (set when installed, null when only in registry).
+    /// </summary>
     public PluginInfo? PluginInfo { get; set; }
 
-    /// <summary>The registry entry (set when the plugin is known in a registry).</summary>
+    /// <summary>
+    /// The registry entry (set when the plugin is known in a registry).
+    /// </summary>
     public PluginRegistryEntry? RegistryEntry { get; set; }
 
     /// <summary>
     /// Creates a PluginItemViewModel from a registry entry (available plugin).
     /// </summary>
+    /// <param name="entry">Registry entry describing the available plugin.</param>
     public static PluginItemViewModel FromRegistryEntry(PluginRegistryEntry entry)
     {
         ArgumentNullException.ThrowIfNull(entry);
@@ -155,6 +210,8 @@ public partial class PluginItemViewModel : ObservableObject
     /// <summary>
     /// Creates a PluginItemViewModel from an installed PluginInfo.
     /// </summary>
+    /// <param name="info">Installed plugin runtime info from the host.</param>
+    /// <param name="registryEntry">Optional matching registry entry for update detection and metadata.</param>
     public static PluginItemViewModel FromPluginInfo(PluginInfo info, PluginRegistryEntry? registryEntry = null)
     {
         ArgumentNullException.ThrowIfNull(info);
@@ -223,6 +280,7 @@ public partial class PluginItemViewModel : ObservableObject
     /// <summary>
     /// Returns true if this item matches the given search query (title or tags).
     /// </summary>
+    /// <param name="query">Search text to match against display name and tags.</param>
     public bool MatchesSearch(string query)
     {
         if (string.IsNullOrWhiteSpace(query)) return true;

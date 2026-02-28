@@ -1,5 +1,4 @@
 using System.IO.Compression;
-using System.Net.Http;
 using System.Text.Json;
 using Vido.Core.Logging;
 using Vido.Core.Plugin;
@@ -16,9 +15,15 @@ public sealed class PluginInstaller : IPluginInstaller
     private readonly HttpClient _httpClient;
     private readonly string _pluginDirectory;
 
-    /// <summary>Marker file placed in a plugin directory to flag deferred deletion.</summary>
+    /// <summary>
+    /// Marker file placed in a plugin directory to flag deferred deletion.
+    /// </summary>
     private const string UninstallMarker = ".uninstall";
-
+    
+    /// <summary>
+    /// Creates a plugin installer that downloads and extracts plugins to the default plugin directory.
+    /// </summary>
+    /// <param name="logService">The logging service used to report installation progress and errors.</param>
     public PluginInstaller(ILogService logService)
         : this(logService, new HttpClient(), PluginPaths.DefaultPluginDirectory)
     {
@@ -34,7 +39,13 @@ public sealed class PluginInstaller : IPluginInstaller
         _pluginDirectory = pluginDirectory;
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Downloads, extracts, and validates a plugin from the registry entry's download URL.
+    /// Returns <c>true</c> if the plugin was installed successfully and its <c>plugin.json</c> manifest was found.
+    /// </summary>
+    /// <param name="entry">The registry entry containing the plugin ID and download URL.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="entry"/> is <c>null</c>.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="entry"/> has an empty ID or download URL.</exception>
     public async Task<bool> InstallAsync(PluginRegistryEntry entry)
     {
         ArgumentNullException.ThrowIfNull(entry);
@@ -140,7 +151,12 @@ public sealed class PluginInstaller : IPluginInstaller
         }
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Removes an installed plugin by deleting its directory.
+    /// If files are locked, creates an uninstall marker for deferred cleanup on next startup.
+    /// </summary>
+    /// <param name="pluginId">The unique identifier of the plugin to uninstall.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="pluginId"/> is null or whitespace.</exception>
     public Task<bool> UninstallAsync(string pluginId)
     {
         if (string.IsNullOrWhiteSpace(pluginId))
@@ -181,7 +197,10 @@ public sealed class PluginInstaller : IPluginInstaller
         }
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Scans the plugin directory for directories marked with an uninstall marker file and deletes them.
+    /// Called at startup to complete deferred uninstalls that failed due to locked files.
+    /// </summary>
     public void CleanupPendingUninstalls()
     {
         if (!Directory.Exists(_pluginDirectory))
@@ -205,7 +224,11 @@ public sealed class PluginInstaller : IPluginInstaller
         }
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Downloads and deserializes the plugin registry JSON from a remote HTTPS or local file:// URL.
+    /// Returns <c>null</c> if the URL is empty or the fetch fails.
+    /// </summary>
+    /// <param name="registryUrl">The HTTPS or file:// URL pointing to a <c>registry.json</c> file.</param>
     public async Task<PluginRegistry?> FetchRegistryAsync(string registryUrl)
     {
         if (string.IsNullOrWhiteSpace(registryUrl))

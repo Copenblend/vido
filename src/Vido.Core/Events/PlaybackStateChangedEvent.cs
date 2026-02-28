@@ -7,6 +7,8 @@ namespace Vido.Core.Events;
 /// </summary>
 public sealed class PlaybackStateChangedEvent
 {
-    /// <summary>The new playback state.</summary>
+    /// <summary>
+    /// The new playback state.
+    /// </summary>
     public required PlaybackState State { get; init; }
 }

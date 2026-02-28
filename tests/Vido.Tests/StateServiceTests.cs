@@ -12,12 +12,18 @@ public sealed class StateServiceTests : IDisposable
 {
     private readonly string _tempDir;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public StateServiceTests()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), "Vido_StateTests_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_tempDir);
     }
 
+    /// <summary>
+    /// Cleans up test resources after each test run.
+    /// </summary>
     public void Dispose()
     {
         try { Directory.Delete(_tempDir, recursive: true); }
@@ -26,6 +32,9 @@ public sealed class StateServiceTests : IDisposable
 
     private StateService CreateService() => new StateService(_tempDir);
 
+    /// <summary>
+    /// Verifies that Current has sensible defaults.
+    /// </summary>
     [Fact]
     public void Current_HasSensibleDefaults()
     {
@@ -42,6 +51,9 @@ public sealed class StateServiceTests : IDisposable
         Assert.Equal("Explorer", svc.Current.ActiveSidebarPanel);
     }
 
+    /// <summary>
+    /// Verifies that Save And Load round trips.
+    /// </summary>
     [Fact]
     public async Task SaveAndLoad_RoundTrips()
     {
@@ -76,6 +88,9 @@ public sealed class StateServiceTests : IDisposable
         await svc.SaveAsync();
     }
 
+    /// <summary>
+    /// Verifies that Load Async with missing file keeps defaults.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_WithMissingFile_KeepsDefaults()
     {
@@ -86,6 +101,9 @@ public sealed class StateServiceTests : IDisposable
         Assert.Equal(1280, svc.Current.WindowWidth); // still defaults
     }
 
+    /// <summary>
+    /// Verifies that Save Async creates directory if missing.
+    /// </summary>
     [Fact]
     public async Task SaveAsync_CreatesDirectoryIfMissing()
     {
@@ -96,6 +114,9 @@ public sealed class StateServiceTests : IDisposable
         Assert.True(Directory.Exists(newDir));
     }
 
+    /// <summary>
+    /// Verifies that Multiple Saves do not conflict.
+    /// </summary>
     [Fact]
     public async Task MultipleSaves_DoNotConflict()
     {

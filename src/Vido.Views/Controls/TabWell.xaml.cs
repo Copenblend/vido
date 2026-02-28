@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -18,6 +18,9 @@ public partial class TabWell : UserControl
     private TabItemModel? _dragTab;
     private const double DragThreshold = 6;
 
+    /// <summary>
+    /// Sets up the tab strip control and registers mouse event handlers for tab interaction.
+    /// </summary>
     public TabWell()
     {
         InitializeComponent();

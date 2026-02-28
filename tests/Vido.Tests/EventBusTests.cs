@@ -4,6 +4,9 @@ using Xunit;
 
 namespace Vido.Tests;
 
+/// <summary>
+/// Verifies the behavior of <see cref="EventBus"/>.
+/// </summary>
 public sealed class EventBusTests
 {
     private readonly IEventBus _bus = new EventBus();
@@ -19,6 +22,9 @@ public sealed class EventBusTests
         public int Value { get; init; }
     }
 
+    /// <summary>
+    /// Verifies that Publish delivers to subscriber.
+    /// </summary>
     [Fact]
     public void Publish_DeliversToSubscriber()
     {
@@ -31,6 +37,9 @@ public sealed class EventBusTests
         Assert.Equal("hello", received.Message);
     }
 
+    /// <summary>
+    /// Verifies that Publish delivers to multiple subscribers.
+    /// </summary>
     [Fact]
     public void Publish_DeliversToMultipleSubscribers()
     {
@@ -45,6 +54,9 @@ public sealed class EventBusTests
         Assert.Contains("B:x", calls);
     }
 
+    /// <summary>
+    /// Verifies that Publish does not deliver to unrelated subscriber.
+    /// </summary>
     [Fact]
     public void Publish_DoesNotDeliverToUnrelatedSubscriber()
     {
@@ -56,6 +68,9 @@ public sealed class EventBusTests
         Assert.Null(received);
     }
 
+    /// <summary>
+    /// Verifies that Unsubscribe stops delivery.
+    /// </summary>
     [Fact]
     public void Unsubscribe_StopsDelivery()
     {
@@ -70,6 +85,9 @@ public sealed class EventBusTests
         Assert.Equal(1, count); // no second delivery
     }
 
+    /// <summary>
+    /// Verifies that Unsubscribe only affects disposed subscription.
+    /// </summary>
     [Fact]
     public void Unsubscribe_OnlyAffectsDisposedSubscription()
     {
@@ -85,6 +103,9 @@ public sealed class EventBusTests
         Assert.Equal(1, countB);
     }
 
+    /// <summary>
+    /// Verifies that Publish with no subscribers does not throw.
+    /// </summary>
     [Fact]
     public void Publish_WithNoSubscribers_DoesNotThrow()
     {
@@ -92,6 +113,9 @@ public sealed class EventBusTests
         Assert.Null(ex);
     }
 
+    /// <summary>
+    /// Verifies that Double Dispose does not throw.
+    /// </summary>
     [Fact]
     public void DoubleDispose_DoesNotThrow()
     {
@@ -102,6 +126,9 @@ public sealed class EventBusTests
         Assert.Null(ex);
     }
 
+    /// <summary>
+    /// Verifies that Concurrent Publish And Subscribe does not throw.
+    /// </summary>
     [Fact]
     public async Task ConcurrentPublishAndSubscribe_DoesNotThrow()
     {
