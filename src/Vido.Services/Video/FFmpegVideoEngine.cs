@@ -99,13 +99,19 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     private Timer? _metricsReportTimer;
     private const int MetricsIntervalMs = 30_000; // Log metrics every 30 seconds
 
+    /// <summary>
+    /// Creates an FFmpeg-based video engine that uses the provided log service for diagnostics and performance metrics.
+    /// </summary>
+    /// <param name="logService">The logging service used to report load times, decode errors, and playback metrics.</param>
     public FFmpegVideoEngine(ILogService logService)
     {
         _logService = logService;
     }
 
     // ── IVideoEngine State Properties ──
-
+    /// <summary>
+    /// Current playback state (None, Stopped, Playing, Paused). Fires <see cref="StateChanged"/> on transitions.
+    /// </summary>
     public PlaybackState State
     {
         get { lock (_stateLock) return _state; }
@@ -120,18 +126,27 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         }
     }
 
+    /// <summary>
+    /// Current playback position within the loaded media, updated at ~60 Hz while playing.
+    /// </summary>
     public TimeSpan Position
     {
         get { lock (_stateLock) return _position; }
         private set { lock (_stateLock) _position = value; }
     }
 
+    /// <summary>
+    /// Total duration of the currently loaded media file.
+    /// </summary>
     public TimeSpan Duration
     {
         get { lock (_stateLock) return _duration; }
         private set { lock (_stateLock) _duration = value; }
     }
 
+    /// <summary>
+    /// Audio volume level from 0 (silent) to 100 (full), applied to the WASAPI audio renderer.
+    /// </summary>
     public int Volume
     {
         get => _volume;
@@ -142,6 +157,9 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         }
     }
 
+    /// <summary>
+    /// When <c>true</c>, audio output is silenced without changing the <see cref="Volume"/> level.
+    /// </summary>
     public bool IsMuted
     {
         get => _isMuted;
@@ -152,12 +170,19 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         }
     }
 
+    /// <summary>
+    /// When <c>true</c>, playback automatically restarts from the beginning when the end of the media is reached.
+    /// </summary>
     public bool IsLooping
     {
         get => _isLooping;
         set => _isLooping = value;
     }
 
+    /// <summary>
+    /// Playback speed multiplier (0.25–4.0). Adjusts both the video presentation clock
+    /// and the SoundTouch time-stretch processor so audio pitch is preserved.
+    /// </summary>
     public double SpeedRatio
     {
         get => _speedRatio;
@@ -190,18 +215,50 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         }
     }
 
+    /// <summary>
+    /// Metadata (resolution, codecs, duration, etc.) extracted from the currently loaded video file, or <c>null</c> if no file is loaded.
+    /// </summary>
     public VideoMetadata? CurrentMetadata => _currentMetadata;
 
     // ── Events ──
+    /// <summary>
+    /// Raised at ~60 Hz while playing, delivering the current playback position.
+    /// </summary>
     public event Action<TimeSpan>? PositionChanged;
+
+    /// <summary>
+    /// Raised when the playback state transitions between None, Stopped, Playing, and Paused.
+    /// </summary>
     public event Action<PlaybackState>? StateChanged;
+
+    /// <summary>
+    /// Raised each time a decoded video frame is ready for rendering, delivering BGRA32 pixel data.
+    /// </summary>
     public event Action<FrameData>? FrameReady;
+
+    /// <summary>
+    /// Raised when the media reaches its end (and looping is disabled), signaling the consumer to load the next file or stop.
+    /// </summary>
     public event Action? MediaEnded;
+
+    /// <summary>
+    /// Raised after a seek operation has been processed by the decode thread and the codec buffers have been flushed.
+    /// </summary>
     public event Action? SeekCompleted;
+
+    /// <summary>
+    /// Raised each time a batch of decoded audio samples is available, providing raw PCM data for visualization or haptics.
+    /// </summary>
     public event Action<AudioSampleEventArgs>? AudioSamplesAvailable;
 
     // ── Commands ──
-
+    /// <summary>
+    /// Opens a video file, initializes FFmpeg demuxer/decoders (with optional hardware acceleration),
+    /// sets up audio resampling, and extracts metadata. Any previously loaded media is stopped and released first.
+    /// </summary>
+    /// <param name="filePath">The absolute path to the video file to load.</param>
+    /// <exception cref="InvalidOperationException">Thrown if FFmpeg has not been initialized via <c>FFmpegInitializer.Initialize()</c>.</exception>
+    /// <exception cref="FileNotFoundException">Thrown if the specified video file does not exist on disk.</exception>
     public Task LoadAsync(string filePath)
     {
         if (!FFmpegInitializer.IsInitialized)
@@ -237,6 +294,10 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         });
     }
 
+    /// <summary>
+    /// Starts or resumes playback. Spawns the decode thread if not already running,
+    /// starts the audio renderer, and begins the presentation clock.
+    /// </summary>
     public void Play()
     {
         if (State == PlaybackState.None) return;
@@ -269,6 +330,10 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         State = PlaybackState.Playing;
     }
 
+    /// <summary>
+    /// Pauses playback by blocking the decode thread, pausing the audio renderer,
+    /// and freezing the presentation clock at the current position.
+    /// </summary>
     public void Pause()
     {
         if (State != PlaybackState.Playing) return;
@@ -284,6 +349,10 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         State = PlaybackState.Paused;
     }
 
+    /// <summary>
+    /// Stops playback completely by cancelling the decode thread, stopping the audio renderer,
+    /// resetting position to zero, and preparing for a fresh <see cref="Play"/> call.
+    /// </summary>
     public void Stop()
     {
         if (State == PlaybackState.None) return;
@@ -311,7 +380,12 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
 
         State = PlaybackState.Stopped;
     }
-
+    
+    /// <summary>
+    /// Posts a seek request to the decode thread, which flushes codec buffers and repositions
+    /// the demuxer to the nearest keyframe before the target. Stale pre-seek frames are discarded.
+    /// </summary>
+    /// <param name="position">The target playback position to seek to.</param>
     public void Seek(TimeSpan position)
     {
         if (State == PlaybackState.None) return;
@@ -337,6 +411,12 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
 
     // ── Internal Implementation ──
 
+    /// <summary>
+    /// Opens the media file, locates video and audio streams, initializes decoders,
+    /// sets up audio resampling and rendering, and extracts metadata.
+    /// </summary>
+    /// <param name="filePath">The absolute path of the media file to open.</param>
+    /// <exception cref="InvalidOperationException">Thrown if the file cannot be opened or stream info cannot be read.</exception>
     private void OpenMedia(string filePath)
     {
         AVFormatContext* fmt = null;
@@ -384,6 +464,7 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     /// Opens the video decoder with hardware acceleration (D3D11VA → DXVA2 → software fallback).
     /// If hw accel setup fails at any point, falls back to software decoding transparently.
     /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the codec is unsupported, the codec context cannot be allocated, codec parameters cannot be copied, or the codec fails to open.</exception>
     private AVCodecContext* OpenVideoCodec(AVStream* stream)
     {
         var codecPar = stream->codecpar;
@@ -514,6 +595,11 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         return pix_fmts[0];
     }
 
+    /// <summary>
+    /// Opens a decoder for the given audio stream, allocating a codec context and enabling multi-threaded decoding.
+    /// </summary>
+    /// <param name="stream">The FFmpeg audio stream to decode.</param>
+    /// <exception cref="InvalidOperationException">Thrown if the codec is unsupported, the codec context cannot be allocated, codec parameters cannot be copied, or the codec fails to open.</exception>
     private AVCodecContext* OpenCodec(AVStream* stream)
     {
         var codecPar = stream->codecpar;
@@ -539,6 +625,11 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         return codecCtx;
     }
 
+    /// <summary>
+    /// Creates and initializes the SwrContext audio resampler and the SoundTouch
+    /// time-stretch processor for the current audio codec context.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown if the SwrContext cannot be allocated or initialized.</exception>
     private void InitializeAudioResampler()
     {
         if (_audioCodecContext == null) return;
@@ -1168,7 +1259,9 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     }
 
     // ── IDisposable ──
-
+    /// <summary>
+    /// Releases all FFmpeg contexts, the frame converter, the audio renderer, and threading primitives.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed) return;

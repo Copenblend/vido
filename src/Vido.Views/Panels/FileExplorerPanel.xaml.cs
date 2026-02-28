@@ -1,5 +1,4 @@
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -57,7 +56,10 @@ public partial class FileExplorerPanel : UserControl
     /// Set by MainWindow after creating the panel.
     /// </summary>
     public IContributionRegistry? ContributionRegistry { get; set; }
-
+    /// <summary>
+    /// Sets up the file explorer panel, wiring data context change and visibility handlers
+    /// to keep the visual state synchronized with the view model.
+    /// </summary>
     public FileExplorerPanel()
     {
         InitializeComponent();
@@ -132,7 +134,7 @@ public partial class FileExplorerPanel : UserControl
         SpinnerRotation.Angle = 0;
     }
 
-    // ─── Tree item events ────────────────────────────────────────────
+    // ─── Tree item events ────────────────────────────────────────────────────────────────
 
     /// <summary>
     /// When a TreeViewItem is loaded, checks if the file has a plugin-provided
@@ -212,7 +214,7 @@ public partial class FileExplorerPanel : UserControl
             }
             catch
             {
-                // Icon load failed — keep default icon
+                // Icon load failed â€” keep default icon
             }
         }
     }
@@ -233,7 +235,7 @@ public partial class FileExplorerPanel : UserControl
     }
 
     /// <summary>
-    /// Handles tree item expansion — triggers lazy-loading of directory children.
+    /// Handles tree item expansion â€” triggers lazy-loading of directory children.
     /// </summary>
     private async void OnTreeViewItemExpanded(object sender, RoutedEventArgs e)
     {
@@ -258,7 +260,7 @@ public partial class FileExplorerPanel : UserControl
         }
     }
 
-    // ─── Node right-click → context menu assignment ──────────────────
+    // ─── Node right-click → context menu assignment ────────────────────────────────────────────────
 
     /// <summary>
     /// Assigns the correct context menu based on the node type when right-clicking
@@ -327,7 +329,7 @@ public partial class FileExplorerPanel : UserControl
         }
     }
 
-    // ─── Context menu click handlers ────────────────────────────────
+    // ─── Context menu click handlers ────────────────────────────────────────────────────────────────
 
     private void OnPlayFileClick(object sender, RoutedEventArgs e)
     {
@@ -372,7 +374,7 @@ public partial class FileExplorerPanel : UserControl
         }
     }
 
-    // ─── Plugin context menu injection ──────────────────────────────
+    // ─── Plugin context menu injection ────────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Dynamically adds plugin-contributed context menu items from the
@@ -418,7 +420,7 @@ public partial class FileExplorerPanel : UserControl
         }
     }
 
-    // ─── Background context menu handlers ───────────────────────────
+    // ─── Background context menu handlers ────────────────────────────────────────────────────────────────
 
     private void OnTreeBackgroundContextMenuOpened(object sender, RoutedEventArgs e)
     {
@@ -464,14 +466,14 @@ public partial class FileExplorerPanel : UserControl
         }
     }
 
-    // ─── Buttons ────────────────────────────────────────────────────
+    // ─── Buttons ────────────────────────────────────────────────────────────────
 
     private void OnOpenFolderButtonClick(object sender, RoutedEventArgs e)
     {
         OpenFolderRequested?.Invoke();
     }
 
-    // ─── Helpers ────────────────────────────────────────────────────
+    // ─── Helpers ────────────────────────────────────────────────────────────────
 
     /// <summary>
     /// Walks up from a <see cref="MenuItem"/> to its owning <see cref="ContextMenu"/>
@@ -504,7 +506,7 @@ public partial class FileExplorerPanel : UserControl
         return null;
     }
 
-    // ─── Drag and drop ──────────────────────────────────────────────
+    // ─── Drag and drop ────────────────────────────────────────────────────────────────
 
     private void OnExplorerDragEnter(object sender, DragEventArgs e)
     {

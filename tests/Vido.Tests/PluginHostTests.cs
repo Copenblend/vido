@@ -26,6 +26,9 @@ public class PluginHostTests : IDisposable
     private readonly IKeyboardShortcutService _keyboardShortcutService = Substitute.For<IKeyboardShortcutService>();
     private readonly AppSettings _appSettings;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public PluginHostTests()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), "vido-pluginhost-test-" + Guid.NewGuid().ToString("N")[..8]);
@@ -38,6 +41,9 @@ public class PluginHostTests : IDisposable
         _settingsService.Current.Returns(_appSettings);
     }
 
+    /// <summary>
+    /// Cleans up test resources after each test run.
+    /// </summary>
     public void Dispose()
     {
         if (Directory.Exists(_tempDir))
@@ -63,6 +69,9 @@ public class PluginHostTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// Verifies that Activate All no plugins succeeds.
+    /// </summary>
     [Fact]
     public void ActivateAll_NoPlugins_Succeeds()
     {
@@ -76,6 +85,9 @@ public class PluginHostTests : IDisposable
             "PluginHost");
     }
 
+    /// <summary>
+    /// Verifies that Activate All invalid plugin dir skips gracefully.
+    /// </summary>
     [Fact]
     public void ActivateAll_InvalidPluginDir_SkipsGracefully()
     {
@@ -87,6 +99,9 @@ public class PluginHostTests : IDisposable
         Assert.Empty(host.Plugins);
     }
 
+    /// <summary>
+    /// Verifies that Activate All valid manifest missing dll sets error state.
+    /// </summary>
     [Fact]
     public void ActivateAll_ValidManifestMissingDll_SetsErrorState()
     {
@@ -108,6 +123,9 @@ public class PluginHostTests : IDisposable
         Assert.Contains("not found", host.Plugins[0].ErrorMessage);
     }
 
+    /// <summary>
+    /// Verifies that Activate All valid manifest invalid dll sets error state.
+    /// </summary>
     [Fact]
     public void ActivateAll_ValidManifestInvalidDll_SetsErrorState()
     {
@@ -128,6 +146,9 @@ public class PluginHostTests : IDisposable
         Assert.Equal(PluginState.Error, host.Plugins[0].State);
     }
 
+    /// <summary>
+    /// Verifies that Activate All duplicate plugin ids skips second.
+    /// </summary>
     [Fact]
     public void ActivateAll_DuplicatePluginIds_SkipsSecond()
     {
@@ -163,6 +184,9 @@ public class PluginHostTests : IDisposable
             "PluginHost");
     }
 
+    /// <summary>
+    /// Verifies that Activate All disabled plugin logs startup.
+    /// </summary>
     [Fact]
     public void ActivateAll_DisabledPlugin_LogsStartup()
     {
@@ -191,6 +215,9 @@ public class PluginHostTests : IDisposable
             "PluginHost");
     }
 
+    /// <summary>
+    /// Verifies that Get Plugin existing id returns info.
+    /// </summary>
     [Fact]
     public void GetPlugin_ExistingId_ReturnsInfo()
     {
@@ -213,6 +240,9 @@ public class PluginHostTests : IDisposable
         Assert.Equal("com.test.my-plugin", info.Manifest.Id);
     }
 
+    /// <summary>
+    /// Verifies that Get Plugin unknown id returns null.
+    /// </summary>
     [Fact]
     public void GetPlugin_UnknownId_ReturnsNull()
     {
@@ -222,6 +252,9 @@ public class PluginHostTests : IDisposable
         Assert.Null(host.GetPlugin("nonexistent"));
     }
 
+    /// <summary>
+    /// Verifies that Get Disabled Plugin Ids returns from settings.
+    /// </summary>
     [Fact]
     public void GetDisabledPluginIds_ReturnsFromSettings()
     {
@@ -235,6 +268,9 @@ public class PluginHostTests : IDisposable
         Assert.Contains("plugin-a", disabled);
     }
 
+    /// <summary>
+    /// Verifies that Deactivate All no plugins succeeds.
+    /// </summary>
     [Fact]
     public void DeactivateAll_NoPlugins_Succeeds()
     {
@@ -248,6 +284,9 @@ public class PluginHostTests : IDisposable
             "PluginHost");
     }
 
+    /// <summary>
+    /// Verifies that Contribution Registry exposed through property.
+    /// </summary>
     [Fact]
     public void ContributionRegistry_ExposedThroughProperty()
     {
@@ -256,6 +295,9 @@ public class PluginHostTests : IDisposable
         Assert.Same(_contributions, host.ContributionRegistry);
     }
 
+    /// <summary>
+    /// Verifies that Scan Non Existent Directory logs debug.
+    /// </summary>
     [Fact]
     public void ScanNonExistentDirectory_LogsDebug()
     {
@@ -269,6 +311,9 @@ public class PluginHostTests : IDisposable
             "PluginHost");
     }
 
+    /// <summary>
+    /// Verifies that Plugin Info initial state is discovered.
+    /// </summary>
     [Fact]
     public void PluginInfo_InitialState_IsDiscovered()
     {
@@ -283,6 +328,9 @@ public class PluginHostTests : IDisposable
         Assert.Null(info.ErrorMessage);
     }
 
+    /// <summary>
+    /// Verifies that Activate All prunes orphaned disabled ids.
+    /// </summary>
     [Fact]
     public void ActivateAll_PrunesOrphanedDisabledIds()
     {
@@ -297,6 +345,9 @@ public class PluginHostTests : IDisposable
         _settingsService.Received().QueueSave();
     }
 
+    /// <summary>
+    /// Verifies that Activate All keeps valid disabled ids.
+    /// </summary>
     [Fact]
     public void ActivateAll_KeepsValidDisabledIds()
     {
@@ -320,6 +371,9 @@ public class PluginHostTests : IDisposable
         Assert.Equal("com.test.real-plugin", _appSettings.DisabledPluginIds[0]);
     }
 
+    /// <summary>
+    /// Verifies that Activate All disabled check is case insensitive.
+    /// </summary>
     [Fact]
     public void ActivateAll_DisabledCheck_IsCaseInsensitive()
     {
@@ -346,6 +400,9 @@ public class PluginHostTests : IDisposable
         Assert.Single(_appSettings.DisabledPluginIds);
     }
 
+    /// <summary>
+    /// Verifies that Get Plugin is case insensitive.
+    /// </summary>
     [Fact]
     public void GetPlugin_IsCaseInsensitive()
     {
@@ -386,6 +443,9 @@ public class PluginHostTests : IDisposable
         };
     }
 
+    /// <summary>
+    /// Verifies that Topological Sort empty list returns empty.
+    /// </summary>
     [Fact]
     public void TopologicalSort_EmptyList_ReturnsEmpty()
     {
@@ -394,6 +454,9 @@ public class PluginHostTests : IDisposable
         Assert.Empty(result);
     }
 
+    /// <summary>
+    /// Verifies that Topological Sort single plugin returns same.
+    /// </summary>
     [Fact]
     public void TopologicalSort_SinglePlugin_ReturnsSame()
     {
@@ -405,6 +468,9 @@ public class PluginHostTests : IDisposable
         Assert.Equal("com.test.solo", result[0].Manifest.Id);
     }
 
+    /// <summary>
+    /// Verifies that Topological Sort no dependencies returns all.
+    /// </summary>
     [Fact]
     public void TopologicalSort_NoDependencies_ReturnsAll()
     {
@@ -424,6 +490,9 @@ public class PluginHostTests : IDisposable
         Assert.Contains("com.test.c", ids);
     }
 
+    /// <summary>
+    /// Verifies that Topological Sort linear chain dependencies first.
+    /// </summary>
     [Fact]
     public void TopologicalSort_LinearChain_DependenciesFirst()
     {
@@ -451,6 +520,9 @@ public class PluginHostTests : IDisposable
         Assert.True(indexB < indexC, "B should come before C");
     }
 
+    /// <summary>
+    /// Verifies that Topological Sort diamond dependency all resolved.
+    /// </summary>
     [Fact]
     public void TopologicalSort_DiamondDependency_AllResolved()
     {
@@ -486,6 +558,9 @@ public class PluginHostTests : IDisposable
         Assert.True(indexC < indexD, "C before D");
     }
 
+    /// <summary>
+    /// Verifies that Topological Sort cycle detected appends remaining.
+    /// </summary>
     [Fact]
     public void TopologicalSort_CycleDetected_AppendsRemaining()
     {
@@ -508,6 +583,9 @@ public class PluginHostTests : IDisposable
         Assert.Equal(2, result.Count);
     }
 
+    /// <summary>
+    /// Verifies that Topological Sort partial cycle non cyclic plugins first.
+    /// </summary>
     [Fact]
     public void TopologicalSort_PartialCycle_NonCyclicPluginsFirst()
     {
@@ -533,6 +611,9 @@ public class PluginHostTests : IDisposable
         Assert.Equal(0, indexC);
     }
 
+    /// <summary>
+    /// Verifies that Topological Sort unknown dependency ignored in sort.
+    /// </summary>
     [Fact]
     public void TopologicalSort_UnknownDependency_IgnoredInSort()
     {
@@ -554,6 +635,9 @@ public class PluginHostTests : IDisposable
         Assert.Contains(result, p => p.Manifest.Id == "com.test.b");
     }
 
+    /// <summary>
+    /// Verifies that Topological Sort case insensitive ids.
+    /// </summary>
     [Fact]
     public void TopologicalSort_CaseInsensitiveIds()
     {
@@ -576,6 +660,9 @@ public class PluginHostTests : IDisposable
 
     // ── Dependency Integration Tests ──
 
+    /// <summary>
+    /// Verifies that Activate All missing dependency sets error state.
+    /// </summary>
     [Fact]
     public void ActivateAll_MissingDependency_SetsErrorState()
     {
@@ -625,6 +712,9 @@ public class PluginHostTests : IDisposable
         Assert.Equal(PluginState.Error, dependent.State);
     }
 
+    /// <summary>
+    /// Verifies that Activate All disabled dependency sets error state.
+    /// </summary>
     [Fact]
     public void ActivateAll_DisabledDependency_SetsErrorState()
     {
@@ -667,6 +757,9 @@ public class PluginHostTests : IDisposable
         Assert.Equal(PluginState.Error, dependent.State);
     }
 
+    /// <summary>
+    /// Verifies that Activate All no dependencies plugin activates normally.
+    /// </summary>
     [Fact]
     public void ActivateAll_NoDependencies_PluginActivatesNormally()
     {
@@ -690,6 +783,9 @@ public class PluginHostTests : IDisposable
         Assert.DoesNotContain("dependency", plugin.ErrorMessage ?? "");
     }
 
+    /// <summary>
+    /// Verifies that Activate All empty dependencies array passes validation.
+    /// </summary>
     [Fact]
     public void ActivateAll_EmptyDependenciesArray_PassesValidation()
     {
@@ -715,6 +811,9 @@ public class PluginHostTests : IDisposable
 
     // ── Assembly Resolver Runtime Probing Tests ──
 
+    /// <summary>
+    /// Verifies that Find Runtime Specific Assembly prefers runtime over root.
+    /// </summary>
     [Fact]
     public void FindRuntimeSpecificAssembly_PrefersRuntimeOverRoot()
     {
@@ -742,6 +841,9 @@ public class PluginHostTests : IDisposable
         Assert.Contains(Path.Combine("runtimes", rid), result);
     }
 
+    /// <summary>
+    /// Verifies that Find Runtime Specific Assembly returns null when no runtimes dir.
+    /// </summary>
     [Fact]
     public void FindRuntimeSpecificAssembly_ReturnsNull_WhenNoRuntimesDir()
     {
@@ -754,6 +856,9 @@ public class PluginHostTests : IDisposable
         Assert.Null(result);
     }
 
+    /// <summary>
+    /// Verifies that Find Root Assembly returns path when dll exists.
+    /// </summary>
     [Fact]
     public void FindRootAssembly_ReturnsPath_WhenDllExists()
     {
@@ -767,6 +872,9 @@ public class PluginHostTests : IDisposable
         Assert.EndsWith("MyLib.dll", result);
     }
 
+    /// <summary>
+    /// Verifies that Find Root Assembly returns null when dll missing.
+    /// </summary>
     [Fact]
     public void FindRootAssembly_ReturnsNull_WhenDllMissing()
     {
@@ -778,6 +886,9 @@ public class PluginHostTests : IDisposable
         Assert.Null(result);
     }
 
+    /// <summary>
+    /// Verifies that Find Runtime Specific Assembly arch specific preferred over generic rid.
+    /// </summary>
     [Fact]
     public void FindRuntimeSpecificAssembly_ArchSpecific_PreferredOverGenericRid()
     {
@@ -804,4 +915,3 @@ public class PluginHostTests : IDisposable
         Assert.Contains($"{rid}-{arch}", result);
     }
 }
-

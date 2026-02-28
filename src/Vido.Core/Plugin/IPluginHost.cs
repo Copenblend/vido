@@ -6,7 +6,9 @@ namespace Vido.Core.Plugin;
 /// </summary>
 public interface IPluginHost
 {
-    /// <summary>All discovered plugins (regardless of state).</summary>
+    /// <summary>
+    /// All discovered plugins (regardless of state).
+    /// </summary>
     IReadOnlyList<PluginInfo> Plugins { get; }
 
     /// <summary>

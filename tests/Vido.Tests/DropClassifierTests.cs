@@ -11,12 +11,18 @@ public sealed class DropClassifierTests : IDisposable
 {
     private readonly string _tempDir;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public DropClassifierTests()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), $"vido_drop_tests_{Guid.NewGuid():N}");
         Directory.CreateDirectory(_tempDir);
     }
 
+    /// <summary>
+    /// Cleans up test resources after each test run.
+    /// </summary>
     public void Dispose()
     {
         if (Directory.Exists(_tempDir))
@@ -25,24 +31,36 @@ public sealed class DropClassifierTests : IDisposable
 
     // ── Classify ──
 
+    /// <summary>
+    /// Verifies that Classify null path returns invalid.
+    /// </summary>
     [Fact]
     public void Classify_NullPath_ReturnsInvalid()
     {
         Assert.Equal(DropClassification.Invalid, DropClassifier.Classify(null));
     }
 
+    /// <summary>
+    /// Verifies that Classify empty string returns invalid.
+    /// </summary>
     [Fact]
     public void Classify_EmptyString_ReturnsInvalid()
     {
         Assert.Equal(DropClassification.Invalid, DropClassifier.Classify(""));
     }
 
+    /// <summary>
+    /// Verifies that Classify whitespace only returns invalid.
+    /// </summary>
     [Fact]
     public void Classify_WhitespaceOnly_ReturnsInvalid()
     {
         Assert.Equal(DropClassification.Invalid, DropClassifier.Classify("   "));
     }
 
+    /// <summary>
+    /// Verifies that Classify non existent path returns invalid.
+    /// </summary>
     [Fact]
     public void Classify_NonExistentPath_ReturnsInvalid()
     {
@@ -50,12 +68,19 @@ public sealed class DropClassifierTests : IDisposable
             DropClassifier.Classify(@"C:\nonexistent_path_abc123\file.mp4"));
     }
 
+    /// <summary>
+    /// Verifies that Classify existing directory returns folder.
+    /// </summary>
     [Fact]
     public void Classify_ExistingDirectory_ReturnsFolder()
     {
         Assert.Equal(DropClassification.Folder, DropClassifier.Classify(_tempDir));
     }
 
+    /// <summary>
+    /// Verifies that Classify video file returns video file.
+    /// </summary>
+    /// <param name="extension">The file extension to classify.</param>
     [Theory]
     [InlineData(".mp4")]
     [InlineData(".avi")]
@@ -72,6 +97,10 @@ public sealed class DropClassifierTests : IDisposable
         Assert.Equal(DropClassification.VideoFile, DropClassifier.Classify(filePath));
     }
 
+    /// <summary>
+    /// Verifies that Classify video file case insensitive.
+    /// </summary>
+    /// <param name="extension">The file extension to classify.</param>
     [Theory]
     [InlineData(".MP4")]
     [InlineData(".Mkv")]
@@ -84,6 +113,10 @@ public sealed class DropClassifierTests : IDisposable
         Assert.Equal(DropClassification.VideoFile, DropClassifier.Classify(filePath));
     }
 
+    /// <summary>
+    /// Verifies that Classify non video file returns unsupported file.
+    /// </summary>
+    /// <param name="extension">The file extension to classify.</param>
     [Theory]
     [InlineData(".txt")]
     [InlineData(".jpg")]
@@ -101,6 +134,9 @@ public sealed class DropClassifierTests : IDisposable
 
     // ── ClassifyAll ──
 
+    /// <summary>
+    /// Verifies that Classify All null array returns empty.
+    /// </summary>
     [Fact]
     public void ClassifyAll_NullArray_ReturnsEmpty()
     {
@@ -108,6 +144,9 @@ public sealed class DropClassifierTests : IDisposable
         Assert.Empty(results);
     }
 
+    /// <summary>
+    /// Verifies that Classify All empty array returns empty.
+    /// </summary>
     [Fact]
     public void ClassifyAll_EmptyArray_ReturnsEmpty()
     {
@@ -115,6 +154,9 @@ public sealed class DropClassifierTests : IDisposable
         Assert.Empty(results);
     }
 
+    /// <summary>
+    /// Verifies that Classify All mixed items returns all valid.
+    /// </summary>
     [Fact]
     public void ClassifyAll_MixedItems_ReturnsAllValid()
     {
@@ -134,6 +176,9 @@ public sealed class DropClassifierTests : IDisposable
         Assert.Equal(textPath, results[2].Path);
     }
 
+    /// <summary>
+    /// Verifies that Classify All skips invalid paths.
+    /// </summary>
     [Fact]
     public void ClassifyAll_SkipsInvalidPaths()
     {
@@ -148,6 +193,9 @@ public sealed class DropClassifierTests : IDisposable
         Assert.Equal(videoPath, results[0].Path);
     }
 
+    /// <summary>
+    /// Verifies that Classify All multiple folders returns all.
+    /// </summary>
     [Fact]
     public void ClassifyAll_MultipleFolders_ReturnsAll()
     {
@@ -162,6 +210,9 @@ public sealed class DropClassifierTests : IDisposable
         Assert.All(results, r => Assert.Equal(DropClassification.Folder, r.Classification));
     }
 
+    /// <summary>
+    /// Verifies that Classify All multiple video files returns all.
+    /// </summary>
     [Fact]
     public void ClassifyAll_MultipleVideoFiles_ReturnsAll()
     {

@@ -32,6 +32,10 @@ public partial class App : Application
 {
     private ServiceProvider? _serviceProvider;
 
+    /// <summary>
+    /// Performs asynchronous application startup, dependency initialization, and main window launch.
+    /// </summary>
+    /// <param name="e">Startup event arguments including command-line arguments.</param>
     protected override async void OnStartup(StartupEventArgs e)
     {
         var startupTimer = Stopwatch.StartNew();
@@ -92,6 +96,10 @@ public partial class App : Application
         });
     }
 
+    /// <summary>
+    /// Performs asynchronous shutdown tasks and disposes the dependency injection container.
+    /// </summary>
+    /// <param name="e">Exit event arguments for application shutdown.</param>
     protected override async void OnExit(ExitEventArgs e)
     {
         if (_serviceProvider is not null)

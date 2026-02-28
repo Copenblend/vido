@@ -13,6 +13,9 @@ public class AudioRendererTests : IDisposable
 
     // ── Buffer Size (vb-002) ──
 
+    /// <summary>
+    /// Verifies that Initialize does not throw when no audio device.
+    /// </summary>
     [Fact]
     public void Initialize_DoesNotThrow_WhenNoAudioDevice()
     {
@@ -22,6 +25,9 @@ public class AudioRendererTests : IDisposable
         Assert.Null(ex);
     }
 
+    /// <summary>
+    /// Verifies that Initialize can be called multiple times.
+    /// </summary>
     [Fact]
     public void Initialize_CanBeCalledMultipleTimes()
     {
@@ -29,6 +35,9 @@ public class AudioRendererTests : IDisposable
         _sut.Initialize(48000, 2); // Re-initialize with different format
     }
 
+    /// <summary>
+    /// Verifies that Submit Samples before initialize does not throw.
+    /// </summary>
     [Fact]
     public void SubmitSamples_BeforeInitialize_DoesNotThrow()
     {
@@ -38,12 +47,18 @@ public class AudioRendererTests : IDisposable
 
     // ── Flush (vb-002) ──
 
+    /// <summary>
+    /// Verifies that Flush before initialize does not throw.
+    /// </summary>
     [Fact]
     public void Flush_BeforeInitialize_DoesNotThrow()
     {
         _sut.Flush();
     }
 
+    /// <summary>
+    /// Verifies that Flush after initialize does not throw.
+    /// </summary>
     [Fact]
     public void Flush_AfterInitialize_DoesNotThrow()
     {
@@ -51,6 +66,9 @@ public class AudioRendererTests : IDisposable
         _sut.Flush();
     }
 
+    /// <summary>
+    /// Verifies that Flush after submitting samples clears buffer.
+    /// </summary>
     [Fact]
     public void Flush_AfterSubmittingSamples_ClearsBuffer()
     {
@@ -62,12 +80,18 @@ public class AudioRendererTests : IDisposable
 
     // ── Stop ──
 
+    /// <summary>
+    /// Verifies that Stop before initialize does not throw.
+    /// </summary>
     [Fact]
     public void Stop_BeforeInitialize_DoesNotThrow()
     {
         _sut.Stop();
     }
 
+    /// <summary>
+    /// Verifies that Stop after initialize does not throw.
+    /// </summary>
     [Fact]
     public void Stop_AfterInitialize_DoesNotThrow()
     {
@@ -77,6 +101,9 @@ public class AudioRendererTests : IDisposable
 
     // ── Volume ──
 
+    /// <summary>
+    /// Verifies that Volume clamps to range.
+    /// </summary>
     [Fact]
     public void Volume_ClampsToRange()
     {
@@ -92,6 +119,9 @@ public class AudioRendererTests : IDisposable
 
     // ── Mute ──
 
+    /// <summary>
+    /// Verifies that Is Muted can be toggled.
+    /// </summary>
     [Fact]
     public void IsMuted_CanBeToggled()
     {
@@ -104,6 +134,9 @@ public class AudioRendererTests : IDisposable
 
     // ── Dispose ──
 
+    /// <summary>
+    /// Verifies that Dispose can be called multiple times.
+    /// </summary>
     [Fact]
     public void Dispose_CanBeCalledMultipleTimes()
     {
@@ -111,6 +144,9 @@ public class AudioRendererTests : IDisposable
         _sut.Dispose(); // Should not throw
     }
 
+    /// <summary>
+    /// Verifies that Submit Samples after dispose does not throw.
+    /// </summary>
     [Fact]
     public void SubmitSamples_AfterDispose_DoesNotThrow()
     {
@@ -123,6 +159,9 @@ public class AudioRendererTests : IDisposable
 
     // ── Float overload (vb-003) ──
 
+    /// <summary>
+    /// Verifies that Submit Samples float overload before initialize does not throw.
+    /// </summary>
     [Fact]
     public void SubmitSamples_FloatOverload_BeforeInitialize_DoesNotThrow()
     {
@@ -130,6 +169,9 @@ public class AudioRendererTests : IDisposable
         _sut.SubmitSamples(floats, 0, floats.Length);
     }
 
+    /// <summary>
+    /// Verifies that Submit Samples float overload after initialize does not throw.
+    /// </summary>
     [Fact]
     public void SubmitSamples_FloatOverload_AfterInitialize_DoesNotThrow()
     {
@@ -138,6 +180,9 @@ public class AudioRendererTests : IDisposable
         _sut.SubmitSamples(floats, 0, floats.Length);
     }
 
+    /// <summary>
+    /// Verifies that Submit Samples float overload after dispose does not throw.
+    /// </summary>
     [Fact]
     public void SubmitSamples_FloatOverload_AfterDispose_DoesNotThrow()
     {
@@ -148,6 +193,9 @@ public class AudioRendererTests : IDisposable
         _sut.SubmitSamples(floats, 0, floats.Length); // Graceful no-op
     }
 
+    /// <summary>
+    /// Cleans up test resources after each test run.
+    /// </summary>
     public void Dispose()
     {
         _sut.Dispose();

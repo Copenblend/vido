@@ -1,4 +1,4 @@
-using System.Buffers;
+﻿using System.Buffers;
 using FFmpeg.AutoGen.Abstractions;
 using Vido.Core.Playback;
 
@@ -25,6 +25,10 @@ internal sealed unsafe class FrameConverter : IDisposable
     /// Configures the converter for the specified source format and dimensions.
     /// Called once when a video is loaded or when dimensions change.
     /// </summary>
+    /// <param name="srcWidth">The width of the source video frame in pixels.</param>
+    /// <param name="srcHeight">The height of the source video frame in pixels.</param>
+    /// <param name="srcFormat">The pixel format of the source frame (deprecated YUVJ* formats are normalized automatically).</param>
+    /// <exception cref="InvalidOperationException">Thrown if the swscale context cannot be created for the given format.</exception>
     public void Configure(int srcWidth, int srcHeight, AVPixelFormat srcFormat)
     {
         // Normalize deprecated YUVJ* formats to their non-deprecated equivalents.
@@ -71,6 +75,8 @@ internal sealed unsafe class FrameConverter : IDisposable
     /// <summary>
     /// Converts an AVFrame to BGRA32 FrameData.
     /// </summary>
+    /// <param name="frame">A pointer to the decoded FFmpeg frame to convert.</param>
+    /// <param name="pts">The presentation timestamp to attach to the resulting <see cref="FrameData"/>.</param>
     public FrameData? Convert(AVFrame* frame, TimeSpan pts)
     {
         if (_swsContext == null || _buffer == null)
@@ -99,7 +105,7 @@ internal sealed unsafe class FrameConverter : IDisposable
         }
 
         // Copy pixel data to a pooled array to avoid per-frame GC allocations.
-        // For 1080p (1920×1080×4 = ~8.3 MB), new byte[] would land on the LOH
+        // For 1080p (1920Ã—1080Ã—4 = ~8.3 MB), new byte[] would land on the LOH
         // every frame. ArrayPool.Shared reuses buffers, eliminating GC pressure.
         var stride = _dstLineSize[0];
         var dataLength = stride * _dstHeight;
@@ -119,7 +125,10 @@ internal sealed unsafe class FrameConverter : IDisposable
 
         _buffer = null;
     }
-
+    
+    /// <summary>
+    /// Frees the swscale context and pixel buffer, and marks this converter as disposed.
+    /// </summary>
     public void Dispose()
     {
         if (!_disposed)

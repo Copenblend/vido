@@ -17,40 +17,64 @@ public partial class SettingDisplayItem : ObservableObject
     private readonly SettingContribution _definition;
     private bool _suppressSave;
 
-    /// <summary>Setting unique identifier.</summary>
+    /// <summary>
+    /// Setting unique identifier.
+    /// </summary>
     public string Id => _definition.Id;
 
-    /// <summary>Display title.</summary>
+    /// <summary>
+    /// Display title.
+    /// </summary>
     public string Title => _definition.Title;
 
-    /// <summary>Description text shown below the control.</summary>
+    /// <summary>
+    /// Description text shown below the control.
+    /// </summary>
     public string Description => _definition.Description;
 
-    /// <summary>Setting type: boolean, string, number, enum, stringList.</summary>
+    /// <summary>
+    /// Setting type: boolean, string, number, enum, stringList.
+    /// </summary>
     public string SettingType => _definition.Type;
 
-    /// <summary>Section name for grouping (may be null).</summary>
+    /// <summary>
+    /// Section name for grouping (may be null).
+    /// </summary>
     public string? Section => _definition.Section;
 
-    /// <summary>Enum values (only for enum type).</summary>
+    /// <summary>
+    /// Enum values (only for enum type).
+    /// </summary>
     public IReadOnlyList<string> EnumValues => _definition.EnumValues;
 
-    /// <summary>Whether this is a boolean setting.</summary>
+    /// <summary>
+    /// Whether this is a boolean setting.
+    /// </summary>
     public bool IsBoolean => SettingType.Equals("boolean", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Whether this is a string setting.</summary>
+    /// <summary>
+    /// Whether this is a string setting.
+    /// </summary>
     public bool IsString => SettingType.Equals("string", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Whether this is a number setting.</summary>
+    /// <summary>
+    /// Whether this is a number setting.
+    /// </summary>
     public bool IsNumber => SettingType.Equals("number", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Whether this is an enum setting.</summary>
+    /// <summary>
+    /// Whether this is an enum setting.
+    /// </summary>
     public bool IsEnum => SettingType.Equals("enum", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Whether this is a string list setting (e.g., multiple URLs).</summary>
+    /// <summary>
+    /// Whether this is a string list setting (e.g., multiple URLs).
+    /// </summary>
     public bool IsStringList => SettingType.Equals("stringList", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Whether this is a folder path setting (browse button).</summary>
+    /// <summary>
+    /// Whether this is a folder path setting (browse button).
+    /// </summary>
     public bool IsFolderPath => SettingType.Equals("folderPath", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
@@ -67,10 +91,14 @@ public partial class SettingDisplayItem : ObservableObject
     [ObservableProperty]
     private bool _isSettingVisible = true;
 
-    /// <summary>Boolean value options for the ComboBox.</summary>
+    /// <summary>
+    /// Boolean value options for the ComboBox.
+    /// </summary>
     public static IReadOnlyList<string> BooleanOptions { get; } = ["True", "False"];
 
-    /// <summary>The string value of the setting (used for string/number TextBox binding).</summary>
+    /// <summary>
+    /// The string value of the setting (used for string/number TextBox binding).
+    /// </summary>
     [ObservableProperty]
     private string _stringValue = string.Empty;
 
@@ -88,7 +116,9 @@ public partial class SettingDisplayItem : ObservableObject
         }
     }
 
-    /// <summary>The selected boolean string ("True"/"False") for boolean ComboBox binding.</summary>
+    /// <summary>
+    /// The selected boolean string ("True"/"False") for boolean ComboBox binding.
+    /// </summary>
     [ObservableProperty]
     private string _selectedBooleanValue = "False";
 
@@ -98,7 +128,9 @@ public partial class SettingDisplayItem : ObservableObject
         _store.Set(Id, value.Equals("True", StringComparison.OrdinalIgnoreCase));
     }
 
-    /// <summary>The selected enum value for enum ComboBox binding.</summary>
+    /// <summary>
+    /// The selected enum value for enum ComboBox binding.
+    /// </summary>
     [ObservableProperty]
     private string _selectedEnumValue = string.Empty;
 
@@ -109,18 +141,26 @@ public partial class SettingDisplayItem : ObservableObject
             _store.Set(Id, value);
     }
 
-    /// <summary>Items for stringList-type settings.</summary>
+    /// <summary>
+    /// Items for stringList-type settings.
+    /// </summary>
     public ObservableCollection<string> ListItems { get; } = [];
 
-    /// <summary>Text for the "add new item" input field.</summary>
+    /// <summary>
+    /// Text for the "add new item" input field.
+    /// </summary>
     [ObservableProperty]
     private string _newListItemText = string.Empty;
 
-    /// <summary>Validation error message shown below the add-item input.</summary>
+    /// <summary>
+    /// Validation error message shown below the add-item input.
+    /// </summary>
     [ObservableProperty]
     private string _validationError = string.Empty;
 
-    /// <summary>Adds a new item to the string list and persists.</summary>
+    /// <summary>
+    /// Adds a new item to the string list and persists.
+    /// </summary>
     [RelayCommand]
     public void AddListItem()
     {
@@ -146,7 +186,10 @@ public partial class SettingDisplayItem : ObservableObject
         SaveListToStore();
     }
 
-    /// <summary>Removes an item from the string list and persists.</summary>
+    /// <summary>
+    /// Removes an item from the string list and persists.
+    /// </summary>
+    /// <param name="item">The list entry to remove.</param>
     [RelayCommand]
     public void RemoveListItem(string item)
     {
@@ -154,13 +197,17 @@ public partial class SettingDisplayItem : ObservableObject
             SaveListToStore();
     }
 
-    /// <summary>Persists the current list items to the store.</summary>
+    /// <summary>
+    /// Persists the current list items to the store.
+    /// </summary>
     private void SaveListToStore()
     {
         _store.Set(Id, ListItems.ToList());
     }
 
-    /// <summary>Requests the view to show a folder browser dialog.</summary>
+    /// <summary>
+    /// Requests the view to show a folder browser dialog.
+    /// </summary>
     [RelayCommand]
     public void BrowseFolder()
     {
@@ -176,7 +223,15 @@ public partial class SettingDisplayItem : ObservableObject
         if (path is null) return;
         StringValue = path;
     }
-
+    
+    /// <summary>
+    /// Creates a setting display item backed by the given definition and store,
+    /// loading the current persisted value (or the default) for UI binding.
+    /// </summary>
+    /// <param name="definition">Setting definition describing type, title, default, and validation rules.</param>
+    /// <param name="store">Backing store for reading and persisting the setting value.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="definition"/> is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="store"/> is null.</exception>
     public SettingDisplayItem(SettingContribution definition, IPluginSettingsStore store)
     {
         _definition = definition ?? throw new ArgumentNullException(nameof(definition));

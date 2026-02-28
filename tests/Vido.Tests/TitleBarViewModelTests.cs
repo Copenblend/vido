@@ -13,24 +13,36 @@ public class TitleBarViewModelTests
     private readonly IWindowService _windowService;
     private readonly TitleBarViewModel _viewModel;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public TitleBarViewModelTests()
     {
         _windowService = Substitute.For<IWindowService>();
         _viewModel = new TitleBarViewModel(_windowService);
     }
 
+    /// <summary>
+    /// Verifies that Default Title is vido.
+    /// </summary>
     [Fact]
     public void DefaultTitle_IsVido()
     {
         Assert.Equal("Vido", _viewModel.Title);
     }
 
+    /// <summary>
+    /// Verifies that Default Is Maximized is false.
+    /// </summary>
     [Fact]
     public void DefaultIsMaximized_IsFalse()
     {
         Assert.False(_viewModel.IsMaximized);
     }
 
+    /// <summary>
+    /// Verifies that Minimize Command calls window service minimize.
+    /// </summary>
     [Fact]
     public void MinimizeCommand_CallsWindowServiceMinimize()
     {
@@ -39,6 +51,9 @@ public class TitleBarViewModelTests
         _windowService.Received(1).Minimize();
     }
 
+    /// <summary>
+    /// Verifies that Toggle Maximize Command calls window service toggle maximize.
+    /// </summary>
     [Fact]
     public void ToggleMaximizeCommand_CallsWindowServiceToggleMaximize()
     {
@@ -47,6 +62,9 @@ public class TitleBarViewModelTests
         _windowService.Received(1).ToggleMaximize();
     }
 
+    /// <summary>
+    /// Verifies that Toggle Maximize Command sets is maximized when state becomes maximized.
+    /// </summary>
     [Fact]
     public void ToggleMaximizeCommand_SetsIsMaximized_WhenStateBecomesMaximized()
     {
@@ -57,6 +75,9 @@ public class TitleBarViewModelTests
         Assert.True(_viewModel.IsMaximized);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Maximize Command clears is maximized when state becomes normal.
+    /// </summary>
     [Fact]
     public void ToggleMaximizeCommand_ClearsIsMaximized_WhenStateBecomesNormal()
     {
@@ -68,6 +89,9 @@ public class TitleBarViewModelTests
         Assert.False(_viewModel.IsMaximized);
     }
 
+    /// <summary>
+    /// Verifies that Close Command calls window service close.
+    /// </summary>
     [Fact]
     public void CloseCommand_CallsWindowServiceClose()
     {
@@ -76,6 +100,9 @@ public class TitleBarViewModelTests
         _windowService.Received(1).Close();
     }
 
+    /// <summary>
+    /// Verifies that Sync Window State maximized sets is maximized true.
+    /// </summary>
     [Fact]
     public void SyncWindowState_Maximized_SetsIsMaximizedTrue()
     {
@@ -84,6 +111,9 @@ public class TitleBarViewModelTests
         Assert.True(_viewModel.IsMaximized);
     }
 
+    /// <summary>
+    /// Verifies that Sync Window State normal sets is maximized false.
+    /// </summary>
     [Fact]
     public void SyncWindowState_Normal_SetsIsMaximizedFalse()
     {
@@ -94,6 +124,9 @@ public class TitleBarViewModelTests
         Assert.False(_viewModel.IsMaximized);
     }
 
+    /// <summary>
+    /// Verifies that Sync Window State minimized sets is maximized false.
+    /// </summary>
     [Fact]
     public void SyncWindowState_Minimized_SetsIsMaximizedFalse()
     {
@@ -104,6 +137,9 @@ public class TitleBarViewModelTests
         Assert.False(_viewModel.IsMaximized);
     }
 
+    /// <summary>
+    /// Verifies that Title raises property changed.
+    /// </summary>
     [Fact]
     public void Title_RaisesPropertyChanged()
     {
@@ -119,6 +155,9 @@ public class TitleBarViewModelTests
         Assert.True(raised);
     }
 
+    /// <summary>
+    /// Verifies that Is Maximized raises property changed.
+    /// </summary>
     [Fact]
     public void IsMaximized_RaisesPropertyChanged()
     {

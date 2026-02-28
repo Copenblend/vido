@@ -1,4 +1,4 @@
-using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
 namespace Vido.Views.Panels;
 
@@ -8,6 +8,9 @@ namespace Vido.Views.Panels;
 /// </summary>
 public partial class VideoDetailsPanel : UserControl
 {
+    /// <summary>
+    /// Sets up the video details panel and its data-bound metadata display.
+    /// </summary>
     public VideoDetailsPanel()
     {
         InitializeComponent();

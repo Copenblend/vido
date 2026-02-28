@@ -24,6 +24,9 @@ public class PlaylistProviderDelegationTests : IDisposable
     private readonly IContributionRegistry _contributionRegistry;
     private readonly VideoPlayerViewModel _sut;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public PlaylistProviderDelegationTests()
     {
         _engine = Substitute.For<IVideoEngine>();
@@ -39,6 +42,9 @@ public class PlaylistProviderDelegationTests : IDisposable
         _sut = new VideoPlayerViewModel(_engine, Substitute.For<IEventBus>(), _logService, _settingsService, _stateService, _contributionRegistry);
     }
 
+    /// <summary>
+    /// Cleans up test resources after each test run.
+    /// </summary>
     public void Dispose()
     {
         _sut.Dispose();
@@ -46,6 +52,9 @@ public class PlaylistProviderDelegationTests : IDisposable
 
     // ── SkipNext ──
 
+    /// <summary>
+    /// Verifies that Skip Next delegates to provider when active provider returns file.
+    /// </summary>
     [Fact]
     public async Task SkipNext_DelegatesToProvider_WhenActiveProviderReturnsFile()
     {
@@ -67,6 +76,9 @@ public class PlaylistProviderDelegationTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Skip Next falls back when provider is not active.
+    /// </summary>
     [Fact]
     public async Task SkipNext_FallsBack_WhenProviderIsNotActive()
     {
@@ -91,6 +103,9 @@ public class PlaylistProviderDelegationTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Skip Next falls back when provider returns null.
+    /// </summary>
     [Fact]
     public async Task SkipNext_FallsBack_WhenProviderReturnsNull()
     {
@@ -117,6 +132,9 @@ public class PlaylistProviderDelegationTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Skip Next falls back when no provider registered.
+    /// </summary>
     [Fact]
     public async Task SkipNext_FallsBack_WhenNoProviderRegistered()
     {
@@ -140,6 +158,9 @@ public class PlaylistProviderDelegationTests : IDisposable
 
     // ── SkipPrevious ──
 
+    /// <summary>
+    /// Verifies that Skip Previous delegates to provider when active provider returns file.
+    /// </summary>
     [Fact]
     public async Task SkipPrevious_DelegatesToProvider_WhenActiveProviderReturnsFile()
     {
@@ -161,6 +182,9 @@ public class PlaylistProviderDelegationTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Skip Previous falls back when provider is not active.
+    /// </summary>
     [Fact]
     public async Task SkipPrevious_FallsBack_WhenProviderIsNotActive()
     {
@@ -185,6 +209,9 @@ public class PlaylistProviderDelegationTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Skip Previous falls back when provider returns null.
+    /// </summary>
     [Fact]
     public async Task SkipPrevious_FallsBack_WhenProviderReturnsNull()
     {
@@ -212,6 +239,9 @@ public class PlaylistProviderDelegationTests : IDisposable
 
     // ── OnEngineMediaEnded (auto-advance) ──
 
+    /// <summary>
+    /// Verifies that Media Ended delegates to provider when active.
+    /// </summary>
     [Fact]
     public async Task MediaEnded_DelegatesToProvider_WhenActive()
     {
@@ -237,6 +267,9 @@ public class PlaylistProviderDelegationTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Media Ended falls back when no provider.
+    /// </summary>
     [Fact]
     public async Task MediaEnded_FallsBack_WhenNoProvider()
     {
@@ -260,6 +293,9 @@ public class PlaylistProviderDelegationTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Media Ended does not advance when looping.
+    /// </summary>
     [Fact]
     public void MediaEnded_DoesNotAdvance_WhenLooping()
     {

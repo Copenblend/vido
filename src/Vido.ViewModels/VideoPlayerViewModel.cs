@@ -28,67 +28,99 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     private bool _isSeeking;
     private double _lastSavedPositionSeconds;
 
-    /// <summary>Seek slider range maximum (0 – SliderMaximum).</summary>
+    /// <summary>
+    /// Seek slider range maximum (0 – SliderMaximum).
+    /// </summary>
     private const double SeekSliderMaximum = 1000.0;
 
-    /// <summary>Minimum playback change (seconds) before persisting position to state.</summary>
+    /// <summary>
+    /// Minimum playback change (seconds) before persisting position to state.
+    /// </summary>
     private const double PositionSaveIntervalSeconds = 5.0;
 
     // ── Observable state ──
 
-    /// <summary>Current playback state.</summary>
+    /// <summary>
+    /// Current playback state.
+    /// </summary>
     [ObservableProperty]
     private PlaybackState _state;
 
-    /// <summary>Current playback position.</summary>
+    /// <summary>
+    /// Current playback position.
+    /// </summary>
     [ObservableProperty]
     private TimeSpan _position;
 
-    /// <summary>Total duration of the loaded media.</summary>
+    /// <summary>
+    /// Total duration of the loaded media.
+    /// </summary>
     [ObservableProperty]
     private TimeSpan _duration;
 
-    /// <summary>Volume level (0–100).</summary>
+    /// <summary>
+    /// Volume level (0–100).
+    /// </summary>
     [ObservableProperty]
     private int _volume;
 
-    /// <summary>Whether audio is muted.</summary>
+    /// <summary>
+    /// Whether audio is muted.
+    /// </summary>
     [ObservableProperty]
     private bool _isMuted;
 
-    /// <summary>Whether playback loops at end.</summary>
+    /// <summary>
+    /// Whether playback loops at end.
+    /// </summary>
     [ObservableProperty]
     private bool _isLooping;
 
-    /// <summary>Whether shuffle mode is active.</summary>
+    /// <summary>
+    /// Whether shuffle mode is active.
+    /// </summary>
     [ObservableProperty]
     private bool _isShuffling;
 
-    /// <summary>Current playback speed multiplier (0.25–4.0).</summary>
+    /// <summary>
+    /// Current playback speed multiplier (0.25–4.0).
+    /// </summary>
     [ObservableProperty]
     private double _playbackSpeed = 1.0;
 
-    /// <summary>Display text for the current playback speed (e.g. "1x", "2x").</summary>
+    /// <summary>
+    /// Display text for the current playback speed (e.g. "1x", "2x").
+    /// </summary>
     [ObservableProperty]
     private string _playbackSpeedText = "1x";
 
-    /// <summary>Whether a video file is currently being loaded.</summary>
+    /// <summary>
+    /// Whether a video file is currently being loaded.
+    /// </summary>
     [ObservableProperty]
     private bool _isLoadingMedia;
 
-    /// <summary>Whether a video file is currently loaded.</summary>
+    /// <summary>
+    /// Whether a video file is currently loaded.
+    /// </summary>
     [ObservableProperty]
     private bool _hasMedia;
 
-    /// <summary>Metadata of the currently loaded video.</summary>
+    /// <summary>
+    /// Metadata of the currently loaded video.
+    /// </summary>
     [ObservableProperty]
     private VideoMetadata? _currentMetadata;
 
-    /// <summary>Display text for the current position (e.g. "01:23").</summary>
+    /// <summary>
+    /// Display text for the current position (e.g. "01:23").
+    /// </summary>
     [ObservableProperty]
     private string _positionText = "00:00";
 
-    /// <summary>Display text for the total duration (e.g. "05:47").</summary>
+    /// <summary>
+    /// Display text for the total duration (e.g. "05:47").
+    /// </summary>
     [ObservableProperty]
     private string _durationText = "00:00";
 
@@ -98,7 +130,9 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private double _seekPosition;
 
-    /// <summary>True when the play button icon should appear (i.e. not currently playing).</summary>
+    /// <summary>
+    /// True when the play button icon should appear (i.e. not currently playing).
+    /// </summary>
     [ObservableProperty]
     private bool _showPlayIcon = true;
 
@@ -111,11 +145,15 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
 
     // ── Resume Bar ──
 
-    /// <summary>Whether the resume playback prompt bar is visible.</summary>
+    /// <summary>
+    /// Whether the resume playback prompt bar is visible.
+    /// </summary>
     [ObservableProperty]
     private bool _showResumeBar;
 
-    /// <summary>Title text shown in the resume bar (e.g. the video file name).</summary>
+    /// <summary>
+    /// Title text shown in the resume bar (e.g. the video file name).
+    /// </summary>
     [ObservableProperty]
     private string _resumeBarTitle = string.Empty;
 
@@ -135,6 +173,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// Index tracks current position in the shuffle order.
     /// </summary>
     private List<string> _shufflePlaylist = [];
+
     private int _shuffleIndex = -1;
 
     /// <summary>
@@ -157,7 +196,17 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// The view subscribes to this to write pixels into a WriteableBitmap.
     /// </summary>
     public event Action<FrameData>? FrameReady;
-
+    
+    /// <summary>
+    /// Creates the video player view model, wiring up engine events, restoring
+    /// persisted playback settings, and subscribing to play-file requests.
+    /// </summary>
+    /// <param name="engine">Video engine for media loading, playback control, and frame decoding.</param>
+    /// <param name="eventBus">Event bus for publishing and subscribing to playback events.</param>
+    /// <param name="logService">Logging service for player operation diagnostics.</param>
+    /// <param name="settingsService">Service for persisting playback preferences (volume, speed, loop).</param>
+    /// <param name="stateService">Service for persisting runtime state (last video, position, recent files).</param>
+    /// <param name="contributionRegistry">Registry for looking up plugin-contributed playlist providers.</param>
     public VideoPlayerViewModel(IVideoEngine engine, IEventBus eventBus, ILogService logService,
         ISettingsService settingsService, IStateService stateService, IContributionRegistry contributionRegistry)
     {
@@ -258,7 +307,9 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// and <see cref="RestoreLastVideoAsync"/>. Loads the file into the engine,
     /// updates duration/metadata/sibling list, and sets <see cref="HasMedia"/>.
     /// </summary>
-    /// <summary>How long to wait before showing the loading spinner.</summary>
+    /// <summary>
+    /// How long to wait before showing the loading spinner.
+    /// </summary>
     private static readonly TimeSpan LoadingIndicatorDelay = TimeSpan.FromMilliseconds(500);
 
     /// <summary>
@@ -437,7 +488,9 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         _logService.Info($"Restored: {Path.GetFileName(lastPath)} at {PositionText}", "Player");
     }
 
-    /// <summary>Accepts the resume prompt — continues playback from the restored position.</summary>
+    /// <summary>
+    /// Accepts the resume prompt — continues playback from the restored position.
+    /// </summary>
     [RelayCommand]
     public void ResumePlayback()
     {
@@ -449,7 +502,9 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>Dismisses the resume prompt — closes/unloads the video.</summary>
+    /// <summary>
+    /// Dismisses the resume prompt — closes/unloads the video.
+    /// </summary>
     [RelayCommand]
     public void DismissResume()
     {
@@ -458,7 +513,9 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         _logService.Info("Resume dismissed — video unloaded", "Player");
     }
 
-    /// <summary>Toggles between play and pause.</summary>
+    /// <summary>
+    /// Toggles between play and pause.
+    /// </summary>
     [RelayCommand]
     public void PlayPause()
     {
@@ -483,7 +540,9 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>Stops playback and resets position.</summary>
+    /// <summary>
+    /// Stops playback and resets position.
+    /// </summary>
     [RelayCommand]
     public void Stop()
     {
@@ -505,7 +564,9 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         _stateService.QueueSave();
     }
 
-    /// <summary>Skips to the previous video file in the folder (wraps around).</summary>
+    /// <summary>
+    /// Skips to the previous video file in the folder (wraps around).
+    /// </summary>
     [RelayCommand]
     public async Task SkipPrevious()
     {
@@ -526,7 +587,9 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
             await LoadAndPlayAsync(prevFile);
     }
 
-    /// <summary>Skips to the next video file in the folder (wraps around).</summary>
+    /// <summary>
+    /// Skips to the next video file in the folder (wraps around).
+    /// </summary>
     [RelayCommand]
     public async Task SkipNext()
     {
@@ -547,21 +610,27 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
             await LoadAndPlayAsync(nextFile);
     }
 
-    /// <summary>Toggles mute state.</summary>
+    /// <summary>
+    /// Toggles mute state.
+    /// </summary>
     [RelayCommand]
     public void ToggleMute()
     {
         IsMuted = !IsMuted;
     }
 
-    /// <summary>Toggles loop mode.</summary>
+    /// <summary>
+    /// Toggles loop mode.
+    /// </summary>
     [RelayCommand]
     public void ToggleLoop()
     {
         IsLooping = !IsLooping;
     }
 
-    /// <summary>Toggles shuffle mode. Builds or clears the shuffle playlist.</summary>
+    /// <summary>
+    /// Toggles shuffle mode. Builds or clears the shuffle playlist.
+    /// </summary>
     [RelayCommand]
     public void ToggleShuffle()
     {
@@ -622,7 +691,10 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         _settingsService.QueueSave();
     }
 
-    /// <summary>Sets the playback speed to a specific value.</summary>
+    /// <summary>
+    /// Sets the playback speed to a specific value.
+    /// </summary>
+    /// <param name="speed">Desired playback speed (clamped to 0.25–4.0).</param>
     [RelayCommand]
     public void SetPlaybackSpeed(double speed)
     {
@@ -674,6 +746,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// is rebuilt to include all video files recursively under this root.
     /// Called from MainWindow when a folder is opened or closed.
     /// </summary>
+    /// <param name="rootPath">Root folder path, or null to clear the explorer root.</param>
     public async Task SetExplorerRootAsync(string? rootPath)
     {
         _explorerRootPath = rootPath;
@@ -754,6 +827,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// to the current file in the sibling list. Wraps around from end to beginning
     /// and vice-versa.
     /// </summary>
+    /// <param name="offset">Position offset relative to the current file (e.g. -1 for previous, +1 for next).</param>
     internal string? GetAdjacentVideoFile(int offset)
     {
         if (CurrentFilePath is null || _siblingVideoFiles.Count == 0)
@@ -783,6 +857,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// Returns the file at <paramref name="offset"/> from the current shuffle index.
     /// Wraps around the shuffle playlist.
     /// </summary>
+    /// <param name="offset">Position offset relative to the current shuffle index.</param>
     internal string? GetShuffleFile(int offset)
     {
         if (_shufflePlaylist.Count == 0) return null;
@@ -835,7 +910,9 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     internal static string FormatTime(TimeSpan ts) => TimeFormatter.Format(ts);
 
     // ── Cleanup ──
-
+    /// <summary>
+    /// Unsubscribes from all engine events to prevent memory leaks.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed) return;

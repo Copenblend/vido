@@ -6,6 +6,8 @@ namespace Vido.Core.Events;
 /// </summary>
 public sealed class PlayFileRequestedEvent
 {
-    /// <summary>Full path to the file to play.</summary>
+    /// <summary>
+    /// Full path to the file to play.
+    /// </summary>
     public required string FilePath { get; init; }
 }

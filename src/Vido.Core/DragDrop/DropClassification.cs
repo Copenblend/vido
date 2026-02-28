@@ -5,15 +5,23 @@ namespace Vido.Core.DragDrop;
 /// </summary>
 public enum DropClassification
 {
-    /// <summary>The dropped path is a directory/folder.</summary>
+    /// <summary>
+    /// The dropped path is a directory/folder.
+    /// </summary>
     Folder,
 
-    /// <summary>The dropped path is a recognized video file.</summary>
+    /// <summary>
+    /// The dropped path is a recognized video file.
+    /// </summary>
     VideoFile,
 
-    /// <summary>The dropped path is a file with an unsupported extension.</summary>
+    /// <summary>
+    /// The dropped path is a file with an unsupported extension.
+    /// </summary>
     UnsupportedFile,
 
-    /// <summary>The dropped path does not exist or is invalid.</summary>
+    /// <summary>
+    /// The dropped path does not exist or is invalid.
+    /// </summary>
     Invalid
 }

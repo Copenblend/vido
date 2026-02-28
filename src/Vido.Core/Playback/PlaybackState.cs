@@ -5,15 +5,23 @@ namespace Vido.Core.Playback;
 /// </summary>
 public enum PlaybackState
 {
-    /// <summary>No media loaded.</summary>
+    /// <summary>
+    /// No media loaded.
+    /// </summary>
     None,
 
-    /// <summary>Media is actively playing.</summary>
+    /// <summary>
+    /// Media is actively playing.
+    /// </summary>
     Playing,
 
-    /// <summary>Media is paused at the current position.</summary>
+    /// <summary>
+    /// Media is paused at the current position.
+    /// </summary>
     Paused,
 
-    /// <summary>Media is stopped (position reset to beginning).</summary>
+    /// <summary>
+    /// Media is stopped (position reset to beginning).
+    /// </summary>
     Stopped
 }

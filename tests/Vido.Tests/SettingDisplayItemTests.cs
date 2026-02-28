@@ -22,6 +22,9 @@ public sealed class SettingDisplayItemTests
         return store;
     }
 
+    /// <summary>
+    /// Verifies that Is String List true for string list type.
+    /// </summary>
     [Fact]
     public void IsStringList_TrueForStringListType()
     {
@@ -30,6 +33,9 @@ public sealed class SettingDisplayItemTests
         Assert.True(item.IsStringList);
     }
 
+    /// <summary>
+    /// Verifies that Is String List false for other types.
+    /// </summary>
     [Fact]
     public void IsStringList_FalseForOtherTypes()
     {
@@ -39,6 +45,9 @@ public sealed class SettingDisplayItemTests
         Assert.False(item.IsStringList);
     }
 
+    /// <summary>
+    /// Verifies that Constructor loads existing list items.
+    /// </summary>
     [Fact]
     public void Constructor_LoadsExistingListItems()
     {
@@ -50,6 +59,9 @@ public sealed class SettingDisplayItemTests
         Assert.Equal("https://two.com", item.ListItems[1]);
     }
 
+    /// <summary>
+    /// Verifies that Add List Item adds to collection.
+    /// </summary>
     [Fact]
     public void AddListItem_AddsToCollection()
     {
@@ -63,6 +75,9 @@ public sealed class SettingDisplayItemTests
         Assert.Equal("https://new.com", item.ListItems[0]);
     }
 
+    /// <summary>
+    /// Verifies that Add List Item trims whitespace.
+    /// </summary>
     [Fact]
     public void AddListItem_TrimsWhitespace()
     {
@@ -75,6 +90,9 @@ public sealed class SettingDisplayItemTests
         Assert.Equal("https://new.com", item.ListItems[0]);
     }
 
+    /// <summary>
+    /// Verifies that Add List Item clears new list item text.
+    /// </summary>
     [Fact]
     public void AddListItem_ClearsNewListItemText()
     {
@@ -87,6 +105,9 @@ public sealed class SettingDisplayItemTests
         Assert.Equal(string.Empty, item.NewListItemText);
     }
 
+    /// <summary>
+    /// Verifies that Add List Item ignores empty text.
+    /// </summary>
     [Fact]
     public void AddListItem_IgnoresEmptyText()
     {
@@ -99,6 +120,9 @@ public sealed class SettingDisplayItemTests
         Assert.Empty(item.ListItems);
     }
 
+    /// <summary>
+    /// Verifies that Add List Item ignores duplicates.
+    /// </summary>
     [Fact]
     public void AddListItem_IgnoresDuplicates()
     {
@@ -111,6 +135,9 @@ public sealed class SettingDisplayItemTests
         Assert.Single(item.ListItems);
     }
 
+    /// <summary>
+    /// Verifies that Add List Item persists to store.
+    /// </summary>
     [Fact]
     public void AddListItem_PersistsToStore()
     {
@@ -123,6 +150,9 @@ public sealed class SettingDisplayItemTests
         store.Received().Set("test.list", Arg.Is<List<string>>(l => l.Count == 1 && l[0] == "https://new.com"));
     }
 
+    /// <summary>
+    /// Verifies that Remove List Item removes from collection.
+    /// </summary>
     [Fact]
     public void RemoveListItem_RemovesFromCollection()
     {
@@ -135,6 +165,9 @@ public sealed class SettingDisplayItemTests
         Assert.Equal("https://two.com", item.ListItems[0]);
     }
 
+    /// <summary>
+    /// Verifies that Remove List Item persists to store.
+    /// </summary>
     [Fact]
     public void RemoveListItem_PersistsToStore()
     {
@@ -146,6 +179,9 @@ public sealed class SettingDisplayItemTests
         store.Received().Set("test.list", Arg.Is<List<string>>(l => l.Count == 1 && l[0] == "https://two.com"));
     }
 
+    /// <summary>
+    /// Verifies that Remove List Item nonexistent item does nothing.
+    /// </summary>
     [Fact]
     public void RemoveListItem_NonexistentItem_DoesNothing()
     {
@@ -158,6 +194,9 @@ public sealed class SettingDisplayItemTests
         Assert.Single(item.ListItems);
     }
 
+    /// <summary>
+    /// Verifies that Other Type Properties false for string list.
+    /// </summary>
     [Fact]
     public void OtherTypeProperties_FalseForStringList()
     {
@@ -175,6 +214,9 @@ public sealed class SettingDisplayItemTests
     private static SettingContribution MakeUrlValidatedContribution(string id = "test.urls") =>
         new() { Id = id, Type = "stringList", Title = "URLs", Description = "URL list", Validation = "url" };
 
+    /// <summary>
+    /// Verifies that Add List Item with url validation accepts https url.
+    /// </summary>
     [Fact]
     public void AddListItem_WithUrlValidation_AcceptsHttpsUrl()
     {
@@ -188,6 +230,9 @@ public sealed class SettingDisplayItemTests
         Assert.Equal(string.Empty, item.ValidationError);
     }
 
+    /// <summary>
+    /// Verifies that Add List Item with url validation accepts file url.
+    /// </summary>
     [Fact]
     public void AddListItem_WithUrlValidation_AcceptsFileUrl()
     {
@@ -201,6 +246,9 @@ public sealed class SettingDisplayItemTests
         Assert.Equal(string.Empty, item.ValidationError);
     }
 
+    /// <summary>
+    /// Verifies that Add List Item with url validation rejects plain text.
+    /// </summary>
     [Fact]
     public void AddListItem_WithUrlValidation_RejectsPlainText()
     {
@@ -214,6 +262,9 @@ public sealed class SettingDisplayItemTests
         Assert.NotEmpty(item.ValidationError);
     }
 
+    /// <summary>
+    /// Verifies that Add List Item with url validation rejects http url.
+    /// </summary>
     [Fact]
     public void AddListItem_WithUrlValidation_RejectsHttpUrl()
     {
@@ -227,6 +278,9 @@ public sealed class SettingDisplayItemTests
         Assert.NotEmpty(item.ValidationError);
     }
 
+    /// <summary>
+    /// Verifies that Add List Item with url validation rejects ftp url.
+    /// </summary>
     [Fact]
     public void AddListItem_WithUrlValidation_RejectsFtpUrl()
     {
@@ -240,6 +294,9 @@ public sealed class SettingDisplayItemTests
         Assert.NotEmpty(item.ValidationError);
     }
 
+    /// <summary>
+    /// Verifies that Add List Item with url validation clears error on success.
+    /// </summary>
     [Fact]
     public void AddListItem_WithUrlValidation_ClearsErrorOnSuccess()
     {
@@ -259,6 +316,9 @@ public sealed class SettingDisplayItemTests
         Assert.Equal(string.Empty, item.ValidationError);
     }
 
+    /// <summary>
+    /// Verifies that Add List Item without validation accepts any text.
+    /// </summary>
     [Fact]
     public void AddListItem_WithoutValidation_AcceptsAnyText()
     {
@@ -274,6 +334,9 @@ public sealed class SettingDisplayItemTests
 
     // ── FolderPath type ──
 
+    /// <summary>
+    /// Verifies that Is Folder Path true for folder path type.
+    /// </summary>
     [Fact]
     public void IsFolderPath_TrueForFolderPathType()
     {
@@ -285,6 +348,9 @@ public sealed class SettingDisplayItemTests
         Assert.False(item.IsString);
     }
 
+    /// <summary>
+    /// Verifies that Is Folder Path false for string type.
+    /// </summary>
     [Fact]
     public void IsFolderPath_FalseForStringType()
     {
@@ -296,6 +362,9 @@ public sealed class SettingDisplayItemTests
         Assert.True(item.IsString);
     }
 
+    /// <summary>
+    /// Verifies that Set Folder Path updates string value.
+    /// </summary>
     [Fact]
     public void SetFolderPath_UpdatesStringValue()
     {
@@ -309,6 +378,9 @@ public sealed class SettingDisplayItemTests
         store.Received().Set("test.folder", @"C:\Users\test\Screenshots");
     }
 
+    /// <summary>
+    /// Verifies that Set Folder Path null does nothing.
+    /// </summary>
     [Fact]
     public void SetFolderPath_NullDoesNothing()
     {
@@ -321,6 +393,9 @@ public sealed class SettingDisplayItemTests
         Assert.Equal(@"C:\existing", item.StringValue);
     }
 
+    /// <summary>
+    /// Verifies that Browse Folder raises browse folder requested event.
+    /// </summary>
     [Fact]
     public void BrowseFolder_RaisesBrowseFolderRequestedEvent()
     {

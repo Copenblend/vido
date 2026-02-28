@@ -5,9 +5,13 @@ namespace Vido.Core.Events;
 /// </summary>
 public sealed class PlaybackPositionChangedEvent
 {
-    /// <summary>Current playback position.</summary>
+    /// <summary>
+    /// Current playback position.
+    /// </summary>
     public required TimeSpan Position { get; init; }
 
-    /// <summary>Total duration of the media.</summary>
+    /// <summary>
+    /// Total duration of the media.
+    /// </summary>
     public required TimeSpan Duration { get; init; }
 }

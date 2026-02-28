@@ -14,6 +14,9 @@ namespace Vido.Views.Controls;
 /// </summary>
 public partial class ActivityBarView : UserControl
 {
+    /// <summary>
+    /// Sets up the activity bar UI, including icon buttons and panel selection handlers.
+    /// </summary>
     public ActivityBarView()
     {
         InitializeComponent();
@@ -77,6 +80,9 @@ public partial class ActivityBarView : UserControl
             typeof(RoutedEventHandler),
             typeof(ActivityBarView));
 
+    /// <summary>
+    /// Occurs when PanelChanged is raised.
+    /// </summary>
     public event RoutedEventHandler PanelChanged
     {
         add => AddHandler(PanelChangedEvent, value);
@@ -151,9 +157,10 @@ public partial class ActivityBarView : UserControl
 
     /// <summary>
     /// Adds a plugin button to the dedicated plugin buttons panel.
-    /// The button's <see cref="FrameworkElement.Uid"/> is used as the panel ID
+    /// The button's Uid property is used as the panel ID
     /// for drag-drop identification.
     /// </summary>
+    /// <param name="button">The plugin button to add to the panel.</param>
     public void AddPluginButton(Button button)
     {
         // Apply the style from local resources
@@ -175,6 +182,8 @@ public partial class ActivityBarView : UserControl
     /// Inserts a plugin button at a specific index within the plugin buttons panel.
     /// Used when adding buttons in a persisted order.
     /// </summary>
+    /// <param name="button">The plugin button to insert.</param>
+    /// <param name="index">The zero-based position at which to insert the button (clamped to valid range).</param>
     public void InsertPluginButton(Button button, int index)
     {
         if (TryFindResource("ActivityBarButtonStyle") is Style style)
@@ -192,6 +201,7 @@ public partial class ActivityBarView : UserControl
     /// <summary>
     /// Removes a plugin button from the plugin buttons panel.
     /// </summary>
+    /// <param name="button">The plugin button to remove.</param>
     public void RemovePluginButton(Button button)
     {
         button.PreviewMouseLeftButtonDown -= OnPluginButtonMouseDown;
@@ -203,6 +213,8 @@ public partial class ActivityBarView : UserControl
     /// Sets the visual active/inactive state of a plugin sidebar button.
     /// Uses the same icon coloring approach as built-in buttons.
     /// </summary>
+    /// <param name="button">The plugin button whose visual state to update.</param>
+    /// <param name="isActive">Whether the button should appear active (bright) or inactive (dimmed).</param>
     public void SetPluginButtonActive(Button button, bool isActive)
     {
         SetButtonActive(button, isActive);
@@ -210,7 +222,9 @@ public partial class ActivityBarView : UserControl
 
     // ── Drag-and-drop for plugin button reordering ──
 
-    /// <summary>Raised after a successful drag-drop reorder of plugin buttons.</summary>
+    /// <summary>
+    /// Raised after a successful drag-drop reorder of plugin buttons.
+    /// </summary>
     public event Action<int, int>? PluginButtonReordered;
 
     private void OnPluginButtonMouseDown(object sender, MouseButtonEventArgs e)

@@ -5,9 +5,13 @@ namespace Vido.Core.Layout;
 /// </summary>
 public enum StatusBarAlignment
 {
-    /// <summary>Item is placed on the left side of the status bar.</summary>
+    /// <summary>
+    /// Item is placed on the left side of the status bar.
+    /// </summary>
     Left,
 
-    /// <summary>Item is placed on the right side of the status bar.</summary>
+    /// <summary>
+    /// Item is placed on the right side of the status bar.
+    /// </summary>
     Right
 }

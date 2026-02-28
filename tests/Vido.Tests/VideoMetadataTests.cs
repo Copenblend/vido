@@ -8,6 +8,9 @@ namespace Vido.Tests;
 /// </summary>
 public class VideoMetadataTests
 {
+    /// <summary>
+    /// Verifies that Optional Properties default to zero or null.
+    /// </summary>
     [Fact]
     public void OptionalProperties_DefaultToZeroOrNull()
     {
@@ -30,6 +33,12 @@ public class VideoMetadataTests
         Assert.Equal(0, metadata.AudioSampleRate);
     }
 
+    /// <summary>
+    /// Verifies that Resolution returns formatted string.
+    /// </summary>
+    /// <param name="width">The video width in pixels.</param>
+    /// <param name="height">The video height in pixels.</param>
+    /// <param name="expected">The expected result value.</param>
     [Theory]
     [InlineData(1920, 1080, "1920x1080")]
     [InlineData(3840, 2160, "3840x2160")]

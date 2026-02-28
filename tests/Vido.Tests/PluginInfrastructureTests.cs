@@ -12,6 +12,9 @@ public sealed class PluginInfrastructureTests
 {
     // ── AppSettings.PluginRegistryUrls ──
 
+    /// <summary>
+    /// Verifies that Plugin Registry Urls default contains official url.
+    /// </summary>
     [Fact]
     public void PluginRegistryUrls_DefaultContainsOfficialUrl()
     {
@@ -21,6 +24,9 @@ public sealed class PluginInfrastructureTests
         Assert.Equal(AppSettings.OfficialRegistryUrl, settings.PluginRegistryUrls[0]);
     }
 
+    /// <summary>
+    /// Verifies that Plugin Registry Urls can add custom url.
+    /// </summary>
     [Fact]
     public void PluginRegistryUrls_CanAddCustomUrl()
     {
@@ -31,6 +37,9 @@ public sealed class PluginInfrastructureTests
         Assert.Equal(AppSettings.OfficialRegistryUrl, settings.PluginRegistryUrls[0]);
     }
 
+    /// <summary>
+    /// Verifies that Plugin Registry Urls supports file protocol.
+    /// </summary>
     [Fact]
     public void PluginRegistryUrls_SupportsFileProtocol()
     {
@@ -40,6 +49,9 @@ public sealed class PluginInfrastructureTests
         Assert.Equal(2, settings.PluginRegistryUrls.Count);
     }
 
+    /// <summary>
+    /// Verifies that Official Registry Url is not empty.
+    /// </summary>
     [Fact]
     public void OfficialRegistryUrl_IsNotEmpty()
     {
@@ -47,6 +59,9 @@ public sealed class PluginInfrastructureTests
         Assert.StartsWith("https://", AppSettings.OfficialRegistryUrl);
     }
 
+    /// <summary>
+    /// Verifies that Nsfw Registry Url is not empty.
+    /// </summary>
     [Fact]
     public void NsfwRegistryUrl_IsNotEmpty()
     {
@@ -54,6 +69,9 @@ public sealed class PluginInfrastructureTests
         Assert.StartsWith("https://", AppSettings.NsfwRegistryUrl);
     }
 
+    /// <summary>
+    /// Verifies that Official Registry Urls contains both urls.
+    /// </summary>
     [Fact]
     public void OfficialRegistryUrls_Contains_Both_Urls()
     {
@@ -62,6 +80,9 @@ public sealed class PluginInfrastructureTests
         Assert.Equal(2, AppSettings.OfficialRegistryUrls.Count);
     }
 
+    /// <summary>
+    /// Verifies that Official Registry Urls is case insensitive.
+    /// </summary>
     [Fact]
     public void OfficialRegistryUrls_IsCaseInsensitive()
     {
@@ -69,6 +90,9 @@ public sealed class PluginInfrastructureTests
         Assert.Contains(AppSettings.NsfwRegistryUrl.ToUpperInvariant(), AppSettings.OfficialRegistryUrls);
     }
 
+    /// <summary>
+    /// Verifies that Plugin Registry Urls default does not contain nsfw url.
+    /// </summary>
     [Fact]
     public void PluginRegistryUrls_Default_DoesNotContainNsfwUrl()
     {
@@ -78,6 +102,9 @@ public sealed class PluginInfrastructureTests
 
     // ── SettingContribution model ──
 
+    /// <summary>
+    /// Verifies that Valid Types contains all five types.
+    /// </summary>
     [Fact]
     public void ValidTypes_ContainsAllFiveTypes()
     {
@@ -89,6 +116,9 @@ public sealed class PluginInfrastructureTests
         Assert.Equal(5, SettingContribution.ValidTypes.Count);
     }
 
+    /// <summary>
+    /// Verifies that Valid Types case insensitive.
+    /// </summary>
     [Fact]
     public void ValidTypes_CaseInsensitive()
     {
@@ -97,6 +127,9 @@ public sealed class PluginInfrastructureTests
         Assert.Contains("FolderPath", SettingContribution.ValidTypes);
     }
 
+    /// <summary>
+    /// Verifies that Setting Contribution default property values.
+    /// </summary>
     [Fact]
     public void SettingContribution_DefaultPropertyValues()
     {
@@ -112,6 +145,9 @@ public sealed class PluginInfrastructureTests
         Assert.False(s.ForceOverride);
     }
 
+    /// <summary>
+    /// Verifies that Setting Contribution section can be set.
+    /// </summary>
     [Fact]
     public void SettingContribution_Section_CanBeSet()
     {
@@ -119,6 +155,9 @@ public sealed class PluginInfrastructureTests
         Assert.Equal("Advanced", s.Section);
     }
 
+    /// <summary>
+    /// Verifies that Setting Contribution force override can be set.
+    /// </summary>
     [Fact]
     public void SettingContribution_ForceOverride_CanBeSet()
     {
@@ -126,6 +165,9 @@ public sealed class PluginInfrastructureTests
         Assert.True(s.ForceOverride);
     }
 
+    /// <summary>
+    /// Verifies that Setting Contribution enum values can be populated.
+    /// </summary>
     [Fact]
     public void SettingContribution_EnumValues_CanBePopulated()
     {

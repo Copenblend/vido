@@ -11,6 +11,9 @@ public class KeyBindingTests
 {
     // ── Equality ──
 
+    /// <summary>
+    /// Verifies that Equals same key and modifiers returns true.
+    /// </summary>
     [Fact]
     public void Equals_SameKeyAndModifiers_ReturnsTrue()
     {
@@ -19,6 +22,9 @@ public class KeyBindingTests
         Assert.Equal(a, b);
     }
 
+    /// <summary>
+    /// Verifies that Equals different key returns false.
+    /// </summary>
     [Fact]
     public void Equals_DifferentKey_ReturnsFalse()
     {
@@ -27,6 +33,9 @@ public class KeyBindingTests
         Assert.NotEqual(a, b);
     }
 
+    /// <summary>
+    /// Verifies that Equals case insensitive.
+    /// </summary>
     [Fact]
     public void Equals_CaseInsensitive()
     {
@@ -35,6 +44,9 @@ public class KeyBindingTests
         Assert.Equal(a, b);
     }
 
+    /// <summary>
+    /// Verifies that Equals same key different modifiers returns false.
+    /// </summary>
     [Fact]
     public void Equals_SameKeyDifferentModifiers_ReturnsFalse()
     {
@@ -43,6 +55,9 @@ public class KeyBindingTests
         Assert.NotEqual(a, b);
     }
 
+    /// <summary>
+    /// Verifies that Equals with all modifiers returns true.
+    /// </summary>
     [Fact]
     public void Equals_WithAllModifiers_ReturnsTrue()
     {
@@ -51,6 +66,9 @@ public class KeyBindingTests
         Assert.Equal(a, b);
     }
 
+    /// <summary>
+    /// Verifies that Equals null returns false.
+    /// </summary>
     [Fact]
     public void Equals_Null_ReturnsFalse()
     {
@@ -58,6 +76,9 @@ public class KeyBindingTests
         Assert.False(binding.Equals(null));
     }
 
+    /// <summary>
+    /// Verifies that Equals object overload works.
+    /// </summary>
     [Fact]
     public void Equals_ObjectOverload_Works()
     {
@@ -68,6 +89,9 @@ public class KeyBindingTests
 
     // ── GetHashCode ──
 
+    /// <summary>
+    /// Verifies that Get Hash Code equal bindings same hash code.
+    /// </summary>
     [Fact]
     public void GetHashCode_EqualBindings_SameHashCode()
     {
@@ -76,6 +100,9 @@ public class KeyBindingTests
         Assert.Equal(a.GetHashCode(), b.GetHashCode());
     }
 
+    /// <summary>
+    /// Verifies that Get Hash Code case insensitive same hash code.
+    /// </summary>
     [Fact]
     public void GetHashCode_CaseInsensitive_SameHashCode()
     {
@@ -84,6 +111,9 @@ public class KeyBindingTests
         Assert.Equal(a.GetHashCode(), b.GetHashCode());
     }
 
+    /// <summary>
+    /// Verifies that Get Hash Code different modifiers different hash code.
+    /// </summary>
     [Fact]
     public void GetHashCode_DifferentModifiers_DifferentHashCode()
     {
@@ -94,30 +124,45 @@ public class KeyBindingTests
 
     // ── DisplayString ──
 
+    /// <summary>
+    /// Verifies that Display String key only.
+    /// </summary>
     [Fact]
     public void DisplayString_KeyOnly()
     {
         Assert.Equal("Space", new KeyBinding("Space").DisplayString);
     }
 
+    /// <summary>
+    /// Verifies that Display String ctrl key.
+    /// </summary>
     [Fact]
     public void DisplayString_CtrlKey()
     {
         Assert.Equal("Ctrl+B", new KeyBinding("B", ctrl: true).DisplayString);
     }
 
+    /// <summary>
+    /// Verifies that Display String ctrl shift key.
+    /// </summary>
     [Fact]
     public void DisplayString_CtrlShiftKey()
     {
         Assert.Equal("Ctrl+Shift+O", new KeyBinding("O", ctrl: true, shift: true).DisplayString);
     }
 
+    /// <summary>
+    /// Verifies that Display String alt key.
+    /// </summary>
     [Fact]
     public void DisplayString_AltKey()
     {
         Assert.Equal("Alt+F4", new KeyBinding("F4", alt: true).DisplayString);
     }
 
+    /// <summary>
+    /// Verifies that Display String all modifiers.
+    /// </summary>
     [Fact]
     public void DisplayString_AllModifiers()
     {
@@ -126,6 +171,9 @@ public class KeyBindingTests
 
     // ── ToString ──
 
+    /// <summary>
+    /// Verifies that To String matches display string.
+    /// </summary>
     [Fact]
     public void ToString_MatchesDisplayString()
     {
@@ -135,12 +183,18 @@ public class KeyBindingTests
 
     // ── Constructor ──
 
+    /// <summary>
+    /// Verifies that Constructor null key throws argument null exception.
+    /// </summary>
     [Fact]
     public void Constructor_NullKey_ThrowsArgumentNullException()
     {
         Assert.Throws<ArgumentNullException>(() => new KeyBinding(null!));
     }
 
+    /// <summary>
+    /// Verifies that Constructor sets properties.
+    /// </summary>
     [Fact]
     public void Constructor_SetsProperties()
     {
@@ -151,6 +205,9 @@ public class KeyBindingTests
         Assert.True(binding.Alt);
     }
 
+    /// <summary>
+    /// Verifies that Constructor default modifiers false.
+    /// </summary>
     [Fact]
     public void Constructor_DefaultModifiersFalse()
     {
@@ -162,6 +219,9 @@ public class KeyBindingTests
 
     // ── Dictionary key behavior ──
 
+    /// <summary>
+    /// Verifies the can be used as dictionary key behavior.
+    /// </summary>
     [Fact]
     public void CanBeUsedAsDictionaryKey()
     {
@@ -175,6 +235,9 @@ public class KeyBindingTests
         Assert.Equal("toggleSidebar", dict[new KeyBinding("B", ctrl: true)]);
     }
 
+    /// <summary>
+    /// Verifies that Dictionary Key case insensitive.
+    /// </summary>
     [Fact]
     public void DictionaryKey_CaseInsensitive()
     {

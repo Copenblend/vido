@@ -1,4 +1,4 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -17,7 +17,13 @@ namespace Vido.Views.Panels;
 public partial class SettingsPage : UserControl
 {
     private readonly SettingsViewModel _viewModel;
-
+    /// <summary>
+    /// Creates the settings page, building the categorized settings UI from the current
+    /// application and plugin settings.
+    /// </summary>
+    /// <param name="settingsService">Service providing access to persisted application settings.</param>
+    /// <param name="pluginHost">Plugin host for discovering plugin-contributed settings, or null if unavailable.</param>
+    /// <param name="appSettingsStore">Shared settings store for two-way change notification, or null to create a new one.</param>
     public SettingsPage(ISettingsService settingsService, IPluginHost? pluginHost, AppSettingsStore? appSettingsStore = null)
     {
         InitializeComponent();

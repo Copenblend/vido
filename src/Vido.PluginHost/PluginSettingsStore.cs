@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Vido.Core.Plugin;
 
 namespace Vido.PluginHost;
@@ -21,9 +21,17 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
         WriteIndented = true,
         PropertyNameCaseInsensitive = true
     };
-
+    
+    /// <summary>
+    /// Raised after a setting value is written or removed, providing the affected key.
+    /// </summary>
     public event Action<string>? SettingChanged;
 
+    /// <summary>
+    /// Creates a settings store for the specified plugin, backed by a JSON file
+    /// at <c>%APPDATA%/Vido/plugins/{pluginId}/settings.json</c>.
+    /// </summary>
+    /// <param name="pluginId">Unique identifier of the plugin whose settings are stored.</param>
     public PluginSettingsStore(string pluginId)
     {
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
@@ -44,6 +52,12 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
         _settingsFilePath = filePath;
     }
 
+    /// <summary>
+    /// Retrieves a setting value by key, deserializing it to <typeparamref name="T"/>.
+    /// Returns <paramref name="defaultValue"/> if the key is not found or deserialization fails.
+    /// </summary>
+    /// <param name="key">The setting key to look up.</param>
+    /// <param name="defaultValue">Value returned when the key is absent or cannot be deserialized.</param>
     public T Get<T>(string key, T defaultValue)
     {
         lock (_lock)
@@ -65,6 +79,12 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
         }
     }
 
+    /// <summary>
+    /// Stores a setting value under the given key, serializing it to JSON.
+    /// Persists the change to disk immediately and raises <see cref="SettingChanged"/>.
+    /// </summary>
+    /// <param name="key">The setting key to write.</param>
+    /// <param name="value">The value to serialize and store.</param>
     public void Set<T>(string key, T value)
     {
         lock (_lock)
@@ -79,6 +99,11 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
         SettingChanged?.Invoke(key);
     }
 
+    /// <summary>
+    /// Removes a single setting by key and persists the change.
+    /// Raises <see cref="SettingChanged"/> if the key existed.
+    /// </summary>
+    /// <param name="key">The setting key to remove.</param>
     public bool Reset(string key)
     {
         bool removed;
@@ -96,6 +121,10 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
         return removed;
     }
 
+    /// <summary>
+    /// Clears all stored settings for this plugin, persists the empty state,
+    /// and raises <see cref="SettingChanged"/> for every removed key.
+    /// </summary>
     public void ResetAll()
     {
         List<string> keys;
@@ -146,7 +175,7 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
         }
         catch
         {
-            // Best-effort save — don't crash the plugin
+            // Best-effort save â€” don't crash the plugin
         }
     }
 }

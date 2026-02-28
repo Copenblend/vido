@@ -8,7 +8,9 @@ namespace Vido.Core.Plugin;
 /// </summary>
 public sealed class PluginDependency
 {
-    /// <summary>Plugin ID of the required dependency (e.g. "com.vido.osr2-plus").</summary>
+    /// <summary>
+    /// Plugin ID of the required dependency (e.g. "com.vido.osr2-plus").
+    /// </summary>
     [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
 

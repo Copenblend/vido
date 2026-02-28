@@ -20,18 +20,26 @@ public partial class MainWindowViewModel : ObservableObject
     /// </summary>
     public bool SuppressSettingsSave { get; set; }
 
-    /// <summary>Well-known tab ID for the video player.</summary>
+    /// <summary>
+    /// Well-known tab ID for the video player.
+    /// </summary>
     public const string PlayerTabId = "Player";
 
-    /// <summary>Well-known tab ID for the settings page.</summary>
+    /// <summary>
+    /// Well-known tab ID for the settings page.
+    /// </summary>
     public const string SettingsTabId = "Settings";
 
     // ── Bottom Panel Tab IDs ──
 
-    /// <summary>Well-known tab ID for the output log panel.</summary>
+    /// <summary>
+    /// Well-known tab ID for the output log panel.
+    /// </summary>
     public const string OutputTabId = "LogOutput";
 
-    /// <summary>Material Design gear icon geometry for the Settings tab.</summary>
+    /// <summary>
+    /// Material Design gear icon geometry for the Settings tab.
+    /// </summary>
     private const string SettingsIconGeometry =
         "M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5"
         + "M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37"
@@ -47,10 +55,14 @@ public partial class MainWindowViewModel : ObservableObject
 
     // ── Tab Management ──
 
-    /// <summary>All open tabs, in display order.</summary>
+    /// <summary>
+    /// All open tabs, in display order.
+    /// </summary>
     public ObservableCollection<TabItemModel> Tabs { get; } = [];
 
-    /// <summary>The currently active tab.</summary>
+    /// <summary>
+    /// The currently active tab.
+    /// </summary>
     [ObservableProperty]
     private TabItemModel? _activeTab;
 
@@ -62,36 +74,52 @@ public partial class MainWindowViewModel : ObservableObject
 
     // ── Panel Visibility ──
 
-    /// <summary>Whether the bottom panel is visible.</summary>
+    /// <summary>
+    /// Whether the bottom panel is visible.
+    /// </summary>
     [ObservableProperty]
     private bool _isBottomPanelVisible;
 
-    /// <summary>Whether the bottom panel is collapsed (showing only tab strip).</summary>
+    /// <summary>
+    /// Whether the bottom panel is collapsed (showing only tab strip).
+    /// </summary>
     [ObservableProperty]
     private bool _isBottomPanelCollapsed;
 
-    /// <summary>Whether the right panel is visible.</summary>
+    /// <summary>
+    /// Whether the right panel is visible.
+    /// </summary>
     [ObservableProperty]
     private bool _isRightPanelVisible;
 
-    /// <summary>Whether the right panel is collapsed (showing only tab strip).</summary>
+    /// <summary>
+    /// Whether the right panel is collapsed (showing only tab strip).
+    /// </summary>
     [ObservableProperty]
     private bool _isRightPanelCollapsed;
 
-    /// <summary>Whether the status bar is visible.</summary>
+    /// <summary>
+    /// Whether the status bar is visible.
+    /// </summary>
     [ObservableProperty]
     private bool _isStatusBarVisible = true;
 
-    /// <summary>Whether the application is in fullscreen mode.</summary>
+    /// <summary>
+    /// Whether the application is in fullscreen mode.
+    /// </summary>
     [ObservableProperty]
     private bool _isFullscreen;
 
     // ── Bottom Panel Tabs ──
 
-    /// <summary>All open bottom panel tabs.</summary>
+    /// <summary>
+    /// All open bottom panel tabs.
+    /// </summary>
     public ObservableCollection<BottomPanelTabItem> BottomPanelTabs { get; } = [];
 
-    /// <summary>The currently active bottom panel tab.</summary>
+    /// <summary>
+    /// The currently active bottom panel tab.
+    /// </summary>
     [ObservableProperty]
     private BottomPanelTabItem? _activeBottomPanelTab;
 
@@ -100,7 +128,11 @@ public partial class MainWindowViewModel : ObservableObject
         if (oldValue is not null) oldValue.IsActive = false;
         if (newValue is not null) newValue.IsActive = true;
     }
-
+    
+    /// <summary>
+    /// Creates the main window view model, initializing tabs and restoring panel state from persisted settings.
+    /// </summary>
+    /// <param name="settingsService">Service for reading and persisting panel layout preferences.</param>
     public MainWindowViewModel(ISettingsService settingsService)
     {
         _settingsService = settingsService;
@@ -140,6 +172,10 @@ public partial class MainWindowViewModel : ObservableObject
     /// Opens a tab. If a tab with the same ID already exists, activates it.
     /// Otherwise creates a new tab and activates it.
     /// </summary>
+    /// <param name="tabId">Unique identifier for the tab.</param>
+    /// <param name="title">Display title for the tab header.</param>
+    /// <param name="iconGeometry">Optional path geometry for the tab icon.</param>
+    /// <param name="isClosable">Whether the user can close this tab (default true).</param>
     public void OpenTab(string tabId, string title, string? iconGeometry = null, bool isClosable = true)
     {
         var existing = FindTab(tabId);
@@ -163,6 +199,7 @@ public partial class MainWindowViewModel : ObservableObject
     /// Closes a tab by ID. Cannot close non-closable tabs (e.g., Player).
     /// If the closed tab was active, activates the nearest remaining tab.
     /// </summary>
+    /// <param name="tabId">ID of the tab to close.</param>
     [RelayCommand]
     public void CloseTab(string tabId)
     {
@@ -190,6 +227,7 @@ public partial class MainWindowViewModel : ObservableObject
     /// <summary>
     /// Activates a tab by ID.
     /// </summary>
+    /// <param name="tabId">ID of the tab to activate.</param>
     [RelayCommand]
     public void ActivateTab(string tabId)
     {
@@ -202,6 +240,8 @@ public partial class MainWindowViewModel : ObservableObject
     /// Reorders a tab from one index to another.
     /// Pinned tabs cannot be moved. Tabs cannot be moved before pinned tabs.
     /// </summary>
+    /// <param name="fromIndex">Current index of the tab to move.</param>
+    /// <param name="toIndex">Target index to move the tab to.</param>
     public void ReorderTab(int fromIndex, int toIndex)
     {
         if (fromIndex < 0 || fromIndex >= Tabs.Count) return;
@@ -225,7 +265,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     // ── Panel Commands ──
 
-    /// <summary>Toggles the bottom panel visibility.</summary>
+    /// <summary>
+    /// Toggles the bottom panel visibility.
+    /// </summary>
     [RelayCommand]
     public void ToggleBottomPanel()
     {
@@ -234,7 +276,9 @@ public partial class MainWindowViewModel : ObservableObject
             IsBottomPanelCollapsed = false;
     }
 
-    /// <summary>Toggles the bottom panel between collapsed (tab strip only) and expanded.</summary>
+    /// <summary>
+    /// Toggles the bottom panel between collapsed (tab strip only) and expanded.
+    /// </summary>
     [RelayCommand]
     public void ToggleBottomPanelCollapse()
     {
@@ -249,7 +293,9 @@ public partial class MainWindowViewModel : ObservableObject
         IsBottomPanelCollapsed = !IsBottomPanelCollapsed;
     }
 
-    /// <summary>Toggles the right panel visibility.</summary>
+    /// <summary>
+    /// Toggles the right panel visibility.
+    /// </summary>
     [RelayCommand]
     public void ToggleRightPanel()
     {
@@ -258,7 +304,9 @@ public partial class MainWindowViewModel : ObservableObject
             IsRightPanelCollapsed = false;
     }
 
-    /// <summary>Toggles the right panel between collapsed (tab strip only) and expanded.</summary>
+    /// <summary>
+    /// Toggles the right panel between collapsed (tab strip only) and expanded.
+    /// </summary>
     [RelayCommand]
     public void ToggleRightPanelCollapse()
     {
@@ -273,7 +321,9 @@ public partial class MainWindowViewModel : ObservableObject
         IsRightPanelCollapsed = !IsRightPanelCollapsed;
     }
 
-    /// <summary>Toggles the status bar visibility.</summary>
+    /// <summary>
+    /// Toggles the status bar visibility.
+    /// </summary>
     [RelayCommand]
     public void ToggleStatusBar()
     {
@@ -317,7 +367,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     // ── Log Output Toggle ──
 
-    /// <summary>Whether the Log Output tab is currently visible.</summary>
+    /// <summary>
+    /// Whether the Log Output tab is currently visible.
+    /// </summary>
     public bool IsLogOutputVisible => FindBottomPanelTab(OutputTabId) is not null;
 
     /// <summary>
@@ -355,6 +407,7 @@ public partial class MainWindowViewModel : ObservableObject
     /// Activates a bottom panel tab by ID. If the panel is hidden, opens it.
     /// If the tab was closed, re-adds it.
     /// </summary>
+    /// <param name="tabId">ID of the bottom panel tab to activate.</param>
     [RelayCommand]
     public void ActivateBottomPanelTab(string tabId)
     {
@@ -374,12 +427,15 @@ public partial class MainWindowViewModel : ObservableObject
     /// Opens (or re-opens) a bottom panel tab. If it doesn't exist, creates it
     /// and inserts it at its canonical position.
     /// </summary>
+    /// <param name="tabId">ID of the bottom panel tab to open.</param>
     public void OpenBottomPanelTab(string tabId) => OpenBottomPanelTab(tabId, null);
 
     /// <summary>
     /// Opens (or re-opens) a bottom panel tab with an optional custom title.
     /// If it doesn't exist, creates it and inserts it at its canonical position.
     /// </summary>
+    /// <param name="tabId">ID of the bottom panel tab to open.</param>
+    /// <param name="customTitle">Optional display title override; defaults to the tab ID uppercased.</param>
     public void OpenBottomPanelTab(string tabId, string? customTitle)
     {
         var existing = FindBottomPanelTab(tabId);
@@ -416,6 +472,7 @@ public partial class MainWindowViewModel : ObservableObject
     /// Closes a bottom panel tab. If it was the active tab, activates
     /// the nearest neighbor. If no tabs remain, hides the panel.
     /// </summary>
+    /// <param name="tabId">ID of the bottom panel tab to close.</param>
     [RelayCommand]
     public void CloseBottomPanelTab(string tabId)
     {
@@ -439,7 +496,10 @@ public partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    /// <summary>Finds a bottom panel tab by ID.</summary>
+    /// <summary>
+    /// Finds a bottom panel tab by ID, or null if not found.
+    /// </summary>
+    /// <param name="tabId">ID of the bottom panel tab to locate.</param>
     public BottomPanelTabItem? FindBottomPanelTab(string tabId)
     {
         for (int i = 0; i < BottomPanelTabs.Count; i++)
@@ -449,7 +509,9 @@ public partial class MainWindowViewModel : ObservableObject
         return null;
     }
 
-    /// <summary>Opens Settings as a tab (like VS Code).</summary>
+    /// <summary>
+    /// Opens Settings as a tab (like VS Code).
+    /// </summary>
     [RelayCommand]
     public void OpenSettings()
     {
@@ -458,7 +520,10 @@ public partial class MainWindowViewModel : ObservableObject
 
     // ── Helpers ──
 
-    /// <summary>Finds a tab by its ID.</summary>
+    /// <summary>
+    /// Finds a tab by its ID, or null if not found.
+    /// </summary>
+    /// <param name="tabId">ID of the tab to locate.</param>
     internal TabItemModel? FindTab(string tabId)
     {
         for (int i = 0; i < Tabs.Count; i++)

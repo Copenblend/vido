@@ -29,6 +29,9 @@ public partial class InputDialog : Window
     /// <summary>
     /// Shows a modal input dialog and returns the entered text, or <c>null</c> if cancelled.
     /// </summary>
+    /// <param name="owner">The parent window that owns the dialog.</param>
+    /// <param name="title">Window title shown in the dialog title bar.</param>
+    /// <param name="prompt">Prompt text displayed above the input box.</param>
     public static string? ShowInputDialog(Window owner, string title, string prompt)
     {
         var dialog = new InputDialog(title, prompt) { Owner = owner };

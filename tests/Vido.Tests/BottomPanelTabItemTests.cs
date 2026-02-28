@@ -9,6 +9,9 @@ namespace Vido.Tests;
 /// </summary>
 public class BottomPanelTabItemTests
 {
+    /// <summary>
+    /// Verifies that Constructor sets id and title.
+    /// </summary>
     [Fact]
     public void Constructor_SetsIdAndTitle()
     {
@@ -18,6 +21,9 @@ public class BottomPanelTabItemTests
         Assert.Equal("TEST", tab.Title);
     }
 
+    /// <summary>
+    /// Verifies that Constructor default values.
+    /// </summary>
     [Fact]
     public void Constructor_DefaultValues()
     {
@@ -27,6 +33,9 @@ public class BottomPanelTabItemTests
         Assert.False(tab.IsActive);
     }
 
+    /// <summary>
+    /// Verifies that Is Active raises property changed.
+    /// </summary>
     [Fact]
     public void IsActive_RaisesPropertyChanged()
     {
@@ -43,6 +52,9 @@ public class BottomPanelTabItemTests
         Assert.True(raised);
     }
 
+    /// <summary>
+    /// Verifies that Is Active same value does not raise.
+    /// </summary>
     [Fact]
     public void IsActive_SameValue_DoesNotRaise()
     {

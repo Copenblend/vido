@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -14,28 +13,44 @@ namespace Vido.Views.Controls;
 /// </summary>
 public partial class TitleBarView : UserControl
 {
-    /// <summary>File filter for video file dialogs.</summary>
+    /// <summary>
+    /// File filter for video file dialogs.
+    /// </summary>
     private const string VideoFileFilter =
         "Video Files|*.mp4;*.avi;*.mkv;*.mov;*.wmv;*.flv;*.webm|All Files|*.*";
 
-    /// <summary>Raised when the user selects File > Open File and picks a video file.</summary>
+    /// <summary>
+    /// Raised when the user selects File > Open File and picks a video file.
+    /// </summary>
     public event Action<string>? FileOpened;
 
-    /// <summary>Raised when the user selects File > Open Folder and picks a valid path.</summary>
+    /// <summary>
+    /// Raised when the user selects File > Open Folder and picks a valid path.
+    /// </summary>
     public event Action<string>? FolderOpened;
 
-    /// <summary>Raised when the user selects File > Close Folder.</summary>
+    /// <summary>
+    /// Raised when the user selects File > Close Folder.
+    /// </summary>
     public event Action? FolderClosed;
 
-    /// <summary>Raised when the user selects File > Rescan Folder.</summary>
+    /// <summary>
+    /// Raised when the user selects File > Rescan Folder.
+    /// </summary>
     public event Action? FolderRescanned;
 
-    /// <summary>Raised when the user selects File > Add File and picks one or more files.</summary>
+    /// <summary>
+    /// Raised when the user selects File > Add File and picks one or more files.
+    /// </summary>
     public event Action<string[]>? FilesAdded;
 
-    /// <summary>Raised when the user selects File > Add Folder and picks a folder.</summary>
+    /// <summary>
+    /// Raised when the user selects File > Add Folder and picks a folder.
+    /// </summary>
     public event Action<string[]>? FolderAddedToExplorer;
-
+    /// <summary>
+    /// Sets up the custom title bar UI including menu items and window control buttons.
+    /// </summary>
     public TitleBarView()
     {
         InitializeComponent();
@@ -44,6 +59,7 @@ public partial class TitleBarView : UserControl
     /// <summary>
     /// Updates the Close Folder menu item enabled state based on whether a folder is open.
     /// </summary>
+    /// <param name="enabled">Whether the Close Folder and Rescan Folder menu items should be enabled.</param>
     public void SetCloseFolderEnabled(bool enabled)
     {
         CloseFolderMenuItem.IsEnabled = enabled;
@@ -53,6 +69,7 @@ public partial class TitleBarView : UserControl
     /// <summary>
     /// Updates the maximize/restore icon and tooltip when the window state changes.
     /// </summary>
+    /// <param name="isMaximized">Whether the window is currently maximized.</param>
     public void UpdateWindowState(bool isMaximized)
     {
         MaximizeIcon.Children.Clear();
@@ -62,7 +79,8 @@ public partial class TitleBarView : UserControl
             // Restore icon: two overlapping rectangles
             var backRect = new Rectangle
             {
-                Width = 8, Height = 8,
+                Width = 8,
+                Height = 8,
                 StrokeThickness = 1,
                 Fill = System.Windows.Media.Brushes.Transparent,
                 HorizontalAlignment = HorizontalAlignment.Right,
@@ -73,7 +91,8 @@ public partial class TitleBarView : UserControl
 
             var frontRect = new Rectangle
             {
-                Width = 8, Height = 8,
+                Width = 8,
+                Height = 8,
                 StrokeThickness = 1,
                 Fill = System.Windows.Media.Brushes.Transparent,
                 HorizontalAlignment = HorizontalAlignment.Left,
@@ -92,7 +111,8 @@ public partial class TitleBarView : UserControl
             // Maximize icon: single rectangle
             var rect = new Rectangle
             {
-                Width = 9, Height = 9,
+                Width = 9,
+                Height = 9,
                 StrokeThickness = 1,
                 Fill = System.Windows.Media.Brushes.Transparent
             };
@@ -104,6 +124,10 @@ public partial class TitleBarView : UserControl
         }
     }
 
+    /// <summary>
+    /// Handles left mouse button presses to support double-click maximize/restore behavior.
+    /// </summary>
+    /// <param name="e">Mouse event arguments containing click count and input state.</param>
     protected override void OnMouseLeftButtonDown(MouseButtonEventArgs e)
     {
         base.OnMouseLeftButtonDown(e);
@@ -189,28 +213,44 @@ public partial class TitleBarView : UserControl
 
     // ── View menu events ──
 
-    /// <summary>Raised when View > Bottom Panel > Show/Hide is clicked.</summary>
+    /// <summary>
+    /// Raised when View > Bottom Panel > Show/Hide is clicked.
+    /// </summary>
     public event Action? ToggleBottomPanelRequested;
 
-    /// <summary>Raised when View > Bottom Panel > Log Output is clicked to show the output panel.</summary>
+    /// <summary>
+    /// Raised when View > Bottom Panel > Log Output is clicked to show the output panel.
+    /// </summary>
     public event Action? ShowOutputRequested;
 
-    /// <summary>Raised when View > Bottom Panel > Show/Hide Log Output is toggled.</summary>
+    /// <summary>
+    /// Raised when View > Bottom Panel > Show/Hide Log Output is toggled.
+    /// </summary>
     public event Action? ToggleLogOutputRequested;
 
-    /// <summary>Raised when View > Right Panel > Show/Hide is clicked.</summary>
+    /// <summary>
+    /// Raised when View > Right Panel > Show/Hide is clicked.
+    /// </summary>
     public event Action? ToggleRightPanelRequested;
 
-    /// <summary>Raised when View > Right Panel > Video Info is clicked.</summary>
+    /// <summary>
+    /// Raised when View > Right Panel > Video Info is clicked.
+    /// </summary>
     public event Action? ShowVideoInfoRequested;
 
-    /// <summary>Raised when View > Toggle Status Bar is clicked.</summary>
+    /// <summary>
+    /// Raised when View > Toggle Status Bar is clicked.
+    /// </summary>
     public event Action? ToggleStatusBarRequested;
 
-    /// <summary>Raised when View > Toggle Sidebar is clicked.</summary>
+    /// <summary>
+    /// Raised when View > Toggle Sidebar is clicked.
+    /// </summary>
     public event Action? ToggleSidebarRequested;
 
-    /// <summary>Raised when View > Show Hidden Files is toggled.</summary>
+    /// <summary>
+    /// Raised when View > Show Hidden Files is toggled.
+    /// </summary>
     public event Action? ToggleShowHiddenFilesRequested;
 
     /// <summary>
@@ -221,22 +261,34 @@ public partial class TitleBarView : UserControl
 
     // ── Playback menu events ──
 
-    /// <summary>Raised when Playback > Play/Pause is clicked.</summary>
+    /// <summary>
+    /// Raised when Playback > Play/Pause is clicked.
+    /// </summary>
     public event Action? PlayPauseRequested;
 
-    /// <summary>Raised when Playback > Stop is clicked.</summary>
+    /// <summary>
+    /// Raised when Playback > Stop is clicked.
+    /// </summary>
     public event Action? StopRequested;
 
-    /// <summary>Raised when Playback > Skip Forward is clicked.</summary>
+    /// <summary>
+    /// Raised when Playback > Skip Forward is clicked.
+    /// </summary>
     public event Action? SkipForwardRequested;
 
-    /// <summary>Raised when Playback > Skip Backward is clicked.</summary>
+    /// <summary>
+    /// Raised when Playback > Skip Backward is clicked.
+    /// </summary>
     public event Action? SkipBackwardRequested;
 
-    /// <summary>Raised when Playback > Loop is clicked.</summary>
+    /// <summary>
+    /// Raised when Playback > Loop is clicked.
+    /// </summary>
     public event Action? LoopRequested;
 
-    /// <summary>Raised when a playback speed is selected from the menu.</summary>
+    /// <summary>
+    /// Raised when a playback speed is selected from the menu.
+    /// </summary>
     public event Action<double>? PlaybackSpeedSelected;
 
     /// <summary>
@@ -245,25 +297,39 @@ public partial class TitleBarView : UserControl
     /// </summary>
     public Func<double>? GetPlaybackSpeed { get; set; }
 
-    /// <summary>Raised when View > Fullscreen is clicked.</summary>
+    /// <summary>
+    /// Raised when View > Fullscreen is clicked.
+    /// </summary>
     public event Action? FullscreenRequested;
 
-    /// <summary>Raised when a recent file is selected from File > Recent Files.</summary>
+    /// <summary>
+    /// Raised when a recent file is selected from File > Recent Files.
+    /// </summary>
     public event Action<string>? RecentFileSelected;
 
-    /// <summary>Raised when File > Recent Files > Clear Watch History is clicked.</summary>
+    /// <summary>
+    /// Raised when File > Recent Files > Clear Watch History is clicked.
+    /// </summary>
     public event Action? ClearWatchHistoryRequested;
 
-    /// <summary>Raised when Help > About Vido is clicked.</summary>
+    /// <summary>
+    /// Raised when Help > About Vido is clicked.
+    /// </summary>
     public event Action? AboutRequested;
 
-    /// <summary>Raised when Help > Check for Updates is clicked.</summary>
+    /// <summary>
+    /// Raised when Help > Check for Updates is clicked.
+    /// </summary>
     public event Action? CheckForUpdatesRequested;
 
-    /// <summary>Raised when Help > Enter Repository Code is clicked.</summary>
+    /// <summary>
+    /// Raised when Help > Enter Repository Code is clicked.
+    /// </summary>
     public event Action? EnterRepositoryCodeRequested;
 
-    /// <summary>Raised when the screenshot button is clicked.</summary>
+    /// <summary>
+    /// Raised when the screenshot button is clicked.
+    /// </summary>
     public event Action? ScreenshotRequested;
 
     /// <summary>
@@ -273,25 +339,36 @@ public partial class TitleBarView : UserControl
     /// </summary>
     public Func<IReadOnlyList<string>>? GetRecentFiles { get; set; }
 
-    /// <summary>Whether the bottom panel is currently visible. Used to update the submenu text.</summary>
+    /// <summary>
+    /// Whether the bottom panel is currently visible. Used to update the submenu text.
+    /// </summary>
     private bool _isBottomPanelVisible;
 
-    /// <summary>Whether the Log Output tab is currently visible. Used to update the submenu text.</summary>
+    /// <summary>
+    /// Whether the Log Output tab is currently visible. Used to update the submenu text.
+    /// </summary>
     private bool _isLogOutputVisible;
 
-    /// <summary>Whether the right panel is currently visible. Used to update the submenu text.</summary>
+    /// <summary>
+    /// Whether the right panel is currently visible. Used to update the submenu text.
+    /// </summary>
     private bool _isRightPanelVisible;
 
-    /// <summary>Whether the sidebar is currently visible. Used to update the submenu text.</summary>
+    /// <summary>
+    /// Whether the sidebar is currently visible. Used to update the submenu text.
+    /// </summary>
     private bool _isSidebarVisible;
 
-    /// <summary>Whether the status bar is currently visible. Used to update the submenu text.</summary>
+    /// <summary>
+    /// Whether the status bar is currently visible. Used to update the submenu text.
+    /// </summary>
     private bool _isStatusBarVisible;
 
     /// <summary>
     /// Updates the Bottom Panel submenu state based on current panel visibility.
     /// Called by MainWindow when the panel visibility changes.
     /// </summary>
+    /// <param name="visible">Whether the bottom panel is currently visible.</param>
     public void SetBottomPanelVisible(bool visible)
     {
         _isBottomPanelVisible = visible;
@@ -301,6 +378,7 @@ public partial class TitleBarView : UserControl
     /// Updates the Log Output submenu state based on current tab visibility.
     /// Called by MainWindow when the Log Output tab is toggled.
     /// </summary>
+    /// <param name="visible">Whether the Log Output tab is currently visible.</param>
     public void SetLogOutputVisible(bool visible)
     {
         _isLogOutputVisible = visible;
@@ -310,6 +388,7 @@ public partial class TitleBarView : UserControl
     /// Updates the Right Panel submenu state based on current panel visibility.
     /// Called by MainWindow when the panel visibility changes.
     /// </summary>
+    /// <param name="visible">Whether the right panel is currently visible.</param>
     public void SetRightPanelVisible(bool visible)
     {
         _isRightPanelVisible = visible;
@@ -319,6 +398,7 @@ public partial class TitleBarView : UserControl
     /// Updates the Sidebar submenu state based on current sidebar visibility.
     /// Called by MainWindow when the sidebar visibility changes.
     /// </summary>
+    /// <param name="visible">Whether the sidebar is currently visible.</param>
     public void SetSidebarVisible(bool visible)
     {
         _isSidebarVisible = visible;
@@ -328,6 +408,7 @@ public partial class TitleBarView : UserControl
     /// Updates the Status Bar submenu state based on current status bar visibility.
     /// Called by MainWindow when the status bar visibility changes.
     /// </summary>
+    /// <param name="visible">Whether the status bar is currently visible.</param>
     public void SetStatusBarVisible(bool visible)
     {
         _isStatusBarVisible = visible;
@@ -480,10 +561,15 @@ public partial class TitleBarView : UserControl
         ScreenshotRequested?.Invoke();
     }
 
-    /// <summary>The screenshot button instance, created on demand.</summary>
+    /// <summary>
+    /// The screenshot button instance, created on demand.
+    /// </summary>
     private Button? _screenshotButton;
 
-    /// <summary>Shows or hides the screenshot button in the title bar toolbar area.</summary>
+    /// <summary>
+    /// Shows or hides the screenshot button in the title bar toolbar area.
+    /// </summary>
+    /// <param name="visible">Whether the screenshot button should be visible.</param>
     public void SetScreenshotButtonVisible(bool visible)
     {
         if (visible)
@@ -507,7 +593,9 @@ public partial class TitleBarView : UserControl
         }
     }
 
-    /// <summary>Creates the screenshot button styled identically to plugin toolbar buttons.</summary>
+    /// <summary>
+    /// Creates the screenshot button styled identically to plugin toolbar buttons.
+    /// </summary>
     private Button CreateScreenshotButton()
     {
         // Camera icon: body path + lens ellipse
@@ -616,15 +704,21 @@ public partial class TitleBarView : UserControl
 
     // ── Status bar plugin items submenu ──
 
-    /// <summary>Map of status bar registration ID → menu item for removal.</summary>
+    /// <summary>
+    /// Map of status bar registration ID → menu item for removal.
+    /// </summary>
     private readonly Dictionary<string, MenuItem> _statusBarMenuItems = [];
 
-    /// <summary>Raised when a plugin status bar item's show/hide is toggled.</summary>
+    /// <summary>
+    /// Raised when a plugin status bar item's show/hide is toggled.
+    /// </summary>
     public event Action<string, bool>? ToggleStatusBarItemRequested;
 
     /// <summary>
     /// Adds a "Show/Hide {name}" menu item to View > Bottom Panel > Status Bar submenu.
     /// </summary>
+    /// <param name="registrationId">Unique identifier for the status bar item registration.</param>
+    /// <param name="name">Display name for the menu item.</param>
     public void AddStatusBarMenuItem(string registrationId, string name)
     {
         var menuItem = new MenuItem
@@ -653,6 +747,7 @@ public partial class TitleBarView : UserControl
     /// <summary>
     /// Removes a plugin's status bar menu item by registration ID.
     /// </summary>
+    /// <param name="registrationId">The registration identifier of the menu item to remove.</param>
     public void RemoveStatusBarMenuItem(string registrationId)
     {
         if (_statusBarMenuItems.TryGetValue(registrationId, out var menuItem))
@@ -664,16 +759,22 @@ public partial class TitleBarView : UserControl
 
     // ── Bottom panel tab show/hide items ──
 
-    /// <summary>Map of bottom panel tab ID → menu item for removal.</summary>
+    /// <summary>
+    /// Map of bottom panel tab ID → menu item for removal.
+    /// </summary>
     private readonly Dictionary<string, MenuItem> _bottomPanelTabMenuItems = [];
 
-    /// <summary>Raised when a bottom panel tab's show/hide is toggled. Params: tabId, visible.</summary>
+    /// <summary>
+    /// Raised when a bottom panel tab's show/hide is toggled. Params: tabId, visible.
+    /// </summary>
     public event Action<string, bool>? ToggleBottomPanelTabRequested;
 
     /// <summary>
     /// Adds a "Hide/Show {name}" menu item to View > Bottom Panel submenu for a plugin tab.
     /// Inserted before the Show/Hide Bottom Panel toggle (last item).
     /// </summary>
+    /// <param name="tabId">Unique identifier for the bottom panel tab.</param>
+    /// <param name="name">Display name for the menu item.</param>
     public void AddBottomPanelTabMenuItem(string tabId, string name)
     {
         var menuItem = new MenuItem
@@ -701,6 +802,7 @@ public partial class TitleBarView : UserControl
     /// <summary>
     /// Removes a plugin's bottom panel tab menu item by tab ID.
     /// </summary>
+    /// <param name="tabId">The tab identifier of the menu item to remove.</param>
     public void RemoveBottomPanelTabMenuItem(string tabId)
     {
         if (_bottomPanelTabMenuItems.TryGetValue(tabId, out var menuItem))
@@ -710,10 +812,14 @@ public partial class TitleBarView : UserControl
         }
     }
 
-    /// <summary>Lazy-initialized container panel for plugin toolbar buttons.</summary>
+    /// <summary>
+    /// Lazy-initialized container panel for plugin toolbar buttons.
+    /// </summary>
     private StackPanel? _pluginToolbarPanel;
 
-    /// <summary>Styled border wrapping the plugin toolbar panel.</summary>
+    /// <summary>
+    /// Styled border wrapping the plugin toolbar panel.
+    /// </summary>
     private Border? _pluginToolbarBorder;
 
     /// <summary>
@@ -721,6 +827,7 @@ public partial class TitleBarView : UserControl
     /// container panel in the drag area (column 2) if needed.
     /// The screenshot button (if present) is always kept as the rightmost item.
     /// </summary>
+    /// <param name="button">The plugin toolbar button to add.</param>
     public void AddPluginToolbarButton(Button button)
     {
         EnsureToolbarPanelExists();
@@ -778,6 +885,7 @@ public partial class TitleBarView : UserControl
     /// <summary>
     /// Removes a plugin toolbar button from the title bar.
     /// </summary>
+    /// <param name="button">The plugin toolbar button to remove.</param>
     public void RemovePluginToolbarButton(Button button)
     {
         _pluginToolbarPanel?.Children.Remove(button);
@@ -799,13 +907,17 @@ public partial class TitleBarView : UserControl
 
     // ── Plugin right panel menu items ──
 
-    /// <summary>Map of panel ID → menu item for removal.</summary>
+    /// <summary>
+    /// Map of panel ID → menu item for removal.
+    /// </summary>
     private readonly Dictionary<string, MenuItem> _rightPanelMenuItems = [];
 
     /// <summary>
     /// Adds a menu item to the View → Right Panel submenu for a plugin-contributed panel.
     /// Inserted before the Show/Hide toggle item.
     /// </summary>
+    /// <param name="title">Display title for the menu item.</param>
+    /// <param name="onSelected">Action to invoke when the menu item is clicked.</param>
     public void AddRightPanelMenuItem(string title, Action onSelected)
     {
         AddRightPanelMenuItem(null, title, onSelected);
@@ -815,6 +927,9 @@ public partial class TitleBarView : UserControl
     /// Adds a menu item to the View → Right Panel submenu for a plugin-contributed panel.
     /// Inserted before the Show/Hide toggle item. Optionally tracked by panelId for removal.
     /// </summary>
+    /// <param name="panelId">Optional panel identifier for tracking and later removal, or null.</param>
+    /// <param name="title">Display title for the menu item.</param>
+    /// <param name="onSelected">Action to invoke when the menu item is clicked.</param>
     public void AddRightPanelMenuItem(string? panelId, string title, Action onSelected)
     {
         var menuItem = new MenuItem
@@ -836,6 +951,7 @@ public partial class TitleBarView : UserControl
     /// <summary>
     /// Removes a plugin's right panel menu item by panel ID.
     /// </summary>
+    /// <param name="panelId">The panel identifier of the menu item to remove.</param>
     public void RemoveRightPanelMenuItem(string panelId)
     {
         if (_rightPanelMenuItems.TryGetValue(panelId, out var menuItem))

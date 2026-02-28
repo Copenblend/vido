@@ -8,6 +8,9 @@ namespace Vido.Tests;
 /// </summary>
 public class AudioSampleEventArgsTests
 {
+    /// <summary>
+    /// Verifies that Constructor sets all properties.
+    /// </summary>
     [Fact]
     public void Constructor_SetsAllProperties()
     {
@@ -26,6 +29,9 @@ public class AudioSampleEventArgsTests
         Assert.Equal(2, args.Channels);
     }
 
+    /// <summary>
+    /// Verifies that Buffer is zero copy slice shares underlying array.
+    /// </summary>
     [Fact]
     public void Buffer_IsZeroCopySlice_SharesUnderlyingArray()
     {
@@ -47,6 +53,9 @@ public class AudioSampleEventArgsTests
         Assert.Equal(0xEF, span[3]);
     }
 
+    /// <summary>
+    /// Verifies that Buffer can be sliced with offset.
+    /// </summary>
     [Fact]
     public void Buffer_CanBeSlicedWithOffset()
     {
@@ -65,6 +74,9 @@ public class AudioSampleEventArgsTests
         Assert.Equal(0xFF, args.Buffer.Span[0]);
     }
 
+    /// <summary>
+    /// Verifies that Buffer empty is valid.
+    /// </summary>
     [Fact]
     public void Buffer_EmptyIsValid()
     {
@@ -80,6 +92,9 @@ public class AudioSampleEventArgsTests
         Assert.Equal(0, args.SampleCount);
     }
 
+    /// <summary>
+    /// Verifies that Sample Count reflects per channel count.
+    /// </summary>
     [Fact]
     public void SampleCount_ReflectsPerChannelCount()
     {
@@ -97,6 +112,10 @@ public class AudioSampleEventArgsTests
         Assert.Equal(expectedBytes, args.Buffer.Length);
     }
 
+    /// <summary>
+    /// Verifies that Sample Rate accepts common rates.
+    /// </summary>
+    /// <param name="sampleRate">The audio sample rate in Hz.</param>
     [Theory]
     [InlineData(44100)]
     [InlineData(48000)]
@@ -114,6 +133,10 @@ public class AudioSampleEventArgsTests
         Assert.Equal(sampleRate, args.SampleRate);
     }
 
+    /// <summary>
+    /// Verifies that Channels accepts various layouts.
+    /// </summary>
+    /// <param name="channels">The number of audio channels.</param>
     [Theory]
     [InlineData(1)]
     [InlineData(2)]

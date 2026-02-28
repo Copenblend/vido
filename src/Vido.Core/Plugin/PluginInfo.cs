@@ -5,13 +5,19 @@ namespace Vido.Core.Plugin;
 /// </summary>
 public sealed class PluginInfo
 {
-    /// <summary>The parsed plugin manifest.</summary>
+    /// <summary>
+    /// The parsed plugin manifest.
+    /// </summary>
     public required PluginManifest Manifest { get; init; }
 
-    /// <summary>Absolute path to the plugin's installation directory.</summary>
+    /// <summary>
+    /// Absolute path to the plugin's installation directory.
+    /// </summary>
     public required string Directory { get; init; }
 
-    /// <summary>Current lifecycle state of the plugin.</summary>
+    /// <summary>
+    /// Current lifecycle state of the plugin.
+    /// </summary>
     public PluginState State { get; set; } = PluginState.Discovered;
 
     /// <summary>

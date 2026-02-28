@@ -23,6 +23,9 @@ public class VideoPlayerViewModelTests : IDisposable
     private readonly IContributionRegistry _contributionRegistry;
     private readonly VideoPlayerViewModel _sut;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public VideoPlayerViewModelTests()
     {
         _engine = Substitute.For<IVideoEngine>();
@@ -40,72 +43,108 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── Initial State ──
 
+    /// <summary>
+    /// Verifies that Initial State is none.
+    /// </summary>
     [Fact]
     public void InitialState_IsNone()
     {
         Assert.Equal(PlaybackState.None, _sut.State);
     }
 
+    /// <summary>
+    /// Verifies that Initial Position is zero.
+    /// </summary>
     [Fact]
     public void InitialPosition_IsZero()
     {
         Assert.Equal(TimeSpan.Zero, _sut.Position);
     }
 
+    /// <summary>
+    /// Verifies that Initial Duration is zero.
+    /// </summary>
     [Fact]
     public void InitialDuration_IsZero()
     {
         Assert.Equal(TimeSpan.Zero, _sut.Duration);
     }
 
+    /// <summary>
+    /// Verifies that Initial Volume matches settings.
+    /// </summary>
     [Fact]
     public void InitialVolume_MatchesSettings()
     {
         Assert.Equal(50, _sut.Volume);
     }
 
+    /// <summary>
+    /// Verifies that Initial Is Muted inherits from engine.
+    /// </summary>
     [Fact]
     public void InitialIsMuted_InheritsFromEngine()
     {
         Assert.False(_sut.IsMuted);
     }
 
+    /// <summary>
+    /// Verifies that Initial Is Looping inherits from engine.
+    /// </summary>
     [Fact]
     public void InitialIsLooping_InheritsFromEngine()
     {
         Assert.False(_sut.IsLooping);
     }
 
+    /// <summary>
+    /// Verifies that Initial Has Media is false.
+    /// </summary>
     [Fact]
     public void InitialHasMedia_IsFalse()
     {
         Assert.False(_sut.HasMedia);
     }
 
+    /// <summary>
+    /// Verifies that Initial Show Play Icon is true.
+    /// </summary>
     [Fact]
     public void InitialShowPlayIcon_IsTrue()
     {
         Assert.True(_sut.ShowPlayIcon);
     }
 
+    /// <summary>
+    /// Verifies that Initial Position Text is zero.
+    /// </summary>
     [Fact]
     public void InitialPositionText_IsZero()
     {
         Assert.Equal("00:00", _sut.PositionText);
     }
 
+    /// <summary>
+    /// Verifies that Initial Duration Text is zero.
+    /// </summary>
     [Fact]
     public void InitialDurationText_IsZero()
     {
         Assert.Equal("00:00", _sut.DurationText);
     }
 
+    /// <summary>
+    /// Verifies that Initial Current File Path is null.
+    /// </summary>
     [Fact]
     public void InitialCurrentFilePath_IsNull()
     {
         Assert.Null(_sut.CurrentFilePath);
     }
 
+    /// <summary>
+    /// Verifies that Initial Current Metadata is null.
+    /// </summary>
     [Fact]
     public void InitialCurrentMetadata_IsNull()
     {
@@ -114,6 +153,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── Volume ──
 
+    /// <summary>
+    /// Verifies that Set Volume forwards to engine.
+    /// </summary>
     [Fact]
     public void SetVolume_ForwardsToEngine()
     {
@@ -121,6 +163,11 @@ public class VideoPlayerViewModelTests : IDisposable
         _engine.Received().Volume = 50;
     }
 
+    /// <summary>
+    /// Verifies that Set Volume clamps value.
+    /// </summary>
+    /// <param name="input">The input value to process.</param>
+    /// <param name="expected">The expected result value.</param>
     [Theory]
     [InlineData(-10, 0)]
     [InlineData(0, 0)]
@@ -135,6 +182,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── Mute / Loop toggles ──
 
+    /// <summary>
+    /// Verifies that Toggle Mute sets is muted true.
+    /// </summary>
     [Fact]
     public void ToggleMute_SetsIsMutedTrue()
     {
@@ -142,6 +192,9 @@ public class VideoPlayerViewModelTests : IDisposable
         Assert.True(_sut.IsMuted);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Mute forwards to engine.
+    /// </summary>
     [Fact]
     public void ToggleMute_ForwardsToEngine()
     {
@@ -149,6 +202,9 @@ public class VideoPlayerViewModelTests : IDisposable
         _engine.Received().IsMuted = true;
     }
 
+    /// <summary>
+    /// Verifies that Toggle Loop sets is looping true.
+    /// </summary>
     [Fact]
     public void ToggleLoop_SetsIsLoopingTrue()
     {
@@ -156,6 +212,9 @@ public class VideoPlayerViewModelTests : IDisposable
         Assert.True(_sut.IsLooping);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Loop forwards to engine.
+    /// </summary>
     [Fact]
     public void ToggleLoop_ForwardsToEngine()
     {
@@ -165,6 +224,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── PlayPause / Stop without media ──
 
+    /// <summary>
+    /// Verifies that Play Pause does nothing when no media.
+    /// </summary>
     [Fact]
     public void PlayPause_DoesNothing_WhenNoMedia()
     {
@@ -173,6 +235,9 @@ public class VideoPlayerViewModelTests : IDisposable
         _engine.DidNotReceive().Pause();
     }
 
+    /// <summary>
+    /// Verifies that Stop does nothing when no media.
+    /// </summary>
     [Fact]
     public void Stop_DoesNothing_WhenNoMedia()
     {
@@ -182,6 +247,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── Engine event handling ──
 
+    /// <summary>
+    /// Verifies that State Changed updates view model state.
+    /// </summary>
     [Fact]
     public void StateChanged_UpdatesViewModelState()
     {
@@ -191,6 +259,9 @@ public class VideoPlayerViewModelTests : IDisposable
         Assert.False(_sut.ShowPlayIcon);
     }
 
+    /// <summary>
+    /// Verifies that State Changed to paused shows play icon.
+    /// </summary>
     [Fact]
     public void StateChanged_ToPaused_ShowsPlayIcon()
     {
@@ -200,6 +271,9 @@ public class VideoPlayerViewModelTests : IDisposable
         Assert.True(_sut.ShowPlayIcon);
     }
 
+    /// <summary>
+    /// Verifies that Position Changed updates position and text.
+    /// </summary>
     [Fact]
     public void PositionChanged_UpdatesPositionAndText()
     {
@@ -210,6 +284,9 @@ public class VideoPlayerViewModelTests : IDisposable
         Assert.Equal("02:30", _sut.PositionText);
     }
 
+    /// <summary>
+    /// Verifies that Frame Ready raises view model event.
+    /// </summary>
     [Fact]
     public void FrameReady_RaisesViewModelEvent()
     {
@@ -225,6 +302,11 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── FormatTime ──
 
+    /// <summary>
+    /// Verifies that Format Time formats correctly.
+    /// </summary>
+    /// <param name="totalSeconds">The total number of seconds to format.</param>
+    /// <param name="expected">The expected result value.</param>
     [Theory]
     [InlineData(0, "00:00")]
     [InlineData(65, "01:05")]
@@ -239,6 +321,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── IsLoadingMedia ──
 
+    /// <summary>
+    /// Verifies that Load And Play Async sets is loading media true then false.
+    /// </summary>
     [Fact]
     public async Task LoadAndPlayAsync_SetsIsLoadingMedia_True_Then_False()
     {
@@ -269,6 +354,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Load And Play Async resets is loading media on failure.
+    /// </summary>
     [Fact]
     public async Task LoadAndPlayAsync_ResetsIsLoadingMedia_OnFailure()
     {
@@ -281,6 +369,9 @@ public class VideoPlayerViewModelTests : IDisposable
         Assert.False(_sut.IsLoadingMedia);
     }
 
+    /// <summary>
+    /// Verifies that Load And Play Async fast load never shows loading indicator.
+    /// </summary>
     [Fact]
     public async Task LoadAndPlayAsync_FastLoad_NeverShowsLoadingIndicator()
     {
@@ -303,6 +394,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── GetAdjacentVideoFile ──
 
+    /// <summary>
+    /// Verifies that Get Adjacent Video File returns null when no current file.
+    /// </summary>
     [Fact]
     public void GetAdjacentVideoFile_ReturnsNull_WhenNoCurrentFile()
     {
@@ -312,6 +406,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── Skip wrapping with temp files ──
 
+    /// <summary>
+    /// Verifies that Skip Next wraps to first file when at end.
+    /// </summary>
     [Fact]
     public async Task SkipNext_WrapsToFirstFile_WhenAtEnd()
     {
@@ -331,6 +428,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Skip Previous wraps to last file when at beginning.
+    /// </summary>
     [Fact]
     public async Task SkipPrevious_WrapsToLastFile_WhenAtBeginning()
     {
@@ -350,6 +450,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Get Adjacent Video File returns middle file normal.
+    /// </summary>
     [Fact]
     public async Task GetAdjacentVideoFile_ReturnsMiddleFile_Normal()
     {
@@ -370,12 +473,18 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── Shuffle ──
 
+    /// <summary>
+    /// Verifies that Initial Is Shuffling is false.
+    /// </summary>
     [Fact]
     public void InitialIsShuffling_IsFalse()
     {
         Assert.False(_sut.IsShuffling);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Shuffle sets is shuffling true.
+    /// </summary>
     [Fact]
     public void ToggleShuffle_SetsIsShufflingTrue()
     {
@@ -383,6 +492,9 @@ public class VideoPlayerViewModelTests : IDisposable
         Assert.True(_sut.IsShuffling);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Shuffle twice sets is shuffling false.
+    /// </summary>
     [Fact]
     public void ToggleShuffle_Twice_SetsIsShufflingFalse()
     {
@@ -391,6 +503,9 @@ public class VideoPlayerViewModelTests : IDisposable
         Assert.False(_sut.IsShuffling);
     }
 
+    /// <summary>
+    /// Verifies that Build Shuffle Playlist contains all siblings.
+    /// </summary>
     [Fact]
     public async Task BuildShufflePlaylist_ContainsAllSiblings()
     {
@@ -419,6 +534,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Build Shuffle Playlist current file is first.
+    /// </summary>
     [Fact]
     public async Task BuildShufflePlaylist_CurrentFileIsFirst()
     {
@@ -438,6 +556,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Get Shuffle File wraps around.
+    /// </summary>
     [Fact]
     public async Task GetShuffleFile_WrapsAround()
     {
@@ -458,6 +579,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Get Shuffle File wraps backward.
+    /// </summary>
     [Fact]
     public async Task GetShuffleFile_WrapsBackward()
     {
@@ -478,6 +602,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Clear Shuffle Playlist on toggle off.
+    /// </summary>
     [Fact]
     public async Task ClearShufflePlaylist_OnToggleOff()
     {
@@ -497,6 +624,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Get Next File uses shuffle when shuffling.
+    /// </summary>
     [Fact]
     public async Task GetNextFile_UsesShuffle_WhenShuffling()
     {
@@ -519,6 +649,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Get Next File uses alphabetical when not shuffling.
+    /// </summary>
     [Fact]
     public async Task GetNextFile_UsesAlphabetical_WhenNotShuffling()
     {
@@ -539,6 +672,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── ApplySeek ──
 
+    /// <summary>
+    /// Verifies that Apply Seek seeks engine when has duration.
+    /// </summary>
     [Fact]
     public void ApplySeek_SeeksEngine_WhenHasDuration()
     {
@@ -559,6 +695,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── Seek ──
 
+    /// <summary>
+    /// Verifies that Begin Seek suppresses position updates.
+    /// </summary>
     [Fact]
     public void BeginSeek_SuppressesPositionUpdates()
     {
@@ -571,6 +710,9 @@ public class VideoPlayerViewModelTests : IDisposable
         Assert.Equal(TimeSpan.Zero, _sut.Position);
     }
 
+    /// <summary>
+    /// Verifies that End Seek resumes position updates.
+    /// </summary>
     [Fact]
     public void EndSeek_ResumesPositionUpdates()
     {
@@ -585,7 +727,10 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── Helpers ──
 
-    /// <summary>Creates a temp directory with empty video stub files.</summary>
+    /// <summary>
+    /// Creates a temp directory populated with empty video stub files for testing.
+    /// </summary>
+    /// <param name="fileNames">File names (including extension) to create as empty stubs.</param>
     private static string CreateTempVideoDir(params string[] fileNames)
     {
         var dir = Path.Combine(Path.GetTempPath(), "vido_test_" + Guid.NewGuid().ToString("N")[..8]);
@@ -595,7 +740,10 @@ public class VideoPlayerViewModelTests : IDisposable
         return dir;
     }
 
-    /// <summary>Creates a temp directory with nested subfolders and empty video stub files.</summary>
+    /// <summary>
+    /// Creates a temp directory with nested subfolders and empty video stub files for testing.
+    /// </summary>
+    /// <param name="relativePaths">Relative paths (including subdirectories) of stub files to create.</param>
     private static string CreateTempNestedVideoDir(params string[] relativePaths)
     {
         var root = Path.Combine(Path.GetTempPath(), "vido_test_" + Guid.NewGuid().ToString("N")[..8]);
@@ -611,6 +759,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── SetExplorerRootAsync + nested folder scanning ──
 
+    /// <summary>
+    /// Verifies that Set Explorer Root scans nested folders.
+    /// </summary>
     [Fact]
     public async Task SetExplorerRoot_ScansNestedFolders()
     {
@@ -641,6 +792,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(root, true); }
     }
 
+    /// <summary>
+    /// Verifies that Skip Next crosses folder boundary.
+    /// </summary>
     [Fact]
     public async Task SkipNext_CrossesFolderBoundary()
     {
@@ -661,6 +815,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(root, true); }
     }
 
+    /// <summary>
+    /// Verifies that Set Explorer Root null clears list.
+    /// </summary>
     [Fact]
     public async Task SetExplorerRoot_Null_ClearsList()
     {
@@ -669,6 +826,9 @@ public class VideoPlayerViewModelTests : IDisposable
         Assert.Null(result);
     }
 
+    /// <summary>
+    /// Verifies that Set Explorer Root Async non existent path clears list.
+    /// </summary>
     [Fact]
     public async Task SetExplorerRootAsync_NonExistentPath_ClearsList()
     {
@@ -677,6 +837,9 @@ public class VideoPlayerViewModelTests : IDisposable
         Assert.Null(result);
     }
 
+    /// <summary>
+    /// Verifies that Set Explorer Root Async skips hidden video files.
+    /// </summary>
     [Fact]
     public async Task SetExplorerRootAsync_SkipsHiddenVideoFiles()
     {
@@ -699,6 +862,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── Dispose ──
 
+    /// <summary>
+    /// Verifies that Dispose can be called multiple times.
+    /// </summary>
     [Fact]
     public void Dispose_CanBeCalledMultipleTimes()
     {
@@ -706,6 +872,9 @@ public class VideoPlayerViewModelTests : IDisposable
         _sut.Dispose(); // should not throw
     }
 
+    /// <summary>
+    /// Verifies that Dispose unsubscribes from engine events.
+    /// </summary>
     [Fact]
     public void Dispose_UnsubscribesFromEngineEvents()
     {
@@ -718,6 +887,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── Stop with media ──
 
+    /// <summary>
+    /// Verifies that Stop with media resets state.
+    /// </summary>
     [Fact]
     public async Task Stop_WithMedia_ResetsState()
     {
@@ -741,6 +913,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Stop with media calls engine stop.
+    /// </summary>
     [Fact]
     public async Task Stop_WithMedia_CallsEngineStop()
     {
@@ -757,6 +932,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Stop with media clears state service.
+    /// </summary>
     [Fact]
     public async Task Stop_WithMedia_ClearsStateService()
     {
@@ -777,6 +955,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── PlayPause with media ──
 
+    /// <summary>
+    /// Verifies that Play Pause when playing pauses.
+    /// </summary>
     [Fact]
     public async Task PlayPause_WhenPlaying_Pauses()
     {
@@ -796,6 +977,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Play Pause when paused plays.
+    /// </summary>
     [Fact]
     public async Task PlayPause_WhenPaused_Plays()
     {
@@ -816,6 +1000,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Play Pause with resume bar accepts resume.
+    /// </summary>
     [Fact]
     public async Task PlayPause_WithResumeBar_AcceptsResume()
     {
@@ -839,6 +1026,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── Resume / Dismiss ──
 
+    /// <summary>
+    /// Verifies that Resume Playback hides bar and plays.
+    /// </summary>
     [Fact]
     public async Task ResumePlayback_HidesBarAndPlays()
     {
@@ -858,6 +1048,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Dismiss Resume hides bar and stops.
+    /// </summary>
     [Fact]
     public async Task DismissResume_HidesBarAndStops()
     {
@@ -879,6 +1072,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── Volume auto-unmute ──
 
+    /// <summary>
+    /// Verifies that Set Volume when muted auto unmutes.
+    /// </summary>
     [Fact]
     public void SetVolume_WhenMuted_AutoUnmutes()
     {
@@ -890,6 +1086,9 @@ public class VideoPlayerViewModelTests : IDisposable
         Assert.False(_sut.IsMuted);
     }
 
+    /// <summary>
+    /// Verifies that Set Volume persists to settings.
+    /// </summary>
     [Fact]
     public void SetVolume_PersistsToSettings()
     {
@@ -901,6 +1100,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── Playback speed ──
 
+    /// <summary>
+    /// Verifies that Set Playback Speed forwards to engine.
+    /// </summary>
     [Fact]
     public void SetPlaybackSpeed_ForwardsToEngine()
     {
@@ -909,6 +1111,9 @@ public class VideoPlayerViewModelTests : IDisposable
         _engine.Received().SpeedRatio = 2.0;
     }
 
+    /// <summary>
+    /// Verifies that Set Playback Speed clamps to range.
+    /// </summary>
     [Fact]
     public void SetPlaybackSpeed_ClampsToRange()
     {
@@ -919,6 +1124,9 @@ public class VideoPlayerViewModelTests : IDisposable
         Assert.Equal(0.25, _sut.PlaybackSpeed);
     }
 
+    /// <summary>
+    /// Verifies that Set Playback Speed updates speed text.
+    /// </summary>
     [Fact]
     public void SetPlaybackSpeed_UpdatesSpeedText()
     {
@@ -929,6 +1137,9 @@ public class VideoPlayerViewModelTests : IDisposable
         Assert.Equal("2x", _sut.PlaybackSpeedText);
     }
 
+    /// <summary>
+    /// Verifies that Set Playback Speed persists to settings.
+    /// </summary>
     [Fact]
     public void SetPlaybackSpeed_PersistsToSettings()
     {
@@ -940,6 +1151,9 @@ public class VideoPlayerViewModelTests : IDisposable
 
     // ── LoadAndPlayAsync ──
 
+    /// <summary>
+    /// Verifies that Load And Play Async sets media properties.
+    /// </summary>
     [Fact]
     public async Task LoadAndPlayAsync_SetsMediaProperties()
     {
@@ -962,6 +1176,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Verifies that Load And Play Async saves state service.
+    /// </summary>
     [Fact]
     public async Task LoadAndPlayAsync_SavesStateService()
     {
@@ -981,6 +1198,9 @@ public class VideoPlayerViewModelTests : IDisposable
         finally { Directory.Delete(dir, true); }
     }
 
+    /// <summary>
+    /// Cleans up test resources after each test run.
+    /// </summary>
     public void Dispose()
     {
         _sut.Dispose();

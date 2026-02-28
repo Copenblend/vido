@@ -1,5 +1,4 @@
-using System.IO;
-using System.Threading.Tasks;
+﻿using System.IO;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -27,6 +26,14 @@ public partial class PluginDetailPanel : UserControl
     private readonly ILogService? _logService;
     private string _activeTab = "Details";
 
+    /// <summary>
+    /// Creates the plugin detail panel and populates it with the specified plugin's metadata,
+    /// content (README/changelog), and settings.
+    /// </summary>
+    /// <param name="item">The plugin view model to display, or null for an empty panel.</param>
+    /// <param name="managerVm">The plugin manager view model for install/uninstall actions.</param>
+    /// <param name="pluginHost">The plugin host for querying plugin runtime state and settings.</param>
+    /// <param name="logService">Logging service for diagnostic messages during content loading.</param>
     public PluginDetailPanel(
         PluginItemViewModel? item,
         PluginManagerViewModel? managerVm,
@@ -71,14 +78,14 @@ public partial class PluginDetailPanel : UserControl
 
                 if (_item.IconSource.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                 {
-                    // HTTP URL — let WPF download asynchronously (don't use OnLoad/Freeze)
+                    // HTTP URL â€” let WPF download asynchronously (don't use OnLoad/Freeze)
                     bitmap.UriSource = new Uri(_item.IconSource, UriKind.Absolute);
                     bitmap.DecodePixelWidth = 56;
                     bitmap.EndInit();
                 }
                 else if (File.Exists(_item.IconSource))
                 {
-                    // Local file — load and freeze for thread safety
+                    // Local file â€” load and freeze for thread safety
                     bitmap.UriSource = new Uri(_item.IconSource, UriKind.Absolute);
                     bitmap.DecodePixelWidth = 56;
                     bitmap.CacheOption = BitmapCacheOption.OnLoad;
@@ -87,7 +94,7 @@ public partial class PluginDetailPanel : UserControl
                 }
                 else
                 {
-                    // Path doesn't exist — keep placeholder
+                    // Path doesn't exist â€” keep placeholder
                     bitmap = null;
                 }
 
@@ -152,9 +159,9 @@ public partial class PluginDetailPanel : UserControl
         if (_item is null) return;
 
         MetaVersion.Text = _item.Version;
-        MetaTags.Text = _item.Tags.Count > 0 ? string.Join(", ", _item.Tags) : "—";
-        MetaLastUpdated.Text = _item.LastUpdated ?? "—";
-        MetaLicense.Text = !string.IsNullOrWhiteSpace(_item.License) ? _item.License : "—";
+        MetaTags.Text = _item.Tags.Count > 0 ? string.Join(", ", _item.Tags) : "â€”";
+        MetaLastUpdated.Text = _item.LastUpdated ?? "â€”";
+        MetaLicense.Text = !string.IsNullOrWhiteSpace(_item.License) ? _item.License : "â€”";
     }
 
     /// <summary>
@@ -172,7 +179,7 @@ public partial class PluginDetailPanel : UserControl
             $"Directory='{_item.PluginInfo?.Directory ?? "(none)"}', IsInstalled={_item.IsInstalled}",
             "PluginDetail");
 
-        // Load README.md — try local file first, then registry URL, then description
+        // Load README.md â€” try local file first, then registry URL, then description
         var readme = TryReadPluginFile("README.md");
         if (string.IsNullOrWhiteSpace(readme))
             readme = await TryFetchUrlContentAsync(_item.ReadmeUrl);
@@ -181,7 +188,7 @@ public partial class PluginDetailPanel : UserControl
         DetailsContentHost.Content = MarkdownRenderer.Render(
             !string.IsNullOrWhiteSpace(readme) ? readme : "No details available.");
 
-        // Load CHANGELOG.md — try local file first, then registry URL
+        // Load CHANGELOG.md â€” try local file first, then registry URL
         var changelog = TryReadPluginFile("CHANGELOG.md");
         if (string.IsNullOrWhiteSpace(changelog))
             changelog = await TryFetchUrlContentAsync(_item.ChangelogUrl);
@@ -437,7 +444,7 @@ public partial class PluginDetailPanel : UserControl
         SettingsContent.Visibility = tabName == "Settings" ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    // ── Click handlers ──
+    // ─── Click handlers ────────────────────────────────────────────────────────────────
 
     private void OnDetailsTabClick(object sender, MouseButtonEventArgs e) => SetActiveTab("Details");
     private void OnChangelogTabClick(object sender, MouseButtonEventArgs e) => SetActiveTab("Changelog");

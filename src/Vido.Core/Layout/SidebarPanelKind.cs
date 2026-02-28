@@ -5,12 +5,18 @@ namespace Vido.Core.Layout;
 /// </summary>
 public enum SidebarPanelKind
 {
-    /// <summary>File explorer tree view.</summary>
+    /// <summary>
+    /// File explorer tree view.
+    /// </summary>
     Explorer,
 
-    /// <summary>Plugin / extension management.</summary>
+    /// <summary>
+    /// Plugin / extension management.
+    /// </summary>
     Extensions,
 
-    /// <summary>Application settings.</summary>
+    /// <summary>
+    /// Application settings.
+    /// </summary>
     Settings
 }

@@ -84,6 +84,9 @@ public sealed class PluginManagerTests
     // ║ PluginItemViewModel Tests                                      ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that From Registry Entry sets all properties.
+    /// </summary>
     [Fact]
     public void FromRegistryEntry_SetsAllProperties()
     {
@@ -100,6 +103,9 @@ public sealed class PluginManagerTests
         Assert.Same(entry, item.RegistryEntry);
     }
 
+    /// <summary>
+    /// Verifies that From Plugin Info sets installed properties.
+    /// </summary>
     [Fact]
     public void FromPluginInfo_SetsInstalledProperties()
     {
@@ -113,6 +119,9 @@ public sealed class PluginManagerTests
         Assert.Same(info, item.PluginInfo);
     }
 
+    /// <summary>
+    /// Verifies that From Plugin Info disabled sets is enabled false.
+    /// </summary>
     [Fact]
     public void FromPluginInfo_Disabled_SetsIsEnabledFalse()
     {
@@ -123,6 +132,9 @@ public sealed class PluginManagerTests
         Assert.False(item.IsEnabled);
     }
 
+    /// <summary>
+    /// Verifies that From Plugin Info error sets is enabled false.
+    /// </summary>
     [Fact]
     public void FromPluginInfo_Error_SetsIsEnabledFalse()
     {
@@ -132,6 +144,9 @@ public sealed class PluginManagerTests
         Assert.False(item.IsEnabled);
     }
 
+    /// <summary>
+    /// Verifies that Status Text installed enabled.
+    /// </summary>
     [Fact]
     public void StatusText_Installed_Enabled()
     {
@@ -139,6 +154,9 @@ public sealed class PluginManagerTests
         Assert.Equal("Enabled", item.StatusText);
     }
 
+    /// <summary>
+    /// Verifies that Status Text installed disabled.
+    /// </summary>
     [Fact]
     public void StatusText_Installed_Disabled()
     {
@@ -146,6 +164,9 @@ public sealed class PluginManagerTests
         Assert.Equal("Disabled", item.StatusText);
     }
 
+    /// <summary>
+    /// Verifies that Status Text available empty.
+    /// </summary>
     [Fact]
     public void StatusText_Available_Empty()
     {
@@ -153,6 +174,9 @@ public sealed class PluginManagerTests
         Assert.Equal(string.Empty, item.StatusText);
     }
 
+    /// <summary>
+    /// Verifies that Is Installed change notifies status text.
+    /// </summary>
     [Fact]
     public void IsInstalled_ChangeNotifiesStatusText()
     {
@@ -165,6 +189,9 @@ public sealed class PluginManagerTests
         Assert.Contains(nameof(item.StatusText), changedProps);
     }
 
+    /// <summary>
+    /// Verifies that Is Enabled change notifies status text.
+    /// </summary>
     [Fact]
     public void IsEnabled_ChangeNotifiesStatusText()
     {
@@ -177,6 +204,9 @@ public sealed class PluginManagerTests
         Assert.Contains(nameof(item.StatusText), changedProps);
     }
 
+    /// <summary>
+    /// Verifies that Matches Search empty query returns true.
+    /// </summary>
     [Fact]
     public void MatchesSearch_EmptyQuery_ReturnsTrue()
     {
@@ -186,6 +216,9 @@ public sealed class PluginManagerTests
         Assert.True(item.MatchesSearch("   "));
     }
 
+    /// <summary>
+    /// Verifies that Matches Search matches display name.
+    /// </summary>
     [Fact]
     public void MatchesSearch_MatchesDisplayName()
     {
@@ -195,6 +228,9 @@ public sealed class PluginManagerTests
         Assert.False(item.MatchesSearch("audio"));
     }
 
+    /// <summary>
+    /// Verifies that Matches Search matches tags.
+    /// </summary>
     [Fact]
     public void MatchesSearch_MatchesTags()
     {
@@ -206,6 +242,9 @@ public sealed class PluginManagerTests
         Assert.False(item.MatchesSearch("audio"));
     }
 
+    /// <summary>
+    /// Verifies that From Registry Entry official registry sets is official.
+    /// </summary>
     [Fact]
     public void FromRegistryEntry_OfficialRegistry_SetsIsOfficial()
     {
@@ -214,6 +253,9 @@ public sealed class PluginManagerTests
         Assert.True(item.IsOfficial);
     }
 
+    /// <summary>
+    /// Verifies that From Registry Entry unofficial registry is official false.
+    /// </summary>
     [Fact]
     public void FromRegistryEntry_UnofficialRegistry_IsOfficialFalse()
     {
@@ -222,18 +264,27 @@ public sealed class PluginManagerTests
         Assert.False(item.IsOfficial);
     }
 
+    /// <summary>
+    /// Verifies that From Registry Entry null entry throws.
+    /// </summary>
     [Fact]
     public void FromRegistryEntry_NullEntry_Throws()
     {
         Assert.Throws<ArgumentNullException>(() => PluginItemViewModel.FromRegistryEntry(null!));
     }
 
+    /// <summary>
+    /// Verifies that From Plugin Info null info throws.
+    /// </summary>
     [Fact]
     public void FromPluginInfo_NullInfo_Throws()
     {
         Assert.Throws<ArgumentNullException>(() => PluginItemViewModel.FromPluginInfo(null!));
     }
 
+    /// <summary>
+    /// Verifies that Display Name falls back to id when blank.
+    /// </summary>
     [Fact]
     public void DisplayName_FallsBackToId_WhenBlank()
     {
@@ -242,6 +293,9 @@ public sealed class PluginManagerTests
         Assert.Equal(entry.Id, item.DisplayName);
     }
 
+    /// <summary>
+    /// Verifies that From Plugin Info with registry entry merges data.
+    /// </summary>
     [Fact]
     public void FromPluginInfo_WithRegistryEntry_MergesData()
     {
@@ -257,6 +311,9 @@ public sealed class PluginManagerTests
     // ║ PluginManagerViewModel Tests                                    ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Load Async populates installed from host.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_PopulatesInstalledFromHost()
     {
@@ -273,6 +330,9 @@ public sealed class PluginManagerTests
         Assert.Equal(1, vm.InstalledCount);
     }
 
+    /// <summary>
+    /// Verifies that Load Async populates available from registry.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_PopulatesAvailableFromRegistry()
     {
@@ -293,6 +353,9 @@ public sealed class PluginManagerTests
         Assert.Empty(vm.InstalledPlugins);
     }
 
+    /// <summary>
+    /// Verifies that Load Async merges installed with registry.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_MergesInstalledWithRegistry()
     {
@@ -315,6 +378,9 @@ public sealed class PluginManagerTests
         Assert.True(vm.InstalledPlugins[0].IsOfficial);
     }
 
+    /// <summary>
+    /// Verifies that Load Async deduplicates across registries.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_DeduplicatesAcrossRegistries()
     {
@@ -339,6 +405,9 @@ public sealed class PluginManagerTests
         Assert.Single(vm.AvailablePlugins);
     }
 
+    /// <summary>
+    /// Verifies that Load Async sets registry source dropdown.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_SetsRegistrySourceDropdown()
     {
@@ -353,6 +422,9 @@ public sealed class PluginManagerTests
         Assert.Contains("My Registry", vm.RegistrySources);
     }
 
+    /// <summary>
+    /// Verifies that Load Async sets is loading during execution.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_SetsIsLoadingDuringExecution()
     {
@@ -371,6 +443,9 @@ public sealed class PluginManagerTests
         Assert.False(vm.IsLoading);
     }
 
+    /// <summary>
+    /// Verifies that Load Async handles registry fetch error.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_HandlesRegistryFetchError()
     {
@@ -383,6 +458,9 @@ public sealed class PluginManagerTests
         Assert.Empty(vm.AvailablePlugins);
     }
 
+    /// <summary>
+    /// Verifies that Load Async prevents concurrent execution.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_PreventsConcurrentExecution()
     {
@@ -407,6 +485,9 @@ public sealed class PluginManagerTests
         Assert.Equal(1, callCount);
     }
 
+    /// <summary>
+    /// Verifies that Search Query filters plugins.
+    /// </summary>
     [Fact]
     public async Task SearchQuery_FiltersPlugins()
     {
@@ -432,6 +513,9 @@ public sealed class PluginManagerTests
         Assert.Equal("Alpha Plugin", vm.AvailablePlugins[0].DisplayName);
     }
 
+    /// <summary>
+    /// Verifies that Search Query clearing resets filter.
+    /// </summary>
     [Fact]
     public async Task SearchQuery_ClearingResetsFilter()
     {
@@ -457,6 +541,9 @@ public sealed class PluginManagerTests
         Assert.Equal(2, vm.AvailablePlugins.Count);
     }
 
+    /// <summary>
+    /// Verifies that Registry Source Filter filters available.
+    /// </summary>
     [Fact]
     public async Task RegistrySourceFilter_FiltersAvailable()
     {
@@ -482,6 +569,9 @@ public sealed class PluginManagerTests
         Assert.Equal("R1 Plugin", vm.AvailablePlugins[0].DisplayName);
     }
 
+    /// <summary>
+    /// Verifies that Registry Source Filter installed plugins always shown.
+    /// </summary>
     [Fact]
     public async Task RegistrySourceFilter_InstalledPluginsAlwaysShown()
     {
@@ -500,6 +590,9 @@ public sealed class PluginManagerTests
         Assert.Single(vm.InstalledPlugins);
     }
 
+    /// <summary>
+    /// Verifies that Install Plugin Async transitions item to installed.
+    /// </summary>
     [Fact]
     public async Task InstallPluginAsync_TransitionsItemToInstalled()
     {
@@ -519,6 +612,9 @@ public sealed class PluginManagerTests
         Assert.False(item.IsBusy);
     }
 
+    /// <summary>
+    /// Verifies that Install Plugin Async failed install no state change.
+    /// </summary>
     [Fact]
     public async Task InstallPluginAsync_FailedInstall_NoStateChange()
     {
@@ -534,6 +630,9 @@ public sealed class PluginManagerTests
         Assert.False(item.IsInstalled);
     }
 
+    /// <summary>
+    /// Verifies that Install Plugin Async fires open detail requested.
+    /// </summary>
     [Fact]
     public async Task InstallPluginAsync_FiresOpenDetailRequested()
     {
@@ -551,6 +650,9 @@ public sealed class PluginManagerTests
         Assert.Same(item, requestedItem);
     }
 
+    /// <summary>
+    /// Verifies that Install Plugin Async skips if already installed.
+    /// </summary>
     [Fact]
     public async Task InstallPluginAsync_SkipsIfAlreadyInstalled()
     {
@@ -565,6 +667,9 @@ public sealed class PluginManagerTests
         await installer.DidNotReceive().InstallAsync(Arg.Any<PluginRegistryEntry>());
     }
 
+    /// <summary>
+    /// Verifies that Install Plugin Async skips if busy.
+    /// </summary>
     [Fact]
     public async Task InstallPluginAsync_SkipsIfBusy()
     {
@@ -579,6 +684,9 @@ public sealed class PluginManagerTests
         await installer.DidNotReceive().InstallAsync(Arg.Any<PluginRegistryEntry>());
     }
 
+    /// <summary>
+    /// Verifies that Uninstall Plugin Async transitions item to available.
+    /// </summary>
     [Fact]
     public async Task UninstallPluginAsync_TransitionsItemToAvailable()
     {
@@ -597,6 +705,9 @@ public sealed class PluginManagerTests
         Assert.False(item.IsBusy);
     }
 
+    /// <summary>
+    /// Verifies that Uninstall Plugin Async skips if not installed.
+    /// </summary>
     [Fact]
     public async Task UninstallPluginAsync_SkipsIfNotInstalled()
     {
@@ -610,6 +721,9 @@ public sealed class PluginManagerTests
         await installer.DidNotReceive().UninstallAsync(Arg.Any<string>());
     }
 
+    /// <summary>
+    /// Verifies that Uninstall Plugin Async removes plugin first.
+    /// </summary>
     [Fact]
     public async Task UninstallPluginAsync_RemovesPluginFirst()
     {
@@ -624,6 +738,9 @@ public sealed class PluginManagerTests
         host.Received(1).RemovePlugin(item.Id);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Enabled toggles state.
+    /// </summary>
     [Fact]
     public void ToggleEnabled_TogglesState()
     {
@@ -642,6 +759,9 @@ public sealed class PluginManagerTests
         host.Received(1).SetEnabled(item.Id, true);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Enabled ignores non installed.
+    /// </summary>
     [Fact]
     public void ToggleEnabled_IgnoresNonInstalled()
     {
@@ -654,6 +774,9 @@ public sealed class PluginManagerTests
         host.DidNotReceive().SetEnabled(Arg.Any<string>(), Arg.Any<bool>());
     }
 
+    /// <summary>
+    /// Verifies that Open Detail fires open detail requested.
+    /// </summary>
     [Fact]
     public void OpenDetail_FiresOpenDetailRequested()
     {
@@ -669,6 +792,9 @@ public sealed class PluginManagerTests
         Assert.Same(item, received);
     }
 
+    /// <summary>
+    /// Verifies that Open Plugin Settings fires open settings requested.
+    /// </summary>
     [Fact]
     public void OpenPluginSettings_FiresOpenSettingsRequested()
     {
@@ -684,6 +810,9 @@ public sealed class PluginManagerTests
         Assert.Same(item, received);
     }
 
+    /// <summary>
+    /// Verifies that Count Badges update on filter changes.
+    /// </summary>
     [Fact]
     public async Task CountBadges_UpdateOnFilterChanges()
     {
@@ -709,6 +838,9 @@ public sealed class PluginManagerTests
         Assert.Equal(0, vm.AvailableCount);
     }
 
+    /// <summary>
+    /// Verifies that Load Async official registry url sets official.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_OfficialRegistryUrl_SetsOfficial()
     {
@@ -724,6 +856,9 @@ public sealed class PluginManagerTests
         Assert.True(vm.AvailablePlugins[0].IsOfficial);
     }
 
+    /// <summary>
+    /// Verifies that Load Async non official url sets official false.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_NonOfficialUrl_SetsOfficialFalse()
     {
@@ -743,6 +878,9 @@ public sealed class PluginManagerTests
         Assert.False(vm.AvailablePlugins[0].IsOfficial);
     }
 
+    /// <summary>
+    /// Verifies that Load Async nsfw registry url sets official.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_NsfwRegistryUrl_SetsOfficial()
     {
@@ -766,6 +904,9 @@ public sealed class PluginManagerTests
     // ║ SettingDisplayItem Tests                                        ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Boolean Setting initialises from store.
+    /// </summary>
     [Fact]
     public void BooleanSetting_InitialisesFromStore()
     {
@@ -782,6 +923,9 @@ public sealed class PluginManagerTests
         Assert.Equal("True", item.SelectedBooleanValue);
     }
 
+    /// <summary>
+    /// Verifies that Boolean Setting default false.
+    /// </summary>
     [Fact]
     public void BooleanSetting_DefaultFalse()
     {
@@ -794,6 +938,9 @@ public sealed class PluginManagerTests
         Assert.Equal("False", item.SelectedBooleanValue);
     }
 
+    /// <summary>
+    /// Verifies that Boolean Setting auto saves on change.
+    /// </summary>
     [Fact]
     public void BooleanSetting_AutoSavesOnChange()
     {
@@ -808,6 +955,9 @@ public sealed class PluginManagerTests
         store.Received(1).Set("flag", false);
     }
 
+    /// <summary>
+    /// Verifies that Boolean Setting does not save during initialization.
+    /// </summary>
     [Fact]
     public void BooleanSetting_DoesNotSaveDuringInitialization()
     {
@@ -821,6 +971,9 @@ public sealed class PluginManagerTests
         store.DidNotReceive().Set(Arg.Any<string>(), Arg.Any<bool>());
     }
 
+    /// <summary>
+    /// Verifies that String Setting initialises from store.
+    /// </summary>
     [Fact]
     public void StringSetting_InitialisesFromStore()
     {
@@ -834,6 +987,9 @@ public sealed class PluginManagerTests
         Assert.Equal("Hello", item.StringValue);
     }
 
+    /// <summary>
+    /// Verifies that String Setting auto saves on change.
+    /// </summary>
     [Fact]
     public void StringSetting_AutoSavesOnChange()
     {
@@ -848,6 +1004,9 @@ public sealed class PluginManagerTests
         store.Received(1).Set("name", "New");
     }
 
+    /// <summary>
+    /// Verifies that Number Setting initialises from store.
+    /// </summary>
     [Fact]
     public void NumberSetting_InitialisesFromStore()
     {
@@ -861,6 +1020,9 @@ public sealed class PluginManagerTests
         Assert.Equal("30", item.StringValue);
     }
 
+    /// <summary>
+    /// Verifies that Number Setting auto saves on change.
+    /// </summary>
     [Fact]
     public void NumberSetting_AutoSavesOnChange()
     {
@@ -875,6 +1037,9 @@ public sealed class PluginManagerTests
         store.Received(1).Set("interval", 60.0);
     }
 
+    /// <summary>
+    /// Verifies that Number Setting invalid string does not save.
+    /// </summary>
     [Fact]
     public void NumberSetting_InvalidString_DoesNotSave()
     {
@@ -889,6 +1054,9 @@ public sealed class PluginManagerTests
         store.DidNotReceive().Set("interval", Arg.Any<double>());
     }
 
+    /// <summary>
+    /// Verifies that Enum Setting initialises from store.
+    /// </summary>
     [Fact]
     public void EnumSetting_InitialisesFromStore()
     {
@@ -909,6 +1077,9 @@ public sealed class PluginManagerTests
         Assert.Equal(4, item.EnumValues.Count);
     }
 
+    /// <summary>
+    /// Verifies that Enum Setting auto saves on change.
+    /// </summary>
     [Fact]
     public void EnumSetting_AutoSavesOnChange()
     {
@@ -929,6 +1100,9 @@ public sealed class PluginManagerTests
         store.Received(1).Set("level", "Debug");
     }
 
+    /// <summary>
+    /// Verifies that Enum Setting empty value does not save.
+    /// </summary>
     [Fact]
     public void EnumSetting_EmptyValue_DoesNotSave()
     {
@@ -948,6 +1122,9 @@ public sealed class PluginManagerTests
         store.DidNotReceive().Set("level", "");
     }
 
+    /// <summary>
+    /// Verifies that Section Property returns manifest section.
+    /// </summary>
     [Fact]
     public void SectionProperty_ReturnsManifestSection()
     {
@@ -959,6 +1136,9 @@ public sealed class PluginManagerTests
         Assert.Equal("Display", item.Section);
     }
 
+    /// <summary>
+    /// Verifies that Boolean Options contains true and false.
+    /// </summary>
     [Fact]
     public void BooleanOptions_ContainsTrueAndFalse()
     {
@@ -967,6 +1147,9 @@ public sealed class PluginManagerTests
         Assert.Contains("False", SettingDisplayItem.BooleanOptions);
     }
 
+    /// <summary>
+    /// Verifies that Constructor null definition throws.
+    /// </summary>
     [Fact]
     public void Constructor_NullDefinition_Throws()
     {
@@ -974,6 +1157,9 @@ public sealed class PluginManagerTests
         Assert.Throws<ArgumentNullException>(() => new SettingDisplayItem(null!, store));
     }
 
+    /// <summary>
+    /// Verifies that Constructor null store throws.
+    /// </summary>
     [Fact]
     public void Constructor_NullStore_Throws()
     {
@@ -981,6 +1167,9 @@ public sealed class PluginManagerTests
         Assert.Throws<ArgumentNullException>(() => new SettingDisplayItem(def, null!));
     }
 
+    /// <summary>
+    /// Verifies that Convert Default handles json element boolean.
+    /// </summary>
     [Fact]
     public void ConvertDefault_HandlesJsonElement_Boolean()
     {
@@ -994,6 +1183,9 @@ public sealed class PluginManagerTests
         Assert.Equal("True", item.SelectedBooleanValue);
     }
 
+    /// <summary>
+    /// Verifies that Convert Default handles json element number.
+    /// </summary>
     [Fact]
     public void ConvertDefault_HandlesJsonElement_Number()
     {
@@ -1007,6 +1199,9 @@ public sealed class PluginManagerTests
         Assert.Equal("42", item.StringValue);
     }
 
+    /// <summary>
+    /// Verifies that Convert Default handles json element string.
+    /// </summary>
     [Fact]
     public void ConvertDefault_HandlesJsonElement_String()
     {
@@ -1020,6 +1215,9 @@ public sealed class PluginManagerTests
         Assert.Equal("hello", item.StringValue);
     }
 
+    /// <summary>
+    /// Verifies that Title And Description return from definition.
+    /// </summary>
     [Fact]
     public void TitleAndDescription_ReturnFromDefinition()
     {
@@ -1036,6 +1234,9 @@ public sealed class PluginManagerTests
     // ║ PluginInstaller Tests (file-system integration)                 ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Install Async null entry throws.
+    /// </summary>
     [Fact]
     public async Task InstallAsync_NullEntry_Throws()
     {
@@ -1044,6 +1245,9 @@ public sealed class PluginManagerTests
         await Assert.ThrowsAsync<ArgumentNullException>(() => installer.InstallAsync(null!));
     }
 
+    /// <summary>
+    /// Verifies that Install Async empty id throws.
+    /// </summary>
     [Fact]
     public async Task InstallAsync_EmptyId_Throws()
     {
@@ -1053,6 +1257,9 @@ public sealed class PluginManagerTests
         await Assert.ThrowsAsync<ArgumentException>(() => installer.InstallAsync(entry));
     }
 
+    /// <summary>
+    /// Verifies that Install Async empty download url throws.
+    /// </summary>
     [Fact]
     public async Task InstallAsync_EmptyDownloadUrl_Throws()
     {
@@ -1062,6 +1269,9 @@ public sealed class PluginManagerTests
         await Assert.ThrowsAsync<ArgumentException>(() => installer.InstallAsync(entry));
     }
 
+    /// <summary>
+    /// Verifies that Uninstall Async empty id throws.
+    /// </summary>
     [Fact]
     public async Task UninstallAsync_EmptyId_Throws()
     {
@@ -1070,6 +1280,9 @@ public sealed class PluginManagerTests
         await Assert.ThrowsAsync<ArgumentException>(() => installer.UninstallAsync(""));
     }
 
+    /// <summary>
+    /// Verifies that Uninstall Async nonexistent dir returns true.
+    /// </summary>
     [Fact]
     public async Task UninstallAsync_NonexistentDir_ReturnsTrue()
     {
@@ -1082,6 +1295,9 @@ public sealed class PluginManagerTests
         Assert.True(result);
     }
 
+    /// <summary>
+    /// Verifies that Uninstall Async existing dir deletes it.
+    /// </summary>
     [Fact]
     public async Task UninstallAsync_ExistingDir_DeletesIt()
     {
@@ -1106,6 +1322,9 @@ public sealed class PluginManagerTests
         }
     }
 
+    /// <summary>
+    /// Verifies that Cleanup Pending Uninstalls removes marked directories.
+    /// </summary>
     [Fact]
     public void CleanupPendingUninstalls_RemovesMarkedDirectories()
     {
@@ -1134,6 +1353,9 @@ public sealed class PluginManagerTests
         }
     }
 
+    /// <summary>
+    /// Verifies that Cleanup Pending Uninstalls nonexistent base dir no op.
+    /// </summary>
     [Fact]
     public void CleanupPendingUninstalls_NonexistentBaseDir_NoOp()
     {
@@ -1142,6 +1364,9 @@ public sealed class PluginManagerTests
         installer.CleanupPendingUninstalls(); // Should not throw
     }
 
+    /// <summary>
+    /// Verifies that Fetch Registry Async empty url returns null.
+    /// </summary>
     [Fact]
     public async Task FetchRegistryAsync_EmptyUrl_ReturnsNull()
     {
@@ -1155,6 +1380,9 @@ public sealed class PluginManagerTests
         Assert.Null(result);
     }
 
+    /// <summary>
+    /// Verifies that Fetch Registry Async file url parses json.
+    /// </summary>
     [Fact]
     public async Task FetchRegistryAsync_FileUrl_ParsesJson()
     {
@@ -1196,6 +1424,9 @@ public sealed class PluginManagerTests
         }
     }
 
+    /// <summary>
+    /// Verifies that Fetch Registry Async invalid json returns null.
+    /// </summary>
     [Fact]
     public async Task FetchRegistryAsync_InvalidJson_ReturnsNull()
     {
@@ -1217,6 +1448,9 @@ public sealed class PluginManagerTests
         }
     }
 
+    /// <summary>
+    /// Verifies that Install Async file url extracts and validates.
+    /// </summary>
     [Fact]
     public async Task InstallAsync_FileUrl_ExtractsAndValidates()
     {
@@ -1257,6 +1491,9 @@ public sealed class PluginManagerTests
         }
     }
 
+    /// <summary>
+    /// Verifies that Install Async zip with root folder moves contents up.
+    /// </summary>
     [Fact]
     public async Task InstallAsync_ZipWithRootFolder_MovesContentsUp()
     {
@@ -1295,6 +1532,9 @@ public sealed class PluginManagerTests
         }
     }
 
+    /// <summary>
+    /// Verifies that Install Async zip without manifest returns false.
+    /// </summary>
     [Fact]
     public async Task InstallAsync_ZipWithoutManifest_ReturnsFalse()
     {
@@ -1337,6 +1577,9 @@ public sealed class PluginManagerTests
     // ║ PluginRegistryEntry Tests                                      ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Plugin Registry Entry default values.
+    /// </summary>
     [Fact]
     public void PluginRegistryEntry_DefaultValues()
     {
@@ -1358,6 +1601,9 @@ public sealed class PluginManagerTests
         Assert.False(entry.IsOfficial);
     }
 
+    /// <summary>
+    /// Verifies that Plugin Registry default values.
+    /// </summary>
     [Fact]
     public void PluginRegistry_DefaultValues()
     {
@@ -1367,6 +1613,9 @@ public sealed class PluginManagerTests
         Assert.Empty(registry.Plugins);
     }
 
+    /// <summary>
+    /// Verifies that Plugin Registry Entry json round trip.
+    /// </summary>
     [Fact]
     public void PluginRegistryEntry_JsonRoundTrip()
     {
@@ -1383,6 +1632,9 @@ public sealed class PluginManagerTests
         Assert.False(roundTripped.IsOfficial);
     }
 
+    /// <summary>
+    /// Verifies that Plugin Registry json round trip.
+    /// </summary>
     [Fact]
     public void PluginRegistry_JsonRoundTrip()
     {
@@ -1403,6 +1655,9 @@ public sealed class PluginManagerTests
     // ║ Sample Plugin Manifest Validation                               ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Sample Plugin Manifest has all required fields.
+    /// </summary>
     [Fact]
     public void SamplePluginManifest_HasAllRequiredFields()
     {
@@ -1423,6 +1678,9 @@ public sealed class PluginManagerTests
         Assert.NotEmpty(manifest.Tags);
     }
 
+    /// <summary>
+    /// Verifies that Sample Plugin Manifest declares all contribution types.
+    /// </summary>
     [Fact]
     public void SamplePluginManifest_DeclaresAllContributionTypes()
     {
@@ -1441,6 +1699,9 @@ public sealed class PluginManagerTests
         Assert.NotEmpty(c.FileIcons);
     }
 
+    /// <summary>
+    /// Verifies that Sample Plugin Manifest declares all setting types.
+    /// </summary>
     [Fact]
     public void SamplePluginManifest_DeclaresAllSettingTypes()
     {
@@ -1458,6 +1719,9 @@ public sealed class PluginManagerTests
         Assert.Contains("enum", types);
     }
 
+    /// <summary>
+    /// Verifies that Sample Plugin Manifest has at least two sections.
+    /// </summary>
     [Fact]
     public void SamplePluginManifest_HasAtLeastTwoSections()
     {
@@ -1474,6 +1738,9 @@ public sealed class PluginManagerTests
         Assert.True(sections.Count >= 2, $"Expected at least 2 sections, got {sections.Count}: {string.Join(", ", sections)}");
     }
 
+    /// <summary>
+    /// Verifies that Sample Plugin Manifest has force override setting.
+    /// </summary>
     [Fact]
     public void SamplePluginManifest_HasForceOverrideSetting()
     {
@@ -1486,6 +1753,9 @@ public sealed class PluginManagerTests
             "At least one setting must have forceOverride: true");
     }
 
+    /// <summary>
+    /// Verifies that Sample Plugin Manifest enum setting has enum values.
+    /// </summary>
     [Fact]
     public void SamplePluginManifest_EnumSetting_HasEnumValues()
     {
@@ -1500,6 +1770,9 @@ public sealed class PluginManagerTests
         }
     }
 
+    /// <summary>
+    /// Verifies that Sample Plugin Manifest sidebar contribution has id and title.
+    /// </summary>
     [Fact]
     public void SamplePluginManifest_SidebarContribution_HasIdAndTitle()
     {
@@ -1514,6 +1787,9 @@ public sealed class PluginManagerTests
         }
     }
 
+    /// <summary>
+    /// Verifies that Sample Plugin Manifest file handler has sample extension.
+    /// </summary>
     [Fact]
     public void SamplePluginManifest_FileHandler_HasSampleExtension()
     {
@@ -1525,6 +1801,9 @@ public sealed class PluginManagerTests
         Assert.Contains(".sample", extensions);
     }
 
+    /// <summary>
+    /// Verifies that Sample Plugin Manifest file icons has sample extension.
+    /// </summary>
     [Fact]
     public void SamplePluginManifest_FileIcons_HasSampleExtension()
     {
@@ -1535,6 +1814,9 @@ public sealed class PluginManagerTests
         Assert.True(manifest.Contributes.FileIcons.ContainsKey(".sample"));
     }
 
+    /// <summary>
+    /// Verifies that Sample Plugin readme exists.
+    /// </summary>
     [Fact]
     public void SamplePlugin_ReadmeExists()
     {
@@ -1542,6 +1824,9 @@ public sealed class PluginManagerTests
         Assert.True(File.Exists(Path.Combine(GetSamplePluginPath(), "README.md")));
     }
 
+    /// <summary>
+    /// Verifies that Sample Plugin changelog exists.
+    /// </summary>
     [Fact]
     public void SamplePlugin_ChangelogExists()
     {
@@ -1549,6 +1834,9 @@ public sealed class PluginManagerTests
         Assert.True(File.Exists(Path.Combine(GetSamplePluginPath(), "CHANGELOG.md")));
     }
 
+    /// <summary>
+    /// Verifies that Sample Plugin registry json exists.
+    /// </summary>
     [Fact]
     public void SamplePlugin_RegistryJsonExists()
     {
@@ -1556,6 +1844,9 @@ public sealed class PluginManagerTests
         Assert.True(File.Exists(Path.Combine(GetSamplePluginPath(), "registry.json")));
     }
 
+    /// <summary>
+    /// Verifies that Sample Plugin registry json contains sample plugin.
+    /// </summary>
     [Fact]
     public void SamplePlugin_RegistryJson_ContainsSamplePlugin()
     {
@@ -1595,12 +1886,18 @@ public sealed class PluginManagerTests
     // ║ PluginPaths Tests                                               ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Plugin Paths default plugin directory is not empty.
+    /// </summary>
     [Fact]
     public void PluginPaths_DefaultPluginDirectory_IsNotEmpty()
     {
         Assert.False(string.IsNullOrWhiteSpace(PluginPaths.DefaultPluginDirectory));
     }
 
+    /// <summary>
+    /// Verifies that Plugin Paths default plugin directory ends with plugins.
+    /// </summary>
     [Fact]
     public void PluginPaths_DefaultPluginDirectory_EndsWithPlugins()
     {
@@ -1611,6 +1908,9 @@ public sealed class PluginManagerTests
     // ║ Integration: PluginManagerViewModel end-to-end flows            ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Full Flow install then uninstall.
+    /// </summary>
     [Fact]
     public async Task FullFlow_Install_ThenUninstall()
     {
@@ -1643,6 +1943,9 @@ public sealed class PluginManagerTests
         Assert.Single(vm.AvailablePlugins);
     }
 
+    /// <summary>
+    /// Verifies that Full Flow install toggle enabled.
+    /// </summary>
     [Fact]
     public async Task FullFlow_Install_ToggleEnabled()
     {
@@ -1672,6 +1975,9 @@ public sealed class PluginManagerTests
         Assert.Equal("Enabled", item.StatusText);
     }
 
+    /// <summary>
+    /// Verifies that Expand Collapse sections are independent.
+    /// </summary>
     [Fact]
     public async Task ExpandCollapse_Sections_AreIndependent()
     {
@@ -1690,6 +1996,9 @@ public sealed class PluginManagerTests
         Assert.False(vm.IsAvailableExpanded);
     }
 
+    /// <summary>
+    /// Verifies that Search Query is case insensitive.
+    /// </summary>
     [Fact]
     public async Task SearchQuery_IsCaseInsensitive()
     {
@@ -1718,6 +2027,9 @@ public sealed class PluginManagerTests
     // ║ vi-046: Plugin Update Detection & UI                           ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Status Text shows update available when has update.
+    /// </summary>
     [Fact]
     public void StatusText_ShowsUpdateAvailable_When_HasUpdate()
     {
@@ -1726,6 +2038,9 @@ public sealed class PluginManagerTests
         Assert.Equal("Update Available", item.StatusText);
     }
 
+    /// <summary>
+    /// Verifies that Has Update notifies status text changed.
+    /// </summary>
     [Fact]
     public void HasUpdate_NotifiesStatusTextChanged()
     {
@@ -1739,6 +2054,12 @@ public sealed class PluginManagerTests
         Assert.Contains(nameof(item.HasUpdate), changedProps);
     }
 
+    /// <summary>
+    /// Verifies that Is Newer Version compares correctly.
+    /// </summary>
+    /// <param name="latest">The latest available version string.</param>
+    /// <param name="current">The current installed version string.</param>
+    /// <param name="expected">The expected result value.</param>
     [Theory]
     [InlineData("2.0.0", "1.0.0", true)]
     [InlineData("1.0.0", "1.0.0", false)]
@@ -1750,6 +2071,9 @@ public sealed class PluginManagerTests
         Assert.Equal(expected, PluginManagerViewModel.IsNewerVersion(latest, current));
     }
 
+    /// <summary>
+    /// Verifies that Is Newer Version unparseable strings returns false.
+    /// </summary>
     [Fact]
     public void IsNewerVersion_UnparseableStrings_ReturnsFalse()
     {
@@ -1758,6 +2082,9 @@ public sealed class PluginManagerTests
         Assert.False(PluginManagerViewModel.IsNewerVersion("abc", "abc"));
     }
 
+    /// <summary>
+    /// Verifies that Load Async detects update when registry version newer.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_DetectsUpdate_When_RegistryVersionNewer()
     {
@@ -1781,6 +2108,9 @@ public sealed class PluginManagerTests
         Assert.Equal("Update Available", installed.StatusText);
     }
 
+    /// <summary>
+    /// Verifies that Load Async no update when versions same.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_NoUpdate_When_VersionsSame()
     {
@@ -1803,6 +2133,9 @@ public sealed class PluginManagerTests
         Assert.Null(installed.AvailableVersion);
     }
 
+    /// <summary>
+    /// Verifies that Load Async no update when registry version older.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_NoUpdate_When_RegistryVersionOlder()
     {
@@ -1824,6 +2157,9 @@ public sealed class PluginManagerTests
         Assert.False(installed.HasUpdate);
     }
 
+    /// <summary>
+    /// Verifies that Update Plugin Async reinstalls and clears has update.
+    /// </summary>
     [Fact]
     public async Task UpdatePluginAsync_Reinstalls_And_ClearsHasUpdate()
     {
@@ -1855,6 +2191,9 @@ public sealed class PluginManagerTests
         host.Received().ActivateAll();
     }
 
+    /// <summary>
+    /// Verifies that Update Plugin Async does nothing when no update.
+    /// </summary>
     [Fact]
     public async Task UpdatePluginAsync_DoesNothing_When_NoUpdate()
     {
@@ -1871,6 +2210,9 @@ public sealed class PluginManagerTests
         await installer.DidNotReceive().InstallAsync(Arg.Any<PluginRegistryEntry>());
     }
 
+    /// <summary>
+    /// Verifies that Update Plugin Async does nothing when busy.
+    /// </summary>
     [Fact]
     public async Task UpdatePluginAsync_DoesNothing_When_Busy()
     {
@@ -1887,6 +2229,9 @@ public sealed class PluginManagerTests
         host.DidNotReceive().RemovePlugin(Arg.Any<string>());
     }
 
+    /// <summary>
+    /// Verifies that Update Plugin Async fires restart required.
+    /// </summary>
     [Fact]
     public async Task UpdatePluginAsync_Fires_RestartRequired()
     {
@@ -1916,6 +2261,9 @@ public sealed class PluginManagerTests
         Assert.Contains("updated", restartMessage);
     }
 
+    /// <summary>
+    /// Verifies that Load Async reconcile detects update when plugin appears late.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_Reconcile_DetectsUpdate_WhenPluginAppearsLate()
     {
@@ -1957,6 +2305,9 @@ public sealed class PluginManagerTests
     // ║ VPP-003: Dependency Auto-Install & Uninstall Blocking          ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Install Plugin Async auto installs dependencies.
+    /// </summary>
     [Fact]
     public async Task InstallPluginAsync_AutoInstallsDependencies()
     {
@@ -1992,6 +2343,9 @@ public sealed class PluginManagerTests
         });
     }
 
+    /// <summary>
+    /// Verifies that Install Plugin Async skips already installed deps.
+    /// </summary>
     [Fact]
     public async Task InstallPluginAsync_SkipsAlreadyInstalledDeps()
     {
@@ -2023,6 +2377,9 @@ public sealed class PluginManagerTests
         await installer.Received(1).InstallAsync(Arg.Is<PluginRegistryEntry>(e => e.Id == "com.test.target"));
     }
 
+    /// <summary>
+    /// Verifies that Install Plugin Async dep install fails aborts target install.
+    /// </summary>
     [Fact]
     public async Task InstallPluginAsync_DepInstallFails_AbortsTargetInstall()
     {
@@ -2053,6 +2410,9 @@ public sealed class PluginManagerTests
         Assert.False(targetItem.IsInstalled);
     }
 
+    /// <summary>
+    /// Verifies that Install Plugin Async transitive deps installed in order.
+    /// </summary>
     [Fact]
     public async Task InstallPluginAsync_TransitiveDeps_InstalledInOrder()
     {
@@ -2086,6 +2446,9 @@ public sealed class PluginManagerTests
         });
     }
 
+    /// <summary>
+    /// Verifies that Install Plugin Async no deps installs directly.
+    /// </summary>
     [Fact]
     public async Task InstallPluginAsync_NoDeps_InstallsDirectly()
     {
@@ -2110,6 +2473,9 @@ public sealed class PluginManagerTests
         await installer.Received(1).InstallAsync(Arg.Any<PluginRegistryEntry>());
     }
 
+    /// <summary>
+    /// Verifies that Uninstall Plugin Async blocked when dependants exist.
+    /// </summary>
     [Fact]
     public async Task UninstallPluginAsync_BlockedWhenDependantsExist()
     {
@@ -2146,6 +2512,9 @@ public sealed class PluginManagerTests
         await installer.DidNotReceive().UninstallAsync("com.test.a");
     }
 
+    /// <summary>
+    /// Verifies that Uninstall Plugin Async allowed when no dependants.
+    /// </summary>
     [Fact]
     public async Task UninstallPluginAsync_AllowedWhenNoDependants()
     {
@@ -2172,6 +2541,9 @@ public sealed class PluginManagerTests
         await installer.Received(1).UninstallAsync("com.test.b");
     }
 
+    /// <summary>
+    /// Verifies that Uninstall Plugin Async blocked lists multiple dependants.
+    /// </summary>
     [Fact]
     public async Task UninstallPluginAsync_BlockedListsMultipleDependants()
     {
@@ -2201,6 +2573,9 @@ public sealed class PluginManagerTests
         Assert.Contains("Plugin C", blockedMessage);
     }
 
+    /// <summary>
+    /// Verifies that Get Installed Dependants no deps returns empty.
+    /// </summary>
     [Fact]
     public void GetInstalledDependants_NoDeps_ReturnsEmpty()
     {
@@ -2214,6 +2589,9 @@ public sealed class PluginManagerTests
         Assert.Empty(dependants);
     }
 
+    /// <summary>
+    /// Verifies that Get Installed Dependants case insensitive.
+    /// </summary>
     [Fact]
     public void GetInstalledDependants_CaseInsensitive()
     {
@@ -2230,6 +2608,9 @@ public sealed class PluginManagerTests
         Assert.Equal("B", dependants[0]);
     }
 
+    /// <summary>
+    /// Verifies that Resolve Dependencies returns leaf first.
+    /// </summary>
     [Fact]
     public async Task ResolveDependencies_ReturnsLeafFirst()
     {
@@ -2253,6 +2634,9 @@ public sealed class PluginManagerTests
         Assert.Equal("com.test.a", deps[0].Id);
     }
 
+    /// <summary>
+    /// Verifies that Resolve Dependencies skips installed deps.
+    /// </summary>
     [Fact]
     public async Task ResolveDependencies_SkipsInstalledDeps()
     {
@@ -2277,6 +2661,9 @@ public sealed class PluginManagerTests
         Assert.Empty(deps); // A is already installed
     }
 
+    /// <summary>
+    /// Verifies that Install Plugin Async dep auto installed updates item state.
+    /// </summary>
     [Fact]
     public async Task InstallPluginAsync_DepAutoInstalled_UpdatesItemState()
     {
@@ -2309,6 +2696,10 @@ public sealed class PluginManagerTests
     // ║ vb-004 — Block install/update/enable when minVidoVersion not met║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Meets Min Vido Version null or empty returns true.
+    /// </summary>
+    /// <param name="minVersion">The minimum required Vido version.</param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -2318,12 +2709,18 @@ public sealed class PluginManagerTests
         Assert.True(PluginManagerViewModel.MeetsMinVidoVersion(minVersion));
     }
 
+    /// <summary>
+    /// Verifies that Meets Min Vido Version unparseable version returns true.
+    /// </summary>
     [Fact]
     public void MeetsMinVidoVersion_UnparseableVersion_ReturnsTrue()
     {
         Assert.True(PluginManagerViewModel.MeetsMinVidoVersion("not-a-version"));
     }
 
+    /// <summary>
+    /// Verifies that Meets Min Vido Version future version returns false.
+    /// </summary>
     [Fact]
     public void MeetsMinVidoVersion_FutureVersion_ReturnsFalse()
     {
@@ -2331,6 +2728,9 @@ public sealed class PluginManagerTests
         Assert.False(PluginManagerViewModel.MeetsMinVidoVersion("999.0.0"));
     }
 
+    /// <summary>
+    /// Verifies that Meets Min Vido Version current or older version returns true.
+    /// </summary>
     [Fact]
     public void MeetsMinVidoVersion_CurrentOrOlderVersion_ReturnsTrue()
     {
@@ -2338,6 +2738,9 @@ public sealed class PluginManagerTests
         Assert.True(PluginManagerViewModel.MeetsMinVidoVersion("0.0.1"));
     }
 
+    /// <summary>
+    /// Verifies that Install Plugin Async when min vido version not met does not install.
+    /// </summary>
     [Fact]
     public async Task InstallPluginAsync_WhenMinVidoVersionNotMet_DoesNotInstall()
     {
@@ -2355,6 +2758,9 @@ public sealed class PluginManagerTests
         Assert.Contains("999.0.0", item.StatusMessage);
     }
 
+    /// <summary>
+    /// Verifies that Install Plugin Async when min vido version met installs.
+    /// </summary>
     [Fact]
     public async Task InstallPluginAsync_WhenMinVidoVersionMet_Installs()
     {
@@ -2372,6 +2778,9 @@ public sealed class PluginManagerTests
         Assert.True(item.IsInstalled);
     }
 
+    /// <summary>
+    /// Verifies that Update Plugin Async when min vido version not met does not update.
+    /// </summary>
     [Fact]
     public async Task UpdatePluginAsync_WhenMinVidoVersionNotMet_DoesNotUpdate()
     {
@@ -2392,6 +2801,9 @@ public sealed class PluginManagerTests
         Assert.Contains("999.0.0", item.StatusMessage);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Enabled when min vido version not met does not enable.
+    /// </summary>
     [Fact]
     public void ToggleEnabled_WhenMinVidoVersionNotMet_DoesNotEnable()
     {
@@ -2410,6 +2822,9 @@ public sealed class PluginManagerTests
         Assert.Contains("999.0.0", item.StatusMessage);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Enabled when min vido version met enables.
+    /// </summary>
     [Fact]
     public void ToggleEnabled_WhenMinVidoVersionMet_Enables()
     {
@@ -2426,6 +2841,9 @@ public sealed class PluginManagerTests
         host.Received(1).SetEnabled(item.Id, true);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Enabled disable always allowed even with future min version.
+    /// </summary>
     [Fact]
     public void ToggleEnabled_Disable_AlwaysAllowedEvenWithFutureMinVersion()
     {
@@ -2442,6 +2860,9 @@ public sealed class PluginManagerTests
         host.Received(1).SetEnabled(item.Id, false);
     }
 
+    /// <summary>
+    /// Verifies that Load Async sets requires newer vido for available plugins.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_SetsRequiresNewerVido_ForAvailablePlugins()
     {
@@ -2460,6 +2881,9 @@ public sealed class PluginManagerTests
         Assert.True(item.RequiresNewerVido);
     }
 
+    /// <summary>
+    /// Verifies that Load Async does not set requires newer vido when version met.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_DoesNotSetRequiresNewerVido_WhenVersionMet()
     {
@@ -2482,6 +2906,9 @@ public sealed class PluginManagerTests
     // ║ vb-005 — Dependency Resolution During Update                   ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Update Plugin Async with outdated dependency updates dependency first.
+    /// </summary>
     [Fact]
     public async Task UpdatePluginAsync_WithOutdatedDependency_UpdatesDependencyFirst()
     {
@@ -2526,6 +2953,9 @@ public sealed class PluginManagerTests
         Assert.False(targetItem.HasUpdate);
     }
 
+    /// <summary>
+    /// Verifies that Update Plugin Async dependency update fails aborts target update.
+    /// </summary>
     [Fact]
     public async Task UpdatePluginAsync_DependencyUpdateFails_AbortsTargetUpdate()
     {
@@ -2575,6 +3005,9 @@ public sealed class PluginManagerTests
         Assert.True(targetItem.HasUpdate);
     }
 
+    /// <summary>
+    /// Verifies that Update Plugin Async dependency already meets version skips it.
+    /// </summary>
     [Fact]
     public async Task UpdatePluginAsync_DependencyAlreadyMeetsVersion_SkipsIt()
     {
@@ -2619,6 +3052,9 @@ public sealed class PluginManagerTests
         Assert.False(targetItem.HasUpdate);
     }
 
+    /// <summary>
+    /// Verifies that Update Plugin Async dependency not installed installs it.
+    /// </summary>
     [Fact]
     public async Task UpdatePluginAsync_DependencyNotInstalled_InstallsIt()
     {
@@ -2670,6 +3106,9 @@ public sealed class PluginManagerTests
     // ║ vb-008 — Installed Plugin Immediately Shown After Install      ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Install Plugin Async success plugin appears in installed list.
+    /// </summary>
     [Fact]
     public async Task InstallPluginAsync_Success_PluginAppearsInInstalledList()
     {
@@ -2698,6 +3137,9 @@ public sealed class PluginManagerTests
         Assert.Equal(1, vm.InstalledCount);
     }
 
+    /// <summary>
+    /// Verifies that Install Plugin Async success plugin removed from available list.
+    /// </summary>
     [Fact]
     public async Task InstallPluginAsync_Success_PluginRemovedFromAvailableList()
     {
@@ -2734,6 +3176,9 @@ public sealed class PluginManagerTests
     // ║ vb-009 — Install/Update Button State Transitions               ║
     // ╚══════════════════════════════════════════════════════════════════╝
 
+    /// <summary>
+    /// Verifies that Action Text when not installed returns install.
+    /// </summary>
     [Fact]
     public void ActionText_WhenNotInstalled_ReturnsInstall()
     {
@@ -2741,6 +3186,9 @@ public sealed class PluginManagerTests
         Assert.Equal("Install", item.ActionText);
     }
 
+    /// <summary>
+    /// Verifies that Action Text when installed returns uninstall.
+    /// </summary>
     [Fact]
     public void ActionText_WhenInstalled_ReturnsUninstall()
     {
@@ -2748,6 +3196,9 @@ public sealed class PluginManagerTests
         Assert.Equal("Uninstall", item.ActionText);
     }
 
+    /// <summary>
+    /// Verifies that Action Text when has update returns update.
+    /// </summary>
     [Fact]
     public void ActionText_WhenHasUpdate_ReturnsUpdate()
     {
@@ -2756,6 +3207,9 @@ public sealed class PluginManagerTests
         Assert.Equal("Update", item.ActionText);
     }
 
+    /// <summary>
+    /// Verifies that Action Text when busy installing returns installing.
+    /// </summary>
     [Fact]
     public void ActionText_WhenBusyInstalling_ReturnsInstalling()
     {
@@ -2765,6 +3219,9 @@ public sealed class PluginManagerTests
         Assert.Equal("Installing...", item.ActionText);
     }
 
+    /// <summary>
+    /// Verifies that Action Text when busy updating returns updating.
+    /// </summary>
     [Fact]
     public void ActionText_WhenBusyUpdating_ReturnsUpdating()
     {
@@ -2775,6 +3232,9 @@ public sealed class PluginManagerTests
         Assert.Equal("Updating...", item.ActionText);
     }
 
+    /// <summary>
+    /// Verifies that Is Action Enabled when busy returns false.
+    /// </summary>
     [Fact]
     public void IsActionEnabled_WhenBusy_ReturnsFalse()
     {
@@ -2784,6 +3244,9 @@ public sealed class PluginManagerTests
         Assert.False(item.IsActionEnabled);
     }
 
+    /// <summary>
+    /// Verifies that Action Text when busy cleared reverts to original.
+    /// </summary>
     [Fact]
     public void ActionText_WhenBusyCleared_RevertsToOriginal()
     {

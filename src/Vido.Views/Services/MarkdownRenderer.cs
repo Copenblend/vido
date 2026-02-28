@@ -21,6 +21,7 @@ public static class MarkdownRenderer
     /// <summary>
     /// Renders Markdown text into a StackPanel of WPF elements.
     /// </summary>
+    /// <param name="markdown">The raw Markdown text to parse and render.</param>
     public static UIElement Render(string markdown)
     {
         if (string.IsNullOrWhiteSpace(markdown))

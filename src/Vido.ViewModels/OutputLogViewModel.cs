@@ -16,21 +16,33 @@ public partial class OutputLogViewModel : ObservableObject, IDisposable
     private readonly SynchronizationContext? _syncContext;
     private LogLevel _minimumLevel = LogLevel.Debug;
 
-    /// <summary>Filtered log entries currently displayed in the panel.</summary>
+    /// <summary>
+    /// Filtered log entries currently displayed in the panel.
+    /// </summary>
     public ObservableCollection<LogEntryViewModel> Entries { get; } = [];
 
-    /// <summary>Whether auto-scroll to the latest entry is enabled.</summary>
+    /// <summary>
+    /// Whether auto-scroll to the latest entry is enabled.
+    /// </summary>
     [ObservableProperty]
     private bool _isAutoScrollEnabled = true;
 
-    /// <summary>Whether the log has any entries (for empty state display).</summary>
+    /// <summary>
+    /// Whether the log has any entries (for empty state display).
+    /// </summary>
     [ObservableProperty]
     private bool _hasEntries;
 
-    /// <summary>Text summarizing the active filter (e.g. "All" or "Warnings+").</summary>
+    /// <summary>
+    /// Text summarizing the active filter (e.g. "All" or "Warnings+").
+    /// </summary>
     [ObservableProperty]
     private string _filterText = "All";
-
+    
+    /// <summary>
+    /// Creates the output log view model, loading existing entries and subscribing to new log events.
+    /// </summary>
+    /// <param name="logService">Log service to observe for new entries and retrieve existing ones.</param>
     public OutputLogViewModel(ILogService logService)
     {
         _logService = logService;
@@ -70,7 +82,9 @@ public partial class OutputLogViewModel : ObservableObject, IDisposable
         HasEntries = true;
     }
 
-    /// <summary>Clears all log entries.</summary>
+    /// <summary>
+    /// Clears all log entries.
+    /// </summary>
     [RelayCommand]
     public void ClearLog()
     {
@@ -79,14 +93,18 @@ public partial class OutputLogViewModel : ObservableObject, IDisposable
         HasEntries = false;
     }
 
-    /// <summary>Toggles auto-scroll on/off.</summary>
+    /// <summary>
+    /// Toggles auto-scroll on/off.
+    /// </summary>
     [RelayCommand]
     public void ToggleAutoScroll()
     {
         IsAutoScrollEnabled = !IsAutoScrollEnabled;
     }
 
-    /// <summary>Cycles through log level filters: All → Info+ → Warnings+ → Errors → All.</summary>
+    /// <summary>
+    /// Cycles through log level filters: All → Info+ → Warnings+ → Errors → All.
+    /// </summary>
     [RelayCommand]
     public void CycleFilter()
     {
@@ -101,7 +119,10 @@ public partial class OutputLogViewModel : ObservableObject, IDisposable
         SetFilter(nextLevel);
     }
 
-    /// <summary>Sets the filter to a specific level.</summary>
+    /// <summary>
+    /// Sets the filter to a specific level.
+    /// </summary>
+    /// <param name="level">Minimum log level to display.</param>
     public void SetFilter(LogLevel level)
     {
         _minimumLevel = level;
@@ -137,41 +158,4 @@ public partial class OutputLogViewModel : ObservableObject, IDisposable
     {
         _logService.EntryAdded -= OnEntryAdded;
     }
-}
-
-/// <summary>
-/// Presentation wrapper for a <see cref="LogEntry"/> with pre-formatted display properties.
-/// </summary>
-public sealed class LogEntryViewModel
-{
-    public LogEntryViewModel(LogEntry entry)
-    {
-        Level = entry.Level;
-        Timestamp = entry.Timestamp.ToLocalTime().ToString("HH:mm:ss.fff");
-        Message = entry.Message;
-        Source = entry.Source;
-        LevelTag = entry.Level switch
-        {
-            LogLevel.Debug => "DBG",
-            LogLevel.Info => "INF",
-            LogLevel.Warning => "WRN",
-            LogLevel.Error => "ERR",
-            _ => "???"
-        };
-        FormattedLine = Source is not null
-            ? $"[{Timestamp}] [{LevelTag}] [{Source}] {Message}"
-            : $"[{Timestamp}] [{LevelTag}] {Message}";
-    }
-
-    public LogLevel Level { get; }
-    public string Timestamp { get; }
-    public string LevelTag { get; }
-    public string Message { get; }
-    public string? Source { get; }
-
-    /// <summary>
-    /// Full formatted line for display: "[HH:mm:ss.fff] [LVL] message".
-    /// Precomputed since all properties are immutable.
-    /// </summary>
-    public string FormattedLine { get; }
 }

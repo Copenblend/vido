@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using Vido.Core.Events;
 
 namespace Vido.Services.Events;
@@ -11,6 +11,11 @@ public sealed class EventBus : IEventBus
     private readonly ConcurrentDictionary<Type, List<Delegate>> _handlers = new();
     private readonly object _lock = new();
 
+    /// <summary>
+    /// Registers a handler that will be invoked each time an event of type <typeparamref name="TEvent"/> is published.
+    /// Returns an <see cref="IDisposable"/> that removes the subscription when disposed.
+    /// </summary>
+    /// <param name="handler">The callback to invoke when an event of type <typeparamref name="TEvent"/> is published.</param>
     public IDisposable Subscribe<TEvent>(Action<TEvent> handler) where TEvent : class
     {
         ArgumentNullException.ThrowIfNull(handler);
@@ -29,9 +34,13 @@ public sealed class EventBus : IEventBus
                 return list;
             });
 
-        return new Subscription(() => Unsubscribe(eventType, handler));
+        return new EventBusSubscription(() => Unsubscribe(eventType, handler));
     }
-
+    
+    /// <summary>
+    /// Dispatches the given event to all registered subscribers of type <typeparamref name="TEvent"/> on the calling thread.
+    /// </summary>
+    /// <param name="eventData">The event instance to deliver to all matching subscribers.</param>
     public void Publish<TEvent>(TEvent eventData) where TEvent : class
     {
         ArgumentNullException.ThrowIfNull(eventData);
@@ -59,16 +68,6 @@ public sealed class EventBus : IEventBus
         lock (_lock)
         {
             handlers.Remove(handler);
-        }
-    }
-
-    private sealed class Subscription(Action onDispose) : IDisposable
-    {
-        private Action? _onDispose = onDispose;
-
-        public void Dispose()
-        {
-            Interlocked.Exchange(ref _onDispose, null)?.Invoke();
         }
     }
 }

@@ -12,10 +12,14 @@ public sealed class TabItemModel : INotifyPropertyChanged
 {
     private bool _isActive;
 
-    /// <summary>Unique identifier for this tab.</summary>
+    /// <summary>
+    /// Unique identifier for this tab.
+    /// </summary>
     public string Id { get; }
 
-    /// <summary>Display title shown in the tab strip.</summary>
+    /// <summary>
+    /// Display title shown in the tab strip.
+    /// </summary>
     public string Title { get; set; }
 
     /// <summary>
@@ -52,9 +56,17 @@ public sealed class TabItemModel : INotifyPropertyChanged
             }
         }
     }
-
+    
+    /// <summary>
+    /// Occurs when PropertyChanged is raised.
+    /// </summary>
     public event PropertyChangedEventHandler? PropertyChanged;
 
+    /// <summary>
+    /// Creates a tab model with the given identifier and display title.
+    /// </summary>
+    /// <param name="id">Unique identifier for the tab (used for activation and lookup).</param>
+    /// <param name="title">Display title shown in the tab strip header.</param>
     public TabItemModel(string id, string title)
     {
         Id = id;

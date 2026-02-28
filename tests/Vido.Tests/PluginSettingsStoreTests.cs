@@ -11,6 +11,9 @@ public class PluginSettingsStoreTests : IDisposable
     private readonly string _tempDir;
     private readonly string _settingsFile;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public PluginSettingsStoreTests()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), "vido-settings-test-" + Guid.NewGuid().ToString("N")[..8]);
@@ -18,6 +21,9 @@ public class PluginSettingsStoreTests : IDisposable
         _settingsFile = Path.Combine(_tempDir, "settings.json");
     }
 
+    /// <summary>
+    /// Cleans up test resources after each test run.
+    /// </summary>
     public void Dispose()
     {
         if (Directory.Exists(_tempDir))
@@ -26,6 +32,9 @@ public class PluginSettingsStoreTests : IDisposable
 
     private PluginSettingsStore CreateStore() => PluginSettingsStore.ForTesting(_settingsFile);
 
+    /// <summary>
+    /// Verifies that Get unset key returns default.
+    /// </summary>
     [Fact]
     public void Get_UnsetKey_ReturnsDefault()
     {
@@ -36,6 +45,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.True(store.Get("missing", true));
     }
 
+    /// <summary>
+    /// Verifies that Set then get returns set value.
+    /// </summary>
     [Fact]
     public void Set_ThenGet_ReturnsSetValue()
     {
@@ -50,6 +62,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.True(store.Get("key3", false));
     }
 
+    /// <summary>
+    /// Verifies that Set overwrites previous value.
+    /// </summary>
     [Fact]
     public void Set_OverwritesPreviousValue()
     {
@@ -61,6 +76,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.Equal("new", store.Get("key", ""));
     }
 
+    /// <summary>
+    /// Verifies that Settings persisted to disk.
+    /// </summary>
     [Fact]
     public void Settings_PersistedToDisk()
     {
@@ -73,6 +91,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.Equal("value", store2.Get("persistent", ""));
     }
 
+    /// <summary>
+    /// Verifies that Setting Changed fired on set.
+    /// </summary>
     [Fact]
     public void SettingChanged_FiredOnSet()
     {
@@ -85,6 +106,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.Equal("myKey", changedKey);
     }
 
+    /// <summary>
+    /// Verifies that Get corrupted file returns default.
+    /// </summary>
     [Fact]
     public void Get_CorruptedFile_ReturnsDefault()
     {
@@ -96,6 +120,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.Equal("default", store.Get("any", "default"));
     }
 
+    /// <summary>
+    /// Verifies that Get complex type deserializes correctly.
+    /// </summary>
     [Fact]
     public void Get_ComplexType_DeserializesCorrectly()
     {
@@ -110,6 +137,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.Equal("c", result[2]);
     }
 
+    /// <summary>
+    /// Verifies that Get type mismatch returns default.
+    /// </summary>
     [Fact]
     public void Get_TypeMismatch_ReturnsDefault()
     {
@@ -121,6 +151,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.Equal(0, store.Get("stringValue", 0));
     }
 
+    /// <summary>
+    /// Verifies that Set creates directory if not exists.
+    /// </summary>
     [Fact]
     public void Set_CreatesDirectoryIfNotExists()
     {
@@ -132,6 +165,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.True(File.Exists(nestedPath));
     }
 
+    /// <summary>
+    /// Verifies that Empty Store no file created.
+    /// </summary>
     [Fact]
     public void EmptyStore_NoFileCreated()
     {
@@ -141,6 +177,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.False(File.Exists(path));
     }
 
+    /// <summary>
+    /// Verifies that Multiple Settings all persisted.
+    /// </summary>
     [Fact]
     public void MultipleSettings_AllPersisted()
     {
@@ -159,6 +198,9 @@ public class PluginSettingsStoreTests : IDisposable
 
     // ── Reset / ResetAll ──
 
+    /// <summary>
+    /// Verifies that Reset existing key removes and returns true.
+    /// </summary>
     [Fact]
     public void Reset_ExistingKey_RemovesAndReturnsTrue()
     {
@@ -171,6 +213,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.Equal("default", store.Get("key", "default"));
     }
 
+    /// <summary>
+    /// Verifies that Reset missing key returns false.
+    /// </summary>
     [Fact]
     public void Reset_MissingKey_ReturnsFalse()
     {
@@ -179,6 +224,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.False(store.Reset("nonexistent"));
     }
 
+    /// <summary>
+    /// Verifies that Reset fires setting changed for removed key.
+    /// </summary>
     [Fact]
     public void Reset_FiresSettingChangedForRemovedKey()
     {
@@ -192,6 +240,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.Equal("key", changedKey);
     }
 
+    /// <summary>
+    /// Verifies that Reset does not fire setting changed for missing key.
+    /// </summary>
     [Fact]
     public void Reset_DoesNotFireSettingChangedForMissingKey()
     {
@@ -204,6 +255,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.False(fired);
     }
 
+    /// <summary>
+    /// Verifies that Reset persists removal.
+    /// </summary>
     [Fact]
     public void Reset_PersistsRemoval()
     {
@@ -215,6 +269,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.Equal("default", store2.Get("key", "default"));
     }
 
+    /// <summary>
+    /// Verifies that Reset All clears all settings.
+    /// </summary>
     [Fact]
     public void ResetAll_ClearsAllSettings()
     {
@@ -230,6 +287,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.False(store.Get("c", false));
     }
 
+    /// <summary>
+    /// Verifies that Reset All fires setting changed for each key.
+    /// </summary>
     [Fact]
     public void ResetAll_FiresSettingChangedForEachKey()
     {
@@ -246,6 +306,9 @@ public class PluginSettingsStoreTests : IDisposable
         Assert.Contains("y", changedKeys);
     }
 
+    /// <summary>
+    /// Verifies that Reset All persists empty store.
+    /// </summary>
     [Fact]
     public void ResetAll_PersistsEmptyStore()
     {

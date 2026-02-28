@@ -1,4 +1,4 @@
-using Vido.Core.Events;
+﻿using Vido.Core.Events;
 using Vido.Core.FileSystem;
 using Vido.Core.Keyboard;
 using Vido.Core.Logging;
@@ -22,13 +22,50 @@ public sealed class PluginContext : IPluginContext
     private readonly List<string> _registeredKeyBindingIds = [];
     private bool _hasPlaylistProvider;
 
+
+    /// <summary>
+    /// The deserialized plugin manifest describing this plugin's metadata and contributions.
+    /// </summary>
     public PluginManifest Manifest { get; }
+
+    /// <summary>
+    /// Absolute path to the directory from which this plugin was loaded.
+    /// </summary>
     public string PluginDirectory { get; }
+
+    /// <summary>
+    /// Application-wide event bus for publishing and subscribing to domain events.
+    /// </summary>
     public IEventBus Events { get; }
+
+    /// <summary>
+    /// Video playback engine exposed to plugins for media control and state queries.
+    /// </summary>
     public IVideoEngine VideoEngine { get; }
+
+    /// <summary>
+    /// Logging service for emitting structured log messages tagged to this plugin.
+    /// </summary>
     public ILogService Logger { get; }
+
+    /// <summary>
+    /// Per-plugin settings store for reading and writing persistent key/value configuration.
+    /// </summary>
     public IPluginSettingsStore Settings { get; }
 
+    /// <summary>
+    /// Creates a plugin context wired to the host's core services and contribution registry.
+    /// Each plugin receives its own context instance during activation.
+    /// </summary>
+    /// <param name="manifest">Deserialized manifest describing the plugin's metadata and contributions.</param>
+    /// <param name="pluginDirectory">Absolute path to the plugin's installation directory.</param>
+    /// <param name="eventBus">Application-wide event bus for domain events.</param>
+    /// <param name="videoEngine">Video playback engine for media control.</param>
+    /// <param name="logService">Logging service for structured log output.</param>
+    /// <param name="settingsStore">Per-plugin persistent settings store.</param>
+    /// <param name="contributions">Central registry for UI contribution registration.</param>
+    /// <param name="contextMenuRegistry">Registry for context menu entries.</param>
+    /// <param name="keyboardShortcutService">Service for registering keyboard shortcuts.</param>
     public PluginContext(
         PluginManifest manifest,
         string pluginDirectory,
@@ -51,6 +88,14 @@ public sealed class PluginContext : IPluginContext
         _keyboardShortcutService = keyboardShortcutService;
     }
 
+    /// <summary>
+    /// Registers a sidebar panel for this plugin by looking up the contribution metadata
+    /// from the manifest and delegating to the central contribution registry.
+    /// </summary>
+    /// <param name="contributionId">Contribution identifier declared in the plugin manifest.</param>
+    /// <param name="viewFactory">Factory that creates the sidebar panel's view element.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="contributionId"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="viewFactory"/> is null.</exception>
     public void RegisterSidebarPanel(string contributionId, Func<object> viewFactory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
@@ -67,6 +112,14 @@ public sealed class PluginContext : IPluginContext
         Logger.Debug($"Plugin '{Manifest.Id}' registered sidebar panel '{contributionId}'", "PluginHost");
     }
 
+    /// <summary>
+    /// Registers a bottom panel for this plugin by looking up the contribution metadata
+    /// from the manifest and delegating to the central contribution registry.
+    /// </summary>
+    /// <param name="contributionId">Contribution identifier declared in the plugin manifest.</param>
+    /// <param name="viewFactory">Factory that creates the bottom panel's view element.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="contributionId"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="viewFactory"/> is null.</exception>
     public void RegisterBottomPanel(string contributionId, Func<object> viewFactory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
@@ -81,6 +134,14 @@ public sealed class PluginContext : IPluginContext
         Logger.Debug($"Plugin '{Manifest.Id}' registered bottom panel '{contributionId}'", "PluginHost");
     }
 
+    /// <summary>
+    /// Registers a right panel for this plugin by looking up the contribution metadata
+    /// from the manifest and delegating to the central contribution registry.
+    /// </summary>
+    /// <param name="contributionId">Contribution identifier declared in the plugin manifest.</param>
+    /// <param name="viewFactory">Factory that creates the right panel's view element.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="contributionId"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="viewFactory"/> is null.</exception>
     public void RegisterRightPanel(string contributionId, Func<object> viewFactory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
@@ -95,6 +156,14 @@ public sealed class PluginContext : IPluginContext
         Logger.Debug($"Plugin '{Manifest.Id}' registered right panel '{contributionId}'", "PluginHost");
     }
 
+    /// <summary>
+    /// Registers a status bar item for this plugin by looking up the contribution metadata
+    /// from the manifest and delegating to the central contribution registry.
+    /// </summary>
+    /// <param name="contributionId">Contribution identifier declared in the plugin manifest.</param>
+    /// <param name="viewFactory">Factory that creates the status bar item's view element.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="contributionId"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="viewFactory"/> is null.</exception>
     public void RegisterStatusBarItem(string contributionId, Func<object> viewFactory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
@@ -110,6 +179,12 @@ public sealed class PluginContext : IPluginContext
         Logger.Debug($"Plugin '{Manifest.Id}' registered status bar item '{contributionId}'", "PluginHost");
     }
 
+    /// <summary>
+    /// Updates the display text of a previously registered status bar item owned by this plugin.
+    /// </summary>
+    /// <param name="contributionId">Contribution identifier of the status bar item to update.</param>
+    /// <param name="text">New text to display.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="contributionId"/> is null or whitespace.</exception>
     public void UpdateStatusBarItem(string contributionId, string text)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
@@ -117,6 +192,14 @@ public sealed class PluginContext : IPluginContext
         _contributions.UpdateStatusBarItem(fullId, text);
     }
 
+    /// <summary>
+    /// Registers a toolbar button click handler for this plugin by looking up the contribution
+    /// metadata from the manifest (tooltip, icon, order) and delegating to the registry.
+    /// </summary>
+    /// <param name="contributionId">Contribution identifier declared in the plugin manifest.</param>
+    /// <param name="clickHandler">Action invoked when the toolbar button is clicked.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="contributionId"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="clickHandler"/> is null.</exception>
     public void RegisterToolbarButtonHandler(string contributionId, Action clickHandler)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
@@ -133,12 +216,26 @@ public sealed class PluginContext : IPluginContext
         Logger.Debug($"Plugin '{Manifest.Id}' registered toolbar button '{contributionId}'", "PluginHost");
     }
 
+    /// <summary>
+    /// Sets or clears the visual highlight state on a toolbar button owned by this plugin.
+    /// </summary>
+    /// <param name="contributionId">Contribution identifier of the toolbar button.</param>
+    /// <param name="highlighted">True to highlight; false to remove the highlight.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="contributionId"/> is null or whitespace.</exception>
     public void SetToolbarButtonHighlight(string contributionId, bool highlighted)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
         _contributions.SetToolbarButtonHighlight(Manifest.Id, contributionId, highlighted);
     }
 
+    /// <summary>
+    /// Registers a context menu handler for this plugin. Looks up metadata (label, file extensions, order)
+    /// from the manifest, registers in both the contribution registry and the context menu registry.
+    /// </summary>
+    /// <param name="contributionId">Contribution identifier declared in the plugin manifest.</param>
+    /// <param name="handler">Action invoked with the selected file node when the menu item is clicked.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="contributionId"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="handler"/> is null.</exception>
     public void RegisterContextMenuHandler(string contributionId, Action<FileNode> handler)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
@@ -178,6 +275,14 @@ public sealed class PluginContext : IPluginContext
         Logger.Debug($"Plugin '{Manifest.Id}' registered context menu handler '{contributionId}'", "PluginHost");
     }
 
+    /// <summary>
+    /// Registers a file handler that processes files matching the specified extensions
+    /// when opened from the file browser.
+    /// </summary>
+    /// <param name="extensions">File extensions this handler can open (e.g. ".funscript").</param>
+    /// <param name="handler">Action invoked with the file node to process.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="extensions"/> or <paramref name="handler"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="extensions"/> is empty.</exception>
     public void RegisterFileHandler(string[] extensions, Action<FileNode> handler)
     {
         ArgumentNullException.ThrowIfNull(extensions);
@@ -189,6 +294,13 @@ public sealed class PluginContext : IPluginContext
         Logger.Debug($"Plugin '{Manifest.Id}' registered file handler for [{string.Join(", ", extensions)}]", "PluginHost");
     }
 
+    /// <summary>
+    /// Registers custom file icons for the given file extensions. Relative icon paths
+    /// in the mapping are resolved to absolute paths within the plugin directory.
+    /// </summary>
+    /// <param name="extensionToIconPath">Mapping of file extensions to relative icon file paths within the plugin.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="extensionToIconPath"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="extensionToIconPath"/> is empty.</exception>
     public void RegisterFileIcons(Dictionary<string, string> extensionToIconPath)
     {
         ArgumentNullException.ThrowIfNull(extensionToIconPath);
@@ -205,6 +317,13 @@ public sealed class PluginContext : IPluginContext
         Logger.Debug($"Plugin '{Manifest.Id}' registered {resolved.Count} file icon(s)", "PluginHost");
     }
 
+    /// <summary>
+    /// Registers a global keyboard shortcut for this plugin. The binding is routed through
+    /// <see cref="Core.Keyboard.IKeyboardShortcutService"/> and logged on success or failure.
+    /// </summary>
+    /// <param name="binding">The key combination to bind.</param>
+    /// <param name="handler">Action invoked when the key combination is pressed.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="binding"/> or <paramref name="handler"/> is null.</exception>
     public void RegisterKeyBinding(KeyBinding binding, Action handler)
     {
         ArgumentNullException.ThrowIfNull(binding);
@@ -223,6 +342,11 @@ public sealed class PluginContext : IPluginContext
         }
     }
 
+    /// <summary>
+    /// Requests the host UI to show and expand the specified right panel owned by this plugin.
+    /// </summary>
+    /// <param name="contributionId">Contribution identifier of the right panel to show.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="contributionId"/> is null or whitespace.</exception>
     public void RequestShowRightPanel(string contributionId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
@@ -230,6 +354,11 @@ public sealed class PluginContext : IPluginContext
         _contributions.RequestShowRightPanel(fullId);
     }
 
+    /// <summary>
+    /// Requests the host UI to show and activate the specified bottom panel tab owned by this plugin.
+    /// </summary>
+    /// <param name="contributionId">Contribution identifier of the bottom panel to show.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="contributionId"/> is null or whitespace.</exception>
     public void RequestShowBottomPanel(string contributionId)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
@@ -237,6 +366,15 @@ public sealed class PluginContext : IPluginContext
         _contributions.RequestShowBottomPanel(fullId);
     }
 
+    /// <summary>
+    /// Registers a control bar item for this plugin with an optional popup overlay,
+    /// using metadata from the manifest for tooltip and order.
+    /// </summary>
+    /// <param name="contributionId">Contribution identifier declared in the plugin manifest.</param>
+    /// <param name="viewFactory">Factory that creates the control bar item's view element.</param>
+    /// <param name="overlayFactory">Optional factory that creates a popup overlay for the item.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="contributionId"/> is null or whitespace.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="viewFactory"/> is null.</exception>
     public void RegisterControlBarItem(string contributionId, Func<object> viewFactory, Func<object>? overlayFactory = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
@@ -252,6 +390,12 @@ public sealed class PluginContext : IPluginContext
         Logger.Debug($"Plugin '{Manifest.Id}' registered control bar item '{contributionId}'", "PluginHost");
     }
 
+    /// <summary>
+    /// Toggles the visibility of a control bar overlay popup owned by this plugin.
+    /// </summary>
+    /// <param name="contributionId">Contribution identifier of the control bar item.</param>
+    /// <param name="visible">True to show the overlay; false to hide it.</param>
+    /// <exception cref="ArgumentException">Thrown if <paramref name="contributionId"/> is null or whitespace.</exception>
     public void ToggleControlBarOverlay(string contributionId, bool visible)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(contributionId);
@@ -259,6 +403,12 @@ public sealed class PluginContext : IPluginContext
         _contributions.ToggleControlBarOverlay(fullId, visible);
     }
 
+    /// <summary>
+    /// Registers this plugin as the active playlist provider.
+    /// Only one playlist provider can be active across all plugins.
+    /// </summary>
+    /// <param name="provider">The playlist provider implementation to register.</param>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="provider"/> is null.</exception>
     public void RegisterPlaylistProvider(IPlaylistProvider provider)
     {
         ArgumentNullException.ThrowIfNull(provider);
@@ -268,6 +418,9 @@ public sealed class PluginContext : IPluginContext
         Logger.Debug($"Plugin '{Manifest.Id}' registered playlist provider", "PluginHost");
     }
 
+    /// <summary>
+    /// Removes this plugin's playlist provider registration if one was previously set.
+    /// </summary>
     public void UnregisterPlaylistProvider()
     {
         if (_hasPlaylistProvider)

@@ -13,7 +13,10 @@ public sealed class FrameData : IDisposable
     private byte[]? _pixelData;
     private readonly bool _pooled;
 
-    /// <summary>Raw BGRA32 pixel data. Throws if already disposed.</summary>
+    /// <summary>
+    /// Raw BGRA32 pixel data. Throws if already disposed.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException">Thrown if the frame has already been disposed and the buffer returned to the pool.</exception>
     public byte[] PixelData => _pixelData ?? throw new ObjectDisposedException(nameof(FrameData));
 
     /// <summary>
@@ -22,16 +25,24 @@ public sealed class FrameData : IDisposable
     /// </summary>
     public int PixelDataLength { get; }
 
-    /// <summary>Frame width in pixels.</summary>
+    /// <summary>
+    /// Frame width in pixels.
+    /// </summary>
     public int Width { get; }
 
-    /// <summary>Frame height in pixels.</summary>
+    /// <summary>
+    /// Frame height in pixels.
+    /// </summary>
     public int Height { get; }
 
-    /// <summary>Number of bytes per row (may include padding).</summary>
+    /// <summary>
+    /// Number of bytes per row (may include padding).
+    /// </summary>
     public int Stride { get; }
 
-    /// <summary>Presentation timestamp for this frame.</summary>
+    /// <summary>
+    /// Presentation timestamp for this frame.
+    /// </summary>
     public TimeSpan Pts { get; }
 
     /// <summary>

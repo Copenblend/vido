@@ -4,10 +4,16 @@ using Xunit;
 
 namespace Vido.Tests;
 
+/// <summary>
+/// Verifies the behavior of <see cref="LogService"/>.
+/// </summary>
 public sealed class LogServiceTests
 {
     private readonly ILogService _log = new LogService();
 
+    /// <summary>
+    /// Verifies that Debug adds entry with debug level.
+    /// </summary>
     [Fact]
     public void Debug_AddsEntryWithDebugLevel()
     {
@@ -19,6 +25,9 @@ public sealed class LogServiceTests
         Assert.Equal("Source1", entry.Source);
     }
 
+    /// <summary>
+    /// Verifies that Info adds entry with info level.
+    /// </summary>
     [Fact]
     public void Info_AddsEntryWithInfoLevel()
     {
@@ -29,6 +38,9 @@ public sealed class LogServiceTests
         Assert.Equal("info msg", entry.Message);
     }
 
+    /// <summary>
+    /// Verifies that Warning adds entry with warning level.
+    /// </summary>
     [Fact]
     public void Warning_AddsEntryWithWarningLevel()
     {
@@ -38,6 +50,9 @@ public sealed class LogServiceTests
         Assert.Equal(LogLevel.Warning, entry.Level);
     }
 
+    /// <summary>
+    /// Verifies that Error adds entry with error level.
+    /// </summary>
     [Fact]
     public void Error_AddsEntryWithErrorLevel()
     {
@@ -47,6 +62,9 @@ public sealed class LogServiceTests
         Assert.Equal(LogLevel.Error, entry.Level);
     }
 
+    /// <summary>
+    /// Verifies that Entries are chronological.
+    /// </summary>
     [Fact]
     public void Entries_AreChronological()
     {
@@ -60,6 +78,9 @@ public sealed class LogServiceTests
         Assert.True(entries[1].Timestamp <= entries[2].Timestamp);
     }
 
+    /// <summary>
+    /// Verifies that Clear removes all entries.
+    /// </summary>
     [Fact]
     public void Clear_RemovesAllEntries()
     {
@@ -71,6 +92,9 @@ public sealed class LogServiceTests
         Assert.Empty(_log.Entries);
     }
 
+    /// <summary>
+    /// Verifies that Entry Added fires on new entry.
+    /// </summary>
     [Fact]
     public void EntryAdded_FiresOnNewEntry()
     {
@@ -83,6 +107,9 @@ public sealed class LogServiceTests
         Assert.Equal("hello", received.Message);
     }
 
+    /// <summary>
+    /// Verifies that Source defaults to empty string.
+    /// </summary>
     [Fact]
     public void Source_DefaultsToEmptyString()
     {
@@ -92,6 +119,9 @@ public sealed class LogServiceTests
         Assert.Null(entry.Source);
     }
 
+    /// <summary>
+    /// Verifies that Timestamp is recent utc.
+    /// </summary>
     [Fact]
     public void Timestamp_IsRecentUtc()
     {

@@ -8,28 +8,44 @@ public interface IVideoEngine : IDisposable
 {
     // ── State ──
 
-    /// <summary>Current playback state.</summary>
+    /// <summary>
+    /// Current playback state.
+    /// </summary>
     PlaybackState State { get; }
 
-    /// <summary>Current playback position.</summary>
+    /// <summary>
+    /// Current playback position.
+    /// </summary>
     TimeSpan Position { get; }
 
-    /// <summary>Total duration of the loaded media.</summary>
+    /// <summary>
+    /// Total duration of the loaded media.
+    /// </summary>
     TimeSpan Duration { get; }
 
-    /// <summary>Volume level (0–100).</summary>
+    /// <summary>
+    /// Volume level (0–100).
+    /// </summary>
     int Volume { get; set; }
 
-    /// <summary>Whether audio output is muted.</summary>
+    /// <summary>
+    /// Whether audio output is muted.
+    /// </summary>
     bool IsMuted { get; set; }
 
-    /// <summary>Whether playback loops when reaching the end.</summary>
+    /// <summary>
+    /// Whether playback loops when reaching the end.
+    /// </summary>
     bool IsLooping { get; set; }
 
-    /// <summary>Playback speed multiplier (0.25–4.0). Default is 1.0.</summary>
+    /// <summary>
+    /// Playback speed multiplier (0.25–4.0). Default is 1.0.
+    /// </summary>
     double SpeedRatio { get; set; }
 
-    /// <summary>Metadata for the currently loaded video, or null if none.</summary>
+    /// <summary>
+    /// Metadata for the currently loaded video, or null if none.
+    /// </summary>
     VideoMetadata? CurrentMetadata { get; }
 
     // ── Commands ──
@@ -39,33 +55,51 @@ public interface IVideoEngine : IDisposable
     /// </summary>
     Task LoadAsync(string filePath);
 
-    /// <summary>Starts or resumes playback.</summary>
+    /// <summary>
+    /// Starts or resumes playback.
+    /// </summary>
     void Play();
 
-    /// <summary>Pauses playback at the current position.</summary>
+    /// <summary>
+    /// Pauses playback at the current position.
+    /// </summary>
     void Pause();
 
-    /// <summary>Stops playback and resets position to the beginning.</summary>
+    /// <summary>
+    /// Stops playback and resets position to the beginning.
+    /// </summary>
     void Stop();
 
-    /// <summary>Seeks to the specified position.</summary>
+    /// <summary>
+    /// Seeks to the specified position.
+    /// </summary>
     void Seek(TimeSpan position);
 
     // ── Events ──
 
-    /// <summary>Fires at ~60Hz with the current playback position during playback.</summary>
+    /// <summary>
+    /// Fires at ~60Hz with the current playback position during playback.
+    /// </summary>
     event Action<TimeSpan>? PositionChanged;
 
-    /// <summary>Fires when the playback state changes.</summary>
+    /// <summary>
+    /// Fires when the playback state changes.
+    /// </summary>
     event Action<PlaybackState>? StateChanged;
 
-    /// <summary>Fires when a decoded video frame is ready for display.</summary>
+    /// <summary>
+    /// Fires when a decoded video frame is ready for display.
+    /// </summary>
     event Action<FrameData>? FrameReady;
 
-    /// <summary>Fires when the media reaches the end (before looping, if enabled).</summary>
+    /// <summary>
+    /// Fires when the media reaches the end (before looping, if enabled).
+    /// </summary>
     event Action? MediaEnded;
 
-    /// <summary>Fires after a seek operation has completed on the decode thread.</summary>
+    /// <summary>
+    /// Fires after a seek operation has completed on the decode thread.
+    /// </summary>
     event Action? SeekCompleted;
 
     /// <summary>

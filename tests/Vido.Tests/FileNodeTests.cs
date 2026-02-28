@@ -4,8 +4,14 @@ using Xunit;
 
 namespace Vido.Tests;
 
+/// <summary>
+/// Verifies the behavior of <see cref="FileNode"/>.
+/// </summary>
 public sealed class FileNodeTests
 {
+    /// <summary>
+    /// Verifies that Constructor sets name from full path.
+    /// </summary>
     [Fact]
     public void Constructor_SetsName_FromFullPath()
     {
@@ -13,6 +19,9 @@ public sealed class FileNodeTests
         Assert.Equal("test.mp4", node.Name);
     }
 
+    /// <summary>
+    /// Verifies that Constructor sets name for directory.
+    /// </summary>
     [Fact]
     public void Constructor_SetsName_ForDirectory()
     {
@@ -20,6 +29,9 @@ public sealed class FileNodeTests
         Assert.Equal("Movies", node.Name);
     }
 
+    /// <summary>
+    /// Verifies that Constructor directory has dummy child.
+    /// </summary>
     [Fact]
     public void Constructor_Directory_HasDummyChild()
     {
@@ -28,6 +40,9 @@ public sealed class FileNodeTests
         Assert.True(node.NeedsLoading);
     }
 
+    /// <summary>
+    /// Verifies that Constructor file has no children.
+    /// </summary>
     [Fact]
     public void Constructor_File_HasNoChildren()
     {
@@ -35,6 +50,9 @@ public sealed class FileNodeTests
         Assert.Empty(node.Children);
     }
 
+    /// <summary>
+    /// Verifies that Is Directory true for directory.
+    /// </summary>
     [Fact]
     public void IsDirectory_True_ForDirectory()
     {
@@ -42,6 +60,9 @@ public sealed class FileNodeTests
         Assert.True(node.IsDirectory);
     }
 
+    /// <summary>
+    /// Verifies that Is Directory false for file.
+    /// </summary>
     [Fact]
     public void IsDirectory_False_ForFile()
     {
@@ -49,6 +70,11 @@ public sealed class FileNodeTests
         Assert.False(node.IsDirectory);
     }
 
+    /// <summary>
+    /// Verifies that Is Video File detects video extensions.
+    /// </summary>
+    /// <param name="path">The file path to evaluate.</param>
+    /// <param name="expected">The expected result value.</param>
     [Theory]
     [InlineData(@"C:\test.mp4", true)]
     [InlineData(@"C:\test.avi", true)]
@@ -67,6 +93,9 @@ public sealed class FileNodeTests
         Assert.Equal(expected, node.IsVideoFile);
     }
 
+    /// <summary>
+    /// Verifies that Is Video File always false for directories.
+    /// </summary>
     [Fact]
     public void IsVideoFile_AlwaysFalse_ForDirectories()
     {
@@ -74,6 +103,9 @@ public sealed class FileNodeTests
         Assert.False(node.IsVideoFile);
     }
 
+    /// <summary>
+    /// Verifies that Needs Loading false after children cleared.
+    /// </summary>
     [Fact]
     public void NeedsLoading_False_AfterChildrenCleared()
     {
@@ -84,6 +116,9 @@ public sealed class FileNodeTests
         Assert.False(node.NeedsLoading);
     }
 
+    /// <summary>
+    /// Verifies that Needs Loading false for files.
+    /// </summary>
     [Fact]
     public void NeedsLoading_False_ForFiles()
     {
@@ -91,6 +126,9 @@ public sealed class FileNodeTests
         Assert.False(node.NeedsLoading);
     }
 
+    /// <summary>
+    /// Verifies that Empty Path produces empty name.
+    /// </summary>
     [Fact]
     public void EmptyPath_ProducesEmptyName()
     {
@@ -98,6 +136,9 @@ public sealed class FileNodeTests
         Assert.Equal(string.Empty, node.Name);
     }
 
+    /// <summary>
+    /// Verifies that Is Hidden defaults false.
+    /// </summary>
     [Fact]
     public void IsHidden_DefaultsFalse()
     {
@@ -105,6 +146,9 @@ public sealed class FileNodeTests
         Assert.False(node.IsHidden);
     }
 
+    /// <summary>
+    /// Verifies that Is Hidden raises property changed.
+    /// </summary>
     [Fact]
     public void IsHidden_RaisesPropertyChanged()
     {
@@ -117,6 +161,9 @@ public sealed class FileNodeTests
         Assert.Contains(nameof(FileNode.IsHidden), raised);
     }
 
+    /// <summary>
+    /// Verifies that Is Hidden does not raise property changed when value unchanged.
+    /// </summary>
     [Fact]
     public void IsHidden_DoesNotRaisePropertyChanged_WhenValueUnchanged()
     {

@@ -6,9 +6,13 @@ namespace Vido.Core.Layout;
 /// </summary>
 public sealed class PluginSidebarItem
 {
-    /// <summary>Full sidebar panel ID (e.g. "plugin.com.vido.osr2-plus.beatbar").</summary>
+    /// <summary>
+    /// Full sidebar panel ID (e.g. "plugin.com.vido.osr2-plus.beatbar").
+    /// </summary>
     public string Id { get; set; } = string.Empty;
 
-    /// <summary>Display order index. Lower values appear higher in the activity bar.</summary>
+    /// <summary>
+    /// Display order index. Lower values appear higher in the activity bar.
+    /// </summary>
     public int Order { get; set; }
 }

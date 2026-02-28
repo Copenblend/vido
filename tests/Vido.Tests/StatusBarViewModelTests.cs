@@ -41,6 +41,9 @@ public class StatusBarViewModelTests : IDisposable
         AudioSampleRate = 48000
     };
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public StatusBarViewModelTests()
     {
         _engine = Substitute.For<IVideoEngine>();
@@ -54,6 +57,9 @@ public class StatusBarViewModelTests : IDisposable
         _sut = new StatusBarViewModel(_playerVm);
     }
 
+    /// <summary>
+    /// Cleans up test resources after each test run.
+    /// </summary>
     public void Dispose()
     {
         _sut.Dispose();
@@ -62,6 +68,9 @@ public class StatusBarViewModelTests : IDisposable
 
     // ── Initial State ──
 
+    /// <summary>
+    /// Verifies that Initial State has built in left items.
+    /// </summary>
     [Fact]
     public void InitialState_HasBuiltInLeftItems()
     {
@@ -69,6 +78,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.Equal(StatusBarViewModel.FileNameItemId, _sut.LeftItems[0].Id);
     }
 
+    /// <summary>
+    /// Verifies that Initial State has built in right items.
+    /// </summary>
     [Fact]
     public void InitialState_HasBuiltInRightItems()
     {
@@ -78,6 +90,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.Equal(StatusBarViewModel.CodecItemId, _sut.RightItems[2].Id);
     }
 
+    /// <summary>
+    /// Verifies that Initial State file name shows no file.
+    /// </summary>
     [Fact]
     public void InitialState_FileNameShowsNoFile()
     {
@@ -85,6 +100,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.Equal("No file", item!.Text);
     }
 
+    /// <summary>
+    /// Verifies that Initial State right items are hidden.
+    /// </summary>
     [Fact]
     public void InitialState_RightItemsAreHidden()
     {
@@ -95,6 +113,9 @@ public class StatusBarViewModelTests : IDisposable
 
     // ── Metadata Updates ──
 
+    /// <summary>
+    /// Verifies that Update From Metadata sets file name.
+    /// </summary>
     [Fact]
     public void UpdateFromMetadata_SetsFileName()
     {
@@ -103,6 +124,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.Equal("sample.mp4", _sut.FindItem(StatusBarViewModel.FileNameItemId)!.Text);
     }
 
+    /// <summary>
+    /// Verifies that Update From Metadata sets resolution.
+    /// </summary>
     [Fact]
     public void UpdateFromMetadata_SetsResolution()
     {
@@ -113,6 +137,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.True(item.IsVisible);
     }
 
+    /// <summary>
+    /// Verifies that Update From Metadata sets duration.
+    /// </summary>
     [Fact]
     public void UpdateFromMetadata_SetsDuration()
     {
@@ -123,6 +150,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.True(item.IsVisible);
     }
 
+    /// <summary>
+    /// Verifies that Update From Metadata sets codec.
+    /// </summary>
     [Fact]
     public void UpdateFromMetadata_SetsCodec()
     {
@@ -133,6 +163,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.True(item.IsVisible);
     }
 
+    /// <summary>
+    /// Verifies that Update From Metadata null codec shows unknown.
+    /// </summary>
     [Fact]
     public void UpdateFromMetadata_NullCodec_ShowsUnknown()
     {
@@ -150,6 +183,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.Equal("UNKNOWN", _sut.FindItem(StatusBarViewModel.CodecItemId)!.Text);
     }
 
+    /// <summary>
+    /// Verifies that Update From Metadata null resets to no file.
+    /// </summary>
     [Fact]
     public void UpdateFromMetadata_Null_ResetsToNoFile()
     {
@@ -162,6 +198,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.False(_sut.FindItem(StatusBarViewModel.CodecItemId)!.IsVisible);
     }
 
+    /// <summary>
+    /// Verifies that Update From Metadata sets file path as tooltip.
+    /// </summary>
     [Fact]
     public void UpdateFromMetadata_SetsFilePathAsTooltip()
     {
@@ -172,6 +211,9 @@ public class StatusBarViewModelTests : IDisposable
 
     // ── Metadata sync via PropertyChanged ──
 
+    /// <summary>
+    /// Verifies that Metadata Changed On Player updates status bar.
+    /// </summary>
     [Fact]
     public void MetadataChangedOnPlayer_UpdatesStatusBar()
     {
@@ -187,6 +229,9 @@ public class StatusBarViewModelTests : IDisposable
 
     // ── Item Registry ──
 
+    /// <summary>
+    /// Verifies that Register Item adds left item.
+    /// </summary>
     [Fact]
     public void RegisterItem_AddsLeftItem()
     {
@@ -197,6 +242,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.Contains(item, _sut.LeftItems);
     }
 
+    /// <summary>
+    /// Verifies that Register Item adds right item.
+    /// </summary>
     [Fact]
     public void RegisterItem_AddsRightItem()
     {
@@ -205,6 +253,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.Contains(item, _sut.RightItems);
     }
 
+    /// <summary>
+    /// Verifies that Register Item inserts in priority order.
+    /// </summary>
     [Fact]
     public void RegisterItem_InsertsInPriorityOrder()
     {
@@ -216,6 +267,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.Equal(0, index);
     }
 
+    /// <summary>
+    /// Verifies that Register Item duplicate id throws argument exception.
+    /// </summary>
     [Fact]
     public void RegisterItem_DuplicateId_ThrowsArgumentException()
     {
@@ -225,6 +279,9 @@ public class StatusBarViewModelTests : IDisposable
             _sut.RegisterItem("plugin.test", StatusBarAlignment.Right, 100));
     }
 
+    /// <summary>
+    /// Verifies that Unregister Item removes item.
+    /// </summary>
     [Fact]
     public void UnregisterItem_RemovesItem()
     {
@@ -234,6 +291,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.Null(_sut.FindItem("plugin.test"));
     }
 
+    /// <summary>
+    /// Verifies that Unregister Item nonexistent id no op.
+    /// </summary>
     [Fact]
     public void UnregisterItem_NonexistentId_NoOp()
     {
@@ -244,6 +304,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.Equal(countBefore, countAfter);
     }
 
+    /// <summary>
+    /// Verifies that Find Item returns correct item.
+    /// </summary>
     [Fact]
     public void FindItem_ReturnsCorrectItem()
     {
@@ -253,12 +316,18 @@ public class StatusBarViewModelTests : IDisposable
         Assert.Same(registered, found);
     }
 
+    /// <summary>
+    /// Verifies that Find Item nonexistent id returns null.
+    /// </summary>
     [Fact]
     public void FindItem_NonexistentId_ReturnsNull()
     {
         Assert.Null(_sut.FindItem("nonexistent"));
     }
 
+    /// <summary>
+    /// Verifies that Find Item finds built in items.
+    /// </summary>
     [Fact]
     public void FindItem_FindsBuiltInItems()
     {
@@ -270,6 +339,9 @@ public class StatusBarViewModelTests : IDisposable
 
     // ── StatusBarItem INotifyPropertyChanged ──
 
+    /// <summary>
+    /// Verifies that Status Bar Item text change raises property changed.
+    /// </summary>
     [Fact]
     public void StatusBarItem_TextChange_RaisesPropertyChanged()
     {
@@ -285,6 +357,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.True(raised);
     }
 
+    /// <summary>
+    /// Verifies that Status Bar Item is visible change raises property changed.
+    /// </summary>
     [Fact]
     public void StatusBarItem_IsVisibleChange_RaisesPropertyChanged()
     {
@@ -300,6 +375,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.True(raised);
     }
 
+    /// <summary>
+    /// Verifies that Status Bar Item same value does not raise property changed.
+    /// </summary>
     [Fact]
     public void StatusBarItem_SameValue_DoesNotRaisePropertyChanged()
     {
@@ -316,6 +394,9 @@ public class StatusBarViewModelTests : IDisposable
 
     // ── Dispose ──
 
+    /// <summary>
+    /// Verifies that Dispose unsubscribes from player events.
+    /// </summary>
     [Fact]
     public void Dispose_UnsubscribesFromPlayerEvents()
     {
@@ -326,6 +407,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.Equal("sample.mp4", _sut.FindItem(StatusBarViewModel.FileNameItemId)!.Text);
     }
 
+    /// <summary>
+    /// Verifies that Dispose does not throw on multiple calls.
+    /// </summary>
     [Fact]
     public void Dispose_DoesNotThrowOnMultipleCalls()
     {
@@ -335,6 +419,9 @@ public class StatusBarViewModelTests : IDisposable
 
     // ── Short duration without hours ──
 
+    /// <summary>
+    /// Verifies that Short Duration omits hours.
+    /// </summary>
     [Fact]
     public void ShortDuration_OmitsHours()
     {
@@ -354,6 +441,9 @@ public class StatusBarViewModelTests : IDisposable
 
     // ── Priority tiebreaking ──
 
+    /// <summary>
+    /// Verifies that Register Item same priority orders by id alphabetically.
+    /// </summary>
     [Fact]
     public void RegisterItem_SamePriority_OrdersByIdAlphabetically()
     {
@@ -367,6 +457,9 @@ public class StatusBarViewModelTests : IDisposable
         Assert.Equal("plugin.charlie", _sut.LeftItems[3].Id);
     }
 
+    /// <summary>
+    /// Verifies that Insert By Priority deterministic with same priority.
+    /// </summary>
     [Fact]
     public void InsertByPriority_DeterministicWith_SamePriority()
     {

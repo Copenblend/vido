@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 
 namespace Vido.Services.Updates;
 
@@ -8,7 +8,11 @@ namespace Vido.Services.Updates;
 public sealed class UpdateDownloader
 {
     private readonly HttpClient _httpClient;
-
+    /// <summary>
+    /// Creates an update downloader, optionally reusing an existing <see cref="HttpClient"/>.
+    /// If none is supplied, a default client with a Vido user-agent header is created.
+    /// </summary>
+    /// <param name="httpClient">An optional <see cref="HttpClient"/> to reuse for download requests; if <c>null</c>, a default client is created.</param>
     public UpdateDownloader(HttpClient? httpClient = null)
     {
         _httpClient = httpClient ?? CreateDefaultHttpClient();
@@ -24,8 +28,12 @@ public sealed class UpdateDownloader
     /// <summary>
     /// Downloads the installer from <paramref name="downloadUrl"/> to a temp folder.
     /// Returns the full local path to the downloaded file.
-    /// Reports progress via <paramref name="onProgress"/> (0.0–1.0).
+    /// Reports progress via <paramref name="onProgress"/> (0.0â€“1.0).
     /// </summary>
+    /// <param name="downloadUrl">The URL of the installer asset to download.</param>
+    /// <param name="fileName">The file name for the downloaded installer (e.g. <c>VidoSetup.msi</c>).</param>
+    /// <param name="onProgress">An optional callback invoked with download progress from 0.0 to 1.0.</param>
+    /// <param name="cancellationToken">A token that can cancel the download operation.</param>
     public async Task<string> DownloadInstallerAsync(
         string downloadUrl,
         string fileName,

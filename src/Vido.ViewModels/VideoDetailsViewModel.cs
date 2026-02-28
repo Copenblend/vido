@@ -17,54 +17,83 @@ public partial class VideoDetailsViewModel : ObservableObject, IDisposable
 
     // ── Metadata display properties ──
 
-    /// <summary>Whether a video is currently loaded and metadata is available.</summary>
+    /// <summary>
+    /// Whether a video is currently loaded and metadata is available.
+    /// </summary>
     [ObservableProperty]
     private bool _hasMetadata;
 
-    /// <summary>Video file name.</summary>
+    /// <summary>
+    /// Video file name.
+    /// </summary>
     [ObservableProperty]
     private string _fileName = string.Empty;
 
-    /// <summary>Full file path.</summary>
+    /// <summary>
+    /// Full file path.
+    /// </summary>
     [ObservableProperty]
     private string _filePath = string.Empty;
 
-    /// <summary>Formatted file size (e.g., "1.23 GB").</summary>
+    /// <summary>
+    /// Formatted file size (e.g., "1.23 GB").
+    /// </summary>
     [ObservableProperty]
     private string _fileSize = string.Empty;
 
-    /// <summary>Formatted duration (e.g., "01:23:45").</summary>
+    /// <summary>
+    /// Formatted duration (e.g., "01:23:45").
+    /// </summary>
     [ObservableProperty]
     private string _formattedDuration = string.Empty;
 
-    /// <summary>Resolution string (e.g., "1920x1080").</summary>
+    /// <summary>
+    /// Resolution string (e.g., "1920x1080").
+    /// </summary>
     [ObservableProperty]
     private string _resolution = string.Empty;
 
-    /// <summary>Video codec name.</summary>
+    /// <summary>
+    /// Video codec name.
+    /// </summary>
     [ObservableProperty]
     private string _videoCodec = string.Empty;
 
-    /// <summary>Audio codec name.</summary>
+    /// <summary>
+    /// Audio codec name.
+    /// </summary>
     [ObservableProperty]
     private string _audioCodec = string.Empty;
 
-    /// <summary>Formatted frame rate (e.g., "23.976 fps").</summary>
+    /// <summary>
+    /// Formatted frame rate (e.g., "23.976 fps").
+    /// </summary>
     [ObservableProperty]
     private string _frameRate = string.Empty;
 
-    /// <summary>Formatted bitrate (e.g., "4.50 Mbps").</summary>
+    /// <summary>
+    /// Formatted bitrate (e.g., "4.50 Mbps").
+    /// </summary>
     [ObservableProperty]
     private string _bitrate = string.Empty;
 
-    /// <summary>Container format name (e.g., "mp4").</summary>
+    /// <summary>
+    /// Container format name (e.g., "mp4").
+    /// </summary>
     [ObservableProperty]
     private string _containerFormat = string.Empty;
 
-    /// <summary>Formatted audio info (e.g., "AAC, Stereo, 48000 Hz").</summary>
+    /// <summary>
+    /// Formatted audio info (e.g., "AAC, Stereo, 48000 Hz").
+    /// </summary>
     [ObservableProperty]
     private string _audioInfo = string.Empty;
 
+    /// <summary>
+    /// Creates the video details view model, subscribing to player metadata changes
+    /// and initializing display properties from the current video (if any).
+    /// </summary>
+    /// <param name="playerViewModel">Video player view model whose metadata is formatted for display.</param>
     public VideoDetailsViewModel(VideoPlayerViewModel playerViewModel)
     {
         _playerViewModel = playerViewModel;
@@ -160,7 +189,10 @@ public partial class VideoDetailsViewModel : ObservableObject, IDisposable
             new[] { metadata.AudioCodec?.ToUpperInvariant(), channels, sampleRate }
                 .Where(s => !string.IsNullOrEmpty(s)));
     }
-
+    
+    /// <summary>
+    /// Unsubscribes from player property change events to prevent memory leaks.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed) return;

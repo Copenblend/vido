@@ -15,6 +15,9 @@ public class MainWindowViewModelTests
     private readonly ISettingsService _settingsService;
     private readonly MainWindowViewModel _sut;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public MainWindowViewModelTests()
     {
         _settingsService = Substitute.For<ISettingsService>();
@@ -29,6 +32,9 @@ public class MainWindowViewModelTests
 
     // ── Constructor / Initial State ──
 
+    /// <summary>
+    /// Verifies that Constructor creates player tab.
+    /// </summary>
     [Fact]
     public void Constructor_CreatesPlayerTab()
     {
@@ -36,6 +42,9 @@ public class MainWindowViewModelTests
         Assert.Equal(MainWindowViewModel.PlayerTabId, _sut.Tabs[0].Id);
     }
 
+    /// <summary>
+    /// Verifies that Constructor player tab is active by default.
+    /// </summary>
     [Fact]
     public void Constructor_PlayerTabIsActiveByDefault()
     {
@@ -43,6 +52,9 @@ public class MainWindowViewModelTests
         Assert.Equal(MainWindowViewModel.PlayerTabId, _sut.ActiveTab!.Id);
     }
 
+    /// <summary>
+    /// Verifies that Constructor player tab is pinned and not closable.
+    /// </summary>
     [Fact]
     public void Constructor_PlayerTabIsPinnedAndNotClosable()
     {
@@ -51,6 +63,9 @@ public class MainWindowViewModelTests
         Assert.False(playerTab.IsClosable);
     }
 
+    /// <summary>
+    /// Verifies that Constructor panels visible but collapsed by default.
+    /// </summary>
     [Fact]
     public void Constructor_PanelsVisibleButCollapsedByDefault()
     {
@@ -71,6 +86,9 @@ public class MainWindowViewModelTests
         Assert.True(vm.IsRightPanelCollapsed);
     }
 
+    /// <summary>
+    /// Verifies that Constructor panels visible and expanded when default settings.
+    /// </summary>
     [Fact]
     public void Constructor_PanelsVisibleAndExpanded_WhenDefaultSettings()
     {
@@ -87,6 +105,9 @@ public class MainWindowViewModelTests
 
     // ── OpenTab ──
 
+    /// <summary>
+    /// Verifies that Open Tab adds new tab and activates it.
+    /// </summary>
     [Fact]
     public void OpenTab_AddsNewTabAndActivatesIt()
     {
@@ -96,6 +117,9 @@ public class MainWindowViewModelTests
         Assert.Equal("test", _sut.ActiveTab!.Id);
     }
 
+    /// <summary>
+    /// Verifies that Open Tab existing id activates without duplicating.
+    /// </summary>
     [Fact]
     public void OpenTab_ExistingId_ActivatesWithoutDuplicating()
     {
@@ -107,6 +131,9 @@ public class MainWindowViewModelTests
         Assert.Equal("test", _sut.ActiveTab!.Id);
     }
 
+    /// <summary>
+    /// Verifies that Open Tab sets icon geometry.
+    /// </summary>
     [Fact]
     public void OpenTab_SetsIconGeometry()
     {
@@ -116,6 +143,9 @@ public class MainWindowViewModelTests
         Assert.Equal("M 0,0 L 10,10", tab?.IconGeometry);
     }
 
+    /// <summary>
+    /// Verifies that Open Tab sets is closable.
+    /// </summary>
     [Fact]
     public void OpenTab_SetsIsClosable()
     {
@@ -127,6 +157,9 @@ public class MainWindowViewModelTests
 
     // ── CloseTab ──
 
+    /// <summary>
+    /// Verifies that Close Tab removes closable tab.
+    /// </summary>
     [Fact]
     public void CloseTab_RemovesClosableTab()
     {
@@ -137,6 +170,9 @@ public class MainWindowViewModelTests
         Assert.Null(_sut.FindTab("test"));
     }
 
+    /// <summary>
+    /// Verifies that Close Tab cannot close player tab.
+    /// </summary>
     [Fact]
     public void CloseTab_CannotClosePlayerTab()
     {
@@ -146,6 +182,9 @@ public class MainWindowViewModelTests
         Assert.Equal(MainWindowViewModel.PlayerTabId, _sut.Tabs[0].Id);
     }
 
+    /// <summary>
+    /// Verifies that Close Tab active tab closed activates neighbor.
+    /// </summary>
     [Fact]
     public void CloseTab_ActiveTabClosed_ActivatesNeighbor()
     {
@@ -157,6 +196,9 @@ public class MainWindowViewModelTests
         Assert.Equal("a", _sut.ActiveTab!.Id);
     }
 
+    /// <summary>
+    /// Verifies that Close Tab active tab closed activates player when last closable.
+    /// </summary>
     [Fact]
     public void CloseTab_ActiveTabClosed_ActivatesPlayerWhenLastClosable()
     {
@@ -166,6 +208,9 @@ public class MainWindowViewModelTests
         Assert.Equal(MainWindowViewModel.PlayerTabId, _sut.ActiveTab!.Id);
     }
 
+    /// <summary>
+    /// Verifies that Close Tab nonexistent id does nothing.
+    /// </summary>
     [Fact]
     public void CloseTab_NonexistentId_DoesNothing()
     {
@@ -174,6 +219,9 @@ public class MainWindowViewModelTests
         Assert.Single(_sut.Tabs);
     }
 
+    /// <summary>
+    /// Verifies that Close Tab inactive tab does not change active tab.
+    /// </summary>
     [Fact]
     public void CloseTab_InactiveTab_DoesNotChangeActiveTab()
     {
@@ -188,6 +236,9 @@ public class MainWindowViewModelTests
 
     // ── ActivateTab ──
 
+    /// <summary>
+    /// Verifies that Activate Tab switches to existing tab.
+    /// </summary>
     [Fact]
     public void ActivateTab_SwitchesToExistingTab()
     {
@@ -197,6 +248,9 @@ public class MainWindowViewModelTests
         Assert.Equal(MainWindowViewModel.PlayerTabId, _sut.ActiveTab!.Id);
     }
 
+    /// <summary>
+    /// Verifies that Activate Tab nonexistent id does nothing.
+    /// </summary>
     [Fact]
     public void ActivateTab_NonexistentId_DoesNothing()
     {
@@ -207,6 +261,9 @@ public class MainWindowViewModelTests
 
     // ── ReorderTab ──
 
+    /// <summary>
+    /// Verifies that Reorder Tab moves tab to new position.
+    /// </summary>
     [Fact]
     public void ReorderTab_MovesTabToNewPosition()
     {
@@ -220,6 +277,9 @@ public class MainWindowViewModelTests
         Assert.Equal("a", _sut.Tabs[2].Id);
     }
 
+    /// <summary>
+    /// Verifies that Reorder Tab cannot move pinned tab.
+    /// </summary>
     [Fact]
     public void ReorderTab_CannotMovePinnedTab()
     {
@@ -231,6 +291,9 @@ public class MainWindowViewModelTests
         Assert.Equal(MainWindowViewModel.PlayerTabId, _sut.Tabs[0].Id);
     }
 
+    /// <summary>
+    /// Verifies that Reorder Tab cannot move before pinned tab.
+    /// </summary>
     [Fact]
     public void ReorderTab_CannotMoveBeforePinnedTab()
     {
@@ -243,6 +306,9 @@ public class MainWindowViewModelTests
         Assert.Equal(MainWindowViewModel.PlayerTabId, _sut.Tabs[0].Id);
     }
 
+    /// <summary>
+    /// Verifies that Reorder Tab invalid indices does nothing.
+    /// </summary>
     [Fact]
     public void ReorderTab_InvalidIndices_DoesNothing()
     {
@@ -255,6 +321,9 @@ public class MainWindowViewModelTests
         Assert.Equal(2, _sut.Tabs.Count);
     }
 
+    /// <summary>
+    /// Verifies that Reorder Tab same index does nothing.
+    /// </summary>
     [Fact]
     public void ReorderTab_SameIndex_DoesNothing()
     {
@@ -267,6 +336,9 @@ public class MainWindowViewModelTests
 
     // ── OpenSettings ──
 
+    /// <summary>
+    /// Verifies that Open Settings creates settings tab.
+    /// </summary>
     [Fact]
     public void OpenSettings_CreatesSettingsTab()
     {
@@ -276,6 +348,9 @@ public class MainWindowViewModelTests
         Assert.Equal(MainWindowViewModel.SettingsTabId, _sut.ActiveTab!.Id);
     }
 
+    /// <summary>
+    /// Verifies that Open Settings called twice does not duplicate.
+    /// </summary>
     [Fact]
     public void OpenSettings_CalledTwice_DoesNotDuplicate()
     {
@@ -285,6 +360,9 @@ public class MainWindowViewModelTests
         Assert.Equal(2, _sut.Tabs.Count);
     }
 
+    /// <summary>
+    /// Verifies that Open Settings settings tab is closable.
+    /// </summary>
     [Fact]
     public void OpenSettings_SettingsTabIsClosable()
     {
@@ -296,6 +374,9 @@ public class MainWindowViewModelTests
 
     // ── Panel Toggles ──
 
+    /// <summary>
+    /// Verifies that Toggle Bottom Panel toggles visibility.
+    /// </summary>
     [Fact]
     public void ToggleBottomPanel_TogglesVisibility()
     {
@@ -309,6 +390,9 @@ public class MainWindowViewModelTests
         Assert.True(_sut.IsBottomPanelVisible);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Right Panel toggles visibility.
+    /// </summary>
     [Fact]
     public void ToggleRightPanel_TogglesVisibility()
     {
@@ -324,6 +408,9 @@ public class MainWindowViewModelTests
 
     // ── FindTab ──
 
+    /// <summary>
+    /// Verifies that Find Tab returns correct tab.
+    /// </summary>
     [Fact]
     public void FindTab_ReturnsCorrectTab()
     {
@@ -334,6 +421,9 @@ public class MainWindowViewModelTests
         Assert.Equal("Test", tab!.Title);
     }
 
+    /// <summary>
+    /// Verifies that Find Tab nonexistent id returns null.
+    /// </summary>
     [Fact]
     public void FindTab_NonexistentId_ReturnsNull()
     {
@@ -342,6 +432,9 @@ public class MainWindowViewModelTests
 
     // ── TabItemModel ──
 
+    /// <summary>
+    /// Verifies that Tab Item Model default values.
+    /// </summary>
     [Fact]
     public void TabItemModel_DefaultValues()
     {
@@ -356,6 +449,9 @@ public class MainWindowViewModelTests
 
     // ── PropertyChanged notifications ──
 
+    /// <summary>
+    /// Verifies that Active Tab raises property changed.
+    /// </summary>
     [Fact]
     public void ActiveTab_RaisesPropertyChanged()
     {
@@ -371,6 +467,9 @@ public class MainWindowViewModelTests
         Assert.True(raised);
     }
 
+    /// <summary>
+    /// Verifies that Is Bottom Panel Visible raises property changed.
+    /// </summary>
     [Fact]
     public void IsBottomPanelVisible_RaisesPropertyChanged()
     {
@@ -386,6 +485,9 @@ public class MainWindowViewModelTests
         Assert.True(raised);
     }
 
+    /// <summary>
+    /// Verifies that Is Right Panel Visible raises property changed.
+    /// </summary>
     [Fact]
     public void IsRightPanelVisible_RaisesPropertyChanged()
     {
@@ -403,6 +505,9 @@ public class MainWindowViewModelTests
 
     // ── Right Panel Collapse ──
 
+    /// <summary>
+    /// Verifies that Toggle Right Panel Collapse toggles state.
+    /// </summary>
     [Fact]
     public void ToggleRightPanelCollapse_TogglesState()
     {
@@ -416,6 +521,9 @@ public class MainWindowViewModelTests
         Assert.False(_sut.IsRightPanelCollapsed);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Right Panel Collapse when hidden shows expanded.
+    /// </summary>
     [Fact]
     public void ToggleRightPanelCollapse_WhenHidden_ShowsExpanded()
     {
@@ -427,6 +535,9 @@ public class MainWindowViewModelTests
         Assert.False(_sut.IsRightPanelCollapsed);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Right Panel shows expanded clears collapsed.
+    /// </summary>
     [Fact]
     public void ToggleRightPanel_ShowsExpanded_ClearsCollapsed()
     {
@@ -440,6 +551,9 @@ public class MainWindowViewModelTests
         Assert.False(_sut.IsRightPanelCollapsed);
     }
 
+    /// <summary>
+    /// Verifies that Is Right Panel Collapsed raises property changed.
+    /// </summary>
     [Fact]
     public void IsRightPanelCollapsed_RaisesPropertyChanged()
     {
@@ -458,6 +572,9 @@ public class MainWindowViewModelTests
 
     // ── Bottom Panel Tabs ──
 
+    /// <summary>
+    /// Verifies that Constructor creates bottom panel tabs.
+    /// </summary>
     [Fact]
     public void Constructor_CreatesBottomPanelTabs()
     {
@@ -465,6 +582,9 @@ public class MainWindowViewModelTests
         Assert.Equal(MainWindowViewModel.OutputTabId, _sut.BottomPanelTabs[0].Id);
     }
 
+    /// <summary>
+    /// Verifies that Constructor output tab is active by default.
+    /// </summary>
     [Fact]
     public void Constructor_OutputTabIsActiveByDefault()
     {
@@ -472,6 +592,9 @@ public class MainWindowViewModelTests
         Assert.Equal(MainWindowViewModel.OutputTabId, _sut.ActiveBottomPanelTab!.Id);
     }
 
+    /// <summary>
+    /// Verifies that Activate Bottom Panel Tab switches to tab.
+    /// </summary>
     [Fact]
     public void ActivateBottomPanelTab_SwitchesToTab()
     {
@@ -480,6 +603,9 @@ public class MainWindowViewModelTests
         Assert.Equal(MainWindowViewModel.OutputTabId, _sut.ActiveBottomPanelTab!.Id);
     }
 
+    /// <summary>
+    /// Verifies that Activate Bottom Panel Tab shows panel.
+    /// </summary>
     [Fact]
     public void ActivateBottomPanelTab_ShowsPanel()
     {
@@ -490,6 +616,9 @@ public class MainWindowViewModelTests
         Assert.True(_sut.IsBottomPanelVisible);
     }
 
+    /// <summary>
+    /// Verifies that Close Bottom Panel Tab cannot close non closable tab.
+    /// </summary>
     [Fact]
     public void CloseBottomPanelTab_CannotCloseNonClosableTab()
     {
@@ -500,6 +629,9 @@ public class MainWindowViewModelTests
         Assert.NotNull(_sut.FindBottomPanelTab(MainWindowViewModel.OutputTabId));
     }
 
+    /// <summary>
+    /// Verifies that Constructor output tab is not closable.
+    /// </summary>
     [Fact]
     public void Constructor_OutputTabIsNotClosable()
     {
@@ -508,6 +640,9 @@ public class MainWindowViewModelTests
         Assert.False(outputTab!.IsClosable);
     }
 
+    /// <summary>
+    /// Verifies that Open Bottom Panel Tab existing tab activates it.
+    /// </summary>
     [Fact]
     public void OpenBottomPanelTab_ExistingTab_ActivatesIt()
     {
@@ -517,6 +652,9 @@ public class MainWindowViewModelTests
         Assert.Single(_sut.BottomPanelTabs); // No duplicates
     }
 
+    /// <summary>
+    /// Verifies that Activate Bottom Panel Tab existing tab shows panel.
+    /// </summary>
     [Fact]
     public void ActivateBottomPanelTab_ExistingTab_ShowsPanel()
     {
@@ -528,6 +666,9 @@ public class MainWindowViewModelTests
         Assert.Equal(MainWindowViewModel.OutputTabId, _sut.ActiveBottomPanelTab!.Id);
     }
 
+    /// <summary>
+    /// Verifies that Active Bottom Panel Tab sets is active flags.
+    /// </summary>
     [Fact]
     public void ActiveBottomPanelTab_SetsIsActiveFlags()
     {
@@ -535,6 +676,9 @@ public class MainWindowViewModelTests
         Assert.True(output.IsActive);
     }
 
+    /// <summary>
+    /// Verifies that Active Bottom Panel Tab raises property changed.
+    /// </summary>
     [Fact]
     public void ActiveBottomPanelTab_RaisesPropertyChanged()
     {
@@ -554,6 +698,9 @@ public class MainWindowViewModelTests
         Assert.True(raised);
     }
 
+    /// <summary>
+    /// Verifies that Find Bottom Panel Tab returns correct tab.
+    /// </summary>
     [Fact]
     public void FindBottomPanelTab_ReturnsCorrectTab()
     {
@@ -562,12 +709,18 @@ public class MainWindowViewModelTests
         Assert.Equal("LOG OUTPUT", tab!.Title);
     }
 
+    /// <summary>
+    /// Verifies that Find Bottom Panel Tab nonexistent id returns null.
+    /// </summary>
     [Fact]
     public void FindBottomPanelTab_NonexistentId_ReturnsNull()
     {
         Assert.Null(_sut.FindBottomPanelTab("nonexistent"));
     }
 
+    /// <summary>
+    /// Verifies that Close Bottom Panel Tab nonexistent id does nothing.
+    /// </summary>
     [Fact]
     public void CloseBottomPanelTab_NonexistentId_DoesNothing()
     {
@@ -577,6 +730,9 @@ public class MainWindowViewModelTests
 
     // ── Bottom Panel Collapse ──
 
+    /// <summary>
+    /// Verifies that Toggle Bottom Panel Collapse toggles state.
+    /// </summary>
     [Fact]
     public void ToggleBottomPanelCollapse_TogglesState()
     {
@@ -590,6 +746,9 @@ public class MainWindowViewModelTests
         Assert.False(_sut.IsBottomPanelCollapsed);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Bottom Panel Collapse when hidden shows expanded.
+    /// </summary>
     [Fact]
     public void ToggleBottomPanelCollapse_WhenHidden_ShowsExpanded()
     {
@@ -601,6 +760,9 @@ public class MainWindowViewModelTests
         Assert.False(_sut.IsBottomPanelCollapsed);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Bottom Panel shows expanded clears collapsed.
+    /// </summary>
     [Fact]
     public void ToggleBottomPanel_ShowsExpanded_ClearsCollapsed()
     {
@@ -614,6 +776,9 @@ public class MainWindowViewModelTests
         Assert.False(_sut.IsBottomPanelCollapsed);
     }
 
+    /// <summary>
+    /// Verifies that Is Bottom Panel Collapsed raises property changed.
+    /// </summary>
     [Fact]
     public void IsBottomPanelCollapsed_RaisesPropertyChanged()
     {
@@ -632,12 +797,18 @@ public class MainWindowViewModelTests
 
     // ── Status Bar Visibility ──
 
+    /// <summary>
+    /// Verifies that Constructor status bar visible by default.
+    /// </summary>
     [Fact]
     public void Constructor_StatusBarVisibleByDefault()
     {
         Assert.True(_sut.IsStatusBarVisible);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Status Bar toggles visibility.
+    /// </summary>
     [Fact]
     public void ToggleStatusBar_TogglesVisibility()
     {
@@ -650,6 +821,9 @@ public class MainWindowViewModelTests
         Assert.True(_sut.IsStatusBarVisible);
     }
 
+    /// <summary>
+    /// Verifies that Is Status Bar Visible raises property changed.
+    /// </summary>
     [Fact]
     public void IsStatusBarVisible_RaisesPropertyChanged()
     {
@@ -667,12 +841,18 @@ public class MainWindowViewModelTests
 
     // ── Fullscreen ──
 
+    /// <summary>
+    /// Verifies that Is Fullscreen default false.
+    /// </summary>
     [Fact]
     public void IsFullscreen_DefaultFalse()
     {
         Assert.False(_sut.IsFullscreen);
     }
 
+    /// <summary>
+    /// Verifies that Is Fullscreen can be set.
+    /// </summary>
     [Fact]
     public void IsFullscreen_CanBeSet()
     {
@@ -683,6 +863,9 @@ public class MainWindowViewModelTests
         Assert.False(_sut.IsFullscreen);
     }
 
+    /// <summary>
+    /// Verifies that Is Fullscreen raises property changed.
+    /// </summary>
     [Fact]
     public void IsFullscreen_RaisesPropertyChanged()
     {
@@ -700,6 +883,9 @@ public class MainWindowViewModelTests
 
     // ── OpenBottomPanelTab with custom title ──
 
+    /// <summary>
+    /// Verifies that Open Bottom Panel Tab new custom tab creates and activates.
+    /// </summary>
     [Fact]
     public void OpenBottomPanelTab_NewCustomTab_CreatesAndActivates()
     {
@@ -713,6 +899,9 @@ public class MainWindowViewModelTests
         Assert.Equal(tab, _sut.ActiveBottomPanelTab);
     }
 
+    /// <summary>
+    /// Verifies that Open Bottom Panel Tab new tab shows panel.
+    /// </summary>
     [Fact]
     public void OpenBottomPanelTab_NewTab_ShowsPanel()
     {
@@ -723,6 +912,9 @@ public class MainWindowViewModelTests
         Assert.True(_sut.IsBottomPanelVisible);
     }
 
+    /// <summary>
+    /// Verifies that Open Bottom Panel Tab duplicate activates existing.
+    /// </summary>
     [Fact]
     public void OpenBottomPanelTab_Duplicate_ActivatesExisting()
     {
@@ -737,6 +929,9 @@ public class MainWindowViewModelTests
 
     // ── CloseBottomPanelTab for closable tabs ──
 
+    /// <summary>
+    /// Verifies that Close Bottom Panel Tab closable tab removes it.
+    /// </summary>
     [Fact]
     public void CloseBottomPanelTab_ClosableTab_RemovesIt()
     {
@@ -749,6 +944,9 @@ public class MainWindowViewModelTests
         Assert.Null(_sut.FindBottomPanelTab("custom1"));
     }
 
+    /// <summary>
+    /// Verifies that Close Bottom Panel Tab active closable activates neighbor.
+    /// </summary>
     [Fact]
     public void CloseBottomPanelTab_ActiveClosable_ActivatesNeighbor()
     {
@@ -763,6 +961,9 @@ public class MainWindowViewModelTests
         Assert.Equal(MainWindowViewModel.OutputTabId, _sut.ActiveBottomPanelTab!.Id);
     }
 
+    /// <summary>
+    /// Verifies that Close Bottom Panel Tab inactive closable does not change active.
+    /// </summary>
     [Fact]
     public void CloseBottomPanelTab_InactiveClosable_DoesNotChangeActive()
     {
@@ -779,6 +980,9 @@ public class MainWindowViewModelTests
 
     // ── SuppressSettingsSave ──
 
+    /// <summary>
+    /// Verifies that Suppress Settings Save prevents queue save.
+    /// </summary>
     [Fact]
     public void SuppressSettingsSave_PreventsQueueSave()
     {
@@ -789,6 +993,9 @@ public class MainWindowViewModelTests
         _settingsService.DidNotReceive().QueueSave();
     }
 
+    /// <summary>
+    /// Verifies that Suppress Settings Save false allows queue save.
+    /// </summary>
     [Fact]
     public void SuppressSettingsSave_False_AllowsQueueSave()
     {
@@ -801,6 +1008,9 @@ public class MainWindowViewModelTests
 
     // ── vido-008: Log Output Toggle ──
 
+    /// <summary>
+    /// Verifies that Log Output hidden by default.
+    /// </summary>
     [Fact]
     public void LogOutput_HiddenByDefault()
     {
@@ -812,6 +1022,9 @@ public class MainWindowViewModelTests
         Assert.False(vm.IsLogOutputVisible);
     }
 
+    /// <summary>
+    /// Verifies that Log Output visible from settings.
+    /// </summary>
     [Fact]
     public void LogOutput_VisibleFromSettings()
     {
@@ -823,6 +1036,9 @@ public class MainWindowViewModelTests
         Assert.True(vm.IsLogOutputVisible);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Log Output shows tab.
+    /// </summary>
     [Fact]
     public void ToggleLogOutput_ShowsTab()
     {
@@ -838,6 +1054,9 @@ public class MainWindowViewModelTests
         settingsSvc.Received().QueueSave();
     }
 
+    /// <summary>
+    /// Verifies that Toggle Log Output hides tab.
+    /// </summary>
     [Fact]
     public void ToggleLogOutput_HidesTab()
     {
@@ -854,6 +1073,9 @@ public class MainWindowViewModelTests
         settingsSvc.Received().QueueSave();
     }
 
+    /// <summary>
+    /// Verifies that Toggle Log Output persists setting.
+    /// </summary>
     [Fact]
     public void ToggleLogOutput_PersistsSetting()
     {
@@ -871,6 +1093,9 @@ public class MainWindowViewModelTests
         settingsSvc.Received(1).QueueSave();
     }
 
+    /// <summary>
+    /// Verifies that Activate Bottom Panel Tab log output creates if missing.
+    /// </summary>
     [Fact]
     public void ActivateBottomPanelTab_LogOutput_CreatesIfMissing()
     {
@@ -887,6 +1112,9 @@ public class MainWindowViewModelTests
         Assert.True(settingsSvc.Current.LogOutputVisible);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Log Output hide tab activates neighbor.
+    /// </summary>
     [Fact]
     public void ToggleLogOutput_HideTab_ActivatesNeighbor()
     {
@@ -905,6 +1133,9 @@ public class MainWindowViewModelTests
         Assert.Equal("custom1", vm.ActiveBottomPanelTab!.Id);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Log Output show tab inserts at start.
+    /// </summary>
     [Fact]
     public void ToggleLogOutput_ShowTab_InsertsAtStart()
     {
@@ -920,6 +1151,9 @@ public class MainWindowViewModelTests
         Assert.Equal(MainWindowViewModel.OutputTabId, vm.ActiveBottomPanelTab!.Id);
     }
 
+    /// <summary>
+    /// Verifies that Log Output recreated via open bottom panel tab is not closable.
+    /// </summary>
     [Fact]
     public void LogOutput_RecreatedViaOpenBottomPanelTab_IsNotClosable()
     {

@@ -1,4 +1,4 @@
-using NAudio.Wave;
+﻿using NAudio.Wave;
 
 namespace Vido.Services.Video;
 
@@ -50,11 +50,11 @@ internal sealed class AudioRenderer : IDisposable
     {
         Cleanup();
 
-        // Use IEEE float samples (32-bit) — this is what swresample outputs
+        // Use IEEE float samples (32-bit) â€” this is what swresample outputs
         var waveFormat = WaveFormat.CreateIeeeFloatWaveFormat(sampleRate, channels);
         _waveProvider = new BufferedWaveProvider(waveFormat)
         {
-            // Buffer up to 2 seconds of audio — larger buffer reduces underruns and
+            // Buffer up to 2 seconds of audio â€” larger buffer reduces underruns and
             // crackling, especially over Bluetooth or with high-latency devices.
             BufferLength = sampleRate * channels * sizeof(float) * 2,
             DiscardOnBufferOverflow = true
@@ -64,14 +64,14 @@ internal sealed class AudioRenderer : IDisposable
         {
             _waveOut = new WasapiOut(
                 NAudio.CoreAudioApi.AudioClientShareMode.Shared,
-                latency: 100); // 100ms latency — more headroom for Bluetooth / USB audio
+                latency: 100); // 100ms latency â€” more headroom for Bluetooth / USB audio
 
             _waveOut.Init(_waveProvider);
             ApplyVolume();
         }
         catch (Exception)
         {
-            // Audio device may not be available — degrade gracefully
+            // Audio device may not be available â€” degrade gracefully
             _waveOut?.Dispose();
             _waveOut = null;
         }
@@ -81,6 +81,9 @@ internal sealed class AudioRenderer : IDisposable
     /// Submits decoded audio samples for playback.
     /// Samples must be IEEE float format matching the initialized sample rate and channels.
     /// </summary>
+    /// <param name="data">The byte array containing IEEE float audio samples.</param>
+    /// <param name="offset">The zero-based byte offset in <paramref name="data"/> at which to begin reading.</param>
+    /// <param name="count">The number of bytes to submit from <paramref name="data"/>.</param>
     public void SubmitSamples(byte[] data, int offset, int count)
     {
         if (_waveProvider == null || _disposed)
@@ -91,8 +94,11 @@ internal sealed class AudioRenderer : IDisposable
 
     /// <summary>
     /// Submits decoded audio samples from a float buffer.
-    /// <paramref name="floatCount"/> is the number of individual float values (samples × channels).
+    /// <paramref name="floatCount"/> is the number of individual float values (samples Ã— channels).
     /// </summary>
+    /// <param name="data">The float array containing interleaved audio samples.</param>
+    /// <param name="offset">The zero-based index in <paramref name="data"/> at which to begin reading.</param>
+    /// <param name="floatCount">The number of individual float values (sample frames × channels) to submit.</param>
     public void SubmitSamples(float[] data, int offset, int floatCount)
     {
         if (_waveProvider == null || _disposed)
@@ -171,7 +177,10 @@ internal sealed class AudioRenderer : IDisposable
         _waveOut = null;
         _waveProvider = null;
     }
-
+    
+    /// <summary>
+    /// Stops playback, releases the WASAPI output device, and marks this renderer as disposed.
+    /// </summary>
     public void Dispose()
     {
         if (!_disposed)

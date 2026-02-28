@@ -8,6 +8,9 @@ using Xunit;
 
 namespace Vido.Tests;
 
+/// <summary>
+/// Verifies the behavior of <see cref="FileExplorerViewModel"/>.
+/// </summary>
 public sealed class FileExplorerViewModelTests
 {
     private readonly IFileSystemService _fileSystemService = Substitute.For<IFileSystemService>();
@@ -18,6 +21,9 @@ public sealed class FileExplorerViewModelTests
     private readonly AppState _appState = new();
     private readonly FileExplorerViewModel _sut;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public FileExplorerViewModelTests()
     {
         _stateService.Current.Returns(_appState);
@@ -25,6 +31,9 @@ public sealed class FileExplorerViewModelTests
         _sut = new FileExplorerViewModel(_fileSystemService, _stateService, _settingsService, _logService);
     }
 
+    /// <summary>
+    /// Verifies that Initial has no folder open.
+    /// </summary>
     [Fact]
     public void Initial_HasNoFolderOpen()
     {
@@ -34,6 +43,9 @@ public sealed class FileExplorerViewModelTests
         Assert.Empty(_sut.RootNodes);
     }
 
+    /// <summary>
+    /// Verifies that Open Folder populates root nodes.
+    /// </summary>
     [Fact]
     public async Task OpenFolder_PopulatesRootNodes()
     {
@@ -53,6 +65,9 @@ public sealed class FileExplorerViewModelTests
         CleanupDir(testDir);
     }
 
+    /// <summary>
+    /// Verifies that Open Folder sets folder name.
+    /// </summary>
     [Fact]
     public async Task OpenFolder_SetsFolderName()
     {
@@ -65,6 +80,9 @@ public sealed class FileExplorerViewModelTests
         CleanupDir(testDir);
     }
 
+    /// <summary>
+    /// Verifies that Open Folder persists last open folder.
+    /// </summary>
     [Fact]
     public async Task OpenFolder_PersistsLastOpenFolder()
     {
@@ -77,6 +95,9 @@ public sealed class FileExplorerViewModelTests
         CleanupDir(testDir);
     }
 
+    /// <summary>
+    /// Verifies that Open Folder ignores non existent path.
+    /// </summary>
     [Fact]
     public async Task OpenFolder_IgnoresNonExistentPath()
     {
@@ -87,6 +108,9 @@ public sealed class FileExplorerViewModelTests
         Assert.False(_sut.IsLoading);
     }
 
+    /// <summary>
+    /// Verifies that Close Folder clears everything.
+    /// </summary>
     [Fact]
     public async Task CloseFolder_ClearsEverything()
     {
@@ -109,6 +133,9 @@ public sealed class FileExplorerViewModelTests
         CleanupDir(testDir);
     }
 
+    /// <summary>
+    /// Verifies that Open Folder clears previous folder.
+    /// </summary>
     [Fact]
     public async Task OpenFolder_ClearsPreviousFolder()
     {
@@ -136,6 +163,9 @@ public sealed class FileExplorerViewModelTests
         CleanupDir(dir2);
     }
 
+    /// <summary>
+    /// Verifies that Expand Node delegates to file system service.
+    /// </summary>
     [Fact]
     public async Task ExpandNode_DelegatesToFileSystemService()
     {
@@ -147,6 +177,9 @@ public sealed class FileExplorerViewModelTests
         await _fileSystemService.Received(1).GetChildrenAsync(node.FullPath);
     }
 
+    /// <summary>
+    /// Verifies that Restore Last Folder opens persisted folder.
+    /// </summary>
     [Fact]
     public async Task RestoreLastFolder_OpensPersistedFolder()
     {
@@ -161,6 +194,9 @@ public sealed class FileExplorerViewModelTests
         CleanupDir(testDir);
     }
 
+    /// <summary>
+    /// Verifies that Restore Last Folder no op when no persisted folder.
+    /// </summary>
     [Fact]
     public async Task RestoreLastFolder_NoOp_WhenNoPersistedFolder()
     {
@@ -169,6 +205,9 @@ public sealed class FileExplorerViewModelTests
         Assert.False(_sut.HasFolderOpen);
     }
 
+    /// <summary>
+    /// Verifies that Restore Last Folder no op when persisted folder deleted.
+    /// </summary>
     [Fact]
     public async Task RestoreLastFolder_NoOp_WhenPersistedFolderDeleted()
     {
@@ -177,6 +216,9 @@ public sealed class FileExplorerViewModelTests
         Assert.False(_sut.HasFolderOpen);
     }
 
+    /// <summary>
+    /// Verifies that Property Changed raised for has folder open.
+    /// </summary>
     [Fact]
     public async Task PropertyChanged_RaisedForHasFolderOpen()
     {
@@ -196,6 +238,9 @@ public sealed class FileExplorerViewModelTests
 
     //  Rescan tests 
 
+    /// <summary>
+    /// Verifies that Rescan Folder reloads from disk.
+    /// </summary>
     [Fact]
     public async Task RescanFolder_ReloadsFromDisk()
     {
@@ -218,6 +263,9 @@ public sealed class FileExplorerViewModelTests
         CleanupDir(testDir);
     }
 
+    /// <summary>
+    /// Verifies that Rescan Folder no op when no folder open.
+    /// </summary>
     [Fact]
     public async Task RescanFolder_NoOp_WhenNoFolderOpen()
     {
@@ -225,6 +273,9 @@ public sealed class FileExplorerViewModelTests
         Assert.Empty(_sut.RootNodes);
     }
 
+    /// <summary>
+    /// Verifies that Rescan Folder preserves hidden files.
+    /// </summary>
     [Fact]
     public async Task RescanFolder_PreservesHiddenFiles()
     {
@@ -254,6 +305,9 @@ public sealed class FileExplorerViewModelTests
 
     //  HideFile tests 
 
+    /// <summary>
+    /// Verifies that Hide File removes node from tree when show hidden false.
+    /// </summary>
     [Fact]
     public async Task HideFile_RemovesNodeFromTree_WhenShowHiddenFalse()
     {
@@ -274,6 +328,9 @@ public sealed class FileExplorerViewModelTests
         CleanupDir(testDir);
     }
 
+    /// <summary>
+    /// Verifies that Hide File marks node hidden when show hidden true.
+    /// </summary>
     [Fact]
     public async Task HideFile_MarksNodeHidden_WhenShowHiddenTrue()
     {
@@ -294,6 +351,9 @@ public sealed class FileExplorerViewModelTests
         CleanupDir(testDir);
     }
 
+    /// <summary>
+    /// Verifies that Hide File adds to hidden files state.
+    /// </summary>
     [Fact]
     public async Task HideFile_AddsToHiddenFilesState()
     {
@@ -309,6 +369,9 @@ public sealed class FileExplorerViewModelTests
         CleanupDir(testDir);
     }
 
+    /// <summary>
+    /// Verifies that Hide File no duplicates in hidden files.
+    /// </summary>
     [Fact]
     public async Task HideFile_NoDuplicatesInHiddenFiles()
     {
@@ -326,6 +389,9 @@ public sealed class FileExplorerViewModelTests
         CleanupDir(testDir);
     }
 
+    /// <summary>
+    /// Verifies that Hide File no op when null.
+    /// </summary>
     [Fact]
     public void HideFile_NoOp_WhenNull()
     {
@@ -333,6 +399,9 @@ public sealed class FileExplorerViewModelTests
         Assert.Empty(_appState.HiddenFiles);
     }
 
+    /// <summary>
+    /// Verifies that Hide File works for folders.
+    /// </summary>
     [Fact]
     public async Task HideFile_WorksForFolders()
     {
@@ -351,6 +420,9 @@ public sealed class FileExplorerViewModelTests
 
     //  UnhideFile tests 
 
+    /// <summary>
+    /// Verifies that Unhide File removes from hidden state.
+    /// </summary>
     [Fact]
     public void UnhideFile_RemovesFromHiddenState()
     {
@@ -364,6 +436,9 @@ public sealed class FileExplorerViewModelTests
         Assert.False(node.IsHidden);
     }
 
+    /// <summary>
+    /// Verifies that Unhide File no op when null.
+    /// </summary>
     [Fact]
     public void UnhideFile_NoOp_WhenNull()
     {
@@ -372,6 +447,9 @@ public sealed class FileExplorerViewModelTests
 
     //  ShowHiddenFiles toggle 
 
+    /// <summary>
+    /// Verifies that Toggle Show Hidden Files toggles property.
+    /// </summary>
     [Fact]
     public async Task ToggleShowHiddenFiles_TogglesProperty()
     {
@@ -382,6 +460,9 @@ public sealed class FileExplorerViewModelTests
         Assert.False(_sut.ShowHiddenFiles);
     }
 
+    /// <summary>
+    /// Verifies that Show Hidden Files true includes hidden nodes as marked.
+    /// </summary>
     [Fact]
     public async Task ShowHiddenFiles_True_IncludesHiddenNodesAsMarked()
     {
@@ -407,6 +488,9 @@ public sealed class FileExplorerViewModelTests
         CleanupDir(testDir);
     }
 
+    /// <summary>
+    /// Verifies that Show Hidden Files false excludes hidden nodes.
+    /// </summary>
     [Fact]
     public async Task ShowHiddenFiles_False_ExcludesHiddenNodes()
     {
@@ -429,6 +513,9 @@ public sealed class FileExplorerViewModelTests
         CleanupDir(testDir);
     }
 
+    /// <summary>
+    /// Verifies that Toggle Show Hidden Files refreshes tree with hidden nodes.
+    /// </summary>
     [Fact]
     public async Task ToggleShowHiddenFiles_RefreshesTreeWithHiddenNodes()
     {
@@ -461,6 +548,9 @@ public sealed class FileExplorerViewModelTests
         CleanupDir(testDir);
     }
 
+    /// <summary>
+    /// Verifies that Expand Node applies hidden filter.
+    /// </summary>
     [Fact]
     public async Task ExpandNode_AppliesHiddenFilter()
     {
@@ -487,6 +577,9 @@ public sealed class FileExplorerViewModelTests
 
     //  CloseFolder clears SelectedNode 
 
+    /// <summary>
+    /// Verifies that Close Folder clears selected node.
+    /// </summary>
     [Fact]
     public async Task CloseFolder_ClearsSelectedNode()
     {
@@ -503,6 +596,9 @@ public sealed class FileExplorerViewModelTests
         CleanupDir(testDir);
     }
 
+    /// <summary>
+    /// Verifies that Selected Node raises property changed.
+    /// </summary>
     [Fact]
     public void SelectedNode_RaisesPropertyChanged()
     {
@@ -515,6 +611,9 @@ public sealed class FileExplorerViewModelTests
         Assert.Contains(nameof(FileExplorerViewModel.SelectedNode), raised);
     }
 
+    /// <summary>
+    /// Verifies that Open Folder Async sets is loading during operation.
+    /// </summary>
     [Fact]
     public async Task OpenFolderAsync_SetsIsLoadingDuringOperation()
     {

@@ -1,4 +1,4 @@
-using System.Collections.Specialized;
+﻿using System.Collections.Specialized;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,6 +13,9 @@ namespace Vido.Views.Panels;
 /// </summary>
 public partial class OutputLogPanel : UserControl
 {
+    /// <summary>
+    /// Sets up the output log panel and registers loaded/unloaded handlers for auto-scroll wiring.
+    /// </summary>
     public OutputLogPanel()
     {
         InitializeComponent();
@@ -59,7 +62,7 @@ public partial class OutputLogPanel : UserControl
         }
     }
 
-    // ── Clipboard & context menu ──
+    // ─── Clipboard & context menu ────────────────────────────────────────────────────────────────
 
     private void OnLogListBoxKeyDown(object sender, KeyEventArgs e)
     {

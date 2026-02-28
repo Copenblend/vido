@@ -5,10 +5,16 @@ using Xunit;
 
 namespace Vido.Tests;
 
+/// <summary>
+/// Verifies the behavior of <see cref="ContextMenuRegistry"/>.
+/// </summary>
 public sealed class ContextMenuRegistryTests
 {
     private readonly ContextMenuRegistry _sut = new();
 
+    /// <summary>
+    /// Verifies that Get Entries returns empty when no registrations.
+    /// </summary>
     [Fact]
     public void GetEntries_ReturnsEmpty_WhenNoRegistrations()
     {
@@ -16,6 +22,9 @@ public sealed class ContextMenuRegistryTests
         Assert.Empty(entries);
     }
 
+    /// <summary>
+    /// Verifies that Register entry appears in get entries.
+    /// </summary>
     [Fact]
     public void Register_EntryAppearsInGetEntries()
     {
@@ -27,6 +36,9 @@ public sealed class ContextMenuRegistryTests
         Assert.Equal("test-1", entries[0].Id);
     }
 
+    /// <summary>
+    /// Verifies that Get Entries filtersby target.
+    /// </summary>
     [Fact]
     public void GetEntries_FiltersbyTarget()
     {
@@ -39,6 +51,9 @@ public sealed class ContextMenuRegistryTests
         Assert.Single(_sut.GetEntries(ContextMenuTarget.Background));
     }
 
+    /// <summary>
+    /// Verifies that Unregister removes entry.
+    /// </summary>
     [Fact]
     public void Unregister_RemovesEntry()
     {
@@ -49,6 +64,9 @@ public sealed class ContextMenuRegistryTests
         Assert.Empty(_sut.GetEntries(ContextMenuTarget.File));
     }
 
+    /// <summary>
+    /// Verifies that Unregister no op when id not found.
+    /// </summary>
     [Fact]
     public void Unregister_NoOp_WhenIdNotFound()
     {
@@ -58,6 +76,9 @@ public sealed class ContextMenuRegistryTests
         Assert.Single(_sut.GetEntries(ContextMenuTarget.File));
     }
 
+    /// <summary>
+    /// Verifies that Get Entries orders by group then order.
+    /// </summary>
     [Fact]
     public void GetEntries_OrdersByGroupThenOrder()
     {
@@ -74,6 +95,9 @@ public sealed class ContextMenuRegistryTests
         Assert.Equal("b-2", entries[3].Id);
     }
 
+    /// <summary>
+    /// Verifies that Get Entries returns read only copy.
+    /// </summary>
     [Fact]
     public void GetEntries_ReturnsReadOnlyCopy()
     {
@@ -83,6 +107,9 @@ public sealed class ContextMenuRegistryTests
         Assert.IsAssignableFrom<IReadOnlyList<ContextMenuEntry>>(entries);
     }
 
+    /// <summary>
+    /// Verifies that Register multiple entries same target.
+    /// </summary>
     [Fact]
     public void Register_MultipleEntriesSameTarget()
     {
@@ -93,6 +120,9 @@ public sealed class ContextMenuRegistryTests
         Assert.Equal(3, _sut.GetEntries(ContextMenuTarget.File).Count);
     }
 
+    /// <summary>
+    /// Verifies that Handler is invoked.
+    /// </summary>
     [Fact]
     public void Handler_IsInvoked()
     {
@@ -113,6 +143,9 @@ public sealed class ContextMenuRegistryTests
         Assert.Equal(@"C:\test.mp4", received!.FullPath);
     }
 
+    /// <summary>
+    /// Verifies that Is Enabled defaults to always true.
+    /// </summary>
     [Fact]
     public void IsEnabled_DefaultsToAlwaysTrue()
     {

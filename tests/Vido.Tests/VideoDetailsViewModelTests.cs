@@ -41,6 +41,9 @@ public class VideoDetailsViewModelTests : IDisposable
         AudioSampleRate = 48000
     };
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public VideoDetailsViewModelTests()
     {
         _engine = Substitute.For<IVideoEngine>();
@@ -54,6 +57,9 @@ public class VideoDetailsViewModelTests : IDisposable
         _sut = new VideoDetailsViewModel(_playerVm);
     }
 
+    /// <summary>
+    /// Cleans up test resources after each test run.
+    /// </summary>
     public void Dispose()
     {
         _sut.Dispose();
@@ -62,6 +68,9 @@ public class VideoDetailsViewModelTests : IDisposable
 
     // ── Initial State ──
 
+    /// <summary>
+    /// Verifies that Initial State has no metadata.
+    /// </summary>
     [Fact]
     public void InitialState_HasNoMetadata()
     {
@@ -72,6 +81,9 @@ public class VideoDetailsViewModelTests : IDisposable
 
     // ── Metadata Updates ──
 
+    /// <summary>
+    /// Verifies that Update From Metadata populates all fields.
+    /// </summary>
     [Fact]
     public void UpdateFromMetadata_PopulatesAllFields()
     {
@@ -91,6 +103,9 @@ public class VideoDetailsViewModelTests : IDisposable
         Assert.Equal("AAC, Stereo, 48000 Hz", _sut.AudioInfo);
     }
 
+    /// <summary>
+    /// Verifies that Update From Metadata null clears.
+    /// </summary>
     [Fact]
     public void UpdateFromMetadata_NullClears()
     {
@@ -102,6 +117,9 @@ public class VideoDetailsViewModelTests : IDisposable
         Assert.Equal(string.Empty, _sut.Resolution);
     }
 
+    /// <summary>
+    /// Verifies that Update From Metadata no audio codec shows none.
+    /// </summary>
     [Fact]
     public void UpdateFromMetadata_NoAudioCodec_ShowsNone()
     {
@@ -120,6 +138,9 @@ public class VideoDetailsViewModelTests : IDisposable
         Assert.Equal("None", _sut.AudioInfo);
     }
 
+    /// <summary>
+    /// Verifies that Update From Metadata zero bitrate shows unknown.
+    /// </summary>
     [Fact]
     public void UpdateFromMetadata_ZeroBitrate_ShowsUnknown()
     {
@@ -137,6 +158,9 @@ public class VideoDetailsViewModelTests : IDisposable
         Assert.Equal("Unknown", _sut.Bitrate);
     }
 
+    /// <summary>
+    /// Verifies that Update From Metadata zero frame rate shows unknown.
+    /// </summary>
     [Fact]
     public void UpdateFromMetadata_ZeroFrameRate_ShowsUnknown()
     {
@@ -156,6 +180,11 @@ public class VideoDetailsViewModelTests : IDisposable
 
     // ── File Size Formatting ──
 
+    /// <summary>
+    /// Verifies that Format File Size correctly formats.
+    /// </summary>
+    /// <param name="bytes">The number of bytes.</param>
+    /// <param name="expected">The expected result value.</param>
     [Theory]
     [InlineData(500, "500 B")]
     [InlineData(1024, "1.00 KB")]
@@ -170,6 +199,11 @@ public class VideoDetailsViewModelTests : IDisposable
 
     // ── Bitrate Formatting ──
 
+    /// <summary>
+    /// Verifies that Format Bitrate correctly formats.
+    /// </summary>
+    /// <param name="bps">The bitrate in bits per second.</param>
+    /// <param name="expected">The expected result value.</param>
     [Theory]
     [InlineData(0, "Unknown")]
     [InlineData(-1, "Unknown")]
@@ -184,6 +218,11 @@ public class VideoDetailsViewModelTests : IDisposable
 
     // ── Audio Info Formatting ──
 
+    /// <summary>
+    /// Verifies that Format Audio Info channel labels.
+    /// </summary>
+    /// <param name="channels">The number of audio channels.</param>
+    /// <param name="expectedChannel">The expected channel value.</param>
     [Theory]
     [InlineData(1, "Mono")]
     [InlineData(2, "Stereo")]
@@ -209,6 +248,9 @@ public class VideoDetailsViewModelTests : IDisposable
         Assert.Contains("44100 Hz", result);
     }
 
+    /// <summary>
+    /// Verifies that Format Audio Info null codec returns none.
+    /// </summary>
     [Fact]
     public void FormatAudioInfo_NullCodec_ReturnsNone()
     {
@@ -226,6 +268,9 @@ public class VideoDetailsViewModelTests : IDisposable
 
     // ── Dispose ──
 
+    /// <summary>
+    /// Verifies that Dispose unsubscribes from player events.
+    /// </summary>
     [Fact]
     public void Dispose_UnsubscribesFromPlayerEvents()
     {
@@ -240,6 +285,9 @@ public class VideoDetailsViewModelTests : IDisposable
         //  but at minimum the Dispose should not throw)
     }
 
+    /// <summary>
+    /// Verifies that Dispose does not throw on multiple calls.
+    /// </summary>
     [Fact]
     public void Dispose_DoesNotThrowOnMultipleCalls()
     {
@@ -249,6 +297,9 @@ public class VideoDetailsViewModelTests : IDisposable
 
     // ── Metadata update when video changes ──
 
+    /// <summary>
+    /// Verifies that Metadata Changed On Player updates details.
+    /// </summary>
     [Fact]
     public void MetadataChangedOnPlayer_UpdatesDetails()
     {
@@ -269,6 +320,9 @@ public class VideoDetailsViewModelTests : IDisposable
 
     // ── Duration with short videos ──
 
+    /// <summary>
+    /// Verifies that Short Duration omits hours.
+    /// </summary>
     [Fact]
     public void ShortDuration_OmitsHours()
     {
@@ -286,6 +340,9 @@ public class VideoDetailsViewModelTests : IDisposable
         Assert.Equal("02:05", _sut.FormattedDuration);
     }
 
+    /// <summary>
+    /// Verifies that Long Duration includes hours.
+    /// </summary>
     [Fact]
     public void LongDuration_IncludesHours()
     {

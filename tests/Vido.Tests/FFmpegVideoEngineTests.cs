@@ -16,6 +16,9 @@ public class FFmpegVideoEngineTests : IDisposable
     private readonly ILogService _logService = Substitute.For<ILogService>();
     private readonly FFmpegVideoEngine _sut;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public FFmpegVideoEngineTests()
     {
         _sut = new FFmpegVideoEngine(_logService);
@@ -23,42 +26,63 @@ public class FFmpegVideoEngineTests : IDisposable
 
     // ── Initial State ──
 
+    /// <summary>
+    /// Verifies that Initial State is none.
+    /// </summary>
     [Fact]
     public void InitialState_IsNone()
     {
         Assert.Equal(PlaybackState.None, _sut.State);
     }
 
+    /// <summary>
+    /// Verifies that Initial Position is zero.
+    /// </summary>
     [Fact]
     public void InitialPosition_IsZero()
     {
         Assert.Equal(TimeSpan.Zero, _sut.Position);
     }
 
+    /// <summary>
+    /// Verifies that Initial Duration is zero.
+    /// </summary>
     [Fact]
     public void InitialDuration_IsZero()
     {
         Assert.Equal(TimeSpan.Zero, _sut.Duration);
     }
 
+    /// <summary>
+    /// Verifies that Initial Volume is default.
+    /// </summary>
     [Fact]
     public void InitialVolume_IsDefault()
     {
         Assert.Equal(75, _sut.Volume);
     }
 
+    /// <summary>
+    /// Verifies that Initial Muted is false.
+    /// </summary>
     [Fact]
     public void InitialMuted_IsFalse()
     {
         Assert.False(_sut.IsMuted);
     }
 
+    /// <summary>
+    /// Verifies that Initial Looping is false.
+    /// </summary>
     [Fact]
     public void InitialLooping_IsFalse()
     {
         Assert.False(_sut.IsLooping);
     }
 
+    /// <summary>
+    /// Verifies that Initial Metadata is null.
+    /// </summary>
     [Fact]
     public void InitialMetadata_IsNull()
     {
@@ -67,6 +91,9 @@ public class FFmpegVideoEngineTests : IDisposable
 
     // ── Volume ──
 
+    /// <summary>
+    /// Verifies that Volume clamps to range.
+    /// </summary>
     [Fact]
     public void Volume_ClampsToRange()
     {
@@ -82,6 +109,9 @@ public class FFmpegVideoEngineTests : IDisposable
 
     // ── Mute ──
 
+    /// <summary>
+    /// Verifies that Is Muted can be toggled.
+    /// </summary>
     [Fact]
     public void IsMuted_CanBeToggled()
     {
@@ -94,6 +124,9 @@ public class FFmpegVideoEngineTests : IDisposable
 
     // ── Looping ──
 
+    /// <summary>
+    /// Verifies that Is Looping can be toggled.
+    /// </summary>
     [Fact]
     public void IsLooping_CanBeToggled()
     {
@@ -106,6 +139,9 @@ public class FFmpegVideoEngineTests : IDisposable
 
     // ── Precondition Checks ──
 
+    /// <summary>
+    /// Verifies that Load Async throws invalid operation when f fmpeg not initialized.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_ThrowsInvalidOperation_WhenFFmpegNotInitialized()
     {
@@ -117,6 +153,9 @@ public class FFmpegVideoEngineTests : IDisposable
             () => _sut.LoadAsync(@"C:\nonexistent\video.mp4"));
     }
 
+    /// <summary>
+    /// Verifies that Play no op when no media loaded.
+    /// </summary>
     [Fact]
     public void Play_NoOp_WhenNoMediaLoaded()
     {
@@ -126,6 +165,9 @@ public class FFmpegVideoEngineTests : IDisposable
         Assert.Equal(PlaybackState.None, _sut.State);
     }
 
+    /// <summary>
+    /// Verifies that Pause no op when no media loaded.
+    /// </summary>
     [Fact]
     public void Pause_NoOp_WhenNoMediaLoaded()
     {
@@ -134,6 +176,9 @@ public class FFmpegVideoEngineTests : IDisposable
         Assert.Equal(PlaybackState.None, _sut.State);
     }
 
+    /// <summary>
+    /// Verifies that Stop no op when no media loaded.
+    /// </summary>
     [Fact]
     public void Stop_NoOp_WhenNoMediaLoaded()
     {
@@ -142,6 +187,9 @@ public class FFmpegVideoEngineTests : IDisposable
         Assert.Equal(PlaybackState.None, _sut.State);
     }
 
+    /// <summary>
+    /// Verifies that Seek no op when no media loaded.
+    /// </summary>
     [Fact]
     public void Seek_NoOp_WhenNoMediaLoaded()
     {
@@ -153,6 +201,9 @@ public class FFmpegVideoEngineTests : IDisposable
 
     // ── Dispose ──
 
+    /// <summary>
+    /// Verifies that Dispose can be called multiple times.
+    /// </summary>
     [Fact]
     public void Dispose_CanBeCalledMultipleTimes()
     {
@@ -162,6 +213,9 @@ public class FFmpegVideoEngineTests : IDisposable
 
     // ── vb-001: Stop safety ──
 
+    /// <summary>
+    /// Verifies that Stop called twice does not throw.
+    /// </summary>
     [Fact]
     public void Stop_CalledTwice_DoesNotThrow()
     {
@@ -173,6 +227,9 @@ public class FFmpegVideoEngineTests : IDisposable
         Assert.Equal(PlaybackState.None, _sut.State);
     }
 
+    /// <summary>
+    /// Verifies that Stop then dispose does not throw.
+    /// </summary>
     [Fact]
     public void Stop_ThenDispose_DoesNotThrow()
     {
@@ -183,6 +240,9 @@ public class FFmpegVideoEngineTests : IDisposable
 
     // ── vb-001: LoadAsync semaphore precondition checks ──
 
+    /// <summary>
+    /// Verifies that Load Async called concurrently precondition fails do not deadlock.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_CalledConcurrently_PreconditionFailsDoNotDeadlock()
     {
@@ -200,6 +260,9 @@ public class FFmpegVideoEngineTests : IDisposable
         await Task.WhenAll(t1, t2);
     }
 
+    /// <summary>
+    /// Verifies that Load Async after failed load can be called again.
+    /// </summary>
     [Fact]
     public async Task LoadAsync_AfterFailedLoad_CanBeCalledAgain()
     {
@@ -217,6 +280,9 @@ public class FFmpegVideoEngineTests : IDisposable
 
     // ── AudioSamplesAvailable Event ──
 
+    /// <summary>
+    /// Verifies that Audio Samples Available event declared is null by default.
+    /// </summary>
     [Fact]
     public void AudioSamplesAvailable_EventDeclared_IsNullByDefault()
     {
@@ -229,6 +295,9 @@ public class FFmpegVideoEngineTests : IDisposable
         Assert.False(subscribed);
     }
 
+    /// <summary>
+    /// Verifies that Audio Samples Available implements i video engine event.
+    /// </summary>
     [Fact]
     public void AudioSamplesAvailable_ImplementsIVideoEngineEvent()
     {
@@ -243,12 +312,19 @@ public class FFmpegVideoEngineTests : IDisposable
 
     // ── SpeedRatio / Time-Stretch (vb-003) ──
 
+    /// <summary>
+    /// Verifies that Speed Ratio default is1.
+    /// </summary>
     [Fact]
     public void SpeedRatio_DefaultIs1()
     {
         Assert.Equal(1.0, _sut.SpeedRatio);
     }
 
+    /// <summary>
+    /// Verifies that Speed Ratio set clamped within range.
+    /// </summary>
+    /// <param name="speed">The playback speed ratio.</param>
     [Theory]
     [InlineData(0.25)]
     [InlineData(0.5)]
@@ -261,6 +337,9 @@ public class FFmpegVideoEngineTests : IDisposable
         Assert.Equal(speed, _sut.SpeedRatio, precision: 3);
     }
 
+    /// <summary>
+    /// Verifies that Speed Ratio below minimum clamped to025.
+    /// </summary>
     [Fact]
     public void SpeedRatio_BelowMinimum_ClampedTo025()
     {
@@ -268,6 +347,9 @@ public class FFmpegVideoEngineTests : IDisposable
         Assert.Equal(0.25, _sut.SpeedRatio, precision: 3);
     }
 
+    /// <summary>
+    /// Verifies that Speed Ratio above maximum clamped to4.
+    /// </summary>
     [Fact]
     public void SpeedRatio_AboveMaximum_ClampedTo4()
     {
@@ -275,6 +357,9 @@ public class FFmpegVideoEngineTests : IDisposable
         Assert.Equal(4.0, _sut.SpeedRatio, precision: 3);
     }
 
+    /// <summary>
+    /// Verifies that Speed Ratio rapid changes does not throw.
+    /// </summary>
     [Fact]
     public void SpeedRatio_RapidChanges_DoesNotThrow()
     {
@@ -287,6 +372,9 @@ public class FFmpegVideoEngineTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// Verifies that Speed Ratio same value no op.
+    /// </summary>
     [Fact]
     public void SpeedRatio_SameValue_NoOp()
     {
@@ -296,6 +384,9 @@ public class FFmpegVideoEngineTests : IDisposable
         Assert.Equal(1.5, _sut.SpeedRatio, precision: 3);
     }
 
+    /// <summary>
+    /// Cleans up test resources after each test run.
+    /// </summary>
     public void Dispose()
     {
         _sut.Dispose();

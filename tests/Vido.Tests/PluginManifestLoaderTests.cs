@@ -14,6 +14,9 @@ public class PluginManifestLoaderTests : IDisposable
     private readonly string _tempDir;
     private readonly ILogService _logger;
 
+    /// <summary>
+    /// Sets up test dependencies and creates the system under test.
+    /// </summary>
     public PluginManifestLoaderTests()
     {
         _tempDir = Path.Combine(Path.GetTempPath(), "vido-test-" + Guid.NewGuid().ToString("N")[..8]);
@@ -21,6 +24,9 @@ public class PluginManifestLoaderTests : IDisposable
         _logger = Substitute.For<ILogService>();
     }
 
+    /// <summary>
+    /// Cleans up test resources after each test run.
+    /// </summary>
     public void Dispose()
     {
         if (Directory.Exists(_tempDir))
@@ -35,6 +41,9 @@ public class PluginManifestLoaderTests : IDisposable
         return pluginDir;
     }
 
+    /// <summary>
+    /// Verifies that Load valid manifest returns manifest.
+    /// </summary>
     [Fact]
     public void Load_ValidManifest_ReturnsManifest()
     {
@@ -55,6 +64,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Equal("Valid.dll", manifest.EntryPoint);
     }
 
+    /// <summary>
+    /// Verifies that Load no plugin json returns null.
+    /// </summary>
     [Fact]
     public void Load_NoPluginJson_ReturnsNull()
     {
@@ -66,6 +78,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Null(manifest);
     }
 
+    /// <summary>
+    /// Verifies that Load malformed json returns null logs error.
+    /// </summary>
     [Fact]
     public void Load_MalformedJson_ReturnsNull_LogsError()
     {
@@ -79,6 +94,9 @@ public class PluginManifestLoaderTests : IDisposable
             "PluginLoader");
     }
 
+    /// <summary>
+    /// Verifies that Load missing id returns null logs warning.
+    /// </summary>
     [Fact]
     public void Load_MissingId_ReturnsNull_LogsWarning()
     {
@@ -99,6 +117,9 @@ public class PluginManifestLoaderTests : IDisposable
             "PluginLoader");
     }
 
+    /// <summary>
+    /// Verifies that Load missing entry point returns null.
+    /// </summary>
     [Fact]
     public void Load_MissingEntryPoint_ReturnsNull()
     {
@@ -116,6 +137,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Null(manifest);
     }
 
+    /// <summary>
+    /// Verifies that Load missing plugin class returns null.
+    /// </summary>
     [Fact]
     public void Load_MissingPluginClass_ReturnsNull()
     {
@@ -133,6 +157,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Null(manifest);
     }
 
+    /// <summary>
+    /// Verifies that Load invalid plugin id returns null.
+    /// </summary>
     [Fact]
     public void Load_InvalidPluginId_ReturnsNull()
     {
@@ -151,6 +178,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Null(manifest);
     }
 
+    /// <summary>
+    /// Verifies that Load non dll entry point returns null.
+    /// </summary>
     [Fact]
     public void Load_NonDllEntryPoint_ReturnsNull()
     {
@@ -169,6 +199,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Null(manifest);
     }
 
+    /// <summary>
+    /// Verifies that Load json with comments succeeds.
+    /// </summary>
     [Fact]
     public void Load_JsonWithComments_Succeeds()
     {
@@ -189,6 +222,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Equal("com.test.comments", manifest.Id);
     }
 
+    /// <summary>
+    /// Verifies that Load json with trailing commas succeeds.
+    /// </summary>
     [Fact]
     public void Load_JsonWithTrailingCommas_Succeeds()
     {
@@ -207,6 +243,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.NotNull(manifest);
     }
 
+    /// <summary>
+    /// Verifies that Validate valid manifest returns no errors.
+    /// </summary>
     [Fact]
     public void Validate_ValidManifest_ReturnsNoErrors()
     {
@@ -224,6 +263,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Empty(errors);
     }
 
+    /// <summary>
+    /// Verifies that Validate duplicate contribution ids returns error.
+    /// </summary>
     [Fact]
     public void Validate_DuplicateContributionIds_ReturnsError()
     {
@@ -248,6 +290,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Contains(errors, e => e.Contains("Duplicate"));
     }
 
+    /// <summary>
+    /// Verifies that Validate missing multiple fields returns multiple errors.
+    /// </summary>
     [Fact]
     public void Validate_MissingMultipleFields_ReturnsMultipleErrors()
     {
@@ -258,6 +303,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.True(errors.Count >= 4); // id, name, version, entryPoint, pluginClass
     }
 
+    /// <summary>
+    /// Verifies that Validate plugin id with letters digits dots is valid.
+    /// </summary>
     [Fact]
     public void Validate_PluginIdWithLettersDigitsDots_IsValid()
     {
@@ -286,6 +334,9 @@ public class PluginManifestLoaderTests : IDisposable
         PluginClass = "Test.Plugin"
     };
 
+    /// <summary>
+    /// Verifies that Validate setting with valid type no errors.
+    /// </summary>
     [Fact]
     public void Validate_SettingWithValidType_NoErrors()
     {
@@ -302,6 +353,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Empty(errors);
     }
 
+    /// <summary>
+    /// Verifies that Validate setting invalid type returns error.
+    /// </summary>
     [Fact]
     public void Validate_SettingInvalidType_ReturnsError()
     {
@@ -316,6 +370,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Contains("invalid type", errors[0]);
     }
 
+    /// <summary>
+    /// Verifies that Validate enum without enum values returns error.
+    /// </summary>
     [Fact]
     public void Validate_EnumWithoutEnumValues_ReturnsError()
     {
@@ -330,6 +387,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Contains("enumValues", errors[0]);
     }
 
+    /// <summary>
+    /// Verifies that Validate setting missing id returns error.
+    /// </summary>
     [Fact]
     public void Validate_SettingMissingId_ReturnsError()
     {
@@ -343,6 +403,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Contains(errors, e => e.Contains("empty 'id'"));
     }
 
+    /// <summary>
+    /// Verifies that Validate setting missing title returns error.
+    /// </summary>
     [Fact]
     public void Validate_SettingMissingTitle_ReturnsError()
     {
@@ -356,6 +419,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Contains(errors, e => e.Contains("empty 'title'"));
     }
 
+    /// <summary>
+    /// Verifies that Validate duplicate setting ids returns error.
+    /// </summary>
     [Fact]
     public void Validate_DuplicateSettingIds_ReturnsError()
     {
@@ -370,6 +436,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Contains(errors, e => e.Contains("Duplicate setting id"));
     }
 
+    /// <summary>
+    /// Verifies that Validate setting id conflicts with contribution returns error.
+    /// </summary>
     [Fact]
     public void Validate_SettingIdConflictsWithContribution_ReturnsError()
     {
@@ -384,6 +453,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Contains(errors, e => e.Contains("conflicts"));
     }
 
+    /// <summary>
+    /// Verifies that Load settings in manifest parses correctly.
+    /// </summary>
     [Fact]
     public void Load_SettingsInManifest_ParsesCorrectly()
     {
@@ -437,6 +509,9 @@ public class PluginManifestLoaderTests : IDisposable
 
     // ── Dependency Validation Tests ──
 
+    /// <summary>
+    /// Verifies that Validate valid dependencies no errors.
+    /// </summary>
     [Fact]
     public void Validate_ValidDependencies_NoErrors()
     {
@@ -452,6 +527,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Empty(errors);
     }
 
+    /// <summary>
+    /// Verifies that Validate dependency empty id returns error.
+    /// </summary>
     [Fact]
     public void Validate_DependencyEmptyId_ReturnsError()
     {
@@ -466,6 +544,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Contains(errors, e => e.Contains("empty 'id'"));
     }
 
+    /// <summary>
+    /// Verifies that Validate dependency empty min version returns error.
+    /// </summary>
     [Fact]
     public void Validate_DependencyEmptyMinVersion_ReturnsError()
     {
@@ -480,6 +561,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Contains(errors, e => e.Contains("empty 'minVersion'"));
     }
 
+    /// <summary>
+    /// Verifies that Validate dependency invalid min version returns error.
+    /// </summary>
     [Fact]
     public void Validate_DependencyInvalidMinVersion_ReturnsError()
     {
@@ -494,6 +578,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Contains(errors, e => e.Contains("invalid minVersion"));
     }
 
+    /// <summary>
+    /// Verifies that Validate duplicate dependency returns error.
+    /// </summary>
     [Fact]
     public void Validate_DuplicateDependency_ReturnsError()
     {
@@ -509,6 +596,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Contains(errors, e => e.Contains("Duplicate"));
     }
 
+    /// <summary>
+    /// Verifies that Validate empty dependencies array no errors.
+    /// </summary>
     [Fact]
     public void Validate_EmptyDependenciesArray_NoErrors()
     {
@@ -520,6 +610,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Empty(errors);
     }
 
+    /// <summary>
+    /// Verifies that Load manifest with dependencies parses correctly.
+    /// </summary>
     [Fact]
     public void Load_ManifestWithDependencies_ParsesCorrectly()
     {
@@ -547,6 +640,9 @@ public class PluginManifestLoaderTests : IDisposable
         Assert.Equal("1.2.0", manifest.Dependencies[1].MinVersion);
     }
 
+    /// <summary>
+    /// Verifies that Load manifest without dependencies defaults to empty list.
+    /// </summary>
     [Fact]
     public void Load_ManifestWithoutDependencies_DefaultsToEmptyList()
     {
