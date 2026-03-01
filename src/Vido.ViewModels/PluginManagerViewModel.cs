@@ -371,7 +371,19 @@ public partial class PluginManagerViewModel : ObservableObject
                     _pluginHost.ActivateAll(); // Will pick up the newly installed plugin + deps
                     var info = _pluginHost.GetPlugin(item.Id);
                     if (info is not null)
+                    {
                         item.PluginInfo = info;
+                        item.IsEnabled = info.State == PluginState.Active;
+                    }
+
+                    if (info is null || info.State != PluginState.Active)
+                    {
+                        item.StatusMessage = "Installed. Restart may be required to fully activate.";
+                        _logService.Warning(
+                            $"Plugin '{item.Id}' installed but state is '{info?.State.ToString() ?? "missing"}'.",
+                            "PluginManager");
+                        RestartRequired?.Invoke($"Plugin '{item.DisplayName}' was installed but did not fully activate. A restart may be required.");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -382,6 +394,11 @@ public partial class PluginManagerViewModel : ObservableObject
                 ApplyFilter();
                 OpenDetailRequested?.Invoke(item);
                 _logService.Info($"Plugin '{item.DisplayName}' installed successfully.", "PluginManager");
+            }
+            else
+            {
+                item.StatusMessage = "Install failed. See Output Log for details.";
+                _logService.Error($"Plugin '{item.DisplayName}' install failed.", "PluginManager");
             }
         }
         finally

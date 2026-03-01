@@ -1602,6 +1602,26 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
+    /// Forces a reconciliation pass for plugin-contributed UI elements.
+    /// Use after runtime plugin lifecycle changes (install/update/uninstall)
+    /// to ensure sidebar/activity-bar state is synchronized.
+    /// </summary>
+    public void RefreshPluginContributions()
+    {
+        void Refresh()
+        {
+            WirePluginContributions();
+            UpdatePluginSidebarButtonStates();
+            ActivityBar.UpdateActiveStates();
+        }
+
+        if (Dispatcher.CheckAccess())
+            Refresh();
+        else
+            Dispatcher.BeginInvoke((Action)Refresh);
+    }
+
+    /// <summary>
     /// Callback fired when a plugin sets or clears a toolbar button highlight.
     /// Updates the button's background to AccentBrush (highlighted) or Transparent (normal).
     /// </summary>
@@ -2015,11 +2035,14 @@ public partial class MainWindow : Window
     /// </summary>
     private static Canvas CreatePuzzlePieceIcon24()
     {
+        var strokeBrush = Application.Current.TryFindResource("InactiveIconBrush") as Brush
+                         ?? Brushes.Gray;
+
         var canvas = new Canvas { Width = 24, Height = 24 };
         var path = new System.Windows.Shapes.Path
         {
             Data = Geometry.Parse("M 5,4 L 11,4 L 11,7 L 14,7 L 14,13 L 17,13 L 17,19 L 11,19 L 11,16 L 8,16 L 8,19 L 2,19 L 2,13 L 5,13 L 5,10 L 2,10 L 2,4 Z"),
-            Stroke = (Brush)Application.Current.FindResource("InactiveIconBrush"),
+            Stroke = strokeBrush,
             StrokeThickness = 1.2,
             Fill = Brushes.Transparent,
             StrokeLineJoin = PenLineJoin.Round

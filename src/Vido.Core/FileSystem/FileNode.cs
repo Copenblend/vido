@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 
@@ -60,10 +61,9 @@ public sealed class FileNode : INotifyPropertyChanged
     /// <summary>
     /// Video file extensions recognized by Vido.
     /// </summary>
-    public static readonly HashSet<string> VideoExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm"
-    };
+    public static readonly FrozenSet<string> VideoExtensions =
+        new[] { ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm" }
+            .ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Sentinel child used to show the expand arrow before real children are loaded.

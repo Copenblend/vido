@@ -101,22 +101,24 @@ public sealed class PluginInstaller : IPluginInstaller
             var manifestPath = Path.Combine(targetDir, "plugin.json");
             if (!File.Exists(manifestPath))
             {
-                // The zip may contain a root folder (e.g. "com.vido.osr2-plus/").
-                // When updating, remnant files from the old install may still
-                // exist alongside the extracted subfolder, so we can't rely on
-                // there being exactly one subdirectory. Search all subdirs for
-                // the one that contains plugin.json.
-                var subDirs = Directory.GetDirectories(targetDir);
-                foreach (var subDir in subDirs)
+                // The zip may contain one or more wrapper folders.
+                // Search recursively for plugin.json and move that directory's
+                // contents to the target root when needed.
+                var nestedManifestPath = Directory
+                    .EnumerateFiles(targetDir, "plugin.json", SearchOption.AllDirectories)
+                    .OrderBy(path => path.Length)
+                    .FirstOrDefault();
+
+                if (nestedManifestPath is not null)
                 {
-                    var innerManifest = Path.Combine(subDir, "plugin.json");
-                    if (File.Exists(innerManifest))
+                    var manifestDirectory = Path.GetDirectoryName(nestedManifestPath);
+                    if (!string.IsNullOrWhiteSpace(manifestDirectory)
+                        && !string.Equals(manifestDirectory, targetDir, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Move contents up one level
-                        MoveContentsUp(subDir, targetDir);
-                        manifestPath = Path.Combine(targetDir, "plugin.json");
-                        break;
+                        MoveContentsUp(manifestDirectory, targetDir);
                     }
+
+                    manifestPath = Path.Combine(targetDir, "plugin.json");
                 }
             }
 

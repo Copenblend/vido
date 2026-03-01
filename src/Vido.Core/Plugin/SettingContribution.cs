@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Text.Json.Serialization;
 
 namespace Vido.Core.Plugin;
@@ -64,8 +65,7 @@ public sealed class SettingContribution
     /// <summary>
     /// Gets the set of recognized setting type identifiers that the manifest parser accepts.
     /// </summary>
-    public static readonly HashSet<string> ValidTypes = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "boolean", "string", "number", "enum", "folderPath"
-    };
+    public static readonly FrozenSet<string> ValidTypes =
+        new[] { "boolean", "string", "number", "enum", "folderPath" }
+            .ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 }
