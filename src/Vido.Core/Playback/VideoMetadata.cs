@@ -3,8 +3,17 @@ namespace Vido.Core.Playback;
 /// <summary>
 /// Contains metadata extracted from a loaded video file.
 /// </summary>
-public sealed class VideoMetadata
+public sealed record VideoMetadata
 {
+    /// <summary>
+    /// Cached empty metadata instance used for default fallback scenarios.
+    /// </summary>
+    public static readonly VideoMetadata Empty = new()
+    {
+        FilePath = string.Empty,
+        FileName = string.Empty
+    };
+
     /// <summary>
     /// Full path to the video file.
     /// </summary>
@@ -70,8 +79,11 @@ public sealed class VideoMetadata
     /// </summary>
     public int AudioSampleRate { get; init; }
 
+    private string? _resolution;
+
     /// <summary>
     /// Returns a human-readable resolution string (e.g., "1920x1080").
+    /// The value is cached after first access.
     /// </summary>
-    public string Resolution => $"{Width}x{Height}";
+    public string Resolution => _resolution ??= $"{Width}x{Height}";
 }
