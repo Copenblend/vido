@@ -69,6 +69,7 @@ public sealed class KeyBinding : IEquatable<KeyBinding>
     /// Comparison is case-insensitive on the key name.
     /// </summary>
     /// <param name="other">The other key binding to compare against.</param>
+    /// <returns><c>true</c> when the bindings are equivalent; otherwise <c>false</c>.</returns>
     public bool Equals(KeyBinding? other)
     {
         if (other is null) return false;
@@ -83,17 +84,20 @@ public sealed class KeyBinding : IEquatable<KeyBinding>
     /// the same key and modifiers as this instance.
     /// </summary>
     /// <param name="obj">The object to compare with this binding.</param>
+    /// <returns><c>true</c> when <paramref name="obj"/> is an equivalent <see cref="KeyBinding"/>; otherwise <c>false</c>.</returns>
     public override bool Equals(object? obj) => Equals(obj as KeyBinding);
 
     /// <summary>
     /// Returns a hash code derived from the upper-cased key name and modifier flags,
     /// consistent with <see cref="Equals(KeyBinding?)"/>.
     /// </summary>
+    /// <returns>A hash code for this key binding.</returns>
     public override int GetHashCode()
         => HashCode.Combine(Key.ToUpperInvariant(), Ctrl, Shift, Alt);
 
     /// <summary>
     /// Returns the human-readable display string (e.g. "Ctrl+Shift+O").
     /// </summary>
+    /// <returns>The display string for this key binding.</returns>
     public override string ToString() => DisplayString;
 }

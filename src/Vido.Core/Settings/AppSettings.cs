@@ -162,6 +162,9 @@ public sealed class AppSettings
     /// Returns <c>null</c> if the input is not recognised.
     /// </summary>
     /// <param name="input">A shorthand code (e.g. "NSFW") or a direct URL to resolve.</param>
+    /// <returns>
+    /// The resolved registry URL when recognized; otherwise <c>null</c>.
+    /// </returns>
     public static string? ResolveRepositoryCode(string input)
     {
         if (string.Equals(input, "NSFW", StringComparison.OrdinalIgnoreCase))
