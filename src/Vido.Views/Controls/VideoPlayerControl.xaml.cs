@@ -19,6 +19,8 @@ public partial class VideoPlayerControl : UserControl
     private WriteableBitmap? _bitmap;
     private VideoPlayerViewModel? _viewModel;
     private DispatcherTimer? _loadingSpinnerTimer;
+    private FrameData? _pendingFrame;
+    private int _renderQueued;
 
     /// <summary>
     /// Cached gradient brush for fullscreen overlay (transparent→black).
@@ -123,6 +125,8 @@ public partial class VideoPlayerControl : UserControl
                 // Clear the bitmap when media is unloaded (Stop)
                 if (!hasMedia)
                 {
+                    var pending = Interlocked.Exchange(ref _pendingFrame, null);
+                    pending?.Dispose();
                     _bitmap = null;
                     VideoSurface.Source = null;
                 }
@@ -188,11 +192,27 @@ public partial class VideoPlayerControl : UserControl
     /// </summary>
     private void OnFrameReady(FrameData frame)
     {
-        Dispatcher.BeginInvoke(() =>
+        var stale = Interlocked.Exchange(ref _pendingFrame, frame);
+        stale?.Dispose();
+
+        if (Interlocked.Exchange(ref _renderQueued, 1) == 0)
+            Dispatcher.BeginInvoke(RenderPendingFrame, DispatcherPriority.Render);
+    }
+
+    /// <summary>
+    /// Renders the most recent decoded frame and drops stale pending frames.
+    /// Ensures at most one render callback is queued at a time.
+    /// </summary>
+    private void RenderPendingFrame()
+    {
+        try
         {
+            var frame = Interlocked.Exchange(ref _pendingFrame, null);
+            if (frame is null)
+                return;
+
             try
             {
-                // Recreate bitmap if dimensions changed
                 if (_bitmap is null || _bitmap.PixelWidth != frame.Width || _bitmap.PixelHeight != frame.Height)
                 {
                     _bitmap = new WriteableBitmap(frame.Width, frame.Height, 96, 96, PixelFormats.Bgra32, null);
@@ -215,10 +235,15 @@ public partial class VideoPlayerControl : UserControl
             }
             finally
             {
-                // Return the pooled pixel buffer immediately after rendering
                 frame.Dispose();
             }
-        });
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _renderQueued, 0);
+            if (Volatile.Read(ref _pendingFrame) is not null && Interlocked.Exchange(ref _renderQueued, 1) == 0)
+                Dispatcher.BeginInvoke(RenderPendingFrame, DispatcherPriority.Render);
+        }
     }
 
     // ── Seek slider events ──

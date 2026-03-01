@@ -285,6 +285,45 @@ public class VideoPlayerViewModelTests : IDisposable
     }
 
     /// <summary>
+    /// Verifies that position text only changes when the displayed second changes.
+    /// </summary>
+    [Fact]
+    public void PositionChanged_SameSecond_DoesNotRaisePositionTextChangedTwice()
+    {
+        var changedCount = 0;
+        _sut.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(VideoPlayerViewModel.PositionText))
+                changedCount++;
+        };
+
+        _sut.GetType().GetProperty("Duration")!.SetValue(_sut, TimeSpan.FromMinutes(5));
+
+        _engine.PositionChanged += Raise.Event<Action<TimeSpan>>(TimeSpan.FromSeconds(10.10));
+        _engine.PositionChanged += Raise.Event<Action<TimeSpan>>(TimeSpan.FromSeconds(10.90));
+
+        Assert.Equal(1, changedCount);
+    }
+
+    /// <summary>
+    /// Verifies that stop resets cached formatting state so subsequent updates render correctly.
+    /// </summary>
+    [Fact]
+    public void Stop_ResetsFormattedSecondCache()
+    {
+        _sut.GetType().GetProperty("HasMedia")!.SetValue(_sut, true);
+
+        _engine.PositionChanged += Raise.Event<Action<TimeSpan>>(TimeSpan.FromSeconds(10.10));
+        Assert.Equal("00:10", _sut.PositionText);
+
+        _sut.Stop();
+        Assert.Equal("00:00", _sut.PositionText);
+
+        _engine.PositionChanged += Raise.Event<Action<TimeSpan>>(TimeSpan.FromSeconds(10.50));
+        Assert.Equal("00:10", _sut.PositionText);
+    }
+
+    /// <summary>
     /// Verifies that Frame Ready raises view model event.
     /// </summary>
     [Fact]

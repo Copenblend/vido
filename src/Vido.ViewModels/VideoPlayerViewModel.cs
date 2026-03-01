@@ -27,6 +27,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     private bool _disposed;
     private bool _isSeeking;
     private double _lastSavedPositionSeconds;
+    private int _lastFormattedSecond = -1;
 
     /// <summary>
     /// Seek slider range maximum (0 – SliderMaximum).
@@ -250,12 +251,21 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     {
         if (_isSeeking) return;
 
+        var currentSecond = (int)position.TotalSeconds;
+        if (currentSecond != _lastFormattedSecond)
+        {
+            _lastFormattedSecond = currentSecond;
+            PositionText = FormatTime(position);
+        }
+
         Position = position;
-        PositionText = FormatTime(position);
-        _eventBus.Publish(new PlaybackPositionChangedEvent { Position = position, Duration = Duration });
 
         if (Duration.TotalSeconds > 0)
+        {
             SeekPosition = position.TotalSeconds / Duration.TotalSeconds * SeekSliderMaximum;
+        }
+
+        _eventBus.Publish(new PlaybackPositionChangedEvent { Position = position, Duration = Duration });
 
         // Save position to state every N seconds of playback change
         if (Math.Abs(position.TotalSeconds - _lastSavedPositionSeconds) >= PositionSaveIntervalSeconds)
@@ -320,6 +330,8 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
 
     private async Task LoadMediaCoreAsync(string filePath)
     {
+        _lastFormattedSecond = -1;
+
         // Only show the loading indicator if the load takes longer than the
         // threshold. Fast local loads complete before the delay elapses,
         // avoiding any UI overhead from showing and immediately hiding the
@@ -415,6 +427,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         await LoadMediaCoreAsync(filePath);
         Position = TimeSpan.Zero;
         PositionText = "00:00";
+        _lastFormattedSecond = -1;
         SeekPosition = 0;
 
         // Sync shuffle index to the file we just loaded
@@ -464,6 +477,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
             _engine.Seek(target);
             Position = target;
             PositionText = FormatTime(target);
+            _lastFormattedSecond = (int)target.TotalSeconds;
             SeekPosition = target.TotalSeconds / Duration.TotalSeconds * SeekSliderMaximum;
             _lastSavedPositionSeconds = target.TotalSeconds;
         }
@@ -471,6 +485,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         {
             Position = TimeSpan.Zero;
             PositionText = "00:00";
+            _lastFormattedSecond = 0;
             SeekPosition = 0;
             // Seek to zero so SeekCompleted fires
             _engine.Seek(TimeSpan.Zero);
@@ -556,6 +571,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         Position = TimeSpan.Zero;
         Duration = TimeSpan.Zero;
         PositionText = "00:00";
+        _lastFormattedSecond = -1;
         DurationText = "00:00";
         SeekPosition = 0;
 
@@ -738,6 +754,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
             _engine.Seek(target);
             Position = target;
             PositionText = FormatTime(target);
+            _lastFormattedSecond = (int)target.TotalSeconds;
         }
     }
 
