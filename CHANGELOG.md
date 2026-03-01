@@ -32,6 +32,20 @@ All notable changes to the Vido project will be documented in this file.
 - Updated `FFmpegVideoEngine.WaitForPresentationTime` to hybrid wait mode: coarse `Thread.Sleep(1)` then sub-2ms `SpinWait` finish.
 - Preserved seek-generation and cancellation abort checks in both wait phases.
 
+### vido-119
+- Added seek drag throttling in `VideoPlayerControl.OnSeekSliderMouseMove` using a `Stopwatch` timestamp guard (~30Hz max apply-seek rate).
+- Ensured final seek precision on drag end by forcing `ApplySeek()` in `OnSeekSliderMouseUp` before `EndSeek()`.
+
+### vido-120
+- Refactored `LogService.Entries` to return a cached copy-on-write snapshot (`Volatile.Read`) instead of allocating `ToList().AsReadOnly()` per read.
+- Updated `LogService` write paths (`Log`, `Clear`) to rebuild and publish snapshots.
+- Added `LogService` tests for snapshot reference stability and mutation refresh behavior.
+
+### vido-121
+- Refactored `ContextMenuRegistry` to maintain per-target cached snapshots rebuilt on `Register` / `Unregister`.
+- Replaced per-read LINQ filtering/sorting allocations in `GetEntries` with allocation-free snapshot lookup.
+- Added `ContextMenuRegistry` tests for snapshot reference reuse and rebuild-on-mutation behavior.
+
 ### Process / Agent Governance
 - Added mandatory zero-warning rule for touched repositories (build + test warning-free) to all agent definitions.
 - Added mandatory ticket strike-through updates in solution documents after completion.
