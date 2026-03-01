@@ -35,17 +35,30 @@ public static class DropClassifier
     /// (folders, video files, and unsupported files — excluding invalid paths).
     /// </summary>
     /// <param name="paths">The array of dropped paths.</param>
-    /// <returns>A list of valid (classification, path) pairs.</returns>
-    public static List<(DropClassification Classification, string Path)> ClassifyAll(string[]? paths)
+    /// <returns>An array of valid (classification, path) pairs.</returns>
+    public static (DropClassification Classification, string Path)[] ClassifyAll(string[]? paths)
     {
-        var results = new List<(DropClassification, string)>();
-        if (paths is null) return results;
+        if (paths is null || paths.Length == 0)
+            return [];
 
-        foreach (var path in paths)
+        var validCount = 0;
+        for (var i = 0; i < paths.Length; i++)
         {
-            var classification = Classify(path);
+            var classification = Classify(paths[i]);
             if (classification != DropClassification.Invalid)
-                results.Add((classification, path));
+                validCount++;
+        }
+
+        if (validCount == 0)
+            return [];
+
+        var results = new (DropClassification, string)[validCount];
+        var index = 0;
+        for (var i = 0; i < paths.Length; i++)
+        {
+            var classification = Classify(paths[i]);
+            if (classification != DropClassification.Invalid)
+                results[index++] = (classification, paths[i]);
         }
 
         return results;
