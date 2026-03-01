@@ -25,6 +25,12 @@ public partial class VideoPlayerControl : UserControl
     private int _renderQueued;
 
     /// <summary>
+    /// Cached render callback delegate to avoid allocating a new method-group delegate
+    /// for each dispatcher enqueue on the frame-render hot path.
+    /// </summary>
+    private readonly Action _renderAction;
+
+    /// <summary>
     /// Cached gradient brush for fullscreen overlay (transparent→black).
     /// </summary>
     private static readonly LinearGradientBrush FullscreenOverlayGradient = CreateFullscreenGradient();
@@ -59,6 +65,7 @@ public partial class VideoPlayerControl : UserControl
     /// </summary>
     public VideoPlayerControl()
     {
+        _renderAction = RenderPendingFrame;
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
 
@@ -165,6 +172,9 @@ public partial class VideoPlayerControl : UserControl
         }
     }
 
+    /// <summary>
+    /// Starts the loading spinner storyboard if not already running.
+    /// </summary>
     private void StartLoadingSpinner()
     {
         if (_loadingSpinnerStoryboard is not null) return;
@@ -185,6 +195,9 @@ public partial class VideoPlayerControl : UserControl
         _loadingSpinnerStoryboard.Begin();
     }
 
+    /// <summary>
+    /// Stops the loading spinner storyboard and resets rotation angle.
+    /// </summary>
     private void StopLoadingSpinner()
     {
         _loadingSpinnerStoryboard?.Stop();
@@ -203,7 +216,7 @@ public partial class VideoPlayerControl : UserControl
         stale?.Dispose();
 
         if (Interlocked.Exchange(ref _renderQueued, 1) == 0)
-            Dispatcher.BeginInvoke(RenderPendingFrame, DispatcherPriority.Render);
+            Dispatcher.BeginInvoke(_renderAction, DispatcherPriority.Render);
     }
 
     /// <summary>
@@ -249,7 +262,7 @@ public partial class VideoPlayerControl : UserControl
         {
             Interlocked.Exchange(ref _renderQueued, 0);
             if (Volatile.Read(ref _pendingFrame) is not null && Interlocked.Exchange(ref _renderQueued, 1) == 0)
-                Dispatcher.BeginInvoke(RenderPendingFrame, DispatcherPriority.Render);
+                Dispatcher.BeginInvoke(_renderAction, DispatcherPriority.Render);
         }
     }
 

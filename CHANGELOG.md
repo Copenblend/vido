@@ -4,6 +4,11 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [0.13.0] - 2026-02-28
 
+### vido-132
+- Cached `VideoPlayerControl` render dispatch callback (`_renderAction`) and switched frame render enqueues to reuse the cached delegate, removing per-frame method-group delegate allocations.
+- Added XML `<summary>` documentation for spinner lifecycle methods in `VideoPlayerControl` and `FileExplorerPanel`.
+- Added `QueueSave_AfterDispose_NoOp` tests for both `SettingsService` and `StateService` to verify post-dispose debounce-queue guards.
+
 ### vido-113
 - Replaced `VideoLoadedEvent` local empty metadata sentinel with shared `VideoMetadata.Empty` fallback in `Vido.Core`.
 - Added test assertions verifying default/null-init metadata returns the shared singleton instance.
