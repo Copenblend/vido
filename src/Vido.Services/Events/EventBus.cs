@@ -16,7 +16,7 @@ public sealed class EventBus : IEventBus
     /// Returns an <see cref="IDisposable"/> that removes the subscription when disposed.
     /// </summary>
     /// <param name="handler">The callback to invoke when an event of type <typeparamref name="TEvent"/> is published.</param>
-    public IDisposable Subscribe<TEvent>(Action<TEvent> handler) where TEvent : class
+    public IDisposable Subscribe<TEvent>(Action<TEvent> handler)
     {
         ArgumentNullException.ThrowIfNull(handler);
 
@@ -41,9 +41,10 @@ public sealed class EventBus : IEventBus
     /// Dispatches the given event to all registered subscribers of type <typeparamref name="TEvent"/> on the calling thread.
     /// </summary>
     /// <param name="eventData">The event instance to deliver to all matching subscribers.</param>
-    public void Publish<TEvent>(TEvent eventData) where TEvent : class
+    public void Publish<TEvent>(TEvent eventData)
     {
-        ArgumentNullException.ThrowIfNull(eventData);
+        if (eventData is null)
+            throw new ArgumentNullException(nameof(eventData));
 
         if (!_handlers.TryGetValue(typeof(TEvent), out var handlers))
             return;
