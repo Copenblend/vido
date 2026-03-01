@@ -1123,6 +1123,9 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
 
     private void ReportMetrics()
     {
+        if (!_logService.IsEnabled(LogLevel.Debug))
+            return;
+
         var elapsed = _metricsTimer.Elapsed;
         if (elapsed.TotalSeconds < 1) return;
 

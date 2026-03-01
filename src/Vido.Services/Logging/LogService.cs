@@ -15,6 +15,13 @@ public sealed class LogService : ILogService
     private IReadOnlyList<LogEntry> _snapshot = Array.Empty<LogEntry>();
 
     /// <summary>
+    /// Returns whether the specified log level is currently enabled.
+    /// </summary>
+    /// <param name="level">The level to query.</param>
+    /// <returns>Always <c>true</c> for the in-memory log service.</returns>
+    public bool IsEnabled(LogLevel level) => true;
+
+    /// <summary>
     /// Returns a snapshot of all log entries recorded so far, safe to enumerate from any thread.
     /// </summary>
     public IReadOnlyList<LogEntry> Entries

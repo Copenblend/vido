@@ -385,6 +385,22 @@ public class FFmpegVideoEngineTests : IDisposable
     }
 
     /// <summary>
+    /// Verifies that ReportMetrics returns immediately when debug logging is disabled.
+    /// </summary>
+    [Fact]
+    public void ReportMetrics_DebugDisabled_DoesNotLog()
+    {
+        _logService.IsEnabled(LogLevel.Debug).Returns(false);
+
+        var reportMetrics = typeof(FFmpegVideoEngine).GetMethod("ReportMetrics", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(reportMetrics);
+
+        reportMetrics!.Invoke(_sut, null);
+
+        _logService.DidNotReceive().Debug(Arg.Any<string>(), Arg.Any<string?>());
+    }
+
+    /// <summary>
     /// Cleans up test resources after each test run.
     /// </summary>
     public void Dispose()

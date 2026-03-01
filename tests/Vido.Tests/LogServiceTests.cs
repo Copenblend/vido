@@ -12,6 +12,19 @@ public sealed class LogServiceTests
     private readonly ILogService _log = new LogService();
 
     /// <summary>
+    /// Verifies that IsEnabled reports true for all levels.
+    /// </summary>
+    [Theory]
+    [InlineData(LogLevel.Debug)]
+    [InlineData(LogLevel.Info)]
+    [InlineData(LogLevel.Warning)]
+    [InlineData(LogLevel.Error)]
+    public void IsEnabled_AllLevels_ReturnsTrue(LogLevel level)
+    {
+        Assert.True(_log.IsEnabled(level));
+    }
+
+    /// <summary>
     /// Verifies that Debug adds entry with debug level.
     /// </summary>
     [Fact]

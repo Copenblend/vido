@@ -174,4 +174,46 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal(2, svc.Current.PluginRegistryUrls.Count);
         Assert.Equal(AppSettings.OfficialRegistryUrl, svc.Current.PluginRegistryUrls[0]);
     }
+
+    /// <summary>
+    /// Verifies that multiple rapid QueueSave calls persist the latest values after debounce.
+    /// </summary>
+    [Fact]
+    public async Task QueueSave_MultipleCalls_PersistsLatestValues()
+    {
+        using var svc = CreateService();
+
+        svc.Current.Volume = 0.25;
+        svc.QueueSave();
+
+        svc.Current.Volume = 0.75;
+        svc.QueueSave();
+
+        await Task.Delay(900);
+
+        using var reloaded = CreateService();
+        await reloaded.LoadAsync();
+        Assert.Equal(0.75, reloaded.Current.Volume);
+    }
+
+    /// <summary>
+    /// Verifies that QueueSave reuses the same timer instance across calls.
+    /// </summary>
+    [Fact]
+    public void QueueSave_TimerReused()
+    {
+        using var svc = CreateService();
+
+        svc.QueueSave();
+        var field = typeof(SettingsService).GetField("_debounceTimer", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(field);
+
+        var firstTimer = field!.GetValue(svc);
+        Assert.NotNull(firstTimer);
+
+        svc.QueueSave();
+        var secondTimer = field.GetValue(svc);
+
+        Assert.Same(firstTimer, secondTimer);
+    }
 }
