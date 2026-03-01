@@ -142,6 +142,7 @@ public sealed class DropClassifierTests : IDisposable
     {
         var results = DropClassifier.ClassifyAll(null);
         Assert.Empty(results);
+        Assert.Same(Array.Empty<(DropClassification Classification, string Path)>(), results);
     }
 
     /// <summary>
@@ -152,6 +153,7 @@ public sealed class DropClassifierTests : IDisposable
     {
         var results = DropClassifier.ClassifyAll([]);
         Assert.Empty(results);
+        Assert.Same(Array.Empty<(DropClassification Classification, string Path)>(), results);
     }
 
     /// <summary>
@@ -167,7 +169,7 @@ public sealed class DropClassifierTests : IDisposable
 
         var results = DropClassifier.ClassifyAll(new[] { videoPath, _tempDir, textPath });
 
-        Assert.Equal(3, results.Count);
+        Assert.Equal(3, results.Length);
         Assert.Equal(DropClassification.VideoFile, results[0].Classification);
         Assert.Equal(videoPath, results[0].Path);
         Assert.Equal(DropClassification.Folder, results[1].Classification);
@@ -206,7 +208,7 @@ public sealed class DropClassifierTests : IDisposable
 
         var results = DropClassifier.ClassifyAll(new[] { sub1, sub2 });
 
-        Assert.Equal(2, results.Count);
+        Assert.Equal(2, results.Length);
         Assert.All(results, r => Assert.Equal(DropClassification.Folder, r.Classification));
     }
 
@@ -223,7 +225,7 @@ public sealed class DropClassifierTests : IDisposable
 
         var results = DropClassifier.ClassifyAll(new[] { video1, video2 });
 
-        Assert.Equal(2, results.Count);
+        Assert.Equal(2, results.Length);
         Assert.All(results, r => Assert.Equal(DropClassification.VideoFile, r.Classification));
     }
 }
