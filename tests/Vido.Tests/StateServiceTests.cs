@@ -170,4 +170,21 @@ public sealed class StateServiceTests : IDisposable
 
         Assert.Same(firstTimer, secondTimer);
     }
+
+    /// <summary>
+    /// Verifies that calling QueueSave after Dispose is a silent no-op.
+    /// </summary>
+    [Fact]
+    public void QueueSave_AfterDispose_NoOp()
+    {
+        var svc = CreateService();
+        svc.Dispose();
+
+        var ex = Record.Exception(() => svc.QueueSave());
+        Assert.Null(ex);
+
+        var field = typeof(StateService).GetField("_debounceTimer", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(field);
+        Assert.Null(field!.GetValue(svc));
+    }
 }

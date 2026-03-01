@@ -118,6 +118,9 @@ public partial class FileExplorerPanel : UserControl
             StopSpinner();
     }
 
+    /// <summary>
+    /// Starts the loading spinner storyboard if not already running.
+    /// </summary>
     private void StartSpinner()
     {
         if (_spinnerStoryboard is not null) return;
@@ -138,6 +141,9 @@ public partial class FileExplorerPanel : UserControl
         _spinnerStoryboard.Begin();
     }
 
+    /// <summary>
+    /// Stops the loading spinner storyboard and resets rotation angle.
+    /// </summary>
     private void StopSpinner()
     {
         _spinnerStoryboard?.Stop();
