@@ -20,6 +20,12 @@ namespace Vido.Views.Panels;
 public partial class FileExplorerPanel : UserControl
 {
     /// <summary>
+    /// Caches plugin-provided file icon images by absolute icon path.
+    /// Frozen bitmaps are immutable and safe to reuse across tree items.
+    /// </summary>
+    private static readonly Dictionary<string, BitmapImage> s_iconCache = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
     /// Raised when the user clicks "Open Folder" (either the button or via a menu).
     /// The subscriber should show the folder dialog and call <see cref="FileExplorerViewModel.OpenFolderAsync"/>.
     /// </summary>
@@ -206,12 +212,16 @@ public partial class FileExplorerPanel : UserControl
         {
             try
             {
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.UriSource = new Uri(iconPath, UriKind.Absolute);
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-                bitmap.Freeze();
+                if (!s_iconCache.TryGetValue(iconPath, out var bitmap))
+                {
+                    bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.UriSource = new Uri(iconPath, UriKind.Absolute);
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+                    s_iconCache[iconPath] = bitmap;
+                }
 
                 customIcon.Source = bitmap;
                 customIcon.Visibility = Visibility.Visible;

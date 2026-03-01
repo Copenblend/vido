@@ -7,6 +7,13 @@ namespace Vido.Core.Logging;
 public interface ILogService
 {
     /// <summary>
+    /// Returns whether the specified log level is currently enabled.
+    /// </summary>
+    /// <param name="level">The level to query.</param>
+    /// <returns><c>true</c> when messages at <paramref name="level"/> should be emitted; otherwise, <c>false</c>.</returns>
+    bool IsEnabled(LogLevel level) => true;
+
+    /// <summary>
     /// All log entries accumulated during this session.
     /// </summary>
     IReadOnlyList<LogEntry> Entries { get; }

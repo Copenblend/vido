@@ -21,6 +21,12 @@ public class KeyboardShortcutService : IKeyboardShortcutService
     /// Reverse lookup: commandId → KeyBinding.
     /// </summary>
     private readonly Dictionary<string, KeyBinding> _commandToBinding = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Cached snapshot of all registered command identifiers.
+    /// Rebuilt only on registration changes to keep <see cref="GetAllCommandIds"/> allocation-free.
+    /// </summary>
+    private IReadOnlyList<string> _commandIdSnapshot = Array.Empty<string>();
     
     /// <summary>
     /// Creates a keyboard shortcut service that logs binding conflicts through the provided log service.
@@ -68,6 +74,7 @@ public class KeyboardShortcutService : IKeyboardShortcutService
 
         _bindings[binding] = (commandId, handler);
         _commandToBinding[commandId] = binding;
+        RebuildCommandIdSnapshot();
 
         return !isConflict;
     }
@@ -84,6 +91,7 @@ public class KeyboardShortcutService : IKeyboardShortcutService
 
         _bindings.Remove(binding);
         _commandToBinding.Remove(commandId);
+        RebuildCommandIdSnapshot();
         return true;
     }
 
@@ -115,7 +123,15 @@ public class KeyboardShortcutService : IKeyboardShortcutService
     /// </summary>
     public IReadOnlyList<string> GetAllCommandIds()
     {
-        return _commandToBinding.Keys.ToList().AsReadOnly();
+        return _commandIdSnapshot;
+    }
+
+    /// <summary>
+    /// Rebuilds the cached command-id snapshot after a register/unregister mutation.
+    /// </summary>
+    private void RebuildCommandIdSnapshot()
+    {
+        _commandIdSnapshot = _commandToBinding.Keys.ToList().AsReadOnly();
     }
 
     /// <summary>

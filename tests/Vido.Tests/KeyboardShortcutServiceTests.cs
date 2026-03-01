@@ -313,6 +313,20 @@ public class KeyboardShortcutServiceTests
         Assert.Equal("cmd.b", ids[0]);
     }
 
+    /// <summary>
+    /// Verifies that GetAllCommandIds returns the same cached snapshot instance until bindings change.
+    /// </summary>
+    [Fact]
+    public void GetAllCommandIds_ReturnsCachedSnapshot()
+    {
+        _sut.Register(new KeyBinding("Space"), "cmd.a", () => { });
+
+        var first = _sut.GetAllCommandIds();
+        var second = _sut.GetAllCommandIds();
+
+        Assert.Same(first, second);
+    }
+
     // ── Case insensitivity ──
 
     /// <summary>

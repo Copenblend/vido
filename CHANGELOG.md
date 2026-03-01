@@ -69,6 +69,29 @@ All notable changes to the Vido project will be documented in this file.
 - Replaced clear-and-add loops in filter/sort paths with single collection replacement assignments.
 - Added tests verifying collection reference replacement behavior for output log filtering, explorer root sorting, and plugin manager filtering.
 
+### vido-127
+- Added cached command-id snapshot storage in `KeyboardShortcutService` and rebuilt it only on register/unregister mutations.
+- Updated `GetAllCommandIds()` to return cached snapshots instead of allocating `ToList().AsReadOnly()` per call.
+- Added tests verifying cached snapshot reference reuse.
+
+### vido-128
+- Replaced `Task.Run` + `Task.Delay` debounce pattern in `SettingsService` and `StateService` with reusable one-shot `System.Threading.Timer` instances.
+- Updated queue-save flows to reuse existing timers, coalescing rapid calls without allocating per-call tasks.
+- Added tests verifying debounce persistence of latest values and timer instance reuse for both services.
+
+### vido-129
+- Added static icon bitmap cache in `FileExplorerPanel` keyed by icon path for plugin file icons.
+- Reused frozen `BitmapImage` instances across tree items to avoid repeated bitmap construction and decode work.
+
+### vido-130
+- Added `ILogService.IsEnabled(LogLevel)` contract support (default-enabled) and implemented it in `LogService`.
+- Updated `FFmpegVideoEngine.ReportMetrics` to return early when debug logging is disabled, avoiding metrics string interpolation work.
+- Added tests validating log-level enablement behavior and metrics guard logging suppression.
+
+### vido-131
+- Completed XML documentation updates for all newly added/modified public APIs introduced in tickets 127–130.
+- Added/updated XML docs on `ILogService.IsEnabled`, `LogService.IsEnabled`, and new caching/debounce members touched in this ticket batch.
+
 ### Process / Agent Governance
 - Added mandatory zero-warning rule for touched repositories (build + test warning-free) to all agent definitions.
 - Added mandatory ticket strike-through updates in solution documents after completion.

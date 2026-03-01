@@ -23,7 +23,8 @@ public sealed class SettingsService : ISettingsService, IDisposable
     };
 
     private readonly SemaphoreSlim _saveLock = new(1, 1);
-    private int _debounceVersion;
+    private Timer? _debounceTimer;
+    private bool _disposed;
     private const int DebounceMs = 500;
 
     /// <summary>
@@ -98,19 +99,23 @@ public sealed class SettingsService : ISettingsService, IDisposable
     /// </summary>
     public void QueueSave()
     {
-        // Increment the version counter. Any in-flight debounce with an older
-        // version will see the mismatch and skip the save. This avoids
-        // CancellationTokenSource + Task.Delay which produce first-chance
-        // TaskCanceledException noise in debugger output.
-        var version = Interlocked.Increment(ref _debounceVersion);
+        if (_disposed)
+            return;
 
-        _ = Task.Run(async () =>
+        if (_debounceTimer is null)
         {
-            await Task.Delay(DebounceMs);
-            // Only save if no newer QueueSave was called during the delay
-            if (Interlocked.CompareExchange(ref _debounceVersion, 0, 0) == version)
-                await SaveAsync();
-        });
+            _debounceTimer = new Timer(static state =>
+            {
+                var service = (SettingsService)state!;
+                if (service._disposed)
+                    return;
+
+                _ = service.SaveAsync();
+            }, this, DebounceMs, Timeout.Infinite);
+            return;
+        }
+
+        _debounceTimer.Change(DebounceMs, Timeout.Infinite);
     }
 
     /// <summary>
@@ -119,6 +124,9 @@ public sealed class SettingsService : ISettingsService, IDisposable
     /// </summary>
     public async Task SaveAsync()
     {
+        if (_disposed)
+            return;
+
         await _saveLock.WaitAsync();
         try
         {
@@ -133,12 +141,17 @@ public sealed class SettingsService : ISettingsService, IDisposable
     }
     
     /// <summary>
-    /// Cancels any pending debounced save and releases the internal semaphore.
+    /// Cancels pending debounced saves and releases internal synchronization resources.
     /// </summary>
     public void Dispose()
     {
-        // Bump version to suppress any in-flight debounce
-        Interlocked.Increment(ref _debounceVersion);
+        if (_disposed)
+            return;
+
+        _disposed = true;
+        _debounceTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+        _debounceTimer?.Dispose();
+        _debounceTimer = null;
         _saveLock.Dispose();
     }
 }
