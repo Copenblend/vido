@@ -4,6 +4,39 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [0.13.0] - 2026-02-28
 
+### vido-113
+- Replaced `VideoLoadedEvent` local empty metadata sentinel with shared `VideoMetadata.Empty` fallback in `Vido.Core`.
+- Added test assertions verifying default/null-init metadata returns the shared singleton instance.
+
+### vido-114
+- Refactored `EventBus` to copy-on-write immutable delegate arrays (`ConcurrentDictionary<Type, Delegate[]>`).
+- Removed publish-path `ToArray()` snapshot allocation and publish lock; publish now iterates immutable snapshots.
+- Added EventBus tests for duplicate-handler unsubscribe semantics and publish-path allocation checks.
+
+### vido-115
+- Optimized `VideoPlayerViewModel.OnEnginePositionChanged` to update `PositionText` only when whole-second display changes.
+- Added second-cache reset/sync points in load, seek, restore, and stop flows.
+- Added tests validating same-second text update suppression and cache reset behavior on stop.
+
+### vido-116
+- Reworked `VideoPlayerControl` frame rendering to atomic latest-frame swap (`Interlocked.Exchange`) with stale-frame disposal.
+- Added single queued render-pass flow to prevent dispatcher frame backlog under UI pressure.
+- Added pending-frame disposal on media unload to avoid pooled-buffer leaks.
+
+### vido-117
+- `FrameConverter.Convert` now reuses cached `byte*[]`/`int[]` source and destination arrays instead of allocating per frame.
+- `AudioRenderer.SubmitSamples(float[])` now uses a persistent reusable byte buffer, removing per-call pool rent/return overhead.
+- Added tests verifying persistent float-submit buffer reuse and growth behavior.
+
+### vido-118
+- Updated `FFmpegVideoEngine.WaitForPresentationTime` to hybrid wait mode: coarse `Thread.Sleep(1)` then sub-2ms `SpinWait` finish.
+- Preserved seek-generation and cancellation abort checks in both wait phases.
+
+### Process / Agent Governance
+- Added mandatory zero-warning rule for touched repositories (build + test warning-free) to all agent definitions.
+- Added mandatory ticket strike-through updates in solution documents after completion.
+- Added mandatory `CHANGELOG.md` update requirement for each touched repository per ticket.
+
 ### Breaking Changes
 - Converted event contracts in `Vido.Core.Events` from `sealed class` to `readonly record struct`:
   - `PlaybackPositionChangedEvent`

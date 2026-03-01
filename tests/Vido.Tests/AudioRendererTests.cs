@@ -194,6 +194,50 @@ public class AudioRendererTests : IDisposable
     }
 
     /// <summary>
+    /// Verifies that float submit reuses the same backing byte buffer for equal or smaller payloads.
+    /// </summary>
+    [Fact]
+    public void SubmitSamples_FloatOverload_ReusesPersistentBuffer_ForSmallerPayload()
+    {
+        _sut.Initialize(48000, 2);
+
+        var initial = new float[256];
+        _sut.SubmitSamples(initial, 0, initial.Length);
+        var firstBuffer = GetFloatSubmitBuffer();
+
+        var smaller = new float[128];
+        _sut.SubmitSamples(smaller, 0, smaller.Length);
+        var secondBuffer = GetFloatSubmitBuffer();
+
+        Assert.Same(firstBuffer, secondBuffer);
+    }
+
+    /// <summary>
+    /// Verifies that float submit grows the backing byte buffer when payload size increases.
+    /// </summary>
+    [Fact]
+    public void SubmitSamples_FloatOverload_GrowsPersistentBuffer_ForLargerPayload()
+    {
+        _sut.Initialize(48000, 2);
+
+        var initial = new float[64];
+        _sut.SubmitSamples(initial, 0, initial.Length);
+        var firstBuffer = GetFloatSubmitBuffer();
+
+        var larger = new float[1024];
+        _sut.SubmitSamples(larger, 0, larger.Length);
+        var secondBuffer = GetFloatSubmitBuffer();
+
+        Assert.True(secondBuffer.Length > firstBuffer.Length);
+    }
+
+    private byte[] GetFloatSubmitBuffer()
+    {
+        var field = typeof(AudioRenderer).GetField("_floatSubmitBuffer", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        return Assert.IsType<byte[]>(field.GetValue(_sut));
+    }
+
+    /// <summary>
     /// Cleans up test resources after each test run.
     /// </summary>
     public void Dispose()
