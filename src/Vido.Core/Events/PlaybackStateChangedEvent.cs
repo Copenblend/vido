@@ -5,10 +5,10 @@ namespace Vido.Core.Events;
 /// <summary>
 /// Published when the playback state changes (play, pause, stop).
 /// </summary>
-public sealed class PlaybackStateChangedEvent
+public readonly record struct PlaybackStateChangedEvent
 {
     /// <summary>
     /// The new playback state.
     /// </summary>
-    public required PlaybackState State { get; init; }
+    public PlaybackState State { get; init; }
 }
