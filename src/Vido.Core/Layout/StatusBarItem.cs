@@ -9,6 +9,13 @@ namespace Vido.Core.Layout;
 /// </summary>
 public class StatusBarItem : INotifyPropertyChanged
 {
+    private static readonly PropertyChangedEventArgs TextChangedArgs = new(nameof(Text));
+    private static readonly PropertyChangedEventArgs TooltipChangedArgs = new(nameof(Tooltip));
+    private static readonly PropertyChangedEventArgs IsVisibleChangedArgs = new(nameof(IsVisible));
+    private static readonly PropertyChangedEventArgs ContentViewChangedArgs = new(nameof(ContentView));
+    private static readonly PropertyChangedEventArgs HasContentViewChangedArgs = new(nameof(HasContentView));
+    private static readonly PropertyChangedEventArgs ShowSeparatorChangedArgs = new(nameof(ShowSeparator));
+
     /// <summary>
     /// Unique identifier for this status bar item.
     /// </summary>
@@ -37,7 +44,7 @@ public class StatusBarItem : INotifyPropertyChanged
         {
             if (_text == value) return;
             _text = value;
-            OnPropertyChanged(nameof(Text));
+            PropertyChanged?.Invoke(this, TextChangedArgs);
         }
     }
 
@@ -53,7 +60,7 @@ public class StatusBarItem : INotifyPropertyChanged
         {
             if (_tooltip == value) return;
             _tooltip = value;
-            OnPropertyChanged(nameof(Tooltip));
+            PropertyChanged?.Invoke(this, TooltipChangedArgs);
         }
     }
 
@@ -69,7 +76,7 @@ public class StatusBarItem : INotifyPropertyChanged
         {
             if (_isVisible == value) return;
             _isVisible = value;
-            OnPropertyChanged(nameof(IsVisible));
+            PropertyChanged?.Invoke(this, IsVisibleChangedArgs);
         }
     }
 
@@ -87,8 +94,8 @@ public class StatusBarItem : INotifyPropertyChanged
         {
             if (_contentView == value) return;
             _contentView = value;
-            OnPropertyChanged(nameof(ContentView));
-            OnPropertyChanged(nameof(HasContentView));
+            PropertyChanged?.Invoke(this, ContentViewChangedArgs);
+            PropertyChanged?.Invoke(this, HasContentViewChangedArgs);
         }
     }
 
@@ -110,7 +117,7 @@ public class StatusBarItem : INotifyPropertyChanged
         {
             if (_showSeparator == value) return;
             _showSeparator = value;
-            OnPropertyChanged(nameof(ShowSeparator));
+            PropertyChanged?.Invoke(this, ShowSeparatorChangedArgs);
         }
     }
     /// <summary>
@@ -130,9 +137,4 @@ public class StatusBarItem : INotifyPropertyChanged
     /// </summary>
 
     public event PropertyChangedEventHandler? PropertyChanged;
-
-    private void OnPropertyChanged(string propertyName)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-    }
 }

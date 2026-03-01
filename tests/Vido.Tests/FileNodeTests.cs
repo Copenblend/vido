@@ -175,4 +175,25 @@ public sealed class FileNodeTests
 
         Assert.Empty(raised);
     }
+
+    /// <summary>
+    /// Verifies that Is Hidden raises PropertyChanged with a cached event args instance.
+    /// </summary>
+    [Fact]
+    public void IsHidden_Changed_UsesCachedPropertyChangedEventArgs()
+    {
+        var node = new FileNode(@"C:\test.mp4", isDirectory: false);
+        var events = new List<PropertyChangedEventArgs>();
+        node.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(FileNode.IsHidden))
+                events.Add(e);
+        };
+
+        node.IsHidden = true;
+        node.IsHidden = false;
+
+        Assert.Equal(2, events.Count);
+        Assert.True(ReferenceEquals(events[0], events[1]));
+    }
 }

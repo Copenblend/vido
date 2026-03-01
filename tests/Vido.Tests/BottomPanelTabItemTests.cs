@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Vido.Core.Layout;
 using Xunit;
 
@@ -71,5 +72,26 @@ public class BottomPanelTabItemTests
         tab.IsActive = false;
 
         Assert.False(raised);
+    }
+
+    /// <summary>
+    /// Verifies that Is Active raises PropertyChanged with a cached event args instance.
+    /// </summary>
+    [Fact]
+    public void IsActive_Changed_UsesCachedPropertyChangedEventArgs()
+    {
+        var tab = new BottomPanelTabItem("test", "TEST");
+        var events = new List<PropertyChangedEventArgs>();
+        tab.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(BottomPanelTabItem.IsActive))
+                events.Add(e);
+        };
+
+        tab.IsActive = true;
+        tab.IsActive = false;
+
+        Assert.Equal(2, events.Count);
+        Assert.True(ReferenceEquals(events[0], events[1]));
     }
 }

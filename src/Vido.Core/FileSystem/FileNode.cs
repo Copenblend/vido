@@ -12,6 +12,8 @@ namespace Vido.Core.FileSystem;
 /// </summary>
 public sealed class FileNode : INotifyPropertyChanged
 {
+    private static readonly PropertyChangedEventArgs IsHiddenChangedArgs = new(nameof(IsHidden));
+
     private bool _isHidden;
 
     /// <summary>
@@ -45,7 +47,7 @@ public sealed class FileNode : INotifyPropertyChanged
         {
             if (_isHidden == value) return;
             _isHidden = value;
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsHidden)));
+            PropertyChanged?.Invoke(this, IsHiddenChangedArgs);
         }
     }
 
