@@ -44,13 +44,18 @@ public sealed class KeyBinding : IEquatable<KeyBinding>
         Shift = shift;
         Alt = alt;
 
-        // Pre-compute display string (immutable record)
-        var parts = new List<string>(4);
-        if (ctrl) parts.Add("Ctrl");
-        if (alt) parts.Add("Alt");
-        if (shift) parts.Add("Shift");
-        parts.Add(key);
-        _displayString = string.Join("+", parts);
+        _displayString = BuildDisplayString(key, ctrl, shift, alt);
+    }
+
+    private static string BuildDisplayString(string key, bool ctrl, bool shift, bool alt)
+    {
+        if (!ctrl && !shift && !alt)
+            return key;
+
+        return string.Create(
+            null,
+            stackalloc char[64],
+            $"{(ctrl ? "Ctrl+" : "")}{(alt ? "Alt+" : "")}{(shift ? "Shift+" : "")}{key}");
     }
 
     /// <summary>
