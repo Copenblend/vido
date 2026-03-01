@@ -61,6 +61,18 @@ public sealed class PlaybackPositionChangedEventTests
     }
 
     /// <summary>
+    /// Verifies hash codes are identical for equal value data.
+    /// </summary>
+    [Fact]
+    public void GetHashCode_SameValues_SameHashCode()
+    {
+        var a = new PlaybackPositionChangedEvent { Position = TimeSpan.FromSeconds(5), Duration = TimeSpan.FromSeconds(20) };
+        var b = new PlaybackPositionChangedEvent { Position = TimeSpan.FromSeconds(5), Duration = TimeSpan.FromSeconds(20) };
+
+        Assert.Equal(a.GetHashCode(), b.GetHashCode());
+    }
+
+    /// <summary>
     /// Verifies with-expression copy behavior.
     /// </summary>
     [Fact]
@@ -72,5 +84,23 @@ public sealed class PlaybackPositionChangedEventTests
         Assert.Equal(TimeSpan.FromSeconds(5), original.Position);
         Assert.Equal(TimeSpan.FromSeconds(7), copy.Position);
         Assert.Equal(original.Duration, copy.Duration);
+    }
+
+    /// <summary>
+    /// Verifies ToString output includes position and duration information.
+    /// </summary>
+    [Fact]
+    public void ToString_ContainsValues()
+    {
+        var evt = new PlaybackPositionChangedEvent
+        {
+            Position = TimeSpan.FromSeconds(30),
+            Duration = TimeSpan.FromMinutes(5)
+        };
+
+        var text = evt.ToString();
+
+        Assert.Contains(nameof(PlaybackPositionChangedEvent.Position), text);
+        Assert.Contains(nameof(PlaybackPositionChangedEvent.Duration), text);
     }
 }

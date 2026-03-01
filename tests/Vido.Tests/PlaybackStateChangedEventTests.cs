@@ -21,14 +21,18 @@ public sealed class PlaybackStateChangedEventTests
     }
 
     /// <summary>
-    /// Verifies init assignment.
+    /// Verifies init assignment for each supported enum state.
     /// </summary>
-    [Fact]
-    public void InitState_AssignedCorrectly()
+    [Theory]
+    [InlineData(PlaybackState.None)]
+    [InlineData(PlaybackState.Playing)]
+    [InlineData(PlaybackState.Paused)]
+    [InlineData(PlaybackState.Stopped)]
+    public void InitState_AssignedCorrectly(PlaybackState state)
     {
-        var evt = new PlaybackStateChangedEvent { State = PlaybackState.Playing };
+        var evt = new PlaybackStateChangedEvent { State = state };
 
-        Assert.Equal(PlaybackState.Playing, evt.State);
+        Assert.Equal(state, evt.State);
     }
 
     /// <summary>

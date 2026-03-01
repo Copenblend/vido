@@ -2,6 +2,51 @@
 
 All notable changes to the Vido project will be documented in this file.
 
+## [0.13.0] - 2026-02-28
+
+### Breaking Changes
+- Converted event contracts in `Vido.Core.Events` from `sealed class` to `readonly record struct`:
+  - `PlaybackPositionChangedEvent`
+  - `PlaybackStateChangedEvent`
+  - `PlayFileRequestedEvent`
+  - `VideoLoadedEvent`
+  - `VideoUnloadedEvent`
+- Changed `DropClassifier.ClassifyAll` return type from `List<(DropClassification, string)>` to `(DropClassification, string)[]`.
+- Plugins/extensions consuming these contracts must be rebuilt against `Vido.Core` 0.13.0.
+
+### Performance Improvements
+- Replaced per-access allocations in `PluginPaths.DefaultPluginDirectory` with cached static path.
+- Replaced mutable `HashSet<string>` statics with `FrozenSet<string>` in:
+  - `FileNode.VideoExtensions`
+  - `SettingContribution.ValidTypes`
+  - `AppSettings.OfficialRegistryUrls`
+- Cached `PropertyChangedEventArgs` instances for high-frequency INPC models:
+  - `StatusBarItem`
+  - `TabItemModel`
+  - `BottomPanelTabItem`
+  - `FileNode`
+- Optimized `TimeFormatter` (`Format`, `FormatPadded`) to use `TimeSpan.TryFormat` with stack buffers.
+- Optimized `KeyBinding` display string construction with `string.Create` (removed `List<string>` + `string.Join`).
+
+### Model/Contract Improvements
+- Converted `VideoMetadata` to `sealed record` and added safe defaults for struct event usage.
+- Converted `UpdateCheckResult` to `sealed record` for value semantics and `with` support.
+
+### Testing
+- Added comprehensive test coverage for all five event types.
+- Added/expanded tests for:
+  - `PluginPaths`
+  - `StatusBarItem`
+  - `TabItemModel`
+  - `BottomPanelTabItem`
+  - `FileNode`
+  - `TimeFormatter`
+  - `UpdateCheckResult`
+  - `DropClassifier`
+
+### Migration
+- Added migration guidance for plugin and consumer updates in `MIGRATION.md`.
+
 ## [0.10.0] - 2026-02-26
 
 ### vi-024
