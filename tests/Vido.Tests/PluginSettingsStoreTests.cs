@@ -84,6 +84,7 @@ public class PluginSettingsStoreTests : IDisposable
     {
         var store = CreateStore();
         store.Set("persistent", "value");
+        store.Flush();
 
         // Create a fresh store instance pointing to the same file
         var store2 = PluginSettingsStore.ForTesting(_settingsFile);
@@ -161,6 +162,7 @@ public class PluginSettingsStoreTests : IDisposable
         var store = PluginSettingsStore.ForTesting(nestedPath);
 
         store.Set("key", "value");
+        store.Flush();
 
         Assert.True(File.Exists(nestedPath));
     }
@@ -188,6 +190,7 @@ public class PluginSettingsStoreTests : IDisposable
         store.Set("a", 1);
         store.Set("b", "two");
         store.Set("c", 3.14);
+        store.Flush();
 
         var store2 = PluginSettingsStore.ForTesting(_settingsFile);
 
@@ -264,6 +267,7 @@ public class PluginSettingsStoreTests : IDisposable
         var store = CreateStore();
         store.Set("key", "value");
         store.Reset("key");
+        store.Flush();
 
         var store2 = PluginSettingsStore.ForTesting(_settingsFile);
         Assert.Equal("default", store2.Get("key", "default"));
@@ -315,8 +319,56 @@ public class PluginSettingsStoreTests : IDisposable
         var store = CreateStore();
         store.Set("key", "val");
         store.ResetAll();
+        store.Flush();
 
         var store2 = PluginSettingsStore.ForTesting(_settingsFile);
         Assert.Equal("default", store2.Get("key", "default"));
+    }
+
+    /// <summary>
+    /// Verifies that Multiple Set calls are coalesced into one debounced save.
+    /// </summary>
+    [Fact]
+    public async Task Set_MultipleTimes_CoalescesToSingleDebouncedSave()
+    {
+        var saveCount = 0;
+        var store = PluginSettingsStore.ForTesting(_settingsFile, debounceMs: 50, onSave: () => saveCount++);
+
+        for (int i = 0; i < 10; i++)
+            store.Set("key", i);
+
+        await Task.Delay(200);
+
+        Assert.Equal(1, saveCount);
+    }
+
+    /// <summary>
+    /// Verifies that Flush writes pending values immediately.
+    /// </summary>
+    [Fact]
+    public void Flush_WritesPendingValuesImmediately()
+    {
+        var store = CreateStore();
+        store.Set("flush-key", "flush-value");
+
+        store.Flush();
+
+        var store2 = PluginSettingsStore.ForTesting(_settingsFile);
+        Assert.Equal("flush-value", store2.Get("flush-key", string.Empty));
+    }
+
+    /// <summary>
+    /// Verifies that Dispose flushes pending changes.
+    /// </summary>
+    [Fact]
+    public void Dispose_FlushesPendingValues()
+    {
+        var store = CreateStore();
+        store.Set("dispose-key", "dispose-value");
+
+        store.Dispose();
+
+        var store2 = PluginSettingsStore.ForTesting(_settingsFile);
+        Assert.Equal("dispose-value", store2.Get("dispose-key", string.Empty));
     }
 }

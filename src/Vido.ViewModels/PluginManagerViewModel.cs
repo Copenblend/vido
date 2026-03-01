@@ -31,12 +31,14 @@ public partial class PluginManagerViewModel : ObservableObject
     /// <summary>
     /// Installed plugins filtered by search and registry.
     /// </summary>
-    public ObservableCollection<PluginItemViewModel> InstalledPlugins { get; } = [];
+    [ObservableProperty]
+    private ObservableCollection<PluginItemViewModel> _installedPlugins = [];
 
     /// <summary>
     /// Available plugins filtered by search and registry.
     /// </summary>
-    public ObservableCollection<PluginItemViewModel> AvailablePlugins { get; } = [];
+    [ObservableProperty]
+    private ObservableCollection<PluginItemViewModel> _availablePlugins = [];
 
     /// <summary>
     /// Registry source options for the dropdown.
@@ -738,8 +740,8 @@ public partial class PluginManagerViewModel : ObservableObject
     /// </summary>
     private void ApplyFilter()
     {
-        InstalledPlugins.Clear();
-        AvailablePlugins.Clear();
+        var installed = new List<PluginItemViewModel>();
+        var available = new List<PluginItemViewModel>();
 
         foreach (var item in _allPlugins)
         {
@@ -759,10 +761,13 @@ public partial class PluginManagerViewModel : ObservableObject
             }
 
             if (item.IsInstalled)
-                InstalledPlugins.Add(item);
+                installed.Add(item);
             else
-                AvailablePlugins.Add(item);
+                available.Add(item);
         }
+
+        InstalledPlugins = new ObservableCollection<PluginItemViewModel>(installed);
+        AvailablePlugins = new ObservableCollection<PluginItemViewModel>(available);
 
         InstalledCount = InstalledPlugins.Count;
         AvailableCount = AvailablePlugins.Count;

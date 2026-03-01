@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using Vido.Core.Playback;
@@ -19,7 +20,7 @@ public partial class VideoPlayerControl : UserControl
 {
     private WriteableBitmap? _bitmap;
     private VideoPlayerViewModel? _viewModel;
-    private DispatcherTimer? _loadingSpinnerTimer;
+    private Storyboard? _loadingSpinnerStoryboard;
     private FrameData? _pendingFrame;
     private int _renderQueued;
 
@@ -166,23 +167,28 @@ public partial class VideoPlayerControl : UserControl
 
     private void StartLoadingSpinner()
     {
-        if (_loadingSpinnerTimer is not null) return;
+        if (_loadingSpinnerStoryboard is not null) return;
 
-        _loadingSpinnerTimer = new DispatcherTimer(DispatcherPriority.Render)
+        var animation = new DoubleAnimation
         {
-            Interval = TimeSpan.FromMilliseconds(16)
+            From = 0,
+            To = 360,
+            Duration = TimeSpan.FromSeconds(1),
+            RepeatBehavior = RepeatBehavior.Forever
         };
-        _loadingSpinnerTimer.Tick += (_, _) =>
-        {
-            LoadingSpinnerRotation.Angle = (LoadingSpinnerRotation.Angle + 6) % 360;
-        };
-        _loadingSpinnerTimer.Start();
+
+        Storyboard.SetTarget(animation, LoadingSpinnerRotation);
+        Storyboard.SetTargetProperty(animation, new PropertyPath(RotateTransform.AngleProperty));
+
+        _loadingSpinnerStoryboard = new Storyboard();
+        _loadingSpinnerStoryboard.Children.Add(animation);
+        _loadingSpinnerStoryboard.Begin();
     }
 
     private void StopLoadingSpinner()
     {
-        _loadingSpinnerTimer?.Stop();
-        _loadingSpinnerTimer = null;
+        _loadingSpinnerStoryboard?.Stop();
+        _loadingSpinnerStoryboard = null;
         LoadingSpinnerRotation.Angle = 0;
     }
 

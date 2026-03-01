@@ -95,6 +95,12 @@ public partial class MainWindow : Window
     private bool _controlsVisible = true;
     private const int FullscreenHideDelayMs = 3000;
     private const int ControlsFadeDurationMs = 200;
+
+    /// <summary>
+    /// Lazily generated WAV data for the screenshot shutter sound.
+    /// Deterministic synthesis means this can be generated once and reused.
+    /// </summary>
+    private static readonly Lazy<byte[]> s_shutterWav = new(GenerateShutterWav);
     
     /// <summary>
     /// Creates the main application window, wiring up all services, view models, and UI subsystems
@@ -2834,87 +2840,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            const int sampleRate = 22050;
-            const int channels = 1;
-            const int bitsPerSample = 16;
-            const double totalSeconds = 0.12;
-            int totalSamples = (int)(sampleRate * totalSeconds);
-            int byteRate = sampleRate * channels * bitsPerSample / 8;
-            int blockAlign = channels * bitsPerSample / 8;
-            int dataSize = totalSamples * blockAlign;
-
-            using var ms = new MemoryStream();
-            using var bw = new BinaryWriter(ms);
-
-            // WAV header
-            bw.Write("RIFF"u8);
-            bw.Write(36 + dataSize);
-            bw.Write("WAVE"u8);
-            bw.Write("fmt "u8);
-            bw.Write(16);            // chunk size
-            bw.Write((short)1);      // PCM
-            bw.Write((short)channels);
-            bw.Write(sampleRate);
-            bw.Write(byteRate);
-            bw.Write((short)blockAlign);
-            bw.Write((short)bitsPerSample);
-            bw.Write("data"u8);
-            bw.Write(dataSize);
-
-            // Synthesize a mechanical shutter click:
-            // Phase 1 (0-40ms): sharp attack noise burst (mirror slap)
-            // Phase 2 (40-60ms): quiet gap
-            // Phase 3 (60-90ms): softer click (shutter curtain)
-            // Phase 4 (90-120ms): rapid decay
-            var rng = new Random(42); // deterministic seed for consistent sound
-            for (int i = 0; i < totalSamples; i++)
-            {
-                double t = (double)i / sampleRate;
-                double amplitude;
-
-                if (t < 0.005)
-                {
-                    // Sharp attack ramp
-                    amplitude = t / 0.005 * 0.9;
-                }
-                else if (t < 0.040)
-                {
-                    // First click body — exponential decay
-                    amplitude = 0.9 * Math.Exp(-(t - 0.005) * 60);
-                }
-                else if (t < 0.060)
-                {
-                    // Quiet gap between clicks
-                    amplitude = 0.02;
-                }
-                else if (t < 0.065)
-                {
-                    // Second click attack
-                    amplitude = (t - 0.060) / 0.005 * 0.5;
-                }
-                else if (t < 0.090)
-                {
-                    // Second click body
-                    amplitude = 0.5 * Math.Exp(-(t - 0.065) * 80);
-                }
-                else
-                {
-                    // Tail decay
-                    amplitude = 0.1 * Math.Exp(-(t - 0.090) * 100);
-                }
-
-                // Filtered noise: mix of broadband noise and a low thunk tone
-                double noise = (rng.NextDouble() * 2 - 1);
-                double thunk = Math.Sin(2 * Math.PI * 180 * t) * 0.4;
-                double sample = (noise * 0.6 + thunk) * amplitude;
-
-                // Clamp and write 16-bit PCM
-                short pcm = (short)Math.Clamp(sample * 16000, short.MinValue, short.MaxValue);
-                bw.Write(pcm);
-            }
-
-            bw.Flush();
-            ms.Position = 0;
+            using var ms = new MemoryStream(s_shutterWav.Value, writable: false);
             var player = new System.Media.SoundPlayer(ms);
             player.Play();
         }
@@ -2922,6 +2848,81 @@ public partial class MainWindow : Window
         {
             // Sound is non-critical — swallow any errors
         }
+    }
+
+    /// <summary>
+    /// Generates deterministic WAV data for the screenshot shutter sound.
+    /// Called once via <see cref="s_shutterWav"/>.
+    /// </summary>
+    private static byte[] GenerateShutterWav()
+    {
+        const int sampleRate = 22050;
+        const int channels = 1;
+        const int bitsPerSample = 16;
+        const double totalSeconds = 0.12;
+        int totalSamples = (int)(sampleRate * totalSeconds);
+        int byteRate = sampleRate * channels * bitsPerSample / 8;
+        int blockAlign = channels * bitsPerSample / 8;
+        int dataSize = totalSamples * blockAlign;
+
+        using var ms = new MemoryStream();
+        using var bw = new BinaryWriter(ms);
+
+        bw.Write("RIFF"u8);
+        bw.Write(36 + dataSize);
+        bw.Write("WAVE"u8);
+        bw.Write("fmt "u8);
+        bw.Write(16);
+        bw.Write((short)1);
+        bw.Write((short)channels);
+        bw.Write(sampleRate);
+        bw.Write(byteRate);
+        bw.Write((short)blockAlign);
+        bw.Write((short)bitsPerSample);
+        bw.Write("data"u8);
+        bw.Write(dataSize);
+
+        var rng = new Random(42);
+        for (int i = 0; i < totalSamples; i++)
+        {
+            double t = (double)i / sampleRate;
+            double amplitude;
+
+            if (t < 0.005)
+            {
+                amplitude = t / 0.005 * 0.9;
+            }
+            else if (t < 0.040)
+            {
+                amplitude = 0.9 * Math.Exp(-(t - 0.005) * 60);
+            }
+            else if (t < 0.060)
+            {
+                amplitude = 0.02;
+            }
+            else if (t < 0.065)
+            {
+                amplitude = (t - 0.060) / 0.005 * 0.5;
+            }
+            else if (t < 0.090)
+            {
+                amplitude = 0.5 * Math.Exp(-(t - 0.065) * 80);
+            }
+            else
+            {
+                amplitude = 0.1 * Math.Exp(-(t - 0.090) * 100);
+            }
+
+            double noise = (rng.NextDouble() * 2 - 1);
+            double thunk = Math.Sin(2 * Math.PI * 180 * t) * 0.4;
+            double sample = (noise * 0.6 + thunk) * amplitude;
+
+            short pcm = (short)Math.Clamp(sample * 16000, short.MinValue, short.MaxValue);
+            bw.Write(pcm);
+        }
+
+        bw.Flush();
+        return ms.ToArray();
     }
 
     private void ShowAboutDialog()

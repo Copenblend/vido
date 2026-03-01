@@ -164,6 +164,24 @@ public sealed class FileExplorerViewModelTests
     }
 
     /// <summary>
+    /// Verifies that Add Items triggers root node sort via collection reassignment.
+    /// </summary>
+    [Fact]
+    public void AddItems_AssignsNewRootNodesCollection()
+    {
+        var dir = CreateTempDir();
+        var filePath = Path.Combine(dir, "clip.mp4");
+        File.WriteAllText(filePath, "x");
+
+        var before = _sut.RootNodes;
+
+        _sut.AddItems([filePath]);
+
+        Assert.NotSame(before, _sut.RootNodes);
+        CleanupDir(dir);
+    }
+
+    /// <summary>
     /// Verifies that Expand Node delegates to file system service.
     /// </summary>
     [Fact]

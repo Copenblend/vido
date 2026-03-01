@@ -354,6 +354,36 @@ public sealed class PluginManagerTests
     }
 
     /// <summary>
+    /// Verifies that Applying filter assigns new collection instances.
+    /// </summary>
+    [Fact]
+    public async Task ApplyFilter_AssignsNewCollections()
+    {
+        var (host, installer, settings, log) = CreateMocks();
+        var registry = new PluginRegistry
+        {
+            Name = "My Registry",
+            Plugins = [
+                MakeEntry(id: "com.test.alpha", displayName: "Alpha"),
+                MakeEntry(id: "com.test.beta", displayName: "Beta")
+            ]
+        };
+
+        installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
+
+        var vm = new PluginManagerViewModel(host, installer, settings, log);
+        await vm.LoadAsync();
+
+        var availableBefore = vm.AvailablePlugins;
+        var installedBefore = vm.InstalledPlugins;
+
+        vm.SearchQuery = "alpha";
+
+        Assert.NotSame(availableBefore, vm.AvailablePlugins);
+        Assert.NotSame(installedBefore, vm.InstalledPlugins);
+    }
+
+    /// <summary>
     /// Verifies that Load Async merges installed with registry.
     /// </summary>
     [Fact]

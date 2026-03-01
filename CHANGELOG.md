@@ -46,6 +46,29 @@ All notable changes to the Vido project will be documented in this file.
 - Replaced per-read LINQ filtering/sorting allocations in `GetEntries` with allocation-free snapshot lookup.
 - Added `ContextMenuRegistry` tests for snapshot reference reuse and rebuild-on-mutation behavior.
 
+### vido-122
+- Refactored `ContributionRegistry` to maintain copy-on-write cached snapshots for all `Get*` contribution query methods and file icons.
+- Rebuilt contribution snapshots on registration/unregister mutations, removing per-query `ToList()` and dictionary-copy allocations.
+- Added snapshot-reference tests across sidebar, panel, status bar, toolbar, context menu, file handler, control bar, and file icon queries.
+
+### vido-123
+- Replaced loading spinner `DispatcherTimer` loops with `Storyboard` + `DoubleAnimation` in both `VideoPlayerControl` and `FileExplorerPanel`.
+- Moved spinner rotation animation work to WPF composition pipeline while preserving start/stop behavior and rotation reset semantics.
+
+### vido-124
+- Added cached deterministic shutter WAV payload (`Lazy<byte[]>`) in `MainWindow` and extracted synthesis into `GenerateShutterWav()`.
+- Updated screenshot sound playback to reuse cached bytes instead of regenerating PCM/WAV data on every screenshot.
+
+### vido-125
+- Reworked `PluginSettingsStore` to debounce writes with `System.Threading.Timer`, coalescing rapid `Set`/`Reset`/`ResetAll` updates.
+- Added `Flush()` and `Dispose()` to persist pending changes reliably at shutdown/deactivation boundaries.
+- Updated `PluginHost` deactivation/removal flows to flush/dispose plugin settings stores and added tests for debounce coalescing and flush/dispose persistence.
+
+### vido-126
+- Updated `OutputLogViewModel`, `FileExplorerViewModel`, and `PluginManagerViewModel` to use collection reassignment for batched UI updates.
+- Replaced clear-and-add loops in filter/sort paths with single collection replacement assignments.
+- Added tests verifying collection reference replacement behavior for output log filtering, explorer root sorting, and plugin manager filtering.
+
 ### Process / Agent Governance
 - Added mandatory zero-warning rule for touched repositories (build + test warning-free) to all agent definitions.
 - Added mandatory ticket strike-through updates in solution documents after completion.

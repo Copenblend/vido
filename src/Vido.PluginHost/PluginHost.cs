@@ -582,6 +582,11 @@ public sealed class PluginHost : IPluginHost
             _contexts.Remove(info.Manifest.Id);
         }
 
+        if (_settingsStores.TryGetValue(info.Manifest.Id, out var settingsStore))
+        {
+            try { settingsStore.Flush(); } catch (Exception flushEx) { _logService.Debug($"Settings flush during deactivation threw: {flushEx.Message}", "PluginHost"); }
+        }
+
         info.State = PluginState.Deactivated;
         _logService.Info($"Plugin '{info.Manifest.Id}' deactivated", "PluginHost");
     }
@@ -627,7 +632,10 @@ public sealed class PluginHost : IPluginHost
             _contexts.Remove(pluginId);
         }
 
-        _settingsStores.Remove(pluginId);
+        if (_settingsStores.Remove(pluginId, out var settingsStore))
+        {
+            try { settingsStore.Dispose(); } catch (Exception disposeEx) { _logService.Debug($"Settings store dispose during removal threw: {disposeEx.Message}", "PluginHost"); }
+        }
 
         // Remove from disabled list so reinstallation starts fresh
         _settingsService.Current.DisabledPluginIds.RemoveAll(id =>

@@ -472,13 +472,9 @@ public partial class FileExplorerViewModel : ObservableObject
     /// </summary>
     private void SortRootNodes()
     {
-        var sorted = RootNodes
+        RootNodes = new ObservableCollection<FileNode>(RootNodes
             .OrderByDescending(n => n.IsDirectory)
             .ThenBy(n => n.Name, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        RootNodes.Clear();
-        foreach (var node in sorted)
-            RootNodes.Add(node);
+            .ToList());
     }
 }
