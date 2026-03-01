@@ -108,6 +108,51 @@ public sealed class ContextMenuRegistryTests
     }
 
     /// <summary>
+    /// Verifies that GetEntries returns the same snapshot reference when unchanged.
+    /// </summary>
+    [Fact]
+    public void GetEntries_ReturnsSameSnapshotReference_WhenUnchanged()
+    {
+        _sut.Register(MakeEntry("test", ContextMenuTarget.File));
+
+        var a = _sut.GetEntries(ContextMenuTarget.File);
+        var b = _sut.GetEntries(ContextMenuTarget.File);
+
+        Assert.Same(a, b);
+    }
+
+    /// <summary>
+    /// Verifies that Register rebuilds snapshots and changes returned reference.
+    /// </summary>
+    [Fact]
+    public void Register_RebuildsSnapshotReference()
+    {
+        _sut.Register(MakeEntry("a", ContextMenuTarget.File));
+        var before = _sut.GetEntries(ContextMenuTarget.File);
+
+        _sut.Register(MakeEntry("b", ContextMenuTarget.File));
+        var after = _sut.GetEntries(ContextMenuTarget.File);
+
+        Assert.NotSame(before, after);
+    }
+
+    /// <summary>
+    /// Verifies that Unregister rebuilds snapshots and changes returned reference.
+    /// </summary>
+    [Fact]
+    public void Unregister_RebuildsSnapshotReference()
+    {
+        _sut.Register(MakeEntry("a", ContextMenuTarget.File));
+        _sut.Register(MakeEntry("b", ContextMenuTarget.File));
+        var before = _sut.GetEntries(ContextMenuTarget.File);
+
+        _sut.Unregister("a");
+        var after = _sut.GetEntries(ContextMenuTarget.File);
+
+        Assert.NotSame(before, after);
+    }
+
+    /// <summary>
     /// Verifies that Register multiple entries same target.
     /// </summary>
     [Fact]

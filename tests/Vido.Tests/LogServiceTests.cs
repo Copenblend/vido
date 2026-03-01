@@ -79,6 +79,48 @@ public sealed class LogServiceTests
     }
 
     /// <summary>
+    /// Verifies that Entries returns the same snapshot reference until new writes occur.
+    /// </summary>
+    [Fact]
+    public void Entries_ReturnsSameSnapshotReference_WhenUnchanged()
+    {
+        _log.Info("first");
+
+        var a = _log.Entries;
+        var b = _log.Entries;
+
+        Assert.Same(a, b);
+    }
+
+    /// <summary>
+    /// Verifies that Entries snapshot reference changes after a new entry is logged.
+    /// </summary>
+    [Fact]
+    public void Entries_SnapshotReferenceChanges_AfterLog()
+    {
+        _log.Info("first");
+        var before = _log.Entries;
+
+        _log.Info("second");
+        var after = _log.Entries;
+
+        Assert.NotSame(before, after);
+    }
+
+    /// <summary>
+    /// Verifies that Entries snapshot is reset to shared empty after clear.
+    /// </summary>
+    [Fact]
+    public void Entries_Clear_ResetsToEmptySnapshot()
+    {
+        _log.Info("first");
+        _log.Clear();
+
+        var entries = _log.Entries;
+        Assert.Same(Array.Empty<LogEntry>(), entries);
+    }
+
+    /// <summary>
     /// Verifies that Clear removes all entries.
     /// </summary>
     [Fact]

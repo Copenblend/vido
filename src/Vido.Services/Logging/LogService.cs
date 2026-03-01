@@ -12,19 +12,14 @@ public sealed class LogService : ILogService
 {
     private readonly List<LogEntry> _entries = [];
     private readonly object _lock = new();
+    private IReadOnlyList<LogEntry> _snapshot = Array.Empty<LogEntry>();
 
     /// <summary>
     /// Returns a snapshot of all log entries recorded so far, safe to enumerate from any thread.
     /// </summary>
     public IReadOnlyList<LogEntry> Entries
     {
-        get
-        {
-            lock (_lock)
-            {
-                return _entries.ToList().AsReadOnly();
-            }
-        }
+        get => Volatile.Read(ref _snapshot);
     }
 
     /// <summary>
@@ -68,6 +63,7 @@ public sealed class LogService : ILogService
         lock (_lock)
         {
             _entries.Clear();
+            Volatile.Write(ref _snapshot, Array.Empty<LogEntry>());
         }
     }
 
@@ -78,6 +74,7 @@ public sealed class LogService : ILogService
         lock (_lock)
         {
             _entries.Add(entry);
+            Volatile.Write(ref _snapshot, _entries.ToList().AsReadOnly());
         }
 
         EntryAdded?.Invoke(entry);

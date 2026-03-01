@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -249,6 +250,8 @@ public partial class VideoPlayerControl : UserControl
     // ── Seek slider events ──
 
     private bool _isSeekDragging;
+    private long _lastSeekTimestamp;
+    private static readonly long SeekMinInterval = Stopwatch.Frequency / 30;
 
     /// <summary>
     /// On mouse-down: suppress engine position updates, seek to the clicked position,
@@ -279,7 +282,13 @@ public partial class VideoPlayerControl : UserControl
         var pos = e.GetPosition(SeekSlider);
         var ratio = Math.Clamp(pos.X / SeekSlider.ActualWidth, 0, 1);
         SeekSlider.Value = SeekSlider.Minimum + ratio * (SeekSlider.Maximum - SeekSlider.Minimum);
-        _viewModel.ApplySeek();
+
+        var now = Stopwatch.GetTimestamp();
+        if (now - _lastSeekTimestamp >= SeekMinInterval)
+        {
+            _lastSeekTimestamp = now;
+            _viewModel.ApplySeek();
+        }
     }
 
     /// <summary>
@@ -290,6 +299,7 @@ public partial class VideoPlayerControl : UserControl
         if (!_isSeekDragging) return;
         _isSeekDragging = false;
         SeekSlider.ReleaseMouseCapture();
+        _viewModel?.ApplySeek();
         _viewModel?.EndSeek();
     }
 
