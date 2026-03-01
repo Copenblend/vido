@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace Vido.Core.Settings;
 
 /// <summary>
@@ -149,11 +151,9 @@ public sealed class AppSettings
     /// <summary>
     /// All official Vido registry URLs. Plugins from these registries show a verified badge.
     /// </summary>
-    public static readonly HashSet<string> OfficialRegistryUrls = new(StringComparer.OrdinalIgnoreCase)
-    {
-        OfficialRegistryUrl,
-        NsfwRegistryUrl
-    };
+    public static readonly FrozenSet<string> OfficialRegistryUrls =
+        new[] { OfficialRegistryUrl, NsfwRegistryUrl }
+            .ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Resolves a repository code or URL to a registry URL.

@@ -75,8 +75,8 @@ public sealed class PluginInfrastructureTests
     [Fact]
     public void OfficialRegistryUrls_Contains_Both_Urls()
     {
-        Assert.Contains(AppSettings.OfficialRegistryUrl, AppSettings.OfficialRegistryUrls);
-        Assert.Contains(AppSettings.NsfwRegistryUrl, AppSettings.OfficialRegistryUrls);
+        Assert.Contains(AppSettings.OfficialRegistryUrl, (ISet<string>)AppSettings.OfficialRegistryUrls);
+        Assert.Contains(AppSettings.NsfwRegistryUrl, (ISet<string>)AppSettings.OfficialRegistryUrls);
         Assert.Equal(2, AppSettings.OfficialRegistryUrls.Count);
     }
 
@@ -86,8 +86,8 @@ public sealed class PluginInfrastructureTests
     [Fact]
     public void OfficialRegistryUrls_IsCaseInsensitive()
     {
-        Assert.Contains(AppSettings.OfficialRegistryUrl.ToUpperInvariant(), AppSettings.OfficialRegistryUrls);
-        Assert.Contains(AppSettings.NsfwRegistryUrl.ToUpperInvariant(), AppSettings.OfficialRegistryUrls);
+        Assert.Contains(AppSettings.OfficialRegistryUrl.ToUpperInvariant(), (ISet<string>)AppSettings.OfficialRegistryUrls);
+        Assert.Contains(AppSettings.NsfwRegistryUrl.ToUpperInvariant(), (ISet<string>)AppSettings.OfficialRegistryUrls);
     }
 
     /// <summary>
@@ -108,11 +108,11 @@ public sealed class PluginInfrastructureTests
     [Fact]
     public void ValidTypes_ContainsAllFiveTypes()
     {
-        Assert.Contains("boolean", SettingContribution.ValidTypes);
-        Assert.Contains("string", SettingContribution.ValidTypes);
-        Assert.Contains("number", SettingContribution.ValidTypes);
-        Assert.Contains("enum", SettingContribution.ValidTypes);
-        Assert.Contains("folderPath", SettingContribution.ValidTypes);
+        Assert.Contains("boolean", (ISet<string>)SettingContribution.ValidTypes);
+        Assert.Contains("string", (ISet<string>)SettingContribution.ValidTypes);
+        Assert.Contains("number", (ISet<string>)SettingContribution.ValidTypes);
+        Assert.Contains("enum", (ISet<string>)SettingContribution.ValidTypes);
+        Assert.Contains("folderPath", (ISet<string>)SettingContribution.ValidTypes);
         Assert.Equal(5, SettingContribution.ValidTypes.Count);
     }
 
@@ -122,9 +122,9 @@ public sealed class PluginInfrastructureTests
     [Fact]
     public void ValidTypes_CaseInsensitive()
     {
-        Assert.Contains("Boolean", SettingContribution.ValidTypes);
-        Assert.Contains("STRING", SettingContribution.ValidTypes);
-        Assert.Contains("FolderPath", SettingContribution.ValidTypes);
+        Assert.Contains("Boolean", (ISet<string>)SettingContribution.ValidTypes);
+        Assert.Contains("STRING", (ISet<string>)SettingContribution.ValidTypes);
+        Assert.Contains("FolderPath", (ISet<string>)SettingContribution.ValidTypes);
     }
 
     /// <summary>

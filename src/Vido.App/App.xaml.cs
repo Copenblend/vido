@@ -55,6 +55,18 @@ public partial class App : Application
         var logService = _serviceProvider.GetRequiredService<ILogService>();
         FFmpegInitializer.Initialize(logService);
 
+        // Clean up deferred plugin uninstalls from previous sessions before
+        // the UI or plugin host attempts discovery/activation.
+        try
+        {
+            var pluginInstaller = _serviceProvider.GetRequiredService<IPluginInstaller>();
+            pluginInstaller.CleanupPendingUninstalls();
+        }
+        catch (Exception ex)
+        {
+            logService.Warning($"Deferred plugin uninstall cleanup failed: {ex.Message}", "PluginInstaller");
+        }
+
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;
         mainWindow.FFmpegVersion = FFmpegInitializer.VersionString;

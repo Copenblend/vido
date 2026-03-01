@@ -73,6 +73,8 @@ public partial class PluginManagerPanel : UserControl
             && DataContext is PluginManagerViewModel vm)
         {
             await vm.InstallPluginAsync(item);
+            if (Application.Current.MainWindow is MainWindow mainWindow)
+                mainWindow.RefreshPluginContributions();
         }
     }
 
@@ -86,6 +88,8 @@ public partial class PluginManagerPanel : UserControl
             && DataContext is PluginManagerViewModel vm)
         {
             await vm.UninstallPluginAsync(item);
+            if (Application.Current.MainWindow is MainWindow mainWindow)
+                mainWindow.RefreshPluginContributions();
         }
     }
 
@@ -99,6 +103,8 @@ public partial class PluginManagerPanel : UserControl
             && DataContext is PluginManagerViewModel vm)
         {
             await vm.UpdatePluginAsync(item);
+            if (Application.Current.MainWindow is MainWindow mainWindow)
+                mainWindow.RefreshPluginContributions();
         }
     }
 
