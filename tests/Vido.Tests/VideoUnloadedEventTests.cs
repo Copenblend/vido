@@ -42,4 +42,16 @@ public sealed class VideoUnloadedEventTests
 
         Assert.Equal(a.GetHashCode(), b.GetHashCode());
     }
+
+    /// <summary>
+    /// Verifies with-expression is supported and yields an equal instance.
+    /// </summary>
+    [Fact]
+    public void WithExpression_ProducesEqualInstance()
+    {
+        var original = new VideoUnloadedEvent();
+        var copy = original with { };
+
+        Assert.Equal(original, copy);
+    }
 }

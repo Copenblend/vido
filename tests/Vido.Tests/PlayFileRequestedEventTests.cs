@@ -54,6 +54,18 @@ public sealed class PlayFileRequestedEventTests
     }
 
     /// <summary>
+    /// Verifies value inequality with different paths.
+    /// </summary>
+    [Fact]
+    public void Equality_DifferentPath_ReturnsFalse()
+    {
+        var a = new PlayFileRequestedEvent { FilePath = "a.mp4" };
+        var b = new PlayFileRequestedEvent { FilePath = "b.mp4" };
+
+        Assert.NotEqual(a, b);
+    }
+
+    /// <summary>
     /// Verifies with-expression copy behavior.
     /// </summary>
     [Fact]

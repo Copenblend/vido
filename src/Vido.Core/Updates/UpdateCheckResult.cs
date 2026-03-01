@@ -3,7 +3,7 @@ namespace Vido.Core.Updates;
 /// <summary>
 /// Result of an update check against a remote release source.
 /// </summary>
-public sealed class UpdateCheckResult
+public sealed record UpdateCheckResult
 {
     /// <summary>
     /// Whether a newer version is available.

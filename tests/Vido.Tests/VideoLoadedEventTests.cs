@@ -80,6 +80,24 @@ public sealed class VideoLoadedEventTests
     }
 
     /// <summary>
+    /// Verifies value inequality with different file path data.
+    /// </summary>
+    [Fact]
+    public void Equality_DifferentValues_ReturnsFalse()
+    {
+        var metadata = new VideoMetadata
+        {
+            FilePath = "video.mp4",
+            FileName = "video.mp4"
+        };
+
+        var a = new VideoLoadedEvent { FilePath = "video.mp4", Metadata = metadata };
+        var b = new VideoLoadedEvent { FilePath = "other.mp4", Metadata = metadata };
+
+        Assert.NotEqual(a, b);
+    }
+
+    /// <summary>
     /// Verifies with-expression copy behavior.
     /// </summary>
     [Fact]
