@@ -11,6 +11,7 @@ public static class TimeFormatter
     /// Uses "mm:ss" or "h:mm:ss" (no leading zero on hours).
     /// </summary>
     /// <param name="ts">The time value to format.</param>
+    /// <returns>The formatted time string for transport display.</returns>
     public static string Format(TimeSpan ts)
     {
         ReadOnlySpan<char> format = ts.TotalHours >= 1
@@ -29,6 +30,7 @@ public static class TimeFormatter
     /// Uses "mm:ss" or "hh:mm:ss" (leading zero on hours).
     /// </summary>
     /// <param name="ts">The time value to format.</param>
+    /// <returns>The formatted time string for metadata display.</returns>
     public static string FormatPadded(TimeSpan ts)
     {
         ReadOnlySpan<char> format = ts.TotalHours >= 1
