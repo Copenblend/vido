@@ -265,6 +265,19 @@ public sealed class OutputLogViewModelTests
         Assert.Equal("All", _sut.FilterText);
     }
 
+    /// <summary>
+    /// Verifies that Set Filter rebuild assigns a new entries collection instance.
+    /// </summary>
+    [Fact]
+    public void SetFilter_Rebuild_AssignsNewEntriesCollection()
+    {
+        var before = _sut.Entries;
+
+        _sut.SetFilter(LogLevel.Warning);
+
+        Assert.NotSame(before, _sut.Entries);
+    }
+
     // ── LogEntryViewModel formatting ──
 
     /// <summary>

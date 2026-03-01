@@ -3,8 +3,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
-using System.Windows.Threading;
 using Vido.Core.FileSystem;
 using Vido.Core.Menus;
 using Vido.Core.Plugin;
@@ -98,7 +98,7 @@ public partial class FileExplorerPanel : UserControl
         }
     }
 
-    private DispatcherTimer? _spinnerTimer;
+    private Storyboard? _spinnerStoryboard;
 
     private void UpdateVisualState(bool hasFolderOpen, bool isLoading)
     {
@@ -114,23 +114,28 @@ public partial class FileExplorerPanel : UserControl
 
     private void StartSpinner()
     {
-        if (_spinnerTimer is not null) return;
+        if (_spinnerStoryboard is not null) return;
 
-        _spinnerTimer = new DispatcherTimer(DispatcherPriority.Render)
+        var animation = new DoubleAnimation
         {
-            Interval = TimeSpan.FromMilliseconds(16)
+            From = 0,
+            To = 360,
+            Duration = TimeSpan.FromSeconds(1),
+            RepeatBehavior = RepeatBehavior.Forever
         };
-        _spinnerTimer.Tick += (_, _) =>
-        {
-            SpinnerRotation.Angle = (SpinnerRotation.Angle + 6) % 360;
-        };
-        _spinnerTimer.Start();
+
+        Storyboard.SetTarget(animation, SpinnerRotation);
+        Storyboard.SetTargetProperty(animation, new PropertyPath(RotateTransform.AngleProperty));
+
+        _spinnerStoryboard = new Storyboard();
+        _spinnerStoryboard.Children.Add(animation);
+        _spinnerStoryboard.Begin();
     }
 
     private void StopSpinner()
     {
-        _spinnerTimer?.Stop();
-        _spinnerTimer = null;
+        _spinnerStoryboard?.Stop();
+        _spinnerStoryboard = null;
         SpinnerRotation.Angle = 0;
     }
 

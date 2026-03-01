@@ -6,15 +6,23 @@ namespace Vido.PluginHost;
 /// <summary>
 /// Per-plugin settings store backed by a JSON file at
 /// <c>%APPDATA%/Vido/plugins/{pluginId}/settings.json</c>.
-/// Loads lazily on first access; saves on every write.
+/// Loads lazily on first access; writes are debounced to reduce disk I/O.
 /// Thread-safe.
 /// </summary>
-public sealed class PluginSettingsStore : IPluginSettingsStore
+public sealed class PluginSettingsStore : IPluginSettingsStore, IDisposable
 {
+    private const int DefaultDebounceMs = 500;
+
     private readonly string _settingsFilePath;
     private readonly object _lock = new();
+    private readonly int _debounceMs;
+    private readonly Action? _onSave;
+
     private Dictionary<string, JsonElement> _store = [];
     private bool _loaded;
+    private bool _dirty;
+    private bool _disposed;
+    private Timer? _debounceTimer;
 
     private static readonly JsonSerializerOptions s_jsonOptions = new()
     {
@@ -37,6 +45,7 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var pluginDir = Path.Combine(appData, "Vido", "plugins", pluginId);
         _settingsFilePath = Path.Combine(pluginDir, "settings.json");
+        _debounceMs = DefaultDebounceMs;
     }
 
     /// <summary>
@@ -47,9 +56,24 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
         return new PluginSettingsStore(settingsFilePath, isExplicitPath: true);
     }
 
-    private PluginSettingsStore(string filePath, bool isExplicitPath)
+    /// <summary>
+    /// Creates a settings store backed by a specific file path (for testing),
+    /// with an optional debounce interval override and save callback.
+    /// </summary>
+    internal static PluginSettingsStore ForTesting(string settingsFilePath, int debounceMs, Action? onSave)
+    {
+        return new PluginSettingsStore(settingsFilePath, isExplicitPath: true, debounceMs, onSave);
+    }
+
+    private PluginSettingsStore(
+        string filePath,
+        bool isExplicitPath,
+        int debounceMs = DefaultDebounceMs,
+        Action? onSave = null)
     {
         _settingsFilePath = filePath;
+        _debounceMs = debounceMs;
+        _onSave = onSave;
     }
 
     /// <summary>
@@ -81,7 +105,7 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
 
     /// <summary>
     /// Stores a setting value under the given key, serializing it to JSON.
-    /// Persists the change to disk immediately and raises <see cref="SettingChanged"/>.
+    /// Schedules persistence and raises <see cref="SettingChanged"/>.
     /// </summary>
     /// <param name="key">The setting key to write.</param>
     /// <param name="value">The value to serialize and store.</param>
@@ -93,7 +117,8 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
 
             var json = JsonSerializer.SerializeToElement(value, s_jsonOptions);
             _store[key] = json;
-            Save();
+            _dirty = true;
+            QueueSave();
         }
 
         SettingChanged?.Invoke(key);
@@ -112,7 +137,10 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
             EnsureLoaded();
             removed = _store.Remove(key);
             if (removed)
-                Save();
+            {
+                _dirty = true;
+                QueueSave();
+            }
         }
 
         if (removed)
@@ -133,7 +161,8 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
             EnsureLoaded();
             keys = [.. _store.Keys];
             _store.Clear();
-            Save();
+            _dirty = true;
+            QueueSave();
         }
 
         foreach (var key in keys)
@@ -162,8 +191,61 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
         }
     }
 
-    private void Save()
+    /// <summary>
+    /// Schedules persistence after a short delay to coalesce rapid writes.
+    /// Must be called while holding <see cref="_lock"/>.
+    /// </summary>
+    private void QueueSave()
     {
+        if (_disposed) return;
+
+        if (_debounceTimer is null)
+        {
+            _debounceTimer = new Timer(_ =>
+            {
+                lock (_lock)
+                    SaveIfDirty();
+            }, null, _debounceMs, Timeout.Infinite);
+            return;
+        }
+
+        _debounceTimer.Change(_debounceMs, Timeout.Infinite);
+    }
+
+    /// <summary>
+    /// Immediately persists pending changes, if any.
+    /// </summary>
+    public void Flush()
+    {
+        lock (_lock)
+        {
+            _debounceTimer?.Change(Timeout.Infinite, Timeout.Infinite);
+            SaveIfDirty();
+        }
+    }
+
+    /// <summary>
+    /// Flushes pending changes and disposes timer resources.
+    /// </summary>
+    public void Dispose()
+    {
+        Timer? timer;
+        lock (_lock)
+        {
+            if (_disposed) return;
+            _disposed = true;
+            timer = _debounceTimer;
+            _debounceTimer = null;
+            SaveIfDirty();
+        }
+
+        timer?.Dispose();
+    }
+
+    private void SaveIfDirty()
+    {
+        if (!_dirty) return;
+
         try
         {
             var dir = Path.GetDirectoryName(_settingsFilePath);
@@ -172,6 +254,8 @@ public sealed class PluginSettingsStore : IPluginSettingsStore
 
             var json = JsonSerializer.Serialize(_store, s_jsonOptions);
             File.WriteAllText(_settingsFilePath, json);
+            _dirty = false;
+            _onSave?.Invoke();
         }
         catch
         {

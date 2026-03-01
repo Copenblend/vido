@@ -554,6 +554,105 @@ public class ContributionRegistryTests
         Assert.Equal(2, second.Count);
     }
 
+    [Fact]
+    public void GetSidebarPanels_RepeatedCalls_ReturnSameSnapshotReference()
+    {
+        _registry.RegisterSidebarPanel("p1", "s1", "S", null, 10, () => "v");
+
+        var first = _registry.GetSidebarPanels();
+        var second = _registry.GetSidebarPanels();
+
+        Assert.Same(first, second);
+    }
+
+    [Fact]
+    public void GetBottomPanels_RepeatedCalls_ReturnSameSnapshotReference()
+    {
+        _registry.RegisterBottomPanel("p1", "b1", "B", 10, () => "v");
+
+        var first = _registry.GetBottomPanels();
+        var second = _registry.GetBottomPanels();
+
+        Assert.Same(first, second);
+    }
+
+    [Fact]
+    public void GetRightPanels_RepeatedCalls_ReturnSameSnapshotReference()
+    {
+        _registry.RegisterRightPanel("p1", "r1", "R", 10, () => "v");
+
+        var first = _registry.GetRightPanels();
+        var second = _registry.GetRightPanels();
+
+        Assert.Same(first, second);
+    }
+
+    [Fact]
+    public void GetStatusBarItems_RepeatedCalls_ReturnSameSnapshotReference()
+    {
+        _registry.RegisterStatusBarItem("p1", "sb1", "Status", "left", 10, () => "v");
+
+        var first = _registry.GetStatusBarItems();
+        var second = _registry.GetStatusBarItems();
+
+        Assert.Same(first, second);
+    }
+
+    [Fact]
+    public void GetToolbarButtons_RepeatedCalls_ReturnSameSnapshotReference()
+    {
+        _registry.RegisterToolbarButton("p1", "tb1", "Tip", null, 10, () => { });
+
+        var first = _registry.GetToolbarButtons();
+        var second = _registry.GetToolbarButtons();
+
+        Assert.Same(first, second);
+    }
+
+    [Fact]
+    public void GetContextMenuItems_RepeatedCalls_ReturnSameSnapshotReference()
+    {
+        _registry.RegisterContextMenuHandler("p1", "ctx1", "Action", [".mp4"], 10, _ => { });
+
+        var first = _registry.GetContextMenuItems();
+        var second = _registry.GetContextMenuItems();
+
+        Assert.Same(first, second);
+    }
+
+    [Fact]
+    public void GetFileHandlers_RepeatedCalls_ReturnSameSnapshotReference()
+    {
+        _registry.RegisterFileHandler("p1", [".txt"], _ => { });
+
+        var first = _registry.GetFileHandlers();
+        var second = _registry.GetFileHandlers();
+
+        Assert.Same(first, second);
+    }
+
+    [Fact]
+    public void GetControlBarItems_RepeatedCalls_ReturnSameSnapshotReference()
+    {
+        _registry.RegisterControlBarItem("p1", "cb1", "Control", 10, () => "v", null);
+
+        var first = _registry.GetControlBarItems();
+        var second = _registry.GetControlBarItems();
+
+        Assert.Same(first, second);
+    }
+
+    [Fact]
+    public void GetFileIcons_RepeatedCalls_ReturnSameSnapshotReference()
+    {
+        _registry.RegisterFileIcons("p1", new Dictionary<string, string> { [".abc"] = "icon.png" });
+
+        var first = _registry.GetFileIcons();
+        var second = _registry.GetFileIcons();
+
+        Assert.Same(first, second);
+    }
+
     // ╔══════════════════════════════════════════════════════════════════╗
     // ║ vb-017 — Overlay toggle before materialization                 ║
     // ╚══════════════════════════════════════════════════════════════════╝

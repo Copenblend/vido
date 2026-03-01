@@ -19,7 +19,8 @@ public partial class OutputLogViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Filtered log entries currently displayed in the panel.
     /// </summary>
-    public ObservableCollection<LogEntryViewModel> Entries { get; } = [];
+    [ObservableProperty]
+    private ObservableCollection<LogEntryViewModel> _entries = [];
 
     /// <summary>
     /// Whether auto-scroll to the latest entry is enabled.
@@ -89,7 +90,7 @@ public partial class OutputLogViewModel : ObservableObject, IDisposable
     public void ClearLog()
     {
         _logService.Clear();
-        Entries.Clear();
+        Entries = [];
         HasEntries = false;
     }
 
@@ -141,13 +142,10 @@ public partial class OutputLogViewModel : ObservableObject, IDisposable
 
     private void RebuildFilteredEntries()
     {
-        Entries.Clear();
-        foreach (var entry in _logService.Entries)
-        {
-            if (entry.Level >= _minimumLevel)
-                Entries.Add(new LogEntryViewModel(entry));
-        }
-
+        Entries = new ObservableCollection<LogEntryViewModel>(
+            _logService.Entries
+                .Where(entry => entry.Level >= _minimumLevel)
+                .Select(entry => new LogEntryViewModel(entry)));
         HasEntries = Entries.Count > 0;
     }
 

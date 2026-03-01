@@ -1,4 +1,5 @@
-﻿using Vido.Core.FileSystem;
+﻿using System.Collections.ObjectModel;
+using Vido.Core.FileSystem;
 using Vido.Core.Keyboard;
 using Vido.Core.Layout;
 using Vido.Core.Plugin;
@@ -23,6 +24,17 @@ public sealed class ContributionRegistry : IContributionRegistry
     private readonly List<FileHandlerRegistration> _fileHandlers = [];
     private readonly List<ControlBarRegistration> _controlBarItems = [];
     private readonly Dictionary<string, string> _fileIcons = new(StringComparer.OrdinalIgnoreCase);
+
+    private IReadOnlyList<SidebarRegistration> _sidebarsSnapshot = Array.Empty<SidebarRegistration>();
+    private IReadOnlyList<PanelRegistration> _bottomPanelsSnapshot = Array.Empty<PanelRegistration>();
+    private IReadOnlyList<PanelRegistration> _rightPanelsSnapshot = Array.Empty<PanelRegistration>();
+    private IReadOnlyList<StatusBarRegistration> _statusBarItemsSnapshot = Array.Empty<StatusBarRegistration>();
+    private IReadOnlyList<ToolbarButtonRegistration> _toolbarButtonsSnapshot = Array.Empty<ToolbarButtonRegistration>();
+    private IReadOnlyList<ContextMenuRegistration> _contextMenuItemsSnapshot = Array.Empty<ContextMenuRegistration>();
+    private IReadOnlyList<FileHandlerRegistration> _fileHandlersSnapshot = Array.Empty<FileHandlerRegistration>();
+    private IReadOnlyList<ControlBarRegistration> _controlBarItemsSnapshot = Array.Empty<ControlBarRegistration>();
+    private IReadOnlyDictionary<string, string> _fileIconsSnapshot =
+        new ReadOnlyDictionary<string, string>(new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase));
 
     // Track which plugin registered which file icon extensions for cleanup
     private readonly Dictionary<string, List<string>> _pluginFileIconKeys = [];
@@ -64,15 +76,60 @@ public sealed class ContributionRegistry : IContributionRegistry
     /// Inserts an item into a sorted list using binary search for O(log n) insertion,
     /// then fires ContributionsChanged.
     /// </summary>
-    private void InsertSorted<T>(List<T> list, T item, Comparison<T> comparison)
+    private void InsertSorted<T>(List<T> list, T item, Comparison<T> comparison, Action rebuildSnapshot)
     {
         lock (_lock)
         {
             var index = list.BinarySearch(item, Comparer<T>.Create(comparison));
             if (index < 0) index = ~index;
             list.Insert(index, item);
+            rebuildSnapshot();
         }
         ContributionsChanged?.Invoke();
+    }
+
+    private void RebuildSidebarSnapshot() =>
+        Volatile.Write(ref _sidebarsSnapshot, _sidebars.ToList().AsReadOnly());
+
+    private void RebuildBottomPanelsSnapshot() =>
+        Volatile.Write(ref _bottomPanelsSnapshot, _bottomPanels.ToList().AsReadOnly());
+
+    private void RebuildRightPanelsSnapshot() =>
+        Volatile.Write(ref _rightPanelsSnapshot, _rightPanels.ToList().AsReadOnly());
+
+    private void RebuildStatusBarItemsSnapshot() =>
+        Volatile.Write(ref _statusBarItemsSnapshot, _statusBarItems.ToList().AsReadOnly());
+
+    private void RebuildToolbarButtonsSnapshot() =>
+        Volatile.Write(ref _toolbarButtonsSnapshot, _toolbarButtons.ToList().AsReadOnly());
+
+    private void RebuildContextMenuItemsSnapshot() =>
+        Volatile.Write(ref _contextMenuItemsSnapshot, _contextMenuItems.ToList().AsReadOnly());
+
+    private void RebuildFileHandlersSnapshot() =>
+        Volatile.Write(ref _fileHandlersSnapshot, _fileHandlers.ToList().AsReadOnly());
+
+    private void RebuildControlBarItemsSnapshot() =>
+        Volatile.Write(ref _controlBarItemsSnapshot, _controlBarItems.ToList().AsReadOnly());
+
+    private void RebuildFileIconsSnapshot()
+    {
+        var snapshot = new ReadOnlyDictionary<string, string>(
+            new Dictionary<string, string>(_fileIcons, StringComparer.OrdinalIgnoreCase));
+        Volatile.Write(ref _fileIconsSnapshot, snapshot);
+    }
+
+    private void RebuildAllSnapshots()
+    {
+        RebuildSidebarSnapshot();
+        RebuildBottomPanelsSnapshot();
+        RebuildRightPanelsSnapshot();
+        RebuildStatusBarItemsSnapshot();
+        RebuildToolbarButtonsSnapshot();
+        RebuildContextMenuItemsSnapshot();
+        RebuildFileHandlersSnapshot();
+        RebuildControlBarItemsSnapshot();
+        RebuildFileIconsSnapshot();
     }
 
     // â”€â”€ Registration â”€â”€
@@ -95,7 +152,8 @@ public sealed class ContributionRegistry : IContributionRegistry
             {
                 var cmp = a.Order.CompareTo(b.Order);
                 return cmp != 0 ? cmp : string.Compare(a.PluginId, b.PluginId, StringComparison.OrdinalIgnoreCase);
-            });
+            },
+            RebuildSidebarSnapshot);
     }
 
     /// <summary>
@@ -115,7 +173,8 @@ public sealed class ContributionRegistry : IContributionRegistry
             {
                 var cmp = a.Order.CompareTo(b.Order);
                 return cmp != 0 ? cmp : string.Compare(a.PluginId, b.PluginId, StringComparison.OrdinalIgnoreCase);
-            });
+            },
+            RebuildBottomPanelsSnapshot);
     }
 
     /// <summary>
@@ -135,7 +194,8 @@ public sealed class ContributionRegistry : IContributionRegistry
             {
                 var cmp = a.Order.CompareTo(b.Order);
                 return cmp != 0 ? cmp : string.Compare(a.PluginId, b.PluginId, StringComparison.OrdinalIgnoreCase);
-            });
+            },
+            RebuildRightPanelsSnapshot);
     }
 
     /// <summary>
@@ -156,7 +216,8 @@ public sealed class ContributionRegistry : IContributionRegistry
             {
                 var cmp = a.Order.CompareTo(b.Order);
                 return cmp != 0 ? cmp : string.Compare(a.PluginId, b.PluginId, StringComparison.OrdinalIgnoreCase);
-            });
+            },
+            RebuildStatusBarItemsSnapshot);
     }
 
     /// <summary>
@@ -177,7 +238,8 @@ public sealed class ContributionRegistry : IContributionRegistry
             {
                 var cmp = a.Order.CompareTo(b.Order);
                 return cmp != 0 ? cmp : string.Compare(a.PluginId, b.PluginId, StringComparison.OrdinalIgnoreCase);
-            });
+            },
+            RebuildToolbarButtonsSnapshot);
     }
 
     /// <summary>
@@ -218,7 +280,8 @@ public sealed class ContributionRegistry : IContributionRegistry
             {
                 var cmp = a.Order.CompareTo(b.Order);
                 return cmp != 0 ? cmp : string.Compare(a.PluginId, b.PluginId, StringComparison.OrdinalIgnoreCase);
-            });
+            },
+            RebuildContextMenuItemsSnapshot);
     }
     
     /// <summary>
@@ -233,6 +296,7 @@ public sealed class ContributionRegistry : IContributionRegistry
         lock (_lock)
         {
             _fileHandlers.Add(new FileHandlerRegistration(pluginId, extensions, handler));
+            RebuildFileHandlersSnapshot();
         }
         ContributionsChanged?.Invoke();
     }
@@ -257,6 +321,8 @@ public sealed class ContributionRegistry : IContributionRegistry
                 _pluginFileIconKeys[pluginId] = keys;
             else
                 existing.AddRange(keys);
+
+            RebuildFileIconsSnapshot();
         }
         ContributionsChanged?.Invoke();
     }
@@ -293,7 +359,8 @@ public sealed class ContributionRegistry : IContributionRegistry
             {
                 var cmp = a.Order.CompareTo(b.Order);
                 return cmp != 0 ? cmp : string.Compare(a.PluginId, b.PluginId, StringComparison.OrdinalIgnoreCase);
-            });
+            },
+            RebuildControlBarItemsSnapshot);
     }
 
     /// <summary>
@@ -378,7 +445,7 @@ public sealed class ContributionRegistry : IContributionRegistry
 
     public IReadOnlyList<SidebarRegistration> GetSidebarPanels()
     {
-        lock (_lock) return _sidebars.ToList();
+        return Volatile.Read(ref _sidebarsSnapshot);
     }
 
     /// <summary>
@@ -386,7 +453,7 @@ public sealed class ContributionRegistry : IContributionRegistry
     /// </summary>
     public IReadOnlyList<PanelRegistration> GetBottomPanels()
     {
-        lock (_lock) return _bottomPanels.ToList();
+        return Volatile.Read(ref _bottomPanelsSnapshot);
     }
 
     /// <summary>
@@ -394,7 +461,7 @@ public sealed class ContributionRegistry : IContributionRegistry
     /// </summary>
     public IReadOnlyList<PanelRegistration> GetRightPanels()
     {
-        lock (_lock) return _rightPanels.ToList();
+        return Volatile.Read(ref _rightPanelsSnapshot);
     }
 
     /// <summary>
@@ -402,7 +469,7 @@ public sealed class ContributionRegistry : IContributionRegistry
     /// </summary>
     public IReadOnlyList<StatusBarRegistration> GetStatusBarItems()
     {
-        lock (_lock) return _statusBarItems.ToList();
+        return Volatile.Read(ref _statusBarItemsSnapshot);
     }
 
     /// <summary>
@@ -410,7 +477,7 @@ public sealed class ContributionRegistry : IContributionRegistry
     /// </summary>
     public IReadOnlyList<ToolbarButtonRegistration> GetToolbarButtons()
     {
-        lock (_lock) return _toolbarButtons.ToList();
+        return Volatile.Read(ref _toolbarButtonsSnapshot);
     }
 
     /// <summary>
@@ -418,7 +485,7 @@ public sealed class ContributionRegistry : IContributionRegistry
     /// </summary>
     public IReadOnlyList<ContextMenuRegistration> GetContextMenuItems()
     {
-        lock (_lock) return _contextMenuItems.ToList();
+        return Volatile.Read(ref _contextMenuItemsSnapshot);
     }
 
     /// <summary>
@@ -426,7 +493,7 @@ public sealed class ContributionRegistry : IContributionRegistry
     /// </summary>
     public IReadOnlyList<FileHandlerRegistration> GetFileHandlers()
     {
-        lock (_lock) return _fileHandlers.ToList();
+        return Volatile.Read(ref _fileHandlersSnapshot);
     }
 
     /// <summary>
@@ -434,7 +501,7 @@ public sealed class ContributionRegistry : IContributionRegistry
     /// </summary>
     public IReadOnlyDictionary<string, string> GetFileIcons()
     {
-        lock (_lock) return new Dictionary<string, string>(_fileIcons, StringComparer.OrdinalIgnoreCase);
+        return Volatile.Read(ref _fileIconsSnapshot);
     }
 
     /// <summary>
@@ -442,7 +509,7 @@ public sealed class ContributionRegistry : IContributionRegistry
     /// </summary>
     public IReadOnlyList<ControlBarRegistration> GetControlBarItems()
     {
-        lock (_lock) return _controlBarItems.ToList();
+        return Volatile.Read(ref _controlBarItemsSnapshot);
     }
 
     /// <summary>
@@ -495,6 +562,8 @@ public sealed class ContributionRegistry : IContributionRegistry
                 _playlistProvider = null;
                 _playlistProviderPluginId = null;
             }
+
+            RebuildAllSnapshots();
         }
         ContributionsChanged?.Invoke();
     }
