@@ -1,5 +1,4 @@
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
 
 namespace Vido.Core.Layout;
 
@@ -9,6 +8,8 @@ namespace Vido.Core.Layout;
 /// </summary>
 public sealed class BottomPanelTabItem : INotifyPropertyChanged
 {
+    private static readonly PropertyChangedEventArgs IsActiveChangedArgs = new(nameof(IsActive));
+
     private bool _isActive;
 
     /// <summary>
@@ -37,7 +38,7 @@ public sealed class BottomPanelTabItem : INotifyPropertyChanged
             if (_isActive != value)
             {
                 _isActive = value;
-                OnPropertyChanged();
+                PropertyChanged?.Invoke(this, IsActiveChangedArgs);
             }
         }
     }
@@ -58,7 +59,4 @@ public sealed class BottomPanelTabItem : INotifyPropertyChanged
     /// </summary>
 
     public event PropertyChangedEventHandler? PropertyChanged;
-
-    private void OnPropertyChanged([CallerMemberName] string? name = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
