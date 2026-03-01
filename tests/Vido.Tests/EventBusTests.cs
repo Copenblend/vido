@@ -22,6 +22,8 @@ public sealed class EventBusTests
         public int Value { get; init; }
     }
 
+    private static void HandleTestEvent(TestEvent _) { }
+
     /// <summary>
     /// Verifies that Publish delivers to subscriber.
     /// </summary>
@@ -148,5 +150,45 @@ public sealed class EventBusTests
         await Task.WhenAll(tasks);
         // Just verifying no exceptions — count is non-deterministic
         Assert.True(count >= 0);
+    }
+
+    /// <summary>
+    /// Verifies that disposing one duplicate handler subscription removes only one registration.
+    /// </summary>
+    [Fact]
+    public void Unsubscribe_DuplicateHandler_RemovesSingleRegistration()
+    {
+        var count = 0;
+        void Handler(TestEvent _) => count++;
+
+        var sub1 = _bus.Subscribe<TestEvent>(Handler);
+        _bus.Subscribe<TestEvent>(Handler);
+
+        sub1.Dispose();
+        _bus.Publish(new TestEvent());
+
+        Assert.Equal(1, count);
+    }
+
+    /// <summary>
+    /// Verifies that publishing with an existing subscriber does not allocate in the hot path.
+    /// </summary>
+    [Fact]
+    public void Publish_WithSubscriber_DoesNotAllocate()
+    {
+        _bus.Subscribe<TestEvent>(HandleTestEvent);
+        var evt = new TestEvent { Message = "alloc" };
+
+        for (var i = 0; i < 128; i++)
+            _bus.Publish(evt);
+
+        _ = GC.GetAllocatedBytesForCurrentThread();
+        var before = GC.GetAllocatedBytesForCurrentThread();
+
+        for (var i = 0; i < 1024; i++)
+            _bus.Publish(evt);
+
+        var after = GC.GetAllocatedBytesForCurrentThread();
+        Assert.Equal(0L, after - before);
     }
 }

@@ -20,6 +20,7 @@ public sealed class VideoLoadedEventTests
         Assert.Equal(string.Empty, evt.FilePath);
         Assert.Equal(string.Empty, evt.Metadata.FilePath);
         Assert.Equal(string.Empty, evt.Metadata.FileName);
+        Assert.Same(VideoMetadata.Empty, evt.Metadata);
     }
 
     /// <summary>
@@ -59,6 +60,7 @@ public sealed class VideoLoadedEventTests
         Assert.Equal(string.Empty, evt.FilePath);
         Assert.Equal(string.Empty, evt.Metadata.FilePath);
         Assert.Equal(string.Empty, evt.Metadata.FileName);
+        Assert.Same(VideoMetadata.Empty, evt.Metadata);
     }
 
     /// <summary>

@@ -7,12 +7,6 @@ namespace Vido.Core.Events;
 /// </summary>
 public readonly record struct VideoLoadedEvent
 {
-    private static readonly VideoMetadata EmptyMetadata = new()
-    {
-        FilePath = string.Empty,
-        FileName = string.Empty
-    };
-
     private readonly string? _filePath;
     private readonly VideoMetadata? _metadata;
 
@@ -26,11 +20,11 @@ public readonly record struct VideoLoadedEvent
     }
 
     /// <summary>
-    /// Metadata extracted from the video file. Defaults to an empty metadata sentinel when unset.
+    /// Metadata extracted from the video file. Defaults to <see cref="VideoMetadata.Empty"/> when unset.
     /// </summary>
     public VideoMetadata Metadata
     {
-        get => _metadata ?? EmptyMetadata;
+        get => _metadata ?? VideoMetadata.Empty;
         init => _metadata = value;
     }
 }

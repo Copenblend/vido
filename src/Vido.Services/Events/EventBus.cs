@@ -8,8 +8,8 @@ namespace Vido.Services.Events;
 /// </summary>
 public sealed class EventBus : IEventBus
 {
-    private readonly ConcurrentDictionary<Type, List<Delegate>> _handlers = new();
-    private readonly object _lock = new();
+    private readonly ConcurrentDictionary<Type, Delegate[]> _handlers = new();
+    private readonly object _writeLock = new();
 
     /// <summary>
     /// Registers a handler that will be invoked each time an event of type <typeparamref name="TEvent"/> is published.
@@ -22,17 +22,19 @@ public sealed class EventBus : IEventBus
 
         var eventType = typeof(TEvent);
 
-        _handlers.AddOrUpdate(
-            eventType,
-            _ => new List<Delegate> { handler },
-            (_, list) =>
-            {
-                lock (_lock)
+        lock (_writeLock)
+        {
+            _handlers.AddOrUpdate(
+                eventType,
+                _ => new Delegate[] { handler },
+                (_, existing) =>
                 {
-                    list.Add(handler);
-                }
-                return list;
-            });
+                    var next = new Delegate[existing.Length + 1];
+                    Array.Copy(existing, next, existing.Length);
+                    next[existing.Length] = handler;
+                    return next;
+                });
+        }
 
         return new EventBusSubscription(() => Unsubscribe(eventType, handler));
     }
@@ -46,29 +48,41 @@ public sealed class EventBus : IEventBus
         if (eventData is null)
             throw new ArgumentNullException(nameof(eventData));
 
-        if (!_handlers.TryGetValue(typeof(TEvent), out var handlers))
+        if (!_handlers.TryGetValue(typeof(TEvent), out var snapshot))
             return;
 
-        Delegate[] snapshot;
-        lock (_lock)
+        var handlers = Volatile.Read(ref snapshot);
+        for (var i = 0; i < handlers.Length; i++)
         {
-            snapshot = handlers.ToArray();
-        }
-
-        foreach (var handler in snapshot)
-        {
-            ((Action<TEvent>)handler)(eventData);
+            ((Action<TEvent>)handlers[i]).Invoke(eventData);
         }
     }
 
     private void Unsubscribe(Type eventType, Delegate handler)
     {
-        if (!_handlers.TryGetValue(eventType, out var handlers))
-            return;
-
-        lock (_lock)
+        lock (_writeLock)
         {
-            handlers.Remove(handler);
+            if (!_handlers.TryGetValue(eventType, out var existing))
+                return;
+
+            var index = Array.IndexOf(existing, handler);
+            if (index < 0)
+                return;
+
+            if (existing.Length == 1)
+            {
+                _handlers.TryRemove(eventType, out _);
+                return;
+            }
+
+            var next = new Delegate[existing.Length - 1];
+            if (index > 0)
+                Array.Copy(existing, 0, next, 0, index);
+
+            if (index < existing.Length - 1)
+                Array.Copy(existing, index + 1, next, index, existing.Length - index - 1);
+
+            _handlers[eventType] = next;
         }
     }
 }
