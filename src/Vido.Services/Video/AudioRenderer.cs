@@ -13,6 +13,7 @@ internal sealed class AudioRenderer : IDisposable
     private bool _disposed;
     private float _volume = 1.0f;
     private bool _isMuted;
+    private byte[]? _floatSubmitBuffer;
 
     /// <summary>
     /// Gets or sets the volume level (0.0 to 1.0).
@@ -105,16 +106,12 @@ internal sealed class AudioRenderer : IDisposable
             return;
 
         var byteCount = floatCount * sizeof(float);
-        var bytes = System.Buffers.ArrayPool<byte>.Shared.Rent(byteCount);
-        try
-        {
-            Buffer.BlockCopy(data, offset * sizeof(float), bytes, 0, byteCount);
-            _waveProvider.AddSamples(bytes, 0, byteCount);
-        }
-        finally
-        {
-            System.Buffers.ArrayPool<byte>.Shared.Return(bytes);
-        }
+
+        if (_floatSubmitBuffer is null || _floatSubmitBuffer.Length < byteCount)
+            _floatSubmitBuffer = new byte[byteCount];
+
+        Buffer.BlockCopy(data, offset * sizeof(float), _floatSubmitBuffer, 0, byteCount);
+        _waveProvider.AddSamples(_floatSubmitBuffer, 0, byteCount);
     }
 
     /// <summary>
@@ -176,6 +173,7 @@ internal sealed class AudioRenderer : IDisposable
         _waveOut?.Dispose();
         _waveOut = null;
         _waveProvider = null;
+        _floatSubmitBuffer = null;
     }
     
     /// <summary>

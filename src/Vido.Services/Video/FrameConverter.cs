@@ -20,6 +20,10 @@ internal sealed unsafe class FrameConverter : IDisposable
     private int _dstHeight;
     private byte[]? _buffer;
     private bool _disposed;
+    private readonly byte*[] _srcData = new byte*[4];
+    private readonly int[] _srcLineSize = new int[4];
+    private readonly byte*[] _dstDataArray = new byte*[4];
+    private readonly int[] _dstLineSizeArray = new int[4];
 
     /// <summary>
     /// Configures the converter for the specified source format and dimensions.
@@ -91,17 +95,29 @@ internal sealed unsafe class FrameConverter : IDisposable
                 AVPixelFormat.AV_PIX_FMT_BGRA,
                 _dstWidth, _dstHeight, 1);
 
-            // Convert frame data/linesize to arrays for sws_scale
-            var srcData = new byte*[] { frame->data[0], frame->data[1], frame->data[2], frame->data[3] };
-            var srcLineSize = new int[] { frame->linesize[0], frame->linesize[1], frame->linesize[2], frame->linesize[3] };
-            var dstData = new byte*[] { _dstData[0], _dstData[1], _dstData[2], _dstData[3] };
-            var dstLineSize = new int[] { _dstLineSize[0], _dstLineSize[1], _dstLineSize[2], _dstLineSize[3] };
+            _srcData[0] = frame->data[0];
+            _srcData[1] = frame->data[1];
+            _srcData[2] = frame->data[2];
+            _srcData[3] = frame->data[3];
+            _srcLineSize[0] = frame->linesize[0];
+            _srcLineSize[1] = frame->linesize[1];
+            _srcLineSize[2] = frame->linesize[2];
+            _srcLineSize[3] = frame->linesize[3];
+
+            _dstDataArray[0] = _dstData[0];
+            _dstDataArray[1] = _dstData[1];
+            _dstDataArray[2] = _dstData[2];
+            _dstDataArray[3] = _dstData[3];
+            _dstLineSizeArray[0] = _dstLineSize[0];
+            _dstLineSizeArray[1] = _dstLineSize[1];
+            _dstLineSizeArray[2] = _dstLineSize[2];
+            _dstLineSizeArray[3] = _dstLineSize[3];
 
             ffmpeg.sws_scale(
                 _swsContext,
-                srcData, srcLineSize,
+                _srcData, _srcLineSize,
                 0, _srcHeight,
-                dstData, dstLineSize);
+                _dstDataArray, _dstLineSizeArray);
         }
 
         // Copy pixel data to a pooled array to avoid per-frame GC allocations.
@@ -124,6 +140,11 @@ internal sealed unsafe class FrameConverter : IDisposable
         }
 
         _buffer = null;
+
+        Array.Clear(_srcData);
+        Array.Clear(_srcLineSize);
+        Array.Clear(_dstDataArray);
+        Array.Clear(_dstLineSizeArray);
     }
     
     /// <summary>

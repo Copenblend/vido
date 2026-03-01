@@ -1051,13 +1051,22 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
 
         if (delay > TimeSpan.FromMilliseconds(1) && delay < TimeSpan.FromSeconds(2))
         {
-            // Break the wait into small chunks so we can abort on seek
             var end = Stopwatch.GetTimestamp() + (long)(delay.TotalSeconds * Stopwatch.Frequency);
-            while (Stopwatch.GetTimestamp() < end)
+            var spinThreshold = Stopwatch.Frequency / 500; // ~2ms
+
+            while (Stopwatch.GetTimestamp() < end - spinThreshold)
             {
                 if (_seekGeneration != generation || _decodeCts.IsCancellationRequested)
                     return;
                 Thread.Sleep(1);
+            }
+
+            var spin = new SpinWait();
+            while (Stopwatch.GetTimestamp() < end)
+            {
+                if (_seekGeneration != generation || _decodeCts.IsCancellationRequested)
+                    return;
+                spin.SpinOnce();
             }
         }
     }
