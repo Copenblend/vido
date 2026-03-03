@@ -393,8 +393,10 @@ public sealed class Osr2PlusModelTests
     [Fact]
     public void BeatBarMode_EqualityOperators_WorkCorrectly()
     {
-        Assert.True(BeatBarMode.Off == BeatBarMode.Off);
-        Assert.False(BeatBarMode.Off != BeatBarMode.Off);
+        var off1 = BeatBarMode.Off;
+        var off2 = BeatBarMode.Off;
+        Assert.True(off1 == off2);
+        Assert.False(off1 != off2);
         Assert.True(BeatBarMode.Off != BeatBarMode.OnPeak);
         Assert.False(BeatBarMode.Off == null);
     }

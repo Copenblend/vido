@@ -16,6 +16,13 @@ All notable changes to the Vido project will be documented in this file.
 - Strong-typed `IExternalBeatSource.RenderBeat` and `RenderIndicator` methods from `object` to `SKCanvas`.
 - Updated XML documentation to reflect integrated architecture (replaced "plugin" references with "feature").
 
+### Plugin Integration (PI-005)
+- Integrated 3 OSR2+ transport service types from `Osr2PlusPlugin.Services` into `Vido.Services/Osr2Plus/` namespace.
+- `ITransportService`: Transport abstraction with `IsConnected`, `ConnectionLabel`, `ConnectionChanged`/`ErrorOccurred` events, `Send(string)`/`Send(ReadOnlySpan<byte>)`, and `Disconnect()`.
+- `SerialTransportService`: COM port transport with thread-safe lock-based state management, `Connect(portName, baudRate)`, `ListPorts()`, stackalloc-based string-to-bytes encoding.
+- `UdpTransportService`: UDP localhost transport with `Connect(port)`, datagram send, and clean reconnection lifecycle.
+- Added 22 unit tests covering default state, connect/send/disconnect lifecycle, error handling, reconnection, data verification via UDP listener, and event firing.
+
 ### Plugin Integration (PI-004)
 - Integrated 8 OSR2+ model types from `Osr2PlusPlugin.Models` into `Vido.Core/Models/Osr2Plus/` namespace.
 - `AxisConfig`: Observable per-axis configuration with `INotifyPropertyChanged`, value clamping, derived properties (`RangeLabel`, `IsStroke`, `IsPitch`, `AvailableFillModes`, `HasScript`), and `CreateDefaults()` factory producing L0/R0/R1/R2 axes.
