@@ -11,6 +11,11 @@ All notable changes to the Vido project will be documented in this file.
 - Added `SkiaSharpVersion`, `SkiaSharpViewsWpfVersion`, `SystemIOPortsVersion` centralized version properties to `Directory.Build.props`.
 - Removed NuGet packaging configuration from `Vido.Core` (`GeneratePackageOnBuild`, `PackageId`, etc.) — Vido.Core is no longer published as an external package.
 
+### Plugin Integration (PI-002)
+- Integrated all 10 haptic contract types from `Vido.Haptics` into `Vido.Core/Haptics/` namespace.
+- Strong-typed `IExternalBeatSource.RenderBeat` and `RenderIndicator` methods from `object` to `SKCanvas`.
+- Updated XML documentation to reflect integrated architecture (replaced "plugin" references with "feature").
+
 ### vido-132
 - Cached `VideoPlayerControl` render dispatch callback (`_renderAction`) and switched frame render enqueues to reuse the cached delegate, removing per-frame method-group delegate allocations.
 - Added XML `<summary>` documentation for spinner lifecycle methods in `VideoPlayerControl` and `FileExplorerPanel`.
