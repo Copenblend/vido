@@ -1,0 +1,226 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using Vido.Core.Models.Osr2Plus;
+using Vido.Core.Settings;
+
+namespace Vido.ViewModels.Osr2Plus;
+
+/// <summary>
+/// ViewModel for the funscript visualizer bottom panel.
+/// Manages visualization mode (Graph/Heatmap), time window, loaded axes,
+/// and current playback position. Persists settings via <see cref="ISettingsService"/>.
+/// </summary>
+public class VisualizerViewModel : INotifyPropertyChanged
+{
+    private readonly ISettingsService _settingsService;
+
+    private VisualizationMode _selectedMode = VisualizationMode.Graph;
+    private int _windowDurationSeconds = 60;
+    private double _currentTime;
+    private Dictionary<string, FunscriptData> _loadedAxes = new();
+
+    // ── Static Dictionaries ──────────────────────────────────
+
+    /// <summary>
+    /// Axis color hex codes — consistent across all UI surfaces.
+    /// </summary>
+    public static readonly Dictionary<string, string> AxisColors = new()
+    {
+        { "L0", "#007ACC" },
+        { "R0", "#B800CC" },
+        { "R1", "#CC5200" },
+        { "R2", "#14CC00" },
+    };
+
+    /// <summary>
+    /// Human-readable axis names.
+    /// </summary>
+    public static readonly Dictionary<string, string> AxisNames = new()
+    {
+        { "L0", "Stroke" },
+        { "R0", "Twist" },
+        { "R1", "Roll" },
+        { "R2", "Pitch" },
+    };
+
+    /// <summary>
+    /// Available window duration values in seconds.
+    /// </summary>
+    public static readonly int[] AvailableWindowDurations = [30, 60, 120, 300];
+
+    /// <summary>
+    /// Display labels corresponding to <see cref="AvailableWindowDurations"/>.
+    /// </summary>
+    public static readonly string[] WindowDurationLabels = ["30s", "1 min", "2 min", "5 min"];
+
+    // ── Properties ───────────────────────────────────────────
+
+    /// <summary>
+    /// The active visualization mode (Graph or Heatmap).
+    /// Persisted to settings.
+    /// </summary>
+    public VisualizationMode SelectedMode
+    {
+        get => _selectedMode;
+        set
+        {
+            if (Set(ref _selectedMode, value))
+            {
+                _settingsService.Current.Osr2VisualizerMode = value.ToString();
+                _settingsService.QueueSave();
+                RepaintRequested?.Invoke();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Duration of the visible time window in seconds (30, 60, 120, or 300).
+    /// Persisted to settings.
+    /// </summary>
+    public int WindowDurationSeconds
+    {
+        get => _windowDurationSeconds;
+        set
+        {
+            if (Set(ref _windowDurationSeconds, value))
+            {
+                OnPropertyChanged(nameof(TimeWindowRadius));
+                OnPropertyChanged(nameof(WindowDurationIndex));
+                _settingsService.Current.Osr2VisualizerWindowDuration = value;
+                _settingsService.QueueSave();
+                RepaintRequested?.Invoke();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Current playback position in seconds. Updated from position events.
+    /// </summary>
+    public double CurrentTime
+    {
+        get => _currentTime;
+        set => Set(ref _currentTime, value);
+    }
+
+    /// <summary>
+    /// Loaded funscript data keyed by axis ID (e.g. "L0", "R0").
+    /// </summary>
+    public Dictionary<string, FunscriptData> LoadedAxes
+    {
+        get => _loadedAxes;
+        set
+        {
+            if (Set(ref _loadedAxes, value))
+                OnPropertyChanged(nameof(HasScripts));
+        }
+    }
+
+    /// <summary>
+    /// True when at least one axis has loaded funscript data.
+    /// </summary>
+    public bool HasScripts => _loadedAxes.Count > 0;
+
+    /// <summary>
+    /// Half the window duration — defines the visible range around <see cref="CurrentTime"/>.
+    /// </summary>
+    public double TimeWindowRadius => _windowDurationSeconds / 2.0;
+
+    /// <summary>
+    /// Index into <see cref="AvailableWindowDurations"/> for ComboBox binding.
+    /// Setting this updates <see cref="WindowDurationSeconds"/>.
+    /// </summary>
+    public int WindowDurationIndex
+    {
+        get => Array.IndexOf(AvailableWindowDurations, _windowDurationSeconds) is var i and >= 0 ? i : 0;
+        set
+        {
+            if (value >= 0 && value < AvailableWindowDurations.Length)
+                WindowDurationSeconds = AvailableWindowDurations[value];
+        }
+    }
+
+    /// <summary>
+    /// Raised to request the visualizer view to repaint (e.g. on time or data changes).
+    /// </summary>
+    public event Action? RepaintRequested;
+
+    // ── Constructor ──────────────────────────────────────────
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="VisualizerViewModel"/> class.
+    /// </summary>
+    /// <param name="settingsService">Settings service for persisting visualizer preferences.</param>
+    public VisualizerViewModel(ISettingsService settingsService)
+    {
+        _settingsService = settingsService;
+        LoadSettings();
+    }
+
+    // ── Public Methods ───────────────────────────────────────
+
+    /// <summary>
+    /// Updates the current playback time and requests a repaint.
+    /// Called from the coordinator's position-changed event handler.
+    /// </summary>
+    /// <param name="timeSeconds">Current playback time in seconds.</param>
+    public void UpdateTime(double timeSeconds)
+    {
+        CurrentTime = timeSeconds;
+        RepaintRequested?.Invoke();
+    }
+
+    /// <summary>
+    /// Replaces the loaded axes with new data and requests a repaint.
+    /// Called when scripts are loaded for a new video.
+    /// </summary>
+    /// <param name="axes">New funscript data keyed by axis ID.</param>
+    public void SetLoadedAxes(Dictionary<string, FunscriptData> axes)
+    {
+        _loadedAxes = axes ?? new Dictionary<string, FunscriptData>();
+        OnPropertyChanged(nameof(LoadedAxes));
+        OnPropertyChanged(nameof(HasScripts));
+        RepaintRequested?.Invoke();
+    }
+
+    /// <summary>
+    /// Clears all loaded axes and requests a repaint.
+    /// Called when a video is unloaded.
+    /// </summary>
+    public void ClearAxes()
+    {
+        LoadedAxes = new Dictionary<string, FunscriptData>();
+        RepaintRequested?.Invoke();
+    }
+
+    // ── Settings Persistence ─────────────────────────────────
+
+    private void LoadSettings()
+    {
+        var settings = _settingsService.Current;
+
+        if (Enum.TryParse<VisualizationMode>(settings.Osr2VisualizerMode, out var mode))
+            _selectedMode = mode;
+
+        var duration = settings.Osr2VisualizerWindowDuration;
+        if (Array.IndexOf(AvailableWindowDurations, duration) >= 0)
+            _windowDurationSeconds = duration;
+    }
+
+    // ── INotifyPropertyChanged ───────────────────────────────
+
+    /// <inheritdoc/>
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>Raises the <see cref="PropertyChanged"/> event.</summary>
+    protected void OnPropertyChanged([CallerMemberName] string? name = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+    /// <summary>Sets a field and raises <see cref="PropertyChanged"/> if the value changed.</summary>
+    protected bool Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
+        field = value;
+        OnPropertyChanged(name);
+        return true;
+    }
+}
