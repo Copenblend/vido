@@ -16,6 +16,16 @@ All notable changes to the Vido project will be documented in this file.
 - Strong-typed `IExternalBeatSource.RenderBeat` and `RenderIndicator` methods from `object` to `SKCanvas`.
 - Updated XML documentation to reflect integrated architecture (replaced "plugin" references with "feature").
 
+### Plugin Integration (PI-004)
+- Integrated 8 OSR2+ model types from `Osr2PlusPlugin.Models` into `Vido.Core/Models/Osr2Plus/` namespace.
+- `AxisConfig`: Observable per-axis configuration with `INotifyPropertyChanged`, value clamping, derived properties (`RangeLabel`, `IsStroke`, `IsPitch`, `AvailableFillModes`, `HasScript`), and `CreateDefaults()` factory producing L0/R0/R1/R2 axes.
+- `AxisFillMode`: 9-member enum (None, Random, Triangle, Sine, Saw, SawtoothReverse, Square, Pulse, EaseInOut).
+- `BeatBarMode`: Sealed value-object class with static `Off`/`OnPeak`/`OnValley` instances, `CreateExternal()` factory, `IEquatable<BeatBarMode>` equality by `Id`.
+- `BeatDetectionMode`, `ConnectionMode`, `VisualizationMode`: Simple enums for device configuration.
+- `FunscriptData` and `FunscriptAction`: Funscript file data model with record-based actions.
+- `TestAxisState`: Internal ephemeral state for axis test-pattern generation.
+- Added 60 unit tests covering all model types, property clamping, change notification, equality, and factory methods.
+
 ### Plugin Integration (PI-003)
 - Added `AxisSettingsData` class for per-axis OSR2+ configuration (`Min`, `Max`, `Enabled`, `FillMode`, `SyncWithStroke`, `FillSpeedHz`, `PositionOffset`) with `CreateDefaults()` factory for L0/R0/R1/R2 axes.
 - Added `SettingDefinition` and `SettingValidation` records for compile-time-safe Settings UI descriptions with typed getter/setter delegates.
