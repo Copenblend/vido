@@ -247,8 +247,6 @@ public sealed class StatePersistenceTests
         svc.Current.RightPanelWidth = 350;
         svc.Current.StatusBarVisible = false;
         svc.Current.ShowHiddenFiles = true;
-        svc.Current.PluginInstalledSectionExpanded = false;
-        svc.Current.PluginAvailableSectionExpanded = false;
 
         await svc.SaveAsync();
 
@@ -268,8 +266,6 @@ public sealed class StatePersistenceTests
         Assert.Equal(350, svc2.Current.RightPanelWidth);
         Assert.False(svc2.Current.StatusBarVisible);
         Assert.True(svc2.Current.ShowHiddenFiles);
-        Assert.False(svc2.Current.PluginInstalledSectionExpanded);
-        Assert.False(svc2.Current.PluginAvailableSectionExpanded);
         }
         finally
         {
@@ -279,62 +275,8 @@ public sealed class StatePersistenceTests
 
     // ── PluginManagerViewModel persists section expanded state ──
 
-    /// <summary>
-    /// Verifies that Plugin Manager VM restores section state from settings.
-    /// </summary>
-    [Fact]
-    public void PluginManagerVM_RestoresSectionState_FromSettings()
-    {
-        var (host, installer, settings, log) = CreatePluginMocks();
-        settings.Current.Returns(new AppSettings
-        {
-            PluginInstalledSectionExpanded = false,
-            PluginAvailableSectionExpanded = false
-        });
-
-        var vm = new PluginManagerViewModel(host, installer, settings, log);
-
-        Assert.False(vm.IsInstalledExpanded);
-        Assert.False(vm.IsAvailableExpanded);
-    }
-
-    /// <summary>
-    /// Verifies that Plugin Manager VM toggle installed expanded saves settings.
-    /// </summary>
-    [Fact]
-    public void PluginManagerVM_ToggleInstalledExpanded_SavesSettings()
-    {
-        var (host, installer, settings, log) = CreatePluginMocks();
-        var appSettings = new AppSettings();
-        settings.Current.Returns(appSettings);
-
-        var vm = new PluginManagerViewModel(host, installer, settings, log);
-        Assert.True(vm.IsInstalledExpanded);
-
-        vm.IsInstalledExpanded = false;
-
-        Assert.False(appSettings.PluginInstalledSectionExpanded);
-        settings.Received().QueueSave();
-    }
-
-    /// <summary>
-    /// Verifies that Plugin Manager VM toggle available expanded saves settings.
-    /// </summary>
-    [Fact]
-    public void PluginManagerVM_ToggleAvailableExpanded_SavesSettings()
-    {
-        var (host, installer, settings, log) = CreatePluginMocks();
-        var appSettings = new AppSettings();
-        settings.Current.Returns(appSettings);
-
-        var vm = new PluginManagerViewModel(host, installer, settings, log);
-        Assert.True(vm.IsAvailableExpanded);
-
-        vm.IsAvailableExpanded = false;
-
-        Assert.False(appSettings.PluginAvailableSectionExpanded);
-        settings.Received().QueueSave();
-    }
+    // Plugin Manager persistence tests removed — PluginInstalledSectionExpanded/PluginAvailableSectionExpanded
+    // properties deleted from AppSettings in PI-003. PluginManagerViewModel will be removed in PI-022.
 
     private static (IPluginHost host, IPluginInstaller installer, ISettingsService settings, ILogService log) CreatePluginMocks()
     {

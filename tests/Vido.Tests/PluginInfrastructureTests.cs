@@ -5,101 +5,11 @@ using Xunit;
 namespace Vido.Tests;
 
 /// <summary>
-/// Tests for vi-b-002 additions: AppSettings.PluginRegistryUrls,
-/// PluginIconConstants, and SettingContribution model properties.
+/// Tests for vi-b-002 additions: SettingContribution model properties.
+/// Plugin registry URL tests removed in PI-003 (plugin settings removed from AppSettings).
 /// </summary>
 public sealed class PluginInfrastructureTests
 {
-    // ── AppSettings.PluginRegistryUrls ──
-
-    /// <summary>
-    /// Verifies that Plugin Registry Urls default contains official url.
-    /// </summary>
-    [Fact]
-    public void PluginRegistryUrls_DefaultContainsOfficialUrl()
-    {
-        var settings = new AppSettings();
-
-        Assert.Single(settings.PluginRegistryUrls);
-        Assert.Equal(AppSettings.OfficialRegistryUrl, settings.PluginRegistryUrls[0]);
-    }
-
-    /// <summary>
-    /// Verifies that Plugin Registry Urls can add custom url.
-    /// </summary>
-    [Fact]
-    public void PluginRegistryUrls_CanAddCustomUrl()
-    {
-        var settings = new AppSettings();
-        settings.PluginRegistryUrls.Add("https://custom.example.com/plugins");
-
-        Assert.Equal(2, settings.PluginRegistryUrls.Count);
-        Assert.Equal(AppSettings.OfficialRegistryUrl, settings.PluginRegistryUrls[0]);
-    }
-
-    /// <summary>
-    /// Verifies that Plugin Registry Urls supports file protocol.
-    /// </summary>
-    [Fact]
-    public void PluginRegistryUrls_SupportsFileProtocol()
-    {
-        var settings = new AppSettings();
-        settings.PluginRegistryUrls.Add("file:///C:/my-plugins/registry.json");
-
-        Assert.Equal(2, settings.PluginRegistryUrls.Count);
-    }
-
-    /// <summary>
-    /// Verifies that Official Registry Url is not empty.
-    /// </summary>
-    [Fact]
-    public void OfficialRegistryUrl_IsNotEmpty()
-    {
-        Assert.False(string.IsNullOrWhiteSpace(AppSettings.OfficialRegistryUrl));
-        Assert.StartsWith("https://", AppSettings.OfficialRegistryUrl);
-    }
-
-    /// <summary>
-    /// Verifies that Nsfw Registry Url is not empty.
-    /// </summary>
-    [Fact]
-    public void NsfwRegistryUrl_IsNotEmpty()
-    {
-        Assert.False(string.IsNullOrWhiteSpace(AppSettings.NsfwRegistryUrl));
-        Assert.StartsWith("https://", AppSettings.NsfwRegistryUrl);
-    }
-
-    /// <summary>
-    /// Verifies that Official Registry Urls contains both urls.
-    /// </summary>
-    [Fact]
-    public void OfficialRegistryUrls_Contains_Both_Urls()
-    {
-        Assert.Contains(AppSettings.OfficialRegistryUrl, (ISet<string>)AppSettings.OfficialRegistryUrls);
-        Assert.Contains(AppSettings.NsfwRegistryUrl, (ISet<string>)AppSettings.OfficialRegistryUrls);
-        Assert.Equal(2, AppSettings.OfficialRegistryUrls.Count);
-    }
-
-    /// <summary>
-    /// Verifies that Official Registry Urls is case insensitive.
-    /// </summary>
-    [Fact]
-    public void OfficialRegistryUrls_IsCaseInsensitive()
-    {
-        Assert.Contains(AppSettings.OfficialRegistryUrl.ToUpperInvariant(), (ISet<string>)AppSettings.OfficialRegistryUrls);
-        Assert.Contains(AppSettings.NsfwRegistryUrl.ToUpperInvariant(), (ISet<string>)AppSettings.OfficialRegistryUrls);
-    }
-
-    /// <summary>
-    /// Verifies that Plugin Registry Urls default does not contain nsfw url.
-    /// </summary>
-    [Fact]
-    public void PluginRegistryUrls_Default_DoesNotContainNsfwUrl()
-    {
-        var settings = new AppSettings();
-        Assert.DoesNotContain(AppSettings.NsfwRegistryUrl, settings.PluginRegistryUrls);
-    }
-
     // ── SettingContribution model ──
 
     /// <summary>
