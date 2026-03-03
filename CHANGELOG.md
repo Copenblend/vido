@@ -7,6 +7,11 @@ All notable changes to the Vido project will be documented in this file.
 ### Plugin Integration (PI-001)
 - Added `SkiaSharp` 2.88.9 package reference to `Vido.Core` for `IExternalBeatSource` strong-typed canvas rendering.
 
+### Plugin Integration (PI-011)
+- Copied 5 Pulse model types into `Vido.Core/Models/Pulse/`: `BeatEvent`, `BeatMap`, `BpmEstimate`, `PulseAnalysisResult`, `PulseState`.
+- Changed namespace from `PulsePlugin.Models` to `Vido.Core.Models.Pulse`.
+- Added 16 unit tests for model defaults, init properties, enum values, and BeatMap sorted data.
+
 ### Plugin Integration (PI-010)
 - Wired OSR2+ feature directly into `MainWindow` via `SetupOsr2Plus()` method, replacing plugin-based `Osr2PlusPlugin.Activate()` with integrated architecture.
 - Created and wired all OSR2+ services (`TCodeService`, `InterpolationService`, `FunscriptParser`, `FunscriptMatcher`, `BeatDetectionService`) and ViewModels (`Osr2PlusSidebarViewModel`, `AxisControlViewModel`, `VisualizerViewModel`, `BeatBarViewModel`) with manual instantiation.
