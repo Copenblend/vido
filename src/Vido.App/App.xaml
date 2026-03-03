@@ -6,6 +6,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/Vido.Views;component/Themes/Brushes.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/Vido.Views;component/Themes/Osr2PlusStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

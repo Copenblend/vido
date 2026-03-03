@@ -1,0 +1,34 @@
+<UserControl x:Class="Vido.Views.Osr2Plus.BeatBarComboBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:Vido.Views.Converters"
+             Background="Transparent">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <converters:BeatBarModeDisplayConverter x:Key="ModeDisplayConverter" />
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+        <TextBlock Text="♪"
+                   Foreground="{StaticResource TextSecondaryBrush}"
+                   FontSize="12"
+                   VerticalAlignment="Center"
+                   Margin="4,0,4,0"
+                   ToolTip="Beat Bar" />
+
+        <ComboBox Style="{StaticResource Osr2ComboBoxStyle}"
+                  ItemContainerStyle="{StaticResource Osr2ComboBoxItemStyle}"
+                  ItemsSource="{Binding AvailableModes}"
+                  SelectedItem="{Binding Mode}"
+                  Width="115"
+                  ToolTip="Beat Bar Mode">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Converter={StaticResource ModeDisplayConverter}}" />
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
+    </StackPanel>
+</UserControl>

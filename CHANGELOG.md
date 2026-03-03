@@ -7,6 +7,16 @@ All notable changes to the Vido project will be documented in this file.
 ### Plugin Integration (PI-001)
 - Added `SkiaSharp` 2.88.9 package reference to `Vido.Core` for `IExternalBeatSource` strong-typed canvas rendering.
 
+### Plugin Integration (PI-009)
+- Integrated 6 OSR2+ XAML view pairs (`SidebarView`, `AxisControlView`, `AxisCardView`, `VisualizerView`, `BeatBarComboBox`, `BeatBarOverlay`) into `Vido.Views/Osr2Plus/` namespace.
+- Created `RangeSlider` custom control in `Vido.Views/Controls/` with dual-thumb range selection, keyboard support, and default `ControlTemplate` in `Themes/RangeSliderGeneric.xaml`.
+- Created 7 value converters in `Vido.Views/Converters/`: `BeatBarModeDisplayConverter`, `BoolToVisibilityConverter`, `FillModeDisplayConverter`, `HexToBrushConverter`, `HexToLowOpacityBrushConverter`, `StateColorToBrushConverter`, `FractionToPercentConverter`.
+- Created `Osr2PlusStyles.xaml` dark theme with colors, brushes, scrollbar, button, textbox, combobox, checkbox, toggle switch, chevron, slider, and custom control styles.
+- Added `Themes/Generic.xaml` for WPF custom control default template resolution.
+- Merged `Osr2PlusStyles.xaml` into `App.xaml` resource dictionaries.
+- Copied 8 icon assets (`connect-dot-green/red`, `connect-icon`, `funscript-pitch/roll/stroke/twist`, `sidebar-icon`) to `Assets/Osr2Plus/` as embedded resources.
+- Updated all XAML namespace declarations for integrated architecture (`Vido.Views.Osr2Plus`, `Vido.Views.Controls`, `Vido.Views.Converters`, cross-assembly references to `Vido.Core.Models.Osr2Plus` and `Vido.ViewModels.Osr2Plus`).
+
 ### Plugin Integration (PI-008)
 - Integrated 5 OSR2+ ViewModel types from `Osr2PlusPlugin.ViewModels` into `Vido.ViewModels/Osr2Plus/` namespace.
 - `Osr2PlusSidebarViewModel`: Connection management (UDP/Serial), output rate, global offset, transport lifecycle with `HomeAxes` startup, `HapticTransportStateEvent` publishing via `IEventBus`, injectable `TransportFactory`/`PortLister` for testing.
