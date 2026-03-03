@@ -7,6 +7,13 @@ All notable changes to the Vido project will be documented in this file.
 ### Plugin Integration (PI-001)
 - Added `SkiaSharp` 2.88.9 package reference to `Vido.Core` for `IExternalBeatSource` strong-typed canvas rendering.
 
+### Plugin Integration (PI-012)
+- Integrated 7 Pulse audio analysis service files into `Vido.Services/Pulse/`: `IAudioDecoder`, `AudioChunk`, `FfmpegAudioDecoder`, `OnsetDetector`, `BpmEstimator`, `AmplitudeTracker`, `AudioPreAnalysisService`.
+- Changed namespace from `PulsePlugin.Services` to `Vido.Services.Pulse`.
+- Updated model imports from `PulsePlugin.Models` to `Vido.Core.Models.Pulse`.
+- Verified FFmpeg.AutoGen.Abstractions and AllowUnsafeBlocks compile correctly for `FfmpegAudioDecoder` unsafe interop.
+- Added 56 unit tests covering OnsetDetector (FFT, onset detection, sensitivity, buffer reuse), BpmEstimator (interval estimation, quantization, circular buffer wrap), AmplitudeTracker (RMS, downmix, byte buffer conversion), AudioPreAnalysisService (integration, progress, cancellation), and AudioChunk properties.
+
 ### Plugin Integration (PI-011)
 - Copied 5 Pulse model types into `Vido.Core/Models/Pulse/`: `BeatEvent`, `BeatMap`, `BpmEstimate`, `PulseAnalysisResult`, `PulseState`.
 - Changed namespace from `PulsePlugin.Models` to `Vido.Core.Models.Pulse`.
