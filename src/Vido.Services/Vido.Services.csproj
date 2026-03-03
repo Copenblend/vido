@@ -23,6 +23,7 @@
     <PackageReference Include="FFmpeg.LGPL" Version="$(FFmpegLGPLVersion)" />
     <PackageReference Include="NAudio" Version="$(NAudioVersion)" />
     <PackageReference Include="SoundTouch.Net" Version="$(SoundTouchNetVersion)" />
+    <PackageReference Include="System.IO.Ports" Version="$(SystemIOPortsVersion)" />
   </ItemGroup>
 
 </Project>

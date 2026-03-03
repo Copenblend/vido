@@ -5,16 +5,11 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Vido.Core</RootNamespace>
-
-    <!-- NuGet package metadata -->
-    <PackageId>Vido.Core</PackageId>
     <Version>$(VidoVersion)</Version>
-    <Authors>Vido</Authors>
-    <Description>Core plugin API for the Vido media player.</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <IncludeSymbols>false</IncludeSymbols>
-    <DebugType>none</DebugType>
   </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="$(SkiaSharpVersion)" />
+  </ItemGroup>
 
 </Project>
