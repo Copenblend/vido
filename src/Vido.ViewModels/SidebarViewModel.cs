@@ -21,7 +21,9 @@ public partial class SidebarViewModel : ObservableObject
         HeaderText = panel switch
         {
             SidebarPanelKind.Explorer => "EXPLORER",
-            SidebarPanelKind.Extensions => "EXTENSIONS",
+            SidebarPanelKind.Playlists => "PLAYLISTS",
+            SidebarPanelKind.Osr2Plus => "OSR2+",
+            SidebarPanelKind.Pulse => "PULSE",
             SidebarPanelKind.Settings => "SETTINGS",
             _ => "EXPLORER"
         };

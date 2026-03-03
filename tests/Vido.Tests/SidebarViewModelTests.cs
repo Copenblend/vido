@@ -27,7 +27,9 @@ public class SidebarViewModelTests
     /// <param name="expected">The expected result value.</param>
     [Theory]
     [InlineData(SidebarPanelKind.Explorer, "EXPLORER")]
-    [InlineData(SidebarPanelKind.Extensions, "EXTENSIONS")]
+    [InlineData(SidebarPanelKind.Playlists, "PLAYLISTS")]
+    [InlineData(SidebarPanelKind.Osr2Plus, "OSR2+")]
+    [InlineData(SidebarPanelKind.Pulse, "PULSE")]
     [InlineData(SidebarPanelKind.Settings, "SETTINGS")]
     public void SetPanel_UpdatesHeaderText(SidebarPanelKind panel, string expected)
     {
@@ -48,7 +50,7 @@ public class SidebarViewModelTests
         var changedProperties = new List<string>();
         vm.PropertyChanged += (_, e) => changedProperties.Add(e.PropertyName!);
 
-        vm.SetPanel(SidebarPanelKind.Extensions);
+        vm.SetPanel(SidebarPanelKind.Playlists);
 
         Assert.Contains("HeaderText", changedProperties);
     }

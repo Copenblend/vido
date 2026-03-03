@@ -35,7 +35,6 @@ public sealed class AppSettingsStore : IPluginSettingsStore
             ["explorer.showHiddenFiles"] = () => Settings.ShowHiddenFiles,
             ["screenshot.enabled"] = () => Settings.ScreenshotEnabled,
             ["screenshot.directory"] = () => Settings.ScreenshotDirectory,
-            ["plugins.registryUrls"] = () => GetCustomRegistryUrls(),
         };
 
         _setters = new(StringComparer.OrdinalIgnoreCase)
@@ -68,11 +67,6 @@ public sealed class AppSettingsStore : IPluginSettingsStore
             ["screenshot.directory"] = v =>
             {
                 Settings.ScreenshotDirectory = v?.ToString() ?? string.Empty;
-                _settingsService.QueueSave();
-            },
-            ["plugins.registryUrls"] = v =>
-            {
-                SetCustomRegistryUrls(v as List<string> ?? []);
                 _settingsService.QueueSave();
             },
         };
@@ -136,53 +130,6 @@ public sealed class AppSettingsStore : IPluginSettingsStore
     public void ResetAll()
     {
         // App settings don't support bulk reset via this interface.
-    }
-
-    /// <summary>
-    /// Returns the custom registry URLs (everything except the official URL at index 0).
-    /// Ensures the official URL is always present as index 0.
-    /// </summary>
-    private List<string> GetCustomRegistryUrls()
-    {
-        EnsureOfficialUrlPresent();
-        return Settings.PluginRegistryUrls
-            .Where(u => !u.Equals(AppSettings.OfficialRegistryUrl, StringComparison.OrdinalIgnoreCase))
-            .ToList();
-    }
-
-    /// <summary>
-    /// Replaces the custom registry URLs (indices 1+) with the given list.
-    /// The official URL at index 0 is never modified.
-    /// </summary>
-    private void SetCustomRegistryUrls(List<string> customUrls)
-    {
-        EnsureOfficialUrlPresent();
-        var urls = Settings.PluginRegistryUrls;
-
-        // Remove all entries after the official URL
-        while (urls.Count > 1)
-            urls.RemoveAt(urls.Count - 1);
-
-        // Add the new custom URLs
-        foreach (var url in customUrls)
-        {
-            if (!string.IsNullOrWhiteSpace(url))
-                urls.Add(url);
-        }
-    }
-
-    /// <summary>
-    /// Ensures the official registry URL is always the first entry.
-    /// Fixes settings files where it was missing.
-    /// </summary>
-    private void EnsureOfficialUrlPresent()
-    {
-        var urls = Settings.PluginRegistryUrls;
-        if (urls.Count == 0 ||
-            !urls[0].Equals(AppSettings.OfficialRegistryUrl, StringComparison.OrdinalIgnoreCase))
-        {
-            urls.Insert(0, AppSettings.OfficialRegistryUrl);
-        }
     }
 
     private static string FormatSpeed(double speed) => speed switch

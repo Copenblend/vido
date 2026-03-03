@@ -134,21 +134,19 @@ public partial class PluginManagerViewModel : ObservableObject
         _logService = logService;
 
         // Restore collapsed/expanded state from persisted settings
-        var s = _settingsService.Current;
-        _isInstalledExpanded = s.PluginInstalledSectionExpanded;
-        _isAvailableExpanded = s.PluginAvailableSectionExpanded;
+        // TODO PI-022: Plugin settings properties removed from AppSettings
+        _isInstalledExpanded = true;
+        _isAvailableExpanded = true;
     }
 
     partial void OnIsInstalledExpandedChanged(bool value)
     {
-        _settingsService.Current.PluginInstalledSectionExpanded = value;
-        _settingsService.QueueSave();
+        // TODO PI-022: Plugin settings properties removed from AppSettings
     }
 
     partial void OnIsAvailableExpandedChanged(bool value)
     {
-        _settingsService.Current.PluginAvailableSectionExpanded = value;
-        _settingsService.QueueSave();
+        // TODO PI-022: Plugin settings properties removed from AppSettings
     }
 
     /// <summary>
@@ -167,7 +165,15 @@ public partial class PluginManagerViewModel : ObservableObject
     /// Call this when the panel becomes visible.
     /// </summary>
     [RelayCommand]
-    public async Task LoadAsync()
+    public async Task LoadAsync() => await LoadAsync(null);
+
+    /// <summary>
+    /// Loads installed plugins and fetches registries from the specified URLs.
+    /// When <paramref name="registryUrlOverrides"/> is <c>null</c>, no registries are fetched
+    /// (registry fetching is stubbed out until PI-022 re-implements the feature).
+    /// </summary>
+    /// <param name="registryUrlOverrides">Optional registry URLs to fetch. Used by tests.</param>
+    public async Task LoadAsync(IEnumerable<string>? registryUrlOverrides)
     {
         if (IsLoading) return;
         IsLoading = true;
@@ -199,7 +205,8 @@ public partial class PluginManagerViewModel : ObservableObject
             }
 
             // 2. Fetch registries
-            var registryUrls = _settingsService.Current.PluginRegistryUrls;
+            // TODO PI-022: PluginRegistryUrls removed from AppSettings
+            var registryUrls = registryUrlOverrides?.ToList() ?? new List<string>();
             var seenIds = new HashSet<string>(installedMap.Keys, StringComparer.OrdinalIgnoreCase);
 
             foreach (var url in registryUrls)
@@ -216,7 +223,8 @@ public partial class PluginManagerViewModel : ObservableObject
                 if (!RegistrySources.Contains(registryName))
                     RegistrySources.Add(registryName);
 
-                var isOfficial = AppSettings.OfficialRegistryUrls.Contains(url);
+                // TODO PI-022: OfficialRegistryUrls removed from AppSettings
+                var isOfficial = false;
 
                 foreach (var entry in registry.Plugins)
                 {

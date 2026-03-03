@@ -34,10 +34,7 @@ public class PluginHostTests : IDisposable
         _tempDir = Path.Combine(Path.GetTempPath(), "vido-pluginhost-test-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(_tempDir);
 
-        _appSettings = new AppSettings
-        {
-            PluginDirectories = [_tempDir]
-        };
+        _appSettings = new AppSettings();
         _settingsService.Current.Returns(_appSettings);
     }
 
@@ -50,10 +47,11 @@ public class PluginHostTests : IDisposable
             Directory.Delete(_tempDir, recursive: true);
     }
 
-    private PluginHost.PluginHost CreateHost() => new(
+    private PluginHost.PluginHost CreateHost(IEnumerable<string>? scanDirs = null) => new(
         _eventBus, _videoEngine, _logService, _settingsService,
         _contributions, _contextMenuRegistry, _keyboardShortcutService,
-        scanDefaultDirectory: false);
+        scanDefaultDirectory: false,
+        additionalScanDirectories: scanDirs ?? [_tempDir]);
 
     private void CreatePluginDirectory(string pluginId, string json,
         bool createDll = false, string? dllName = null)
@@ -155,7 +153,6 @@ public class PluginHostTests : IDisposable
         // Create a second scan directory
         var dir2 = Path.Combine(_tempDir, "_scan2");
         Directory.CreateDirectory(dir2);
-        _appSettings.PluginDirectories = [_tempDir, dir2];
 
         var json = """
         {
@@ -176,7 +173,7 @@ public class PluginHostTests : IDisposable
         Directory.CreateDirectory(pluginDir2);
         File.WriteAllText(Path.Combine(pluginDir2, "plugin.json"), json);
 
-        var host = CreateHost();
+        var host = CreateHost([_tempDir, dir2]);
         host.ActivateAll();
 
         _logService.Received().Warning(
@@ -190,7 +187,7 @@ public class PluginHostTests : IDisposable
     [Fact]
     public void ActivateAll_DisabledPlugin_LogsStartup()
     {
-        _appSettings.DisabledPluginIds = ["com.test.disabled"];
+        // TODO PI-021: DisabledPluginIds removed from AppSettings — disabled feature stubbed out
 
         CreatePluginDirectory("disabled-plugin", """
         {
@@ -253,19 +250,17 @@ public class PluginHostTests : IDisposable
     }
 
     /// <summary>
-    /// Verifies that Get Disabled Plugin Ids returns from settings.
+    /// Verifies that Get Disabled Plugin Ids returns empty list (disabled feature stubbed out in PI-003).
     /// </summary>
     [Fact]
-    public void GetDisabledPluginIds_ReturnsFromSettings()
+    public void GetDisabledPluginIds_ReturnsEmptyList()
     {
-        _appSettings.DisabledPluginIds = ["plugin-a", "plugin-b"];
-
+        // TODO PI-021: DisabledPluginIds removed from AppSettings — always returns empty
         var host = CreateHost();
 
         var disabled = host.GetDisabledPluginIds();
 
-        Assert.Equal(2, disabled.Count);
-        Assert.Contains("plugin-a", disabled);
+        Assert.Empty(disabled);
     }
 
     /// <summary>
@@ -301,9 +296,7 @@ public class PluginHostTests : IDisposable
     [Fact]
     public void ScanNonExistentDirectory_LogsDebug()
     {
-        _appSettings.PluginDirectories = [@"C:\nonexistent\path\12345"];
-
-        var host = CreateHost();
+        var host = CreateHost([@"C:\nonexistent\path\12345"]);
         host.ActivateAll();
 
         _logService.Received().Debug(
@@ -329,76 +322,9 @@ public class PluginHostTests : IDisposable
     }
 
     /// <summary>
-    /// Verifies that Activate All prunes orphaned disabled ids.
-    /// </summary>
-    [Fact]
-    public void ActivateAll_PrunesOrphanedDisabledIds()
-    {
-        // Add a stale ID that doesn't match any actual plugin
-        _appSettings.DisabledPluginIds = ["com.nonexistent.plugin"];
-
-        var host = CreateHost();
-        host.ActivateAll();
-
-        // Stale entry should be removed from DisabledPluginIds
-        Assert.Empty(_appSettings.DisabledPluginIds);
-        _settingsService.Received().QueueSave();
-    }
-
-    /// <summary>
-    /// Verifies that Activate All keeps valid disabled ids.
-    /// </summary>
-    [Fact]
-    public void ActivateAll_KeepsValidDisabledIds()
-    {
-        _appSettings.DisabledPluginIds = ["com.test.real-plugin"];
-
-        CreatePluginDirectory("real-plugin", """
-        {
-            "id": "com.test.real-plugin",
-            "name": "real-plugin",
-            "version": "1.0.0",
-            "entryPoint": "Real.dll",
-            "pluginClass": "Real.Plugin"
-        }
-        """);
-
-        var host = CreateHost();
-        host.ActivateAll();
-
-        // Valid disabled ID should remain
-        Assert.Single(_appSettings.DisabledPluginIds);
-        Assert.Equal("com.test.real-plugin", _appSettings.DisabledPluginIds[0]);
-    }
-
-    /// <summary>
-    /// Verifies that Activate All disabled check is case insensitive.
-    /// </summary>
-    [Fact]
-    public void ActivateAll_DisabledCheck_IsCaseInsensitive()
-    {
-        // Setting file has different casing than the manifest
-        _appSettings.DisabledPluginIds = ["COM.TEST.MY-PLUGIN"];
-
-        CreatePluginDirectory("ci-plugin", """
-        {
-            "id": "com.test.my-plugin",
-            "name": "ci-plugin",
-            "version": "1.0.0",
-            "entryPoint": "CI.dll",
-            "pluginClass": "CI.Plugin"
-        }
-        """);
-
-        var host = CreateHost();
-        host.ActivateAll();
-
-        // The disabled ID (case-insensitive) should be retained because the
-        // plugin exists. The plugin itself is in Error state (fake DLL) so the
-        // disabled check in the activation loop is bypassed, but the pruning
-        // should NOT remove the entry because the ID maps to a real plugin.
-        Assert.Single(_appSettings.DisabledPluginIds);
-    }
+    // PI-003: ActivateAll_PrunesOrphanedDisabledIds, ActivateAll_KeepsValidDisabledIds,
+    // and ActivateAll_DisabledCheck_IsCaseInsensitive tests removed — DisabledPluginIds
+    // property deleted from AppSettings. These will be re-implemented in PI-021.
 
     /// <summary>
     /// Verifies that Get Plugin is case insensitive.
@@ -714,11 +640,13 @@ public class PluginHostTests : IDisposable
 
     /// <summary>
     /// Verifies that Activate All disabled dependency sets error state.
+    /// With DisabledPluginIds removed in PI-003, the base plugin is no longer disabled
+    /// but still errors due to fake DLL. The dependent plugin still fails.
     /// </summary>
     [Fact]
     public void ActivateAll_DisabledDependency_SetsErrorState()
     {
-        _appSettings.DisabledPluginIds = ["com.test.base"];
+        // TODO PI-021: DisabledPluginIds removed from AppSettings — disabled feature stubbed out
 
         CreatePluginDirectory("base-plugin", """
         {
@@ -746,12 +674,11 @@ public class PluginHostTests : IDisposable
         var host = CreateHost();
         host.ActivateAll();
 
-        // base-plugin should be disabled
+        // base-plugin ends up in Error state due to fake DLL (not disabled — feature stubbed out)
         var basePlugin = host.GetPlugin("com.test.base");
         Assert.NotNull(basePlugin);
-        // Even with the disabled check, the DLL not found error occurs first in DiscoverPlugins.
-        // The plugin ends up in Error due to DLL, but the disabled flag is set before that.
-        // Check that the dependent also fails.
+        Assert.Equal(PluginState.Error, basePlugin.State);
+        // The dependent also fails due to dependency on an Error-state plugin.
         var dependent = host.GetPlugin("com.test.dependent");
         Assert.NotNull(dependent);
         Assert.Equal(PluginState.Error, dependent.State);

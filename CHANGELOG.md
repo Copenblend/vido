@@ -16,6 +16,18 @@ All notable changes to the Vido project will be documented in this file.
 - Strong-typed `IExternalBeatSource.RenderBeat` and `RenderIndicator` methods from `object` to `SKCanvas`.
 - Updated XML documentation to reflect integrated architecture (replaced "plugin" references with "feature").
 
+### Plugin Integration (PI-003)
+- Added `AxisSettingsData` class for per-axis OSR2+ configuration (`Min`, `Max`, `Enabled`, `FillMode`, `SyncWithStroke`, `FillSpeedHz`, `PositionOffset`) with `CreateDefaults()` factory for L0/R0/R1/R2 axes.
+- Added `SettingDefinition` and `SettingValidation` records for compile-time-safe Settings UI descriptions with typed getter/setter delegates.
+- Added 21 feature settings to `AppSettings`: OSR2+ Connection (4), OSR2+ Output (2), OSR2+ Visualizer (2), OSR2+ Runtime (2), OSR2+ Per-Axis (1 Dictionary), Pulse Detection (2), Pulse Visualizer (1), Pulse Runtime (2), Playlist (3).
+- Updated `AppSettings.ResetToDefaults()` to reset all new feature settings.
+- Replaced `SidebarPanelKind.Extensions` with `Playlists`, `Osr2Plus`, `Pulse` enum members.
+- Removed all plugin settings properties from `AppSettings`: `PluginInstalledSectionExpanded`, `PluginAvailableSectionExpanded`, `PluginDirectories`, `DisabledPluginIds`, `PluginSidebarOrder`, `PluginRegistryUrls`, `OfficialRegistryUrl`, `NsfwRegistryUrl`, `OfficialRegistryUrls`, `ResolveRepositoryCode()`.
+- Deleted `PluginSidebarItem` class (replaced by feature-specific enum members).
+- Updated all downstream consumers (`SettingsService`, `AppSettingsStore`, `SidebarViewModel`, `ActivityBarViewModel`, `ActivityBarView`, `MainWindow`, `PluginManagerViewModel`, `PluginHost`) with TODO stubs for PI-021/PI-022.
+- Added `additionalScanDirectories` constructor parameter to `PluginHost` for test-injectable scan directory support.
+- Added `LoadAsync(IEnumerable<string>?)` overload to `PluginManagerViewModel` for test-injectable registry URLs.
+
 ### vido-132
 - Cached `VideoPlayerControl` render dispatch callback (`_renderAction`) and switched frame render enqueues to reuse the cached delegate, removing per-frame method-group delegate allocations.
 - Added XML `<summary>` documentation for spinner lifecycle methods in `VideoPlayerControl` and `FileExplorerPanel`.

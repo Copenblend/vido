@@ -68,6 +68,7 @@ public sealed class PluginHost : IPluginHost
     /// <param name="contextMenuRegistry">Registry for context menu entries.</param>
     /// <param name="keyboardShortcutService">Service for registering keyboard shortcuts.</param>
     /// <param name="scanDefaultDirectory">When false, the default <c>%APPDATA%/Vido/plugins/</c> directory is not scanned.</param>
+    /// <param name="additionalScanDirectories">Optional extra directories to scan for plugins (used primarily by tests).</param>
     public PluginHost(
         IEventBus eventBus,
         IVideoEngine videoEngine,
@@ -76,7 +77,8 @@ public sealed class PluginHost : IPluginHost
         ContributionRegistry contributions,
         IContextMenuRegistry contextMenuRegistry,
         IKeyboardShortcutService keyboardShortcutService,
-        bool scanDefaultDirectory = true)
+        bool scanDefaultDirectory = true,
+        IEnumerable<string>? additionalScanDirectories = null)
     {
         _eventBus = eventBus;
         _videoEngine = videoEngine;
@@ -90,11 +92,10 @@ public sealed class PluginHost : IPluginHost
         if (scanDefaultDirectory)
             _scanDirectories.Add(DefaultPluginDirectory);
 
-        // Add custom directories from settings
-        var customDirs = settingsService.Current.PluginDirectories;
-        if (customDirs is not null)
+        // Add additional scan directories (replaces former AppSettings.PluginDirectories)
+        if (additionalScanDirectories is not null)
         {
-            foreach (var dir in customDirs)
+            foreach (var dir in additionalScanDirectories)
             {
                 if (!string.IsNullOrWhiteSpace(dir))
                     _scanDirectories.Add(dir);
@@ -112,8 +113,9 @@ public sealed class PluginHost : IPluginHost
 
         DiscoverPlugins();
 
+        // TODO PI-021: DisabledPluginIds removed from AppSettings
         var disabledIds = new HashSet<string>(
-            _settingsService.Current.DisabledPluginIds, StringComparer.OrdinalIgnoreCase);
+            new List<string>(), StringComparer.OrdinalIgnoreCase);
 
         // Mark disabled plugins before dependency resolution
         foreach (var info in _plugins)
@@ -207,7 +209,8 @@ public sealed class PluginHost : IPluginHost
             return;
         }
 
-        var disabledIds = _settingsService.Current.DisabledPluginIds;
+        // TODO PI-021: DisabledPluginIds removed from AppSettings
+        var disabledIds = new List<string>();
 
         if (enabled)
         {
@@ -239,7 +242,8 @@ public sealed class PluginHost : IPluginHost
     /// Returns the list of plugin IDs that are currently marked as disabled in application settings.
     /// </summary>
     public IReadOnlyList<string> GetDisabledPluginIds() =>
-        _settingsService.Current.DisabledPluginIds.ToList().AsReadOnly();
+        // TODO PI-021: DisabledPluginIds removed from AppSettings
+        new List<string>().AsReadOnly();
 
     /// <summary>
     /// Removes entries from <see cref="AppSettings.DisabledPluginIds"/> that
@@ -250,7 +254,8 @@ public sealed class PluginHost : IPluginHost
     {
         var knownIds = new HashSet<string>(
             _plugins.Select(p => p.Manifest.Id), StringComparer.OrdinalIgnoreCase);
-        var disabledIds = _settingsService.Current.DisabledPluginIds;
+        // TODO PI-021: DisabledPluginIds removed from AppSettings
+        var disabledIds = new List<string>();
         var removed = disabledIds.RemoveAll(id => !knownIds.Contains(id));
         if (removed > 0)
         {
@@ -638,8 +643,7 @@ public sealed class PluginHost : IPluginHost
         }
 
         // Remove from disabled list so reinstallation starts fresh
-        _settingsService.Current.DisabledPluginIds.RemoveAll(id =>
-            string.Equals(id, pluginId, StringComparison.OrdinalIgnoreCase));
+        // TODO PI-021: DisabledPluginIds removed from AppSettings
         _settingsService.QueueSave();
 
         _logService.Debug($"Plugin '{pluginId}' removed from runtime state", "PluginHost");

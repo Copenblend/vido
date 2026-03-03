@@ -1,5 +1,3 @@
-using System.Collections.Frozen;
-
 namespace Vido.Core.Settings;
 
 /// <summary>
@@ -102,83 +100,119 @@ public sealed class AppSettings
     /// </summary>
     public string ScreenshotDirectory { get; set; } = string.Empty;
 
-    // --- Plugins ---
+    // --- OSR2+ Connection Settings ---
 
     /// <summary>
-    /// Whether the Installed section in the Plugin Manager is expanded.
+    /// Connection mode for the OSR2+ device ("UDP" or "Serial").
     /// </summary>
-    public bool PluginInstalledSectionExpanded { get; set; } = true;
+    public string Osr2ConnectionMode { get; set; } = "UDP";
 
     /// <summary>
-    /// Whether the Available section in the Plugin Manager is expanded.
+    /// UDP port for OSR2+ T-Code output.
     /// </summary>
-    public bool PluginAvailableSectionExpanded { get; set; } = true;
+    public int Osr2UdpPort { get; set; } = 7777;
 
     /// <summary>
-    /// Additional directories to scan for plugins (besides %APPDATA%/Vido/plugins/).
+    /// Serial COM port name for OSR2+ communication.
     /// </summary>
-    public List<string> PluginDirectories { get; set; } = [];
+    public string Osr2ComPort { get; set; } = "";
 
     /// <summary>
-    /// Plugin IDs that the user has explicitly disabled.
+    /// Baud rate for OSR2+ serial communication.
     /// </summary>
-    public List<string> DisabledPluginIds { get; set; } = [];
+    public int Osr2BaudRate { get; set; } = 115200;
+
+    // --- OSR2+ Output Settings ---
 
     /// <summary>
-    /// Persisted display order of plugin sidebar icons.
-    /// Stores full panel IDs in the user's preferred order.
-    /// When empty, the default registration order is used.
+    /// T-Code output rate in Hz (updates per second).
     /// </summary>
-    public List<string> PluginSidebarOrder { get; set; } = [];
+    public int Osr2OutputRate { get; set; } = 100;
 
     /// <summary>
-    /// Plugin registry URLs. The official Vido registry is always the first entry
-    /// and cannot be removed. Users may add custom URLs (including <c>file://</c>
-    /// paths for local development).
+    /// Global timing offset in milliseconds applied to all axes.
     /// </summary>
-    public List<string> PluginRegistryUrls { get; set; } = [OfficialRegistryUrl];
+    public int Osr2GlobalOffset { get; set; } = 0;
+
+    // --- OSR2+ Visualizer Settings ---
 
     /// <summary>
-    /// The official Vido plugin registry URL (always present).
+    /// Visualizer display mode (e.g. "Graph", "Bars").
     /// </summary>
-    public const string OfficialRegistryUrl = "https://raw.githubusercontent.com/Copenblend/vido-plugin-registry/refs/heads/master/registry.json";
+    public string Osr2VisualizerMode { get; set; } = "Graph";
 
     /// <summary>
-    /// The official NSFW Vido plugin registry URL.
+    /// Duration of the visualizer time window in seconds.
     /// </summary>
-    public const string NsfwRegistryUrl = "https://raw.githubusercontent.com/Copenblend/vido-nsfw-plugin-registry/refs/heads/master/registry.json";
+    public int Osr2VisualizerWindowDuration { get; set; } = 60;
+
+    // --- OSR2+ Runtime Settings ---
 
     /// <summary>
-    /// All official Vido registry URLs. Plugins from these registries show a verified badge.
+    /// Beat bar display mode (e.g. "Off", "OnPeak", "OnValley").
     /// </summary>
-    public static readonly FrozenSet<string> OfficialRegistryUrls =
-        new[] { OfficialRegistryUrl, NsfwRegistryUrl }
-            .ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+    public string Osr2BeatBarMode { get; set; } = "Off";
 
     /// <summary>
-    /// Resolves a repository code or URL to a registry URL.
-    /// Known codes (e.g. "NSFW") map to predefined URLs.
-    /// Direct URLs (https://, http://, file://) are returned as-is.
-    /// Returns <c>null</c> if the input is not recognised.
+    /// Last active right panel ID for OSR2+ (used to restore panel state).
     /// </summary>
-    /// <param name="input">A shorthand code (e.g. "NSFW") or a direct URL to resolve.</param>
-    /// <returns>
-    /// The resolved registry URL when recognized; otherwise <c>null</c>.
-    /// </returns>
-    public static string? ResolveRepositoryCode(string input)
-    {
-        if (string.Equals(input, "NSFW", StringComparison.OrdinalIgnoreCase))
-            return NsfwRegistryUrl;
+    public string Osr2LastRightPanel { get; set; } = "";
 
-        if (input.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
-            input.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-            input.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
-        {
-            return input;
-        }
+    // --- OSR2+ Per-Axis Settings ---
 
-        return null;
-    }
+    /// <summary>
+    /// Per-axis configuration for the OSR2+ device, keyed by axis ID (L0, R0, R1, R2).
+    /// </summary>
+    public Dictionary<string, AxisSettingsData> Osr2AxisSettings { get; set; } = AxisSettingsData.CreateDefaults();
+
+    // --- Pulse Detection Settings ---
+
+    /// <summary>
+    /// Beat detection sensitivity multiplier for Pulse audio analysis.
+    /// Higher values detect more beats (including quieter ones).
+    /// </summary>
+    public double PulseBeatSensitivity { get; set; } = 1.5;
+
+    /// <summary>
+    /// Whether BPM-based phase locking is enabled for Pulse beat detection.
+    /// </summary>
+    public bool PulseEnableBpmPhaseLock { get; set; } = true;
+
+    // --- Pulse Visualizer Settings ---
+
+    /// <summary>
+    /// Duration of the waveform display window in seconds.
+    /// </summary>
+    public int PulseWaveformWindowDuration { get; set; } = 30;
+
+    // --- Pulse Runtime Settings ---
+
+    /// <summary>
+    /// Whether the Pulse audio-driven haptic engine is active.
+    /// </summary>
+    public bool PulseUsePulse { get; set; } = false;
+
+    /// <summary>
+    /// Index of the selected beat rate in the Pulse rate selector.
+    /// </summary>
+    public int PulseBeatRateIndex { get; set; } = 0;
+
+    // --- Playlist Settings ---
+
+    /// <summary>
+    /// Whether playlists are automatically saved when modified.
+    /// </summary>
+    public bool PlaylistAutoSave { get; set; } = false;
+
+    /// <summary>
+    /// Most recently opened playlist file paths.
+    /// </summary>
+    public List<string> PlaylistRecentPlaylists { get; set; } = [];
+
+    /// <summary>
+    /// Path of the last loaded playlist file (restored on startup).
+    /// </summary>
+    public string PlaylistLastPlaylistPath { get; set; } = "";
 
     /// <summary>
     /// Resets every property to its default value.
@@ -203,11 +237,30 @@ public sealed class AppSettings
         ShowHiddenFiles = false;
         ScreenshotEnabled = false;
         ScreenshotDirectory = string.Empty;
-        PluginInstalledSectionExpanded = true;
-        PluginAvailableSectionExpanded = true;
-        PluginDirectories = [];
-        DisabledPluginIds = [];
-        PluginSidebarOrder = [];
-        PluginRegistryUrls = [OfficialRegistryUrl];
+
+        // OSR2+ settings
+        Osr2ConnectionMode = "UDP";
+        Osr2UdpPort = 7777;
+        Osr2ComPort = "";
+        Osr2BaudRate = 115200;
+        Osr2OutputRate = 100;
+        Osr2GlobalOffset = 0;
+        Osr2VisualizerMode = "Graph";
+        Osr2VisualizerWindowDuration = 60;
+        Osr2BeatBarMode = "Off";
+        Osr2LastRightPanel = "";
+        Osr2AxisSettings = AxisSettingsData.CreateDefaults();
+
+        // Pulse settings
+        PulseBeatSensitivity = 1.5;
+        PulseEnableBpmPhaseLock = true;
+        PulseWaveformWindowDuration = 30;
+        PulseUsePulse = false;
+        PulseBeatRateIndex = 0;
+
+        // Playlist settings
+        PlaylistAutoSave = false;
+        PlaylistRecentPlaylists = [];
+        PlaylistLastPlaylistPath = "";
     }
 }

@@ -84,44 +84,8 @@ public sealed class AppSettingsStoreTests
         Assert.True(_store.Get("explorer.showHiddenFiles", false));
     }
 
-    /// <summary>
-    /// Verifies that Get registry urls returns empty list when no custom urls.
-    /// </summary>
-    [Fact]
-    public void Get_RegistryUrls_ReturnsEmptyListWhenNoCustomUrls()
-    {
-        _settings.PluginRegistryUrls = [AppSettings.OfficialRegistryUrl];
-        var result = _store.Get("plugins.registryUrls", new List<string>());
-        Assert.Empty(result);
-    }
-
-    /// <summary>
-    /// Verifies that Get registry urls returns custom urls only.
-    /// </summary>
-    [Fact]
-    public void Get_RegistryUrls_ReturnsCustomUrlsOnly()
-    {
-        _settings.PluginRegistryUrls = [AppSettings.OfficialRegistryUrl, "https://custom1.com", "https://custom2.com"];
-        var result = _store.Get("plugins.registryUrls", new List<string>());
-        Assert.Equal(2, result.Count);
-        Assert.Equal("https://custom1.com", result[0]);
-        Assert.Equal("https://custom2.com", result[1]);
-    }
-
-    /// <summary>
-    /// Verifies that Get registry urls ensures official url when missing.
-    /// </summary>
-    [Fact]
-    public void Get_RegistryUrls_EnsuresOfficialUrlWhenMissing()
-    {
-        _settings.PluginRegistryUrls = ["https://custom-only.com"];
-        var result = _store.Get("plugins.registryUrls", new List<string>());
-        // After ensuring official URL is present, "custom-only.com" becomes a custom URL
-        Assert.Single(result);
-        Assert.Equal("https://custom-only.com", result[0]);
-        // The official URL should now be at index 0 in the underlying list
-        Assert.Equal(AppSettings.OfficialRegistryUrl, _settings.PluginRegistryUrls[0]);
-    }
+    // Plugin registry URL tests removed — PluginRegistryUrls and OfficialRegistryUrl
+    // properties deleted from AppSettings in PI-003.
 
     /// <summary>
     /// Verifies that Get unknown key returns default.
@@ -212,44 +176,7 @@ public sealed class AppSettingsStoreTests
         Assert.True(_settings.ShowHiddenFiles);
     }
 
-    /// <summary>
-    /// Verifies that Set registry urls adds custom urls.
-    /// </summary>
-    [Fact]
-    public void Set_RegistryUrls_AddsCustomUrls()
-    {
-        _settings.PluginRegistryUrls = [AppSettings.OfficialRegistryUrl];
-        _store.Set("plugins.registryUrls", new List<string> { "https://custom1.com", "https://custom2.com" });
-        Assert.Equal(3, _settings.PluginRegistryUrls.Count);
-        Assert.Equal(AppSettings.OfficialRegistryUrl, _settings.PluginRegistryUrls[0]);
-        Assert.Equal("https://custom1.com", _settings.PluginRegistryUrls[1]);
-        Assert.Equal("https://custom2.com", _settings.PluginRegistryUrls[2]);
-    }
-
-    /// <summary>
-    /// Verifies that Set registry urls replaces existing custom urls.
-    /// </summary>
-    [Fact]
-    public void Set_RegistryUrls_ReplacesExistingCustomUrls()
-    {
-        _settings.PluginRegistryUrls = [AppSettings.OfficialRegistryUrl, "old-url"];
-        _store.Set("plugins.registryUrls", new List<string> { "new-url" });
-        Assert.Equal(2, _settings.PluginRegistryUrls.Count);
-        Assert.Equal(AppSettings.OfficialRegistryUrl, _settings.PluginRegistryUrls[0]);
-        Assert.Equal("new-url", _settings.PluginRegistryUrls[1]);
-    }
-
-    /// <summary>
-    /// Verifies that Set registry urls empty list removes all custom urls.
-    /// </summary>
-    [Fact]
-    public void Set_RegistryUrls_EmptyListRemovesAllCustomUrls()
-    {
-        _settings.PluginRegistryUrls = [AppSettings.OfficialRegistryUrl, "old-url"];
-        _store.Set("plugins.registryUrls", new List<string>());
-        Assert.Single(_settings.PluginRegistryUrls);
-        Assert.Equal(AppSettings.OfficialRegistryUrl, _settings.PluginRegistryUrls[0]);
-    }
+    // Plugin registry URL setter tests removed — PluginRegistryUrls deleted from AppSettings in PI-003.
 
     /// <summary>
     /// Verifies that Set unknown key does nothing.

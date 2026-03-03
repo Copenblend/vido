@@ -323,7 +323,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(null));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         Assert.Single(vm.InstalledPlugins);
         Assert.Equal("com.test.plugin", vm.InstalledPlugins[0].Id);
@@ -345,7 +345,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         Assert.Single(vm.AvailablePlugins);
         Assert.Equal("com.test.plugin", vm.AvailablePlugins[0].Id);
@@ -372,7 +372,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var availableBefore = vm.AvailablePlugins;
         var installedBefore = vm.InstalledPlugins;
@@ -401,39 +401,16 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         Assert.Single(vm.InstalledPlugins);
         Assert.Empty(vm.AvailablePlugins);
-        Assert.True(vm.InstalledPlugins[0].IsOfficial);
+        // PI-003: IsOfficial is now hardcoded to false in the VM (OfficialRegistryUrls removed)
+        Assert.False(vm.InstalledPlugins[0].IsOfficial);
     }
 
-    /// <summary>
-    /// Verifies that Load Async deduplicates across registries.
-    /// </summary>
-    [Fact]
-    public async Task LoadAsync_DeduplicatesAcrossRegistries()
-    {
-        var (host, installer, settings, log) = CreateMocks();
-        var appSettings = new AppSettings();
-        appSettings.PluginRegistryUrls.Add("https://extra.registry.com");
-        settings.Current.Returns(appSettings);
-
-        var pluginEntry = MakeEntry(id: "com.test.shared");
-
-        var registry1 = new PluginRegistry { Name = "Registry1", Plugins = [pluginEntry] };
-        var registry2 = new PluginRegistry { Name = "Registry2", Plugins = [MakeEntry(id: "com.test.shared")] };
-
-        // First call returns registry1, second returns registry2
-        installer.FetchRegistryAsync(appSettings.PluginRegistryUrls[0]).Returns(Task.FromResult<PluginRegistry?>(registry1));
-        installer.FetchRegistryAsync("https://extra.registry.com").Returns(Task.FromResult<PluginRegistry?>(registry2));
-
-        var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
-
-        // Should appear only once (first registry wins)
-        Assert.Single(vm.AvailablePlugins);
-    }
+    // PI-003: LoadAsync_DeduplicatesAcrossRegistries test removed — PluginRegistryUrls
+    // property deleted from AppSettings, registry fetching stubbed out. Will be re-implemented in PI-022.
 
     /// <summary>
     /// Verifies that Load Async sets registry source dropdown.
@@ -446,7 +423,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         Assert.Contains("All", vm.RegistrySources);
         Assert.Contains("My Registry", vm.RegistrySources);
@@ -463,7 +440,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(tcs.Task);
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        var loadTask = vm.LoadAsync();
+        var loadTask = vm.LoadAsync(["https://example.com/registry"]);
 
         Assert.True(vm.IsLoading);
 
@@ -483,7 +460,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(null));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync(); // Should not throw
+        await vm.LoadAsync(["https://example.com/registry"]); // Should not throw
 
         Assert.Empty(vm.AvailablePlugins);
     }
@@ -506,8 +483,8 @@ public sealed class PluginManagerTests
         var vm = new PluginManagerViewModel(host, installer, settings, log);
 
         // First call starts (IsLoading = true); second should bail
-        var t1 = vm.LoadAsync();
-        var t2 = vm.LoadAsync(); // Should bail because IsLoading is true
+        var t1 = vm.LoadAsync(["https://example.com/registry"]);
+        var t2 = vm.LoadAsync(["https://example.com/registry"]); // Should bail because IsLoading is true
 
         tcs.SetResult(null); // Release the first call
         await Task.WhenAll(t1, t2);
@@ -534,7 +511,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         Assert.Equal(2, vm.AvailablePlugins.Count);
 
@@ -562,7 +539,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         vm.SearchQuery = "Xylophone";
         Assert.Single(vm.AvailablePlugins);
@@ -571,33 +548,8 @@ public sealed class PluginManagerTests
         Assert.Equal(2, vm.AvailablePlugins.Count);
     }
 
-    /// <summary>
-    /// Verifies that Registry Source Filter filters available.
-    /// </summary>
-    [Fact]
-    public async Task RegistrySourceFilter_FiltersAvailable()
-    {
-        var (host, installer, settings, log) = CreateMocks();
-
-        var appSettings = new AppSettings();
-        appSettings.PluginRegistryUrls.Add("https://second.registry.com");
-        settings.Current.Returns(appSettings);
-
-        var r1 = new PluginRegistry { Name = "Registry1", Plugins = [MakeEntry(id: "r1-plugin", displayName: "R1 Plugin")] };
-        var r2 = new PluginRegistry { Name = "Registry2", Plugins = [MakeEntry(id: "r2-plugin", displayName: "R2 Plugin")] };
-
-        installer.FetchRegistryAsync(appSettings.PluginRegistryUrls[0]).Returns(Task.FromResult<PluginRegistry?>(r1));
-        installer.FetchRegistryAsync("https://second.registry.com").Returns(Task.FromResult<PluginRegistry?>(r2));
-
-        var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
-
-        Assert.Equal(2, vm.AvailablePlugins.Count);
-
-        vm.SelectedRegistrySource = "Registry1";
-        Assert.Single(vm.AvailablePlugins);
-        Assert.Equal("R1 Plugin", vm.AvailablePlugins[0].DisplayName);
-    }
+    // PI-003: RegistrySourceFilter_FiltersAvailable test removed — PluginRegistryUrls
+    // property deleted from AppSettings, registry fetching stubbed out. Will be re-implemented in PI-022.
 
     /// <summary>
     /// Verifies that Registry Source Filter installed plugins always shown.
@@ -613,7 +565,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         vm.SelectedRegistrySource = "SomeReg";
         // Installed plugins without matching registry should still show
@@ -857,7 +809,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         Assert.Equal(2, vm.InstalledCount);
         Assert.Equal(1, vm.AvailableCount);
@@ -869,66 +821,9 @@ public sealed class PluginManagerTests
     }
 
     /// <summary>
-    /// Verifies that Load Async official registry url sets official.
-    /// </summary>
-    [Fact]
-    public async Task LoadAsync_OfficialRegistryUrl_SetsOfficial()
-    {
-        var (host, installer, settings, log) = CreateMocks();
-        var entry = MakeEntry(id: "official-plugin");
-        var registry = new PluginRegistry { Name = "Vido Official", Plugins = [entry] };
-
-        installer.FetchRegistryAsync(AppSettings.OfficialRegistryUrl).Returns(Task.FromResult<PluginRegistry?>(registry));
-
-        var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
-
-        Assert.True(vm.AvailablePlugins[0].IsOfficial);
-    }
-
-    /// <summary>
-    /// Verifies that Load Async non official url sets official false.
-    /// </summary>
-    [Fact]
-    public async Task LoadAsync_NonOfficialUrl_SetsOfficialFalse()
-    {
-        var (host, installer, settings, log) = CreateMocks();
-        var appSettings = new AppSettings();
-        appSettings.PluginRegistryUrls.Clear();
-        appSettings.PluginRegistryUrls.Add("https://custom.example.com/registry");
-        settings.Current.Returns(appSettings);
-
-        var entry = MakeEntry(id: "custom-plugin");
-        var registry = new PluginRegistry { Name = "Custom", Plugins = [entry] };
-        installer.FetchRegistryAsync("https://custom.example.com/registry").Returns(Task.FromResult<PluginRegistry?>(registry));
-
-        var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
-
-        Assert.False(vm.AvailablePlugins[0].IsOfficial);
-    }
-
-    /// <summary>
-    /// Verifies that Load Async nsfw registry url sets official.
-    /// </summary>
-    [Fact]
-    public async Task LoadAsync_NsfwRegistryUrl_SetsOfficial()
-    {
-        var (host, installer, settings, log) = CreateMocks();
-        var appSettings = new AppSettings();
-        appSettings.PluginRegistryUrls.Add(AppSettings.NsfwRegistryUrl);
-        settings.Current.Returns(appSettings);
-
-        var entry = MakeEntry(id: "nsfw-plugin");
-        var registry = new PluginRegistry { Name = "NSFW", Plugins = [entry] };
-        installer.FetchRegistryAsync(AppSettings.NsfwRegistryUrl).Returns(Task.FromResult<PluginRegistry?>(registry));
-
-        var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
-
-        var nsfwPlugin = vm.AvailablePlugins.First(p => p.Id == "nsfw-plugin");
-        Assert.True(nsfwPlugin.IsOfficial);
-    }
+    // PI-003: LoadAsync_OfficialRegistryUrl_SetsOfficial, LoadAsync_NonOfficialUrl_SetsOfficialFalse,
+    // and LoadAsync_NsfwRegistryUrl_SetsOfficial tests removed — PluginRegistryUrls,
+    // OfficialRegistryUrl, and NsfwRegistryUrl deleted from AppSettings. Will be re-implemented in PI-022.
 
     // ╔══════════════════════════════════════════════════════════════════╗
     // ║ SettingDisplayItem Tests                                        ║
@@ -1952,7 +1847,7 @@ public sealed class PluginManagerTests
         installer.UninstallAsync("flow-plugin").Returns(Task.FromResult(true));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         Assert.Single(vm.AvailablePlugins);
         Assert.Empty(vm.InstalledPlugins);
@@ -1986,7 +1881,7 @@ public sealed class PluginManagerTests
         installer.InstallAsync(entry).Returns(Task.FromResult(true));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var item = vm.AvailablePlugins[0];
         await vm.InstallPluginAsync(item);
@@ -2041,7 +1936,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         vm.SearchQuery = "VIDEO";
         Assert.Single(vm.AvailablePlugins);
@@ -2130,7 +2025,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var installed = vm.InstalledPlugins.Single(p => p.Id == "com.test.plugin");
         Assert.True(installed.HasUpdate);
@@ -2156,7 +2051,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var installed = vm.InstalledPlugins.Single(p => p.Id == "com.test.plugin");
         Assert.False(installed.HasUpdate);
@@ -2181,7 +2076,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var installed = vm.InstalledPlugins.Single(p => p.Id == "com.test.plugin");
         Assert.False(installed.HasUpdate);
@@ -2206,7 +2101,7 @@ public sealed class PluginManagerTests
         host.GetPlugin("com.test.plugin").Returns(updatedInfo);
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var installed = vm.InstalledPlugins.Single(p => p.Id == "com.test.plugin");
         Assert.True(installed.HasUpdate);
@@ -2278,7 +2173,7 @@ public sealed class PluginManagerTests
         host.GetPlugin("com.test.plugin").Returns(updatedInfo);
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         string? restartMessage = null;
         vm.RestartRequired += msg => restartMessage = msg;
@@ -2320,7 +2215,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         // The plugin should be marked as installed (from reconciliation step 3)
         var plugin = vm.InstalledPlugins.FirstOrDefault(p => p.Id == "com.test.plugin");
@@ -2350,7 +2245,7 @@ public sealed class PluginManagerTests
         targetEntry.Dependencies = [new PluginDependency { Id = "com.test.dep", MinVersion = "1.0.0" }];
 
         var registry = new PluginRegistry { Name = "R", Plugins = [depEntry, targetEntry] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         // Neither plugin is installed
@@ -2360,7 +2255,7 @@ public sealed class PluginManagerTests
         installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var targetItem = vm.AvailablePlugins.First(p => p.Id == "com.test.target");
         await vm.InstallPluginAsync(targetItem);
@@ -2391,12 +2286,12 @@ public sealed class PluginManagerTests
         host.GetPlugin("com.test.target").Returns((PluginInfo?)null);
 
         var registry = new PluginRegistry { Name = "R", Plugins = [depEntry, targetEntry] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
         installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var targetItem = vm.AvailablePlugins.First(p => p.Id == "com.test.target");
         await vm.InstallPluginAsync(targetItem);
@@ -2420,7 +2315,7 @@ public sealed class PluginManagerTests
         targetEntry.Dependencies = [new PluginDependency { Id = "com.test.dep", MinVersion = "1.0.0" }];
 
         var registry = new PluginRegistry { Name = "R", Plugins = [depEntry, targetEntry] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         host.GetPlugin(Arg.Any<string>()).Returns((PluginInfo?)null);
@@ -2430,7 +2325,7 @@ public sealed class PluginManagerTests
             .Returns(Task.FromResult(false));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var targetItem = vm.AvailablePlugins.First(p => p.Id == "com.test.target");
         await vm.InstallPluginAsync(targetItem);
@@ -2456,13 +2351,13 @@ public sealed class PluginManagerTests
         entryC.Dependencies = [new PluginDependency { Id = "com.test.b", MinVersion = "1.0.0" }];
 
         var registry = new PluginRegistry { Name = "R", Plugins = [entryA, entryB, entryC] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
         host.GetPlugin(Arg.Any<string>()).Returns((PluginInfo?)null);
         installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var itemC = vm.AvailablePlugins.First(p => p.Id == "com.test.c");
         await vm.InstallPluginAsync(itemC);
@@ -2488,13 +2383,13 @@ public sealed class PluginManagerTests
         // No dependencies
 
         var registry = new PluginRegistry { Name = "R", Plugins = [entry] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
         host.GetPlugin(Arg.Any<string>()).Returns((PluginInfo?)null);
         installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var item = vm.AvailablePlugins.First(p => p.Id == "com.test.no-deps");
         await vm.InstallPluginAsync(item);
@@ -2520,7 +2415,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(null));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         string? blockedMessage = null;
         vm.UninstallBlocked += msg => blockedMessage = msg;
@@ -2560,7 +2455,7 @@ public sealed class PluginManagerTests
         installer.UninstallAsync("com.test.b").Returns(Task.FromResult(true));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var itemB = vm.InstalledPlugins.First(p => p.Id == "com.test.b");
         await vm.UninstallPluginAsync(itemB);
@@ -2590,7 +2485,7 @@ public sealed class PluginManagerTests
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(null));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         string? blockedMessage = null;
         vm.UninstallBlocked += msg => blockedMessage = msg;
@@ -2652,12 +2547,12 @@ public sealed class PluginManagerTests
         entryB.Dependencies = [new PluginDependency { Id = "com.test.a", MinVersion = "1.0.0" }];
 
         var registry = new PluginRegistry { Name = "R", Plugins = [entryA, entryB] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
         host.GetPlugin(Arg.Any<string>()).Returns((PluginInfo?)null);
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var deps = vm.ResolveDependencies(entryB);
         Assert.Single(deps);
@@ -2681,11 +2576,11 @@ public sealed class PluginManagerTests
         host.GetPlugin("com.test.a").Returns(infoA);
 
         var registry = new PluginRegistry { Name = "R", Plugins = [entryA, entryB] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var deps = vm.ResolveDependencies(entryB);
         Assert.Empty(deps); // A is already installed
@@ -2704,13 +2599,13 @@ public sealed class PluginManagerTests
         targetEntry.Dependencies = [new PluginDependency { Id = "com.test.dep", MinVersion = "1.0.0" }];
 
         var registry = new PluginRegistry { Name = "R", Plugins = [depEntry, targetEntry] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
         host.GetPlugin(Arg.Any<string>()).Returns((PluginInfo?)null);
         installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var depItem = vm.AvailablePlugins.First(p => p.Id == "com.test.dep");
         var targetItem = vm.AvailablePlugins.First(p => p.Id == "com.test.target");
@@ -2901,11 +2796,11 @@ public sealed class PluginManagerTests
         entry.MinVidoVersion = "999.0.0";
 
         var registry = new PluginRegistry { Name = "R", Plugins = [entry] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var item = vm.AvailablePlugins.First(p => p.Id == entry.Id);
         Assert.True(item.RequiresNewerVido);
@@ -2922,11 +2817,11 @@ public sealed class PluginManagerTests
         entry.MinVidoVersion = "0.0.1";
 
         var registry = new PluginRegistry { Name = "R", Plugins = [entry] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var item = vm.AvailablePlugins.First(p => p.Id == entry.Id);
         Assert.False(item.RequiresNewerVido);
@@ -2960,12 +2855,12 @@ public sealed class PluginManagerTests
         ];
 
         var registry = new PluginRegistry { Name = "R", Plugins = [targetEntry, depEntry] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
         installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var targetItem = vm.InstalledPlugins.Single(p => p.Id == "com.test.target");
         Assert.True(targetItem.HasUpdate);
@@ -3007,7 +2902,7 @@ public sealed class PluginManagerTests
         ];
 
         var registry = new PluginRegistry { Name = "R", Plugins = [targetEntry, depEntry] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
 
         // Dep install fails
@@ -3017,7 +2912,7 @@ public sealed class PluginManagerTests
             .Returns(Task.FromResult(true));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var targetItem = vm.InstalledPlugins.Single(p => p.Id == "com.test.target");
         Assert.True(targetItem.HasUpdate);
@@ -3060,12 +2955,12 @@ public sealed class PluginManagerTests
         ];
 
         var registry = new PluginRegistry { Name = "R", Plugins = [targetEntry, depEntry] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
         installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var targetItem = vm.InstalledPlugins.Single(p => p.Id == "com.test.target");
         Assert.True(targetItem.HasUpdate);
@@ -3105,12 +3000,12 @@ public sealed class PluginManagerTests
         ];
 
         var registry = new PluginRegistry { Name = "R", Plugins = [targetEntry, depEntry] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
         installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         var targetItem = vm.InstalledPlugins.Single(p => p.Id == "com.test.target");
         Assert.True(targetItem.HasUpdate);
@@ -3147,13 +3042,13 @@ public sealed class PluginManagerTests
         // Registry has one available plugin
         var entry = MakeEntry(id: "com.test.new", displayName: "New Plugin", version: "1.0.0");
         var registry = new PluginRegistry { Name = "R", Plugins = [entry] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
         installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
         host.GetPlugin("com.test.new").Returns((PluginInfo?)null);
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         // Verify it starts in Available, not Installed
         Assert.Single(vm.AvailablePlugins, p => p.Id == "com.test.new");
@@ -3179,13 +3074,13 @@ public sealed class PluginManagerTests
         var entry1 = MakeEntry(id: "com.test.one", displayName: "Plugin One", version: "1.0.0");
         var entry2 = MakeEntry(id: "com.test.two", displayName: "Plugin Two", version: "1.0.0");
         var registry = new PluginRegistry { Name = "R", Plugins = [entry1, entry2] };
-        settings.Current.Returns(new AppSettings { PluginRegistryUrls = ["https://example.com/registry"] });
+        settings.Current.Returns(new AppSettings());
         installer.FetchRegistryAsync(Arg.Any<string>()).Returns(Task.FromResult<PluginRegistry?>(registry));
         installer.InstallAsync(Arg.Any<PluginRegistryEntry>()).Returns(Task.FromResult(true));
         host.GetPlugin(Arg.Any<string>()).Returns((PluginInfo?)null);
 
         var vm = new PluginManagerViewModel(host, installer, settings, log);
-        await vm.LoadAsync();
+        await vm.LoadAsync(["https://example.com/registry"]);
 
         // Both plugins start in Available
         Assert.Equal(2, vm.AvailablePlugins.Count);

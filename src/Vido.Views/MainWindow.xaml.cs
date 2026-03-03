@@ -63,7 +63,7 @@ public partial class MainWindow : Window
     private ActivityBarViewModel? _activityBarViewModel;
     private SidebarViewModel? _sidebarViewModel;
     private FileExplorerPanel? _fileExplorerPanel;
-    private PluginManagerPanel? _pluginManagerPanel;
+    // TODO PI-022: PluginManagerPanel removed
     private PluginManagerViewModel? _pluginManagerViewModel;
     private SettingsPage? _settingsPage;
     private readonly AppSettingsStore _appSettingsStore;
@@ -291,10 +291,8 @@ public partial class MainWindow : Window
         ActivityBar.SettingsRequested += (_, _) => _mainWindowViewModel.OpenSettings();
 
         // Plugin sidebar button drag-and-drop reordering (vb-007)
-        ActivityBar.PluginButtonReordered += (oldIndex, newIndex) =>
-        {
-            _activityBarViewModel!.MovePluginItem(oldIndex, newIndex);
-        };
+        // TODO PI-024: Plugin sidebar ordering removed
+        ActivityBar.PluginButtonReordered += (oldIndex, newIndex) => { };
 
         // Initialize visual states
         ActivityBar.UpdateActiveStates();
@@ -962,7 +960,8 @@ public partial class MainWindow : Window
         // Wire Help menu events
         TitleBar.AboutRequested += ShowAboutDialog;
         TitleBar.CheckForUpdatesRequested += ShowCheckForUpdatesMessage;
-        TitleBar.EnterRepositoryCodeRequested += OnEnterRepositoryCode;
+        // TODO PI-022: OnEnterRepositoryCode removed — plugin registry no longer needed
+        // TitleBar.EnterRepositoryCodeRequested += OnEnterRepositoryCode;
 
         // Wire screenshot button
         TitleBar.ScreenshotRequested += OnScreenshotRequested;
@@ -1424,19 +1423,7 @@ public partial class MainWindow : Window
                 case SidebarPanelKind.Explorer:
                     Sidebar.SetPanelContent(_fileExplorerPanel);
                     break;
-                case SidebarPanelKind.Extensions:
-                    if (_pluginManagerPanel is null)
-                    {
-                        _pluginManagerPanel = new PluginManagerPanel
-                        {
-                            DataContext = _pluginManagerViewModel
-                        };
-                        WirePluginManagerEvents();
-                    }
-                    Sidebar.SetPanelContent(_pluginManagerPanel);
-                    // Load plugin data when switching to extensions
-                    _ = _pluginManagerViewModel?.LoadAsync();
-                    break;
+                // TODO PI-024: Add cases for Playlists, Osr2Plus, Pulse
                 default:
                     Sidebar.SetPanelContent(null);
                     break;
@@ -1731,7 +1718,7 @@ public partial class MainWindow : Window
                 _pluginSidebarButtons.Remove(id);
             }
             _pluginSidebarContents.Remove(id);
-            _activityBarViewModel?.RemovePluginItem(id);
+            // TODO PI-024: RemovePluginItem removed from ActivityBarViewModel
             if (_activePluginSidebarId == id)
             {
                 _activePluginSidebarId = null;
@@ -1975,12 +1962,10 @@ public partial class MainWindow : Window
                 _pluginSidebarButtons[fullId] = button;
 
                 // Register with ViewModel for ordering (vb-007)
-                var item = new Core.Layout.PluginSidebarItem { Id = fullId, Order = panel.Order };
-                _activityBarViewModel!.AddPluginItem(item);
+                // TODO PI-024: Plugin sidebar ordering replaced by fixed enum order
 
-                // Determine visual insertion index from ViewModel order
-                var vmIndex = _activityBarViewModel.PluginItems.IndexOf(item);
-                ActivityBar.InsertPluginButton(button, vmIndex);
+                // Determine visual insertion index
+                ActivityBar.InsertPluginButton(button, 0);
             });
         }
     }
@@ -3062,59 +3047,5 @@ public partial class MainWindow : Window
         }
     }
 
-    private void OnEnterRepositoryCode()
-    {
-        var input = InputDialog.ShowInputDialog(
-            this,
-            "Enter Repository Code",
-            "Enter a repository code or URL to add a plugin registry:");
-
-        if (string.IsNullOrWhiteSpace(input)) return;
-
-        var url = AppSettings.ResolveRepositoryCode(input.Trim());
-
-        if (url is null)
-        {
-            MessageBox.Show(
-                this,
-                $"Unknown repository code: '{input}'.\n\n" +
-                "You can enter a known code (e.g. NSFW) or a direct URL " +
-                "(starting with https:// or file://).",
-                "Unknown Code",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-            return;
-        }
-
-        // Check if already added
-        var urls = _settingsService.Current.PluginRegistryUrls;
-        if (urls.Any(u => u.Equals(url, StringComparison.OrdinalIgnoreCase)))
-        {
-            MessageBox.Show(
-                this,
-                "This registry is already in your list.",
-                "Already Added",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-            return;
-        }
-
-        // Add the URL and save
-        urls.Add(url);
-        _settingsService.QueueSave();
-
-        MessageBox.Show(
-            this,
-            "Registry added successfully! The plugin list will refresh.",
-            "Registry Added",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
-
-        // Refresh the plugin manager if it's loaded
-        if (_pluginManagerViewModel is not null)
-            _ = _pluginManagerViewModel.RefreshAsync();
-
-        // Refresh the settings panel if it's open so the URL list updates
-        _settingsPage?.RefreshRegistryUrls();
-    }
+    // TODO PI-022: OnEnterRepositoryCode removed — plugin registry no longer needed
 }
