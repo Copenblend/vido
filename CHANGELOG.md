@@ -16,6 +16,14 @@ All notable changes to the Vido project will be documented in this file.
 - Strong-typed `IExternalBeatSource.RenderBeat` and `RenderIndicator` methods from `object` to `SKCanvas`.
 - Updated XML documentation to reflect integrated architecture (replaced "plugin" references with "feature").
 
+### Plugin Integration (PI-007)
+- Integrated 3 OSR2+ TCode engine types from `Osr2PlusPlugin.Services` into `Vido.Services/Osr2Plus/` namespace.
+- `TCodeService`: Full TCode output engine with dedicated background thread (`ThreadPriority.AboveNormal`), `Stopwatch`-based time extrapolation, zero-allocation hot-path byte buffer formatting, configurable output rate (30–200 Hz), dirty-value tracking (≥1 change threshold), fill mode orchestration (7 waveform types + random), return-to-center animation (exponential smoothing), ramp-up blending, test-mode oscillation with smooth speed/amplitude transitions, external axis position support, homing sequence, and per-axis position offset (L0/R1/R2 percentage, R0 modular degrees).
+- `PatternGenerator`: Static waveform calculator for 7 fill modes (Triangle, Sine, Saw, SawtoothReverse, Square, Pulse, EaseInOut) returning 0.0–1.0 position values with smooth cosine transitions at direction changes.
+- `RandomPatternGenerator`: Cosine-interpolated random movement generator with configurable min/max range, 20% minimum distance constraint, and optional seeded RNG for deterministic test output.
+- Changed `TestAxisState` visibility from `internal` to `public` in `Vido.Core.Models.Osr2Plus` to enable cross-assembly access from `Vido.Services`.
+- Added 101 unit tests covering `PositionToTCode` (scaling, min/max, clamping), `IsDirty` (threshold tracking), `AxisOrdinal` (known/unknown axes), `FormatTCodeCommand` (linear/rotation prefix, formatting), `ApplyPositionOffset` (L0/R0/R1/R2 modes, clamping, modular wrapping), `ClampPitchFillPosition` (pitch vs non-pitch), `SetOutputRate` (clamping 30–200), `SetScripts`/`HasScriptsLoaded`, time extrapolation, test mode lifecycle (start/stop/update/stopAll/events), `PatternGenerator` (all 7 modes: range, periodicity, waveform shape), `RandomPatternGenerator` (range, seeded determinism, smooth transitions, reset), `HomeAxes`/`SendPositionWithOffset` (transport integration), and `SleepPrecise` timing.
+
 ### Plugin Integration (PI-006)
 - Integrated 5 OSR2+ funscript services from `Osr2PlusPlugin.Services` into `Vido.Services/Osr2Plus/` namespace.
 - `FunscriptParser`: Streaming `Utf8JsonReader`-based parser with single-axis `Parse()`/`ParseFile()` and multi-axis `TryParseMultiAxis()` support, UTF-8/UTF-16 BOM handling, pre-allocated action lists, and conditional sorting.

@@ -4,7 +4,7 @@ namespace Vido.Core.Models.Osr2Plus;
 /// Represents the mutable runtime state for a single axis in test mode.
 /// Used internally by the T-Code output service to generate test waveforms.
 /// </summary>
-internal class TestAxisState
+public class TestAxisState
 {
     /// <summary>
     /// Gets or sets the normalized waveform phase in the range [0, 1).
