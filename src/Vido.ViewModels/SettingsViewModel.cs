@@ -221,6 +221,73 @@ public partial class SettingsViewModel : ObservableObject
 
         // Listen for changes to toggle the directory setting visibility
         _appSettingsStore.SettingChanged += OnAppSettingChanged;
+
+        // ── OSR2+ ──
+        var osr2Definitions = new List<SettingContribution>
+        {
+            new()
+            {
+                Id = "osr2.connectionMode",
+                Type = "enum",
+                Title = "Default Connection Mode",
+                Description = "Select the default connection mode for the OSR2+ device.",
+                Default = "UDP",
+                EnumValues = ["UDP", "Serial"],
+                Section = "Connection"
+            },
+            new()
+            {
+                Id = "osr2.udpPort",
+                Type = "number",
+                Title = "Default UDP Port",
+                Description = "UDP port number for device communication (default: 7777).",
+                Default = 7777.0,
+                Section = "Connection"
+            },
+            new()
+            {
+                Id = "osr2.baudRate",
+                Type = "enum",
+                Title = "Default Baud Rate",
+                Description = "Serial baud rate for device communication.",
+                Default = "115200",
+                EnumValues = ["9600", "19200", "38400", "57600", "115200", "250000"],
+                Section = "Connection"
+            },
+            new()
+            {
+                Id = "osr2.outputRate",
+                Type = "number",
+                Title = "TCode Output Rate (Hz)",
+                Description = "How many TCode commands per second to send (30\u2013200 Hz).",
+                Default = 100.0,
+                Section = "Output"
+            },
+            new()
+            {
+                Id = "osr2.globalOffset",
+                Type = "number",
+                Title = "Global Funscript Offset (ms)",
+                Description = "Time offset applied to all funscript axes (\u2212500 to +500 ms). Negative = earlier, Positive = later.",
+                Default = 0.0,
+                Section = "Output"
+            },
+            new()
+            {
+                Id = "osr2.visualizerWindowDuration",
+                Type = "enum",
+                Title = "Visualizer Window Duration",
+                Description = "Duration of the funscript visualization window in seconds.",
+                Default = "60",
+                EnumValues = ["30", "60", "120", "300"],
+                Section = "Visualizer"
+            },
+        };
+
+        var osr2Items = osr2Definitions
+            .Select(d => new SettingDisplayItem(d, _appSettingsStore))
+            .ToList();
+        AllCategories.Add(new SettingsCategoryViewModel("OSR2+", osr2Items));
     }
 
     /// <summary>

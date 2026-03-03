@@ -7,6 +7,21 @@ All notable changes to the Vido project will be documented in this file.
 ### Plugin Integration (PI-001)
 - Added `SkiaSharp` 2.88.9 package reference to `Vido.Core` for `IExternalBeatSource` strong-typed canvas rendering.
 
+### Plugin Integration (PI-010)
+- Wired OSR2+ feature directly into `MainWindow` via `SetupOsr2Plus()` method, replacing plugin-based `Osr2PlusPlugin.Activate()` with integrated architecture.
+- Created and wired all OSR2+ services (`TCodeService`, `InterpolationService`, `FunscriptParser`, `FunscriptMatcher`, `BeatDetectionService`) and ViewModels (`Osr2PlusSidebarViewModel`, `AxisControlViewModel`, `VisualizerViewModel`, `BeatBarViewModel`) with manual instantiation.
+- Registered 6 UI contribution points: sidebar panel (`SidebarPanelKind.Osr2Plus`), bottom panel tab ("Funscript Visualizer"), right panel ("Axis Settings"), status bar item ("OSR2+ Status"), toolbar button (Quick Connect with highlight on connection), control bar (BeatBar ComboBox + SkiaSharp overlay).
+- Wired 8 event bus subscriptions: `VideoLoadedEvent` (load scripts, sync speed), `VideoUnloadedEvent` (clear scripts, stop TCode, home axes), `PlaybackStateChangedEvent` (start/stop TCode), `PlaybackPositionChangedEvent` (update time, sync speed), `ExternalBeatSourceRegistration`, `ExternalBeatEvent`, `SuppressFunscriptEvent`, `ExternalAxisPositionsEvent`.
+- Wired cross-feature coordination: script changes → visualizer + beat bar + `HapticScriptsChangedEvent` publish + auto-show visualizer, axis config changes → `HapticAxisConfigEvent` publish, device connection → toolbar highlight + status bar text, sidebar buttons → panel show requests, beat bar mode → overlay visibility.
+- Added OSR2+ button to `ActivityBarView` with sidebar-icon.png and panel selection via `SidebarPanelKind.Osr2Plus`.
+- Added `SidebarPanelKind.Osr2Plus` case to `OnPanelChanged` for built-in sidebar content switching.
+- Registered `.funscript` extension in `FileExplorerViewModel.AdditionalAcceptedExtensions`.
+- Added `IEventBus` constructor parameter to `MainWindow` for direct event bus access.
+- Added `Vido.Services` project reference to `Vido.Views.csproj` for service access.
+- Added `InternalsVisibleTo("Vido.Views")` to `Vido.ViewModels.csproj` for `FileDialogFactory` access.
+- Added TCode and subscription disposal in `OnClosing` for clean shutdown.
+- Wired file dialog factory for manual funscript loading and speed ratio synchronization.
+
 ### Plugin Integration (PI-009)
 - Integrated 6 OSR2+ XAML view pairs (`SidebarView`, `AxisControlView`, `AxisCardView`, `VisualizerView`, `BeatBarComboBox`, `BeatBarOverlay`) into `Vido.Views/Osr2Plus/` namespace.
 - Created `RangeSlider` custom control in `Vido.Views/Controls/` with dual-thumb range selection, keyboard support, and default `ControlTemplate` in `Themes/RangeSliderGeneric.xaml`.

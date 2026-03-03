@@ -20,9 +20,16 @@ using Vido.Core.Windowing;
 using Vido.ViewModels;
 using Vido.Views.Panels;
 using Vido.Views.Services;
+using Vido.Core.Events;
+using Vido.Core.Haptics;
 using Vido.Core.Logging;
+using Vido.Core.Models.Osr2Plus;
+using Vido.Core.Playback;
 using Vido.Core.Updates;
+using Vido.Services.Osr2Plus;
+using Vido.ViewModels.Osr2Plus;
 using Vido.Views.Controls;
+using Vido.Views.Osr2Plus;
 
 namespace Vido.Views;
 
@@ -49,6 +56,7 @@ public partial class MainWindow : Window
     private readonly IContextMenuRegistry _contextMenuRegistry;
     private readonly IPluginHost _pluginHost;
     private readonly IUpdateService _updateService;
+    private readonly IEventBus _eventBus;
 
     private string[]? _pendingCommandLineArgs;
     private string? _pendingInstallerPath;
@@ -67,6 +75,17 @@ public partial class MainWindow : Window
     private PluginManagerViewModel? _pluginManagerViewModel;
     private SettingsPage? _settingsPage;
     private readonly AppSettingsStore _appSettingsStore;
+
+    // ── OSR2+ integrated feature ──────────────────────────────
+    private TCodeService? _tcode;
+    private Osr2PlusSidebarViewModel? _osr2SidebarVm;
+    private AxisControlViewModel? _axisControlVm;
+    private VisualizerViewModel? _visualizerVm;
+    private BeatBarViewModel? _beatBarVm;
+    private BeatDetectionService? _beatDetection;
+    private readonly List<IDisposable> _osr2Subscriptions = [];
+    private UIElement? _osr2SidebarContent;
+    private double _lastSpeedRatio = 1.0;
 
     // Remembered panel dimensions for toggle persistence
     private double _bottomPanelHeight = 200;
@@ -115,6 +134,7 @@ public partial class MainWindow : Window
     /// <param name="pluginInstaller">Service for installing and uninstalling plugins from registries.</param>
     /// <param name="pluginHost">Host managing plugin lifecycle (activation, deactivation, discovery).</param>
     /// <param name="updateService">Service for checking and downloading application updates.</param>
+    /// <param name="eventBus">Event bus for publishing and subscribing to application-wide events.</param>
     /// <param name="fileExplorerViewModel">View model for the file explorer sidebar panel.</param>
     /// <param name="videoPlayerViewModel">View model controlling video playback and transport.</param>
     /// <param name="mainWindowViewModel">View model managing tabs, panels, and overall window layout.</param>
@@ -131,6 +151,7 @@ public partial class MainWindow : Window
         IPluginInstaller pluginInstaller,
         IPluginHost pluginHost,
         IUpdateService updateService,
+        IEventBus eventBus,
         FileExplorerViewModel fileExplorerViewModel,
         VideoPlayerViewModel videoPlayerViewModel,
         MainWindowViewModel mainWindowViewModel,
@@ -146,6 +167,7 @@ public partial class MainWindow : Window
         _contextMenuRegistry = contextMenuRegistry;
         _pluginHost = pluginHost;
         _updateService = updateService;
+        _eventBus = eventBus;
         _fileExplorerViewModel = fileExplorerViewModel;
         _videoPlayerViewModel = videoPlayerViewModel;
         _mainWindowViewModel = mainWindowViewModel;
@@ -174,6 +196,7 @@ public partial class MainWindow : Window
         SetupFileExplorer();
         SetupDragDrop();
         SetupPluginContributions();
+        SetupOsr2Plus();
         RestoreWindowState();
         RestoreLayoutState();
 
@@ -1423,7 +1446,10 @@ public partial class MainWindow : Window
                 case SidebarPanelKind.Explorer:
                     Sidebar.SetPanelContent(_fileExplorerPanel);
                     break;
-                // TODO PI-024: Add cases for Playlists, Osr2Plus, Pulse
+                case SidebarPanelKind.Osr2Plus:
+                    Sidebar.SetPanelContent(_osr2SidebarContent);
+                    break;
+                // TODO PI-024: Add cases for Playlists, Pulse
                 default:
                     Sidebar.SetPanelContent(null);
                     break;
@@ -1461,6 +1487,12 @@ public partial class MainWindow : Window
     protected override async void OnClosing(System.ComponentModel.CancelEventArgs e)
     {
         _logService.Info("Vido shutting down", "App");
+
+        // Dispose OSR2+ resources
+        foreach (var sub in _osr2Subscriptions) sub.Dispose();
+        _osr2Subscriptions.Clear();
+        _tcode?.Dispose();
+
         SaveWindowState();
         await _stateService.SaveAsync();
         await _settingsService.SaveAsync();
@@ -1580,6 +1612,432 @@ public partial class MainWindow : Window
         _contributionRegistry.ToolbarButtonHighlightChanged += OnToolbarButtonHighlightChanged;
         _contributionRegistry.ControlBarOverlayToggled += OnControlBarOverlayToggled;
         WirePluginContributions();
+    }
+
+    // ── OSR2+ Integrated Feature ──
+
+    /// <summary>
+    /// Creates and wires all OSR2+ services, view models, views, event bus subscriptions,
+    /// and UI contribution points. This replaces the plugin-based <c>Osr2PlusPlugin.Activate()</c>
+    /// logic with direct integration into the main window.
+    /// </summary>
+    private void SetupOsr2Plus()
+    {
+        // ── Create Services ──────────────────────────────────
+        var interpolation = new InterpolationService();
+        _tcode = new TCodeService(interpolation);
+        var parser = new FunscriptParser();
+        var matcher = new FunscriptMatcher();
+        _beatDetection = new BeatDetectionService();
+
+        // ── Create ViewModels ────────────────────────────────
+        _osr2SidebarVm = new Osr2PlusSidebarViewModel(_tcode, _settingsService, _eventBus);
+        _axisControlVm = new AxisControlViewModel(_tcode, _settingsService, parser, matcher);
+        _visualizerVm = new VisualizerViewModel(_settingsService);
+        _beatBarVm = new BeatBarViewModel(_settingsService, _beatDetection);
+
+        // ── Wire Sidebar Panel Requests ──────────────────────
+        _osr2SidebarVm.ShowAxisSettingsRequested += () =>
+        {
+            SwitchRightPanel("osr2.axis-control");
+            _settingsService.Current.Osr2LastRightPanel = "osr2.axis-control";
+            _settingsService.QueueSave();
+        };
+
+        _osr2SidebarVm.ShowVisualizerRequested += () =>
+        {
+            _mainWindowViewModel.ActivateBottomPanelTab("osr2.visualizer");
+            if (_bottomPanelContents.TryGetValue("osr2.visualizer", out var content))
+                BottomPanelContent.Content = content;
+        };
+
+        // ── Wire Device Connection State ─────────────────────
+        _osr2SidebarVm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(Osr2PlusSidebarViewModel.IsConnected))
+            {
+                _axisControlVm.SetDeviceConnected(_osr2SidebarVm.IsConnected);
+                SetOsr2ToolbarButtonHighlight(_osr2SidebarVm.IsConnected);
+            }
+
+            if (e.PropertyName == nameof(Osr2PlusSidebarViewModel.StatusText))
+            {
+                var statusItem = _statusBarViewModel.FindItem("osr2.status");
+                if (statusItem is not null)
+                    statusItem.Text = _osr2SidebarVm.StatusText;
+            }
+        };
+
+        // ── Wire Script Changes to Visualizer ────────────────
+        _axisControlVm.ScriptsChanged += scripts => _visualizerVm.SetLoadedAxes(scripts);
+
+        // ── Wire Beat Bar ────────────────────────────────────
+        _axisControlVm.ScriptsChanged += scripts =>
+        {
+            if (scripts.TryGetValue("L0", out var l0Script))
+                _beatBarVm.LoadBeats(l0Script);
+            else
+                _beatBarVm.ClearBeats();
+
+            SetOsr2BeatBarOverlayVisible(_beatBarVm.IsActive);
+        };
+
+        _beatBarVm.ModeChanged += mode =>
+        {
+            SetOsr2BeatBarOverlayVisible(mode != BeatBarMode.Off);
+        };
+
+        // ── Haptic Event Bus Subscriptions ────────────────────
+        _osr2Subscriptions.Add(_eventBus.Subscribe<ExternalBeatSourceRegistration>(
+            reg => _beatBarVm.OnBeatSourceRegistration(reg)));
+
+        _osr2Subscriptions.Add(_eventBus.Subscribe<ExternalBeatEvent>(
+            evt => _beatBarVm.OnExternalBeatEvent(evt)));
+
+        _osr2Subscriptions.Add(_eventBus.Subscribe<SuppressFunscriptEvent>(evt =>
+        {
+            _axisControlVm.OnSuppressFunscript(evt);
+
+            // When switching back to funscript, show the Funscript Visualizer
+            if (!evt.SuppressFunscripts)
+            {
+                _mainWindowViewModel.ActivateBottomPanelTab("osr2.visualizer");
+                if (_bottomPanelContents.TryGetValue("osr2.visualizer", out var content))
+                    BottomPanelContent.Content = content;
+            }
+        }));
+
+        _osr2Subscriptions.Add(_eventBus.Subscribe<ExternalAxisPositionsEvent>(
+            evt => _tcode.SetExternalPositions(evt.Positions)));
+
+        // ── Publish Script & Config Changes ───────────────────
+        _axisControlVm.ScriptsChanged += scripts =>
+        {
+            var scriptLoadedMap = new Dictionary<string, bool>(scripts.Count, StringComparer.Ordinal);
+            foreach (var key in scripts.Keys)
+                scriptLoadedMap[key] = true;
+
+            _eventBus.Publish(new HapticScriptsChangedEvent
+            {
+                HasAnyScripts = scripts.Count > 0,
+                AxisScriptLoaded = scriptLoadedMap,
+            });
+
+            // Auto-show funscript visualizer when scripts load
+            if (scripts.Count > 0)
+            {
+                _mainWindowViewModel.ActivateBottomPanelTab("osr2.visualizer");
+                if (_bottomPanelContents.TryGetValue("osr2.visualizer", out var content))
+                    BottomPanelContent.Content = content;
+            }
+        };
+
+        PublishOsr2AxisConfig();
+        _axisControlVm.AxisConfigChanged += PublishOsr2AxisConfig;
+
+        // ── Wire File Dialog Factory ──────────────────────────
+        foreach (var card in _axisControlVm.AxisCards)
+        {
+            card.FileDialogFactory = () =>
+            {
+                var dialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Filter = "Funscript Files (*.funscript)|*.funscript|All Files (*.*)|*.*",
+                    Title = $"Open Funscript for {card.AxisName} ({card.AxisId})"
+                };
+                return dialog.ShowDialog() == true ? dialog.FileName : null;
+            };
+        }
+
+        // ── Subscribe to Playback Events ──────────────────────
+        _osr2Subscriptions.Add(_eventBus.Subscribe<VideoLoadedEvent>(OnOsr2VideoLoaded));
+        _osr2Subscriptions.Add(_eventBus.Subscribe<VideoUnloadedEvent>(OnOsr2VideoUnloaded));
+        _osr2Subscriptions.Add(_eventBus.Subscribe<PlaybackStateChangedEvent>(OnOsr2PlaybackStateChanged));
+        _osr2Subscriptions.Add(_eventBus.Subscribe<PlaybackPositionChangedEvent>(OnOsr2PositionChanged));
+
+        // ── Register UI Contributions ─────────────────────────
+        // Sidebar content
+        _osr2SidebarContent = new Osr2Plus.SidebarView { DataContext = _osr2SidebarVm };
+
+        // Bottom panel tab: Funscript Visualizer
+        var visualizerView = new VisualizerView { DataContext = _visualizerVm };
+        _bottomPanelContents["osr2.visualizer"] = visualizerView;
+        _mainWindowViewModel.OpenBottomPanelTab("osr2.visualizer", "FUNSCRIPT VISUALIZER");
+        TitleBar.AddBottomPanelTabMenuItem("osr2.visualizer", "Funscript Visualizer");
+
+        // Right panel: Axis Control
+        var axisControlView = new AxisControlView { DataContext = _axisControlVm };
+        _rightPanelContents["osr2.axis-control"] = axisControlView;
+        _rightPanelTitles["osr2.axis-control"] = "Axis Settings";
+        TitleBar.AddRightPanelMenuItem("osr2.axis-control", "Axis Settings", () => SwitchRightPanel("osr2.axis-control"));
+
+        // Status bar item
+        var statusItem = _statusBarViewModel.RegisterItem("osr2.status", StatusBarAlignment.Right, 500);
+        statusItem.Text = _osr2SidebarVm.StatusText;
+        statusItem.Tooltip = "OSR2+ Connection Status";
+        statusItem.IsVisible = true;
+        TitleBar.AddStatusBarMenuItem("osr2.status", "OSR2+ Status");
+
+        // Toolbar button: Quick Connect
+        SetupOsr2ToolbarButton();
+
+        // Control bar: BeatBar ComboBox + Overlay
+        var beatBarComboBox = new BeatBarComboBox { DataContext = _beatBarVm };
+        VideoPlayer.AddPluginControlBarItem("osr2.beat-bar", beatBarComboBox);
+
+        var beatBarOverlay = new BeatBarOverlay { DataContext = _beatBarVm };
+        VideoPlayer.AddPluginOverlay("osr2.beat-bar", beatBarOverlay);
+
+        // File icons — register .funscript extensions in file explorer
+        _fileExplorerViewModel.AdditionalAcceptedExtensions.Add(".funscript");
+
+        // ── Restore Right Panel ──────────────────────────────
+        var lastPanel = _settingsService.Current.Osr2LastRightPanel;
+        if (!string.IsNullOrEmpty(lastPanel))
+            SwitchRightPanel(lastPanel);
+
+        _logService.Info("OSR2+ feature initialized", "OSR2+");
+    }
+
+    /// <summary>
+    /// Creates and adds the OSR2+ quick connect toolbar button to the title bar.
+    /// Uses the connect icon from embedded resources.
+    /// </summary>
+    private void SetupOsr2ToolbarButton()
+    {
+        var icon = new Image
+        {
+            Source = LoadEmbeddedResource("Assets/Osr2Plus/connect-icon.png"),
+            Width = 16,
+            Height = 16,
+            Stretch = Stretch.Uniform,
+            SnapsToDevicePixels = true
+        };
+
+        var button = new Button
+        {
+            Content = icon,
+            ToolTip = "OSR2+ Connect",
+            Tag = "osr2-quick-connect",
+            Height = 22,
+            Background = System.Windows.Media.Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Cursor = System.Windows.Input.Cursors.Hand,
+            VerticalAlignment = VerticalAlignment.Center,
+            Padding = new Thickness(4, 2, 4, 2),
+            VerticalContentAlignment = VerticalAlignment.Center,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+        };
+
+        // Custom template matching the snapshot toolbar button style
+        var bdName = "Bd";
+        var template = new ControlTemplate(typeof(Button));
+        var borderFactory = new FrameworkElementFactory(typeof(Border), bdName);
+        borderFactory.SetValue(Border.BackgroundProperty, System.Windows.Media.Brushes.Transparent);
+        borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
+        borderFactory.SetValue(Border.PaddingProperty, new Thickness(6, 2, 6, 2));
+        borderFactory.AppendChild(new FrameworkElementFactory(typeof(ContentPresenter)));
+
+        var hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        hoverTrigger.Setters.Add(new Setter(Border.BackgroundProperty,
+            new DynamicResourceExtension("HoverBackgroundBrush"), bdName));
+        template.Triggers.Add(hoverTrigger);
+        template.VisualTree = borderFactory;
+        button.Template = template;
+
+        button.Click += (_, _) =>
+        {
+            try { _osr2SidebarVm?.ConnectCommand.Execute(null); }
+            catch (Exception ex) { _logService.Error($"Quick connect error: {ex.Message}", "OSR2+"); }
+        };
+
+        TitleBar.AddPluginToolbarButton(button);
+    }
+
+    /// <summary>
+    /// Sets the OSR2+ toolbar button highlight state based on connection status.
+    /// </summary>
+    private void SetOsr2ToolbarButtonHighlight(bool highlighted)
+    {
+        void Apply()
+        {
+            TitleBar.SetToolbarButtonHighlight("osr2-quick-connect", highlighted);
+        }
+
+        if (Dispatcher.CheckAccess())
+            Apply();
+        else
+            Dispatcher.BeginInvoke(Apply);
+    }
+
+    /// <summary>
+    /// Sets the BeatBar overlay visibility on the video player.
+    /// </summary>
+    private void SetOsr2BeatBarOverlayVisible(bool visible)
+    {
+        void Apply() => VideoPlayer.SetPluginOverlayVisible("osr2.beat-bar", visible);
+
+        if (Dispatcher.CheckAccess())
+            Apply();
+        else
+            Dispatcher.BeginInvoke(Apply);
+    }
+
+    /// <summary>
+    /// Loads a BitmapImage from an embedded WPF resource URI.
+    /// </summary>
+    private static System.Windows.Media.Imaging.BitmapImage LoadEmbeddedResource(string relativePath)
+    {
+        var bitmap = new System.Windows.Media.Imaging.BitmapImage();
+        bitmap.BeginInit();
+        bitmap.UriSource = new Uri($"pack://application:,,,/Vido.Views;component/{relativePath}", UriKind.Absolute);
+        bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+        bitmap.EndInit();
+        bitmap.Freeze();
+        return bitmap;
+    }
+
+    /// <summary>
+    /// Publishes the current axis configurations as a <see cref="HapticAxisConfigEvent"/>
+    /// so other features can read axis constraints.
+    /// </summary>
+    private void PublishOsr2AxisConfig()
+    {
+        if (_axisControlVm is null) return;
+
+        var axisSnapshots = new List<HapticAxisSnapshot>(_axisControlVm.AxisCards.Count);
+        foreach (var card in _axisControlVm.AxisCards)
+        {
+            axisSnapshots.Add(new HapticAxisSnapshot
+            {
+                Id = card.AxisId,
+                Min = card.Min,
+                Max = card.Max,
+                Enabled = card.Enabled,
+            });
+        }
+
+        _eventBus.Publish(new HapticAxisConfigEvent { Axes = axisSnapshots });
+    }
+
+    // ── OSR2+ Event Handlers ──────────────────────────────────
+
+    /// <summary>
+    /// Handles <see cref="VideoLoadedEvent"/> — loads matching funscripts
+    /// and syncs speed ratio.
+    /// </summary>
+    private void OnOsr2VideoLoaded(VideoLoadedEvent e)
+    {
+        try
+        {
+            _logService.Debug($"[OSR2+] Video loaded: {e.FilePath}", "OSR2+");
+
+            if (_axisControlVm is null) return;
+
+            _axisControlVm.LoadScriptsForVideo(e.FilePath);
+            SyncOsr2SpeedRatio();
+
+            _logService.Info($"Scripts loaded for: {e.FilePath}", "OSR2+");
+        }
+        catch (Exception ex)
+        {
+            _logService.Error($"[OSR2+] VideoLoaded handler error: {ex.Message}", "OSR2+");
+        }
+    }
+
+    /// <summary>
+    /// Handles <see cref="VideoUnloadedEvent"/> — clears scripts, stops TCode,
+    /// and homes axes.
+    /// </summary>
+    private void OnOsr2VideoUnloaded(VideoUnloadedEvent e)
+    {
+        try
+        {
+            _logService.Debug("[OSR2+] Video unloaded", "OSR2+");
+
+            if (_axisControlVm is null || _tcode is null) return;
+
+            _axisControlVm.ClearScripts();
+            _beatBarVm?.ClearBeats();
+            _tcode.SetPlaying(false);
+            _axisControlVm.SetVideoPlaying(false);
+            _visualizerVm?.ClearAxes();
+
+            // Recenter device to home position
+            _tcode.HomeAxes();
+            _logService.Debug("[OSR2+] Device recentered after video unload", "OSR2+");
+        }
+        catch (Exception ex)
+        {
+            _logService.Error($"[OSR2+] VideoUnloaded handler error: {ex.Message}", "OSR2+");
+        }
+    }
+
+    /// <summary>
+    /// Handles <see cref="PlaybackStateChangedEvent"/> — starts/stops TCode output.
+    /// </summary>
+    private void OnOsr2PlaybackStateChanged(PlaybackStateChangedEvent e)
+    {
+        try
+        {
+            _logService.Debug($"[OSR2+] Playback state: {e.State}", "OSR2+");
+
+            if (_tcode is null || _axisControlVm is null) return;
+
+            var isPlaying = e.State == PlaybackState.Playing;
+            _tcode.SetPlaying(isPlaying);
+            _axisControlVm.SetVideoPlaying(isPlaying);
+
+            // Recenter device when playback stops
+            if (e.State == PlaybackState.Stopped)
+            {
+                _tcode.HomeAxes();
+                _logService.Debug("[OSR2+] Device recentered on stop", "OSR2+");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logService.Error($"[OSR2+] PlaybackStateChanged handler error: {ex.Message}", "OSR2+");
+        }
+    }
+
+    /// <summary>
+    /// Handles <see cref="PlaybackPositionChangedEvent"/> — updates time for
+    /// TCode interpolation, visualizer, and beat bar. Also syncs speed ratio.
+    /// </summary>
+    private void OnOsr2PositionChanged(PlaybackPositionChangedEvent e)
+    {
+        try
+        {
+            _tcode?.SetTime(e.Position.TotalMilliseconds);
+            _visualizerVm?.UpdateTime(e.Position.TotalSeconds);
+            _beatBarVm?.UpdateTime(e.Position.TotalMilliseconds);
+
+            // Poll speed ratio from the video engine on each position tick
+            SyncOsr2SpeedRatio();
+        }
+        catch (Exception ex)
+        {
+            _logService.Error($"[OSR2+] PositionChanged handler error: {ex.Message}", "OSR2+");
+        }
+    }
+
+    /// <summary>
+    /// Reads the current speed ratio from the video player and forwards it
+    /// to <see cref="TCodeService.SetPlaybackSpeed"/> if it has changed.
+    /// </summary>
+    private void SyncOsr2SpeedRatio()
+    {
+        if (_tcode is null) return;
+
+        var speed = _videoPlayerViewModel.PlaybackSpeed;
+        // ReSharper disable once CompareOfFloatsByEqualityOperator
+        if (speed != _lastSpeedRatio)
+        {
+            _lastSpeedRatio = speed;
+            _tcode.SetPlaybackSpeed((float)speed);
+            _logService.Debug($"[OSR2+] Playback speed updated: {speed:F2}×", "OSR2+");
+        }
     }
 
     /// <summary>
