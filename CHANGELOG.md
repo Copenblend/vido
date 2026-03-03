@@ -7,6 +7,15 @@ All notable changes to the Vido project will be documented in this file.
 ### Plugin Integration (PI-001)
 - Added `SkiaSharp` 2.88.9 package reference to `Vido.Core` for `IExternalBeatSource` strong-typed canvas rendering.
 
+### Plugin Integration (PI-013)
+- Integrated 5 Pulse real-time service files into `Vido.Services/Pulse/`: `AudioRingBuffer`, `LiveAmplitudeService`, `PulseTCodeMapper`, `PulseEngine`, `PulseBeatSource`.
+- Changed namespace from `PulsePlugin.Services` to `Vido.Services.Pulse`.
+- Updated model imports from `PulsePlugin.Models` to `Vido.Core.Models.Pulse`.
+- Updated haptic imports from `Vido.Haptics` to `Vido.Core.Haptics`.
+- Refactored `PulseBeatSource.RenderBeat` and `RenderIndicator` to accept strongly-typed `SKCanvas` parameter (removed `object` cast guards).
+- Removed `string? currentMediaPath` constructor parameter from `PulseEngine` (media path tracked via `VideoLoadedEvent` subscription).
+- Added 99 unit tests covering AudioRingBuffer (write/read/overflow/wrap-around/concurrent), LiveAmplitudeService (submit/process/start/stop/reset/events), PulseTCodeMapper (null/empty/position range/waveform shape/binary search/reset), PulseEngine (state machine/enable-disable/analysis/playback/position/seek/divisor/dispose), and PulseBeatSource (contract/rendering/visual output/strong typing).
+
 ### Plugin Integration (PI-012)
 - Integrated 7 Pulse audio analysis service files into `Vido.Services/Pulse/`: `IAudioDecoder`, `AudioChunk`, `FfmpegAudioDecoder`, `OnsetDetector`, `BpmEstimator`, `AmplitudeTracker`, `AudioPreAnalysisService`.
 - Changed namespace from `PulsePlugin.Services` to `Vido.Services.Pulse`.
