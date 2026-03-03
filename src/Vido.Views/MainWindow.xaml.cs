@@ -1791,6 +1791,16 @@ public partial class MainWindow : Window
         // File icons — register .funscript extensions in file explorer
         _fileExplorerViewModel.AdditionalAcceptedExtensions.Add(".funscript");
 
+        // Register funscript file icons with contribution registry for explorer display
+        const string iconBase = "pack://application:,,,/Vido.Views;component/Assets/Osr2Plus/";
+        _contributionRegistry.RegisterFileIcons("osr2plus", new Dictionary<string, string>
+        {
+            { ".funscript", iconBase + "funscript-stroke.png" },
+            { ".twist.funscript", iconBase + "funscript-twist.png" },
+            { ".roll.funscript", iconBase + "funscript-roll.png" },
+            { ".pitch.funscript", iconBase + "funscript-pitch.png" },
+        });
+
         // ── Restore Right Panel ──────────────────────────────
         var lastPanel = _settingsService.Current.Osr2LastRightPanel;
         if (!string.IsNullOrEmpty(lastPanel))
