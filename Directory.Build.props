@@ -23,6 +23,15 @@
     <SoundTouchNetVersion>2.3.2</SoundTouchNetVersion>
   </PropertyGroup>
 
+  <PropertyGroup Label="Package Versions - Graphics">
+    <SkiaSharpVersion>2.88.9</SkiaSharpVersion>
+    <SkiaSharpViewsWpfVersion>2.88.9</SkiaSharpViewsWpfVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package Versions - Hardware">
+    <SystemIOPortsVersion>8.0.0</SystemIOPortsVersion>
+  </PropertyGroup>
+
   <PropertyGroup Label="Package Versions - UI/MVVM">
     <CommunityToolkitMvvmVersion>8.4.0</CommunityToolkitMvvmVersion>
     <MarkdigVersion>0.38.0</MarkdigVersion>

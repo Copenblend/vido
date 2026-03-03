@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <PackageReference Include="Markdig" Version="$(MarkdigVersion)" />
+    <PackageReference Include="SkiaSharp.Views.WPF" Version="$(SkiaSharpViewsWpfVersion)" />
   </ItemGroup>
 
 </Project>

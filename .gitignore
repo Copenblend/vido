@@ -25,6 +25,10 @@ bld/
 publish/
 context/
 screenshots/
+working/
+.github/agents/
+.github/skills/
+integration/
 
 # .NET Core
 project.lock.json

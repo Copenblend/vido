@@ -4,6 +4,13 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [0.13.0] - 2026-02-28
 
+### Plugin Integration (PI-001)
+- Added `SkiaSharp` 2.88.9 package reference to `Vido.Core` for `IExternalBeatSource` strong-typed canvas rendering.
+- Added `System.IO.Ports` 8.0.0 package reference to `Vido.Services` for serial transport support.
+- Added `SkiaSharp.Views.WPF` 2.88.9 package reference to `Vido.Views` for SkiaSharp WPF rendering controls.
+- Added `SkiaSharpVersion`, `SkiaSharpViewsWpfVersion`, `SystemIOPortsVersion` centralized version properties to `Directory.Build.props`.
+- Removed NuGet packaging configuration from `Vido.Core` (`GeneratePackageOnBuild`, `PackageId`, etc.) — Vido.Core is no longer published as an external package.
+
 ### vido-132
 - Cached `VideoPlayerControl` render dispatch callback (`_renderAction`) and switched frame render enqueues to reuse the cached delegate, removing per-frame method-group delegate allocations.
 - Added XML `<summary>` documentation for spinner lifecycle methods in `VideoPlayerControl` and `FileExplorerPanel`.
