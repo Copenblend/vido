@@ -49,6 +49,7 @@ ScaffoldingReadMe.txt
 CodeCoverage/
 *.code-workspace
 .github/agents/
+.github/skills/
 
 # MSBuild Binary and Structured Log
 *.binlog
