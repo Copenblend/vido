@@ -32,6 +32,7 @@ public partial class ActivityBarView : UserControl
             return;
 
         SetButtonActive(ExplorerButton, vm.IsPanelActive(SidebarPanelKind.Explorer) && vm.IsSidebarVisible);
+        SetButtonActive(Osr2PlusButton, vm.IsPanelActive(SidebarPanelKind.Osr2Plus) && vm.IsSidebarVisible);
         // TODO PI-024: Replace ExtensionsButton with feature panel buttons
         SetButtonActive(ExtensionsButton, false);
         SetButtonActive(SettingsButton, vm.IsPanelActive(SidebarPanelKind.Settings) && vm.IsSidebarVisible);
@@ -50,6 +51,16 @@ public partial class ActivityBarView : UserControl
     private void OnExtensionsClick(object sender, RoutedEventArgs e)
     {
         // TODO PI-024: This button will be replaced with feature panel buttons
+    }
+
+    private void OnOsr2PlusClick(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is ActivityBarViewModel vm)
+        {
+            vm.SelectPanelCommand.Execute(SidebarPanelKind.Osr2Plus);
+            UpdateActiveStates();
+            RaisePanelChanged();
+        }
     }
 
     private void OnSettingsClick(object sender, RoutedEventArgs e)

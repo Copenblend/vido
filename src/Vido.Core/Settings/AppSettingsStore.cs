@@ -35,6 +35,12 @@ public sealed class AppSettingsStore : IPluginSettingsStore
             ["explorer.showHiddenFiles"] = () => Settings.ShowHiddenFiles,
             ["screenshot.enabled"] = () => Settings.ScreenshotEnabled,
             ["screenshot.directory"] = () => Settings.ScreenshotDirectory,
+            ["osr2.connectionMode"] = () => Settings.Osr2ConnectionMode,
+            ["osr2.udpPort"] = () => (double)Settings.Osr2UdpPort,
+            ["osr2.baudRate"] = () => Settings.Osr2BaudRate.ToString(),
+            ["osr2.outputRate"] = () => (double)Settings.Osr2OutputRate,
+            ["osr2.globalOffset"] = () => (double)Settings.Osr2GlobalOffset,
+            ["osr2.visualizerWindowDuration"] = () => Settings.Osr2VisualizerWindowDuration.ToString(),
         };
 
         _setters = new(StringComparer.OrdinalIgnoreCase)
@@ -67,6 +73,38 @@ public sealed class AppSettingsStore : IPluginSettingsStore
             ["screenshot.directory"] = v =>
             {
                 Settings.ScreenshotDirectory = v?.ToString() ?? string.Empty;
+                _settingsService.QueueSave();
+            },
+            ["osr2.connectionMode"] = v =>
+            {
+                Settings.Osr2ConnectionMode = v?.ToString() ?? "UDP";
+                _settingsService.QueueSave();
+            },
+            ["osr2.udpPort"] = v =>
+            {
+                Settings.Osr2UdpPort = (int)Math.Clamp(Convert.ToDouble(v), 1, 65535);
+                _settingsService.QueueSave();
+            },
+            ["osr2.baudRate"] = v =>
+            {
+                if (int.TryParse(v?.ToString(), out var baud))
+                    Settings.Osr2BaudRate = baud;
+                _settingsService.QueueSave();
+            },
+            ["osr2.outputRate"] = v =>
+            {
+                Settings.Osr2OutputRate = (int)Math.Clamp(Convert.ToDouble(v), 30, 200);
+                _settingsService.QueueSave();
+            },
+            ["osr2.globalOffset"] = v =>
+            {
+                Settings.Osr2GlobalOffset = (int)Math.Clamp(Convert.ToDouble(v), -500, 500);
+                _settingsService.QueueSave();
+            },
+            ["osr2.visualizerWindowDuration"] = v =>
+            {
+                if (int.TryParse(v?.ToString(), out var dur))
+                    Settings.Osr2VisualizerWindowDuration = dur;
                 _settingsService.QueueSave();
             },
         };

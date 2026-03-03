@@ -893,6 +893,31 @@ public partial class TitleBarView : UserControl
     }
 
     /// <summary>
+    /// Sets the background highlight on a toolbar button identified by its <see cref="FrameworkElement.Tag"/>.
+    /// When highlighted, uses the <c>AccentBrush</c> resource; otherwise transparent.
+    /// </summary>
+    /// <param name="tag">The Tag value identifying the toolbar button.</param>
+    /// <param name="highlighted">Whether the button should be highlighted.</param>
+    public void SetToolbarButtonHighlight(string tag, bool highlighted)
+    {
+        if (_pluginToolbarPanel is null) return;
+
+        foreach (var child in _pluginToolbarPanel.Children)
+        {
+            if (child is Button btn && btn.Tag as string == tag)
+            {
+                if (btn.Template?.FindName("Bd", btn) is Border bd)
+                {
+                    bd.Background = highlighted
+                        ? (System.Windows.Media.Brush)FindResource("AccentBrush")
+                        : System.Windows.Media.Brushes.Transparent;
+                }
+                break;
+            }
+        }
+    }
+
+    /// <summary>
     /// Shows/hides the plugin toolbar border based on whether any buttons remain.
     /// </summary>
     private void UpdatePluginToolbarVisibility()

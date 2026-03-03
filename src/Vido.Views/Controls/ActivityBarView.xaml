@@ -88,6 +88,18 @@
                 </Canvas>
             </Button>
 
+            <!-- OSR2+ sidebar button — uses embedded connect icon -->
+            <Button x:Name="Osr2PlusButton"
+                    Style="{StaticResource ActivityBarButtonStyle}"
+                    ToolTip="OSR2+"
+                    Click="OnOsr2PlusClick">
+                <Image Source="pack://application:,,,/Vido.Views;component/Assets/Osr2Plus/sidebar-icon.png"
+                       Width="24" Height="24"
+                       Stretch="Uniform"
+                       SnapsToDevicePixels="True"
+                       Opacity="0.6" />
+            </Button>
+
             <!-- Plugin sidebar buttons — separate container for drag-and-drop reordering (vb-007) -->
             <StackPanel x:Name="PluginButtonsPanel"
                         AllowDrop="True"
