@@ -202,7 +202,9 @@ public partial class FileExplorerPanel : UserControl
         if (iconPath is null && !icons.TryGetValue(ext, out iconPath))
             return;
 
-        if (!File.Exists(iconPath)) return;
+        // Support both file system paths and pack:// URIs for embedded resources
+        bool isPackUri = iconPath.StartsWith("pack://", StringComparison.OrdinalIgnoreCase);
+        if (!isPackUri && !File.Exists(iconPath)) return;
 
         // Find the named elements inside the data template
         var contentPresenter = FindVisualChild<ContentPresenter>(item);
