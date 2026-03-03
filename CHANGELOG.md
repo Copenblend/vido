@@ -16,6 +16,15 @@ All notable changes to the Vido project will be documented in this file.
 - Strong-typed `IExternalBeatSource.RenderBeat` and `RenderIndicator` methods from `object` to `SKCanvas`.
 - Updated XML documentation to reflect integrated architecture (replaced "plugin" references with "feature").
 
+### Plugin Integration (PI-006)
+- Integrated 5 OSR2+ funscript services from `Osr2PlusPlugin.Services` into `Vido.Services/Osr2Plus/` namespace.
+- `FunscriptParser`: Streaming `Utf8JsonReader`-based parser with single-axis `Parse()`/`ParseFile()` and multi-axis `TryParseMultiAxis()` support, UTF-8/UTF-16 BOM handling, pre-allocated action lists, and conditional sorting.
+- `FunscriptMatcher`: Convention-based matching (`video.funscript → L0`, `.twist. → R0`, `.roll. → R1`, `.pitch. → R2`) with case-insensitive file search.
+- `FunscriptLoadingService`: Orchestrates multi-axis-first loading, individual file fallback, and manual override persistence with `ScriptsChanged` event.
+- `InterpolationService`: Linear interpolation with per-axis cached-index O(1) sequential advancement and O(log n) binary search fallback for seeks.
+- `BeatDetectionService`: Peak/valley detection from funscript action data for beat bar visualization.
+- Added 55 unit tests covering parsing (valid/invalid/malformed JSON, BOM handling, multi-axis, unsorted actions, clamping), matching (all axes, case-insensitive, empty), interpolation (boundary, midpoint, sequential, seek-back, reset, zero-range), beat detection (peaks, valleys, plateau, flat), and loading service (auto-match, multi-axis, overrides, events, clear).
+
 ### Plugin Integration (PI-005)
 - Integrated 3 OSR2+ transport service types from `Osr2PlusPlugin.Services` into `Vido.Services/Osr2Plus/` namespace.
 - `ITransportService`: Transport abstraction with `IsConnected`, `ConnectionLabel`, `ConnectionChanged`/`ErrorOccurred` events, `Send(string)`/`Send(ReadOnlySpan<byte>)`, and `Disconnect()`.
