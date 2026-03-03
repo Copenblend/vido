@@ -6,6 +6,19 @@ All notable changes to the Vido project will be documented in this file.
 
 ### Plugin Integration (PI-001)
 - Added `SkiaSharp` 2.88.9 package reference to `Vido.Core` for `IExternalBeatSource` strong-typed canvas rendering.
+
+### Plugin Integration (PI-008)
+- Integrated 5 OSR2+ ViewModel types from `Osr2PlusPlugin.ViewModels` into `Vido.ViewModels/Osr2Plus/` namespace.
+- `Osr2PlusSidebarViewModel`: Connection management (UDP/Serial), output rate, global offset, transport lifecycle with `HomeAxes` startup, `HapticTransportStateEvent` publishing via `IEventBus`, injectable `TransportFactory`/`PortLister` for testing.
+- `AxisControlViewModel`: 4-axis card orchestration (L0/R0/R1/R2), funscript auto-loading (multi-axis first, individual fallback), manual override persistence, `SuppressFunscriptEvent` handling, test mode lifecycle, injectable `FindMatchingScriptsFunc`/`TryParseMultiAxisFunc`/`ParseFileFunc`.
+- `AxisCardViewModel`: Individual axis card wrapping `AxisConfig`, min/max/enabled/fill mode/sync/fill speed/position offset properties, script loading with `FileDialogFactory`/`ParseFileFunc` injection, manual vs auto-loaded script tracking.
+- `VisualizerViewModel`: Funscript visualizer mode selection (Graph/Heatmap), configurable time window (30s–5min), loaded axis tracking, static axis color/name maps.
+- `BeatBarViewModel`: Beat bar mode management (Off/OnPeak/OnValley + external sources), `BeatDetectionService` integration, dynamic `AvailableModes` rebuilding on external source registration/unregistration, deferred external mode resolution, pre-external mode save/restore, `HidesBuiltInModes` support.
+- Refactored all ViewModels from `IPluginSettingsStore` (string-keyed `Get`/`Set`) to `ISettingsService` (strongly-typed `AppSettings` properties + `QueueSave()`).
+- Replaced plugin-internal `RelayCommand` with `CommunityToolkit.Mvvm.Input.RelayCommand`.
+- Removed `OnSettingChanged` handlers from all ViewModels (no longer needed — settings only change from VM itself in integrated architecture).
+- Added `Vido.Services` project reference to `Vido.ViewModels.csproj` for TCode/Funscript/BeatDetection service access.
+- Added 93 unit tests covering settings persistence, property clamping, command execution, connect/disconnect lifecycle, transport state publishing, script loading/clearing/suppression, beat detection, external beat source registration/unregistration, deferred mode resolution, axis card config changes, and PropertyChanged notifications.
 - Added `System.IO.Ports` 8.0.0 package reference to `Vido.Services` for serial transport support.
 - Added `SkiaSharp.Views.WPF` 2.88.9 package reference to `Vido.Views` for SkiaSharp WPF rendering controls.
 - Added `SkiaSharpVersion`, `SkiaSharpViewsWpfVersion`, `SystemIOPortsVersion` centralized version properties to `Directory.Build.props`.
