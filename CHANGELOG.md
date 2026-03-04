@@ -4,6 +4,17 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [0.13.0] - 2026-02-28
 
+### Plugin Integration (PI-019)
+- Wired Playlists into MainWindow with `SetupPlaylists()` method following OSR2+/Pulse patterns.
+- Created `PlaylistFileService`, `DialogService`, `ToastService`, and `PlaylistProvider` service instances.
+- Created `PlaylistViewModel` with full DI wiring (video engine, event bus, settings, toast, playlist provider).
+- Registered `PlaylistSidebarView` as sidebar content for `SidebarPanelKind.Playlists`.
+- Registered status bar item (`playlists.status`, Left-aligned, order 100) with `PropertyChanged` binding.
+- Registered context menu entry "Add to Playlist" for video files in the file explorer.
+- Registered `PlaylistProvider` with `IContributionRegistry` for transport control integration.
+- Added `.vidpl` to file explorer accepted extensions.
+- Added Playlists case to `OnPanelChanged` sidebar panel switching (replaced TODO comment).
+
 ### Plugin Integration (PI-001)
 - Added `SkiaSharp` 2.88.9 package reference to `Vido.Core` for `IExternalBeatSource` strong-typed canvas rendering.
 

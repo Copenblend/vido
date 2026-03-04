@@ -112,6 +112,18 @@
                        Opacity="0.6" />
             </Button>
 
+            <!-- Playlists sidebar button — uses embedded Playlists icon -->
+            <Button x:Name="PlaylistsButton"
+                    Style="{StaticResource ActivityBarButtonStyle}"
+                    ToolTip="Playlists"
+                    Click="OnPlaylistsClick">
+                <Image Source="pack://application:,,,/Vido.Views;component/Assets/Playlists/sidebar-icon.png"
+                       Width="24" Height="24"
+                       Stretch="Uniform"
+                       SnapsToDevicePixels="True"
+                       Opacity="0.6" />
+            </Button>
+
             <!-- Plugin sidebar buttons — separate container for drag-and-drop reordering (vb-007) -->
             <StackPanel x:Name="PluginButtonsPanel"
                         AllowDrop="True"
