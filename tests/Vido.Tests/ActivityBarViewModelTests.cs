@@ -204,4 +204,55 @@ public class ActivityBarViewModelTests
         // IsSidebarVisible should NOT have been toggled
         Assert.True(vm.IsSidebarVisible);
     }
+
+    /// <summary>
+    /// Verifies that ClearActivePanel deselects all panels.
+    /// </summary>
+    [Fact]
+    public void ClearActivePanel_DeselectsAllPanels()
+    {
+        var vm = new ActivityBarViewModel();
+        Assert.True(vm.IsPanelActive(SidebarPanelKind.Explorer));
+
+        vm.ClearActivePanel();
+
+        Assert.False(vm.IsPanelActive(SidebarPanelKind.Explorer));
+        Assert.False(vm.IsPanelActive(SidebarPanelKind.Playlists));
+        Assert.False(vm.IsPanelActive(SidebarPanelKind.Osr2Plus));
+        Assert.False(vm.IsPanelActive(SidebarPanelKind.Pulse));
+        Assert.False(vm.IsPanelActive(SidebarPanelKind.Settings));
+    }
+
+    /// <summary>
+    /// Verifies that sidebar visibility is persisted via ISettingsService.
+    /// </summary>
+    [Fact]
+    public void SidebarVisibility_PersistedViaSettingsService()
+    {
+        var settings = new AppSettings { SidebarVisible = true };
+        var svc = Substitute.For<ISettingsService>();
+        svc.Current.Returns(settings);
+        var vm = new ActivityBarViewModel(svc);
+
+        // Toggle sidebar off
+        vm.SelectPanelCommand.Execute(SidebarPanelKind.Explorer);
+
+        Assert.False(settings.SidebarVisible);
+        svc.Received().QueueSave();
+    }
+
+    /// <summary>
+    /// Verifies that constructor restores sidebar visibility from settings.
+    /// </summary>
+    [Fact]
+    public void Constructor_RestoresSidebarVisibilityFromSettings()
+    {
+        var settings = new AppSettings { SidebarVisible = false };
+        var svc = Substitute.For<ISettingsService>();
+        svc.Current.Returns(settings);
+
+        var vm = new ActivityBarViewModel(svc);
+
+        Assert.False(vm.IsSidebarVisible);
+    }
 }
