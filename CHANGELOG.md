@@ -7,6 +7,18 @@ All notable changes to the Vido project will be documented in this file.
 ### Plugin Integration (PI-001)
 - Added `SkiaSharp` 2.88.9 package reference to `Vido.Core` for `IExternalBeatSource` strong-typed canvas rendering.
 
+### Plugin Integration (PI-014)
+- Integrated 2 Pulse ViewModel types into `Vido.ViewModels/Pulse/`: `PulseSidebarViewModel`, `WaveformViewModel`.
+- Integrated 3 Pulse XAML view pairs into `Vido.Views/Pulse/`: `PulseSidebarView`, `WaveformPanelView`, `BeatRateComboBox`.
+- Created `PulseStyles.xaml` dark theme with colors, brushes, toggle, progress bar, scrollviewer, combobox, combobox item styles.
+- Merged `PulseStyles.xaml` into `App.xaml` resource dictionaries.
+- Copied 2 icon assets (`Pulse-plugin.png`, `sidebar-icon.png`) to `Assets/Pulse/` as embedded resources.
+- `PulseSidebarViewModel`: State display, BPM readout, analysis progress, toggle on/off via `PulseEngine.SetEnabled`, beat rate selection with 4 divisor options, settings persistence for `PulseUsePulse` and `PulseBeatRateIndex`.
+- `WaveformViewModel`: Waveform data binding, beat markers, playback position tracking, window duration selection (10s/30s/60s/2m/5m), `RepaintRequested` event for SkiaSharp canvas invalidation, settings persistence for `PulseWaveformWindowDuration`.
+- `WaveformPanelView` code-behind: Full SkiaSharp rendering with pre-allocated paints/paths, waveform path caching, beat marker rendering, playback cursor.
+- Added `InternalsVisibleTo("Vido.ViewModels")` and `InternalsVisibleTo("Vido.Views")` to `Vido.Services.csproj` for `PulseEngine` access.
+- Added 66 unit tests covering PulseSidebarViewModel (constructor, null guards, defaults, UsePulse toggle with persistence, state changes via reflection callbacks, BPM/progress updates, status messages, beat rate selection, dispose) and WaveformViewModel (constructor, null guards, defaults, window duration with persistence, UpdateTime, Clear, engine state callbacks, BeatMap ready, RepaintRequested event, dispose safety).
+
 ### Plugin Integration (PI-013)
 - Integrated 5 Pulse real-time service files into `Vido.Services/Pulse/`: `AudioRingBuffer`, `LiveAmplitudeService`, `PulseTCodeMapper`, `PulseEngine`, `PulseBeatSource`.
 - Changed namespace from `PulsePlugin.Services` to `Vido.Services.Pulse`.

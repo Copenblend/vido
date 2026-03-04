@@ -1,0 +1,260 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using Vido.Core.Models.Pulse;
+using Vido.Core.Settings;
+using Vido.Services.Pulse;
+
+namespace Vido.ViewModels.Pulse;
+
+/// <summary>
+/// ViewModel for the Pulse sidebar panel — toggle switch, analysis progress,
+/// BPM readout, state indicator, and description text. Persists settings
+/// via <see cref="ISettingsService"/>.
+/// </summary>
+internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposable
+{
+    private readonly PulseEngine _engine;
+    private readonly ISettingsService _settingsService;
+
+    private bool _usePulse;
+    private PulseState _state;
+    private double _currentBpm;
+    private double _analysisProgress;
+    private string _statusMessage = string.Empty;
+    private string _statusBarText = "\u2665 Pulse: Off";
+    private string? _errorMessage;
+    private int _selectedBeatRateIndex;
+    private bool _disposed;
+
+    /// <summary>Raised when a property value changes.</summary>
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    /// <summary>Initializes a new instance of the sidebar view model.</summary>
+    /// <param name="engine">Pulse engine that provides state, progress, and BPM updates.</param>
+    /// <param name="settingsService">Settings service for persisting Pulse preferences.</param>
+    public PulseSidebarViewModel(PulseEngine engine, ISettingsService settingsService)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+        ArgumentNullException.ThrowIfNull(settingsService);
+
+        _engine = engine;
+        _settingsService = settingsService;
+
+        // Load persisted state
+        _usePulse = _settingsService.Current.PulseUsePulse;
+        _selectedBeatRateIndex = _settingsService.Current.PulseBeatRateIndex;
+        _state = _engine.State;
+
+        _engine.StateChanged += OnEngineStateChanged;
+        _engine.AnalysisProgress += OnAnalysisProgress;
+        _engine.BeatMapReady += OnBeatMapReady;
+        _engine.ErrorOccurred += OnErrorOccurred;
+
+        UpdateStatusMessage();
+    }
+
+    // ── Properties ──
+
+    /// <summary>Main toggle — enables/disables Pulse.</summary>
+    public bool UsePulse
+    {
+        get => _usePulse;
+        set
+        {
+            if (_usePulse == value) return;
+            _usePulse = value;
+            OnPropertyChanged();
+            _engine.SetEnabled(value);
+            _settingsService.Current.PulseUsePulse = value;
+            _settingsService.QueueSave();
+        }
+    }
+
+    /// <summary>Current engine state.</summary>
+    public PulseState State
+    {
+        get => _state;
+        private set
+        {
+            if (_state == value) return;
+            _state = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(IsAnalyzing));
+            OnPropertyChanged(nameof(ShowBpm));
+            OnPropertyChanged(nameof(StateColor));
+        }
+    }
+
+    /// <summary>Current detected BPM.</summary>
+    public double CurrentBpm
+    {
+        get => _currentBpm;
+        private set
+        {
+            if (Math.Abs(_currentBpm - value) < 0.01) return;
+            _currentBpm = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Analysis progress 0.0–1.0.</summary>
+    public double AnalysisProgress
+    {
+        get => _analysisProgress;
+        private set
+        {
+            if (Math.Abs(_analysisProgress - value) < 0.005) return;
+            _analysisProgress = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Human-readable status message.</summary>
+    public string StatusMessage
+    {
+        get => _statusMessage;
+        private set
+        {
+            if (_statusMessage == value) return;
+            _statusMessage = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Short status string for the application status bar.</summary>
+    public string StatusBarText
+    {
+        get => _statusBarText;
+        private set
+        {
+            if (_statusBarText == value) return;
+            _statusBarText = value;
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>Whether the engine is currently analyzing (progress bar visible).</summary>
+    public bool IsAnalyzing => _state == PulseState.Analyzing;
+
+    /// <summary>Whether to show the BPM readout (Ready or Active).</summary>
+    public bool ShowBpm => _state is PulseState.Ready or PulseState.Active;
+
+    /// <summary>State indicator color key: "Green", "Yellow", "Grey", "Red".</summary>
+    public string StateColor => _state switch
+    {
+        PulseState.Active => "Green",
+        PulseState.Ready or PulseState.Analyzing => "Yellow",
+        PulseState.Error => "Red",
+        _ => "Grey"
+    };
+
+    // ── Beat Rate ──
+
+    /// <summary>Display labels for the beat rate ComboBox.</summary>
+    public static IReadOnlyList<string> BeatRateOptions { get; } = new[]
+    {
+        "Every Beat",
+        "Every 2nd Beat",
+        "Every 3rd Beat",
+        "Every 4th Beat"
+    };
+
+    /// <summary>
+    /// Selected beat rate index (0 = every beat, 1 = every 2nd, etc.).
+    /// Maps to engine BeatDivisor = index + 1.
+    /// </summary>
+    public int SelectedBeatRateIndex
+    {
+        get => _selectedBeatRateIndex;
+        set
+        {
+            if (_selectedBeatRateIndex == value) return;
+            _selectedBeatRateIndex = value;
+            OnPropertyChanged();
+            _engine.BeatDivisor = value + 1;
+            _settingsService.Current.PulseBeatRateIndex = value;
+            _settingsService.QueueSave();
+        }
+    }
+
+    /// <summary>Description text explaining Pulse behaviour.</summary>
+    public string Description =>
+        "When Use Pulse is enabled:\n" +
+        "\u2022 Audio is pre-analyzed for beat detection on load\n" +
+        "\u2022 Funscript auto-loading is suppressed\n" +
+        "\u2022 A \u2018Pulse\u2019 BeatBar mode appears (with red hearts)\n" +
+        "\u2022 L0 axis is driven by beat-synchronized strokes\n" +
+        "\u2022 Other axes (R0/R1/R2) continue with fill modes\n" +
+        "\u2022 OSR2+ axis Min/Max/Enabled settings still apply\n\n" +
+        "Toggle off to restore normal funscript behavior.";
+
+    // ── Engine callbacks ──
+
+    private void OnEngineStateChanged(PulseState newState)
+    {
+        State = newState;
+        if (newState != PulseState.Error)
+            _errorMessage = null;
+        UpdateStatusMessage();
+    }
+
+    private void OnAnalysisProgress(double progress)
+    {
+        AnalysisProgress = progress;
+        UpdateStatusMessage();
+    }
+
+    private void OnBeatMapReady(BeatMap beatMap)
+    {
+        CurrentBpm = beatMap.Bpm;
+        UpdateStatusMessage();
+    }
+
+    private void OnErrorOccurred(string message)
+    {
+        _errorMessage = message;
+        UpdateStatusMessage();
+    }
+
+    // ── Helpers ──
+
+    private void UpdateStatusMessage()
+    {
+        StatusMessage = _state switch
+        {
+            PulseState.Inactive => string.Empty,
+            PulseState.Analyzing => $"Analyzing audio... {_analysisProgress:P0}",
+            PulseState.Ready => $"Ready \u2014 \u2665 {_currentBpm:F0} BPM detected",
+            PulseState.Active => $"\u2665 {_currentBpm:F0} BPM",
+            PulseState.Error => $"Error: {_errorMessage ?? "Unknown"}",
+            _ => string.Empty
+        };
+
+        StatusBarText = _state switch
+        {
+            PulseState.Inactive => "\u2665 Pulse: Off",
+            PulseState.Analyzing => "\u2665 Pulse: Analyzing...",
+            PulseState.Ready => "\u2665 Pulse: Ready",
+            PulseState.Active => $"\u2665 Pulse: Active {_currentBpm:F0} BPM",
+            PulseState.Error => "\u2665 Pulse: Error",
+            _ => "\u2665 Pulse: Off"
+        };
+    }
+
+    private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    /// <summary>Disposes the view model and unsubscribes from engine events.</summary>
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        _engine.StateChanged -= OnEngineStateChanged;
+        _engine.AnalysisProgress -= OnAnalysisProgress;
+        _engine.BeatMapReady -= OnBeatMapReady;
+        _engine.ErrorOccurred -= OnErrorOccurred;
+    }
+}

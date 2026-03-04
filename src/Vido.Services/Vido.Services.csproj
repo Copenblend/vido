@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Vido.Tests" />
+    <InternalsVisibleTo Include="Vido.ViewModels" />
+    <InternalsVisibleTo Include="Vido.Views" />
   </ItemGroup>
 
   <ItemGroup>
