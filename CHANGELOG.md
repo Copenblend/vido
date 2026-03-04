@@ -4,7 +4,47 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [0.14.0] - 2026-03-03
 
-### Plugin Integration (PI-027)
+### Changed
+- OSR2+ device control is now a built-in feature (previously a plugin).
+- Pulse audio-to-haptics is now a built-in feature (previously a plugin).
+- Playlist management is now a built-in feature (previously a plugin).
+- All settings are in the main Settings view under OSR2+, Pulse, and Playlists categories.
+- Activity bar now shows 5 fixed icons: Explorer, OSR2+, Pulse, Playlists, Settings.
+- Sidebar panel switching uses `SidebarPanelKind` enum instead of string-based plugin panel IDs.
+
+### Removed
+- Plugin system removed: plugin discovery, loading, `IContributionRegistry`, `IPluginHost`, `IPluginInstaller`, plugin manager UI, and all `Wire*`/`Unwire*` wiring infrastructure.
+- Extensions panel removed from activity bar.
+- `SettingContribution` replaced by compile-time-safe `SettingDefinition` with getter/setter delegates.
+- Plugin button drag-and-drop reordering removed from activity bar.
+- `Vido.PluginHost` project removed from solution.
+- Custom `BoolToVisibilityConverter` removed (replaced by WPF built-in `BooleanToVisibilityConverter`).
+- Stale `Vido.Core` and `Vido.Haptics` NuGet packages removed from `local-packages/`.
+
+### Improved
+- Faster application startup (no plugin loading overhead).
+- Compile-time type safety for all features — no runtime reflection or dynamic loading.
+- All feature services directly instantiated with strong typing.
+- Clean shutdown with proper disposal of all OSR2+, Pulse, and Playlist resources.
+
+### Integration Details (PI-023 through PI-031)
+
+#### PI-031: Final Changelog
+- Consolidated all plugin integration changes into structured changelog entry.
+
+#### PI-030: Integration Verification  
+- Verified all DI registrations, feature setup methods, settings categories, activity bar buttons, and event bus subscriptions.
+- Confirmed zero orphaned plugin references in source code.
+- All 1617 unit tests pass.
+
+#### PI-029: Solution & Build Cleanup
+- Verified `Vido.sln` contains only: Core, Services, ViewModels, Views, App, Tests.
+- No NuGet references to `Vido.Core` or `Vido.Haptics` packages.
+- `InternalsVisibleTo("Vido.Tests")` already present in `Vido.Services`.
+- Removed 6 stale `.nupkg` files from `local-packages/`.
+- Build: 0 errors, 0 warnings. Tests: 1617/1617 passed.
+
+#### PI-027: Deduplicate WPF Converters
 - Audited all converters in `Vido.Views/Converters/` — no duplicates exist within the main solution.
 - Replaced custom `BoolToVisibilityConverter` with WPF's built-in `BooleanToVisibilityConverter` in 4 XAML files: `Osr2Plus/SidebarView.xaml`, `Osr2Plus/AxisControlView.xaml`, `Osr2Plus/AxisCardView.xaml`, `Pulse/PulseSidebarView.xaml`.
 - Removed `converters` xmlns from `Osr2Plus/SidebarView.xaml` and `Osr2Plus/AxisControlView.xaml` (no longer needed after BoolToVisibilityConverter removal).

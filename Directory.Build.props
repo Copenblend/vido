@@ -7,7 +7,7 @@
     <Product>Vido</Product>
     <Authors>Vido</Authors>
     <Copyright>Copyright (c) 2025-2026 Vido</Copyright>
-    <Description>A performant, extensible video player for Windows</Description>
+    <Description>A performant video player for Windows</Description>
   </PropertyGroup>
 
   <PropertyGroup Label="Package Versions - Microsoft">
