@@ -4,6 +4,24 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [0.14.0] - 2026-03-03
 
+### Plugin Integration (PI-026)
+- Confirmed all plugin wiring methods already removed from `MainWindow.xaml.cs` (completed in PI-020).
+- No `SetupPluginContributions()`, `WirePluginContributions()`, `UnwireStaleContributions()`, or any `Wire*`/`Unwire*` methods remain.
+- No tracking fields (`_wiredBottomPanelIds`, `_wiredStatusBarIds`, etc.) remain.
+- No `IContributionRegistry`, `IPluginHost`, `IPluginInstaller` constructor parameters remain.
+- No `_pluginManagerVm` field or `ContributionsChanged` subscription remain.
+- `SidebarView` content switching uses `SidebarPanelKind` enum (Explorer, Osr2Plus, Pulse, Playlists).
+- `SetupOsr2Plus()`, `SetupPulse()`, `SetupPlaylists()` are the only feature wiring methods.
+- No code changes required — all work was completed as part of PI-020.
+
+### Plugin Integration (PI-025)
+- Confirmed `VideoPlayerViewModel` already uses direct `IPlaylistProvider?` injection (completed in PI-020).
+- No `IContributionRegistry` dependency remains in `VideoPlayerViewModel`.
+- Playlist-based skip next/prev navigation delegates to `IPlaylistProvider` when active.
+- Falls back to sibling file list when provider is null or inactive.
+- `PlaylistProviderDelegationTests.cs` (309 lines) already provides comprehensive coverage.
+- No code changes required — all work was completed as part of PI-020.
+
 ### Plugin Integration (PI-024)
 - Removed Extensions button from activity bar (replaced by dedicated feature panel buttons already present).
 - Removed plugin sidebar button drag-and-drop reordering infrastructure from `ActivityBarView.xaml.cs` (`AddPluginButton`, `InsertPluginButton`, `RemovePluginButton`, `SetPluginButtonActive`, `PluginButtonReordered` event, and all drag-drop handlers).
