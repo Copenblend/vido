@@ -1,18 +1,19 @@
 # Vido
 
-A performant, extensible video player for Windows built with WPF, .NET 8, and FFmpeg. Designed as a VS Code Dark Modern visual clone with a fully modular plugin system.
+A performant video player for Windows built with WPF, .NET 8, and FFmpeg. Features a VS Code Dark Modern-inspired UI with built-in OSR2+ haptic device control, Pulse audio-to-haptics, and playlist management.
 
 ## Features
 
 - **Hardware-accelerated video playback** — D3D11VA / DXVA2 GPU decoding with automatic software fallback
 - **VS Code-inspired UI** — custom frameless window, activity bar, sidebar, bottom/right panels, tab system, status bar
 - **File explorer** — tree view with lazy-loading, context menus, drag-and-drop, hidden file management
-- **Plugin system** — extensible architecture supporting sidebar panels, bottom/right tabs, status bar items, toolbar buttons, context menus, file handlers, custom file icons, keyboard shortcuts, and per-plugin settings
-- **Plugin manager** — browse, install, update, and uninstall plugins from configurable registries (including local `file://` paths for development)
+- **OSR2+ haptic device control** — TCode output via serial/UDP, funscript playback, axis control with fill modes, beat bar visualization, funscript visualizer (graph + heatmap)
+- **Pulse audio-to-haptics** — real-time BPM detection, onset analysis, waveform visualization, automatic beat-driven haptic output
+- **Playlist management** — create/save/load `.vidpl` playlists, drag-and-drop reordering, shuffle, auto-save, skip next/prev navigation
 - **Full state persistence** — window geometry, open folder, last video + position, panel layout, volume, playback speed, recent files
-- **Keyboard shortcuts** — comprehensive default bindings with extensible registry
+- **Keyboard shortcuts** — comprehensive default bindings
 - **Fullscreen mode** — F11/F/double-click with auto-hiding overlay controls
-- **Performance optimized** — frame buffer pooling (ArrayPool), TreeView virtualization, deferred plugin activation, ReadyToRun compilation, playback metrics logging
+- **Performance optimized** — frame buffer pooling, TreeView virtualization, zero-allocation TCode hot paths, lock-free audio ring buffers, ReadyToRun compilation
 
 ## Requirements
 
@@ -77,12 +78,11 @@ All formats supported by FFmpeg, including:
 
 ```
 Vido.App           → Entry point, DI container, startup
-Vido.Core          → Interfaces, models, events, plugin API (zero dependencies)
-Vido.Services      → FFmpeg engine, file system, settings, state persistence
+Vido.Core          → Interfaces, models, events, haptic types
+Vido.Services      → FFmpeg engine, file system, settings, OSR2+, Pulse, Playlists
 Vido.ViewModels    → MVVM ViewModels (CommunityToolkit.Mvvm)
 Vido.Views         → WPF XAML views, themes, controls
-Vido.PluginHost    → Plugin loading, lifecycle, API bridge
-Vido.Tests         → xUnit tests (809 tests)
+Vido.Tests         → xUnit tests (1617 tests)
 ```
 
 ### Key Technologies
@@ -92,28 +92,17 @@ Vido.Tests         → xUnit tests (809 tests)
 | WPF / .NET 8 | UI framework |
 | FFmpeg.AutoGen 8.0 | Video decoding (P/Invoke bindings) |
 | NAudio | WASAPI audio output |
+| SkiaSharp | Hardware-accelerated 2D rendering (visualizers, waveforms, beat bars) |
 | CommunityToolkit.Mvvm | MVVM source generators |
 | Microsoft.Extensions.DI | Dependency injection |
-| xUnit + Moq | Testing |
-
-## Plugin Development
-
-See [PLUGIN_DEVELOPMENT.md](PLUGIN_DEVELOPMENT.md) for a complete guide to creating Vido plugins.
-
-### Quick Start
-
-1. Create a .NET 8 class library referencing `Vido.Core.dll`
-2. Implement `IVidoPlugin` with `Activate()` and `Deactivate()`
-3. Create a `plugin.json` manifest
-4. Copy to `%APPDATA%/Vido/plugins/your-plugin-id/`
-5. Launch Vido — the plugin loads automatically
+| System.IO.Ports | Serial port communication (OSR2+ device) |
+| xUnit + NSubstitute | Testing |
 
 ## Configuration
 
 Settings are stored in `%APPDATA%/Vido/`:
-- `settings.json` — user preferences (volume, playback speed, layout, plugin registries)
+- `settings.json` — user preferences (volume, playback speed, layout, OSR2+, Pulse, Playlist settings)
 - `state.json` — session state (window position, last video, recent files)
-- `plugins/` — installed plugins
 
 ## License
 
