@@ -20,6 +20,8 @@
     <Resource Include="Assets\Osr2Plus\funscript-stroke.png" />
     <Resource Include="Assets\Osr2Plus\funscript-twist.png" />
     <Resource Include="Assets\Osr2Plus\sidebar-icon.png" />
+    <Resource Include="Assets\Pulse\Pulse-plugin.png" />
+    <Resource Include="Assets\Pulse\sidebar-icon.png" />
   </ItemGroup>
 
   <ItemGroup>
