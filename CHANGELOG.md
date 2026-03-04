@@ -7,6 +7,18 @@ All notable changes to the Vido project will be documented in this file.
 ### Plugin Integration (PI-001)
 - Added `SkiaSharp` 2.88.9 package reference to `Vido.Core` for `IExternalBeatSource` strong-typed canvas rendering.
 
+### Plugin Integration (PI-015)
+- Added `SetupPulse()` method to `MainWindow.xaml.cs` wiring all Pulse services, ViewModels, views, event subscriptions, and UI contributions.
+- Created and wired Pulse services: `FfmpegAudioDecoder`, `AudioPreAnalysisService`, `LiveAmplitudeService`, `PulseTCodeMapper`, `PulseEngine`.
+- Registered 4 UI contribution points: sidebar panel (`SidebarPanelKind.Pulse`), bottom panel tab ("PULSE WAVEFORM"), status bar item ("Pulse Status", priority 600), control bar (`BeatRateComboBox` with visibility toggle).
+- Wired 3 `IVideoEngine` events to `PulseEngine`: `AudioSamplesAvailable`, `PositionChanged` (with waveform time update), `SeekCompleted`.
+- Wired `SuppressFunscriptEvent` subscription to auto-show Pulse Waveform bottom panel when Pulse suppresses funscripts.
+- Added `IVideoEngine` constructor parameter to `MainWindow` for direct engine event access.
+- Added Pulse sidebar button to `ActivityBarView` with sidebar-icon.png, `OnPulseClick` handler, and active state tracking.
+- Added `SidebarPanelKind.Pulse` case to `OnPanelChanged` for sidebar content switching.
+- Added Pulse resource disposal in `OnClosing`: unsubscribes engine events, disposes subscriptions, ViewModels, engine, and pre-analysis service.
+- Restored persisted `PulseUsePulse` toggle state on startup.
+
 ### Plugin Integration (PI-014)
 - Integrated 2 Pulse ViewModel types into `Vido.ViewModels/Pulse/`: `PulseSidebarViewModel`, `WaveformViewModel`.
 - Integrated 3 Pulse XAML view pairs into `Vido.Views/Pulse/`: `PulseSidebarView`, `WaveformPanelView`, `BeatRateComboBox`.

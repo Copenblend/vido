@@ -1585,6 +1585,289 @@ public class Osr2ViewModelTests : IDisposable
     }
 
     // ═══════════════════════════════════════════════════════════
+    //  BeatBar Persistence & Mode Switching Tests
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Verifies that switching to an external mode persists the fallback built-in mode.
+    /// </summary>
+    [Fact]
+    public void BeatBar_SwitchToExternal_PersistsFallbackMode()
+    {
+        var vm = new BeatBarViewModel(_settingsService, _beatDetection);
+        vm.Mode = BeatBarMode.OnPeak;
+
+        var source = CreatePulseBeatSource();
+        vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+        {
+            Source = source,
+            IsRegistering = true,
+        });
+
+        // Mode should have auto-switched to external (HidesBuiltInModes = true)
+        Assert.True(vm.Mode.IsExternal);
+        // Fallback should be persisted
+        Assert.Equal("OnPeak", _settings.Osr2BeatBarFallbackMode);
+    }
+
+    /// <summary>
+    /// Verifies that unregistering external source restores the pre-external built-in mode.
+    /// </summary>
+    [Fact]
+    public void BeatBar_UnregisterExternal_RestoresPreExternalMode()
+    {
+        var vm = new BeatBarViewModel(_settingsService, _beatDetection);
+        vm.Mode = BeatBarMode.OnPeak;
+
+        var source = CreatePulseBeatSource();
+        vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+        {
+            Source = source,
+            IsRegistering = true,
+        });
+        Assert.True(vm.Mode.IsExternal);
+
+        // Unregister → should restore OnPeak
+        vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+        {
+            Source = source,
+            IsRegistering = false,
+        });
+
+        Assert.Equal(BeatBarMode.OnPeak, vm.Mode);
+        Assert.Equal("OnPeak", _settings.Osr2BeatBarMode);
+    }
+
+    /// <summary>
+    /// Verifies round-trip: select built-in → enable external → disable external → built-in restored.
+    /// </summary>
+    [Fact]
+    public void BeatBar_FullRoundTrip_PreservesBuiltInMode()
+    {
+        var vm = new BeatBarViewModel(_settingsService, _beatDetection);
+        vm.Mode = BeatBarMode.OnValley;
+
+        var source = CreatePulseBeatSource();
+
+        // Enable Pulse
+        vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+        {
+            Source = source,
+            IsRegistering = true,
+        });
+        Assert.True(vm.Mode.IsExternal);
+
+        // Disable Pulse
+        vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+        {
+            Source = source,
+            IsRegistering = false,
+        });
+        Assert.Equal(BeatBarMode.OnValley, vm.Mode);
+
+        // Re-enable Pulse
+        vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+        {
+            Source = source,
+            IsRegistering = true,
+        });
+        Assert.True(vm.Mode.IsExternal);
+
+        // Disable again
+        vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+        {
+            Source = source,
+            IsRegistering = false,
+        });
+        Assert.Equal(BeatBarMode.OnValley, vm.Mode);
+    }
+
+    /// <summary>
+    /// Verifies that selecting Off while external is active does NOT clear the fallback.
+    /// </summary>
+    [Fact]
+    public void BeatBar_SelectOffDuringExternal_PreservesFallback()
+    {
+        var vm = new BeatBarViewModel(_settingsService, _beatDetection);
+        vm.Mode = BeatBarMode.OnPeak;
+
+        var source = CreatePulseBeatSource();
+        vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+        {
+            Source = source,
+            IsRegistering = true,
+        });
+        Assert.True(vm.Mode.IsExternal);
+        Assert.Equal("OnPeak", _settings.Osr2BeatBarFallbackMode);
+
+        // User selects Off while Pulse is active
+        vm.Mode = BeatBarMode.Off;
+
+        // Fallback should still be preserved
+        Assert.Equal("OnPeak", _settings.Osr2BeatBarFallbackMode);
+
+        // Unregister external → should restore OnPeak (not Off)
+        vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+        {
+            Source = source,
+            IsRegistering = false,
+        });
+        Assert.Equal(BeatBarMode.OnPeak, vm.Mode);
+    }
+
+    /// <summary>
+    /// Verifies that the fallback mode persists across sessions (simulated by constructor).
+    /// </summary>
+    [Fact]
+    public void BeatBar_FallbackMode_PersistsAcrossSessions()
+    {
+        // Session 1: User had OnPeak, then Pulse activated
+        _settings.Osr2BeatBarMode = "pulse";
+        _settings.Osr2BeatBarFallbackMode = "OnPeak";
+
+        // Session 2: App restarts, Pulse not yet registered
+        var vm = new BeatBarViewModel(_settingsService, _beatDetection);
+
+        // Should show the fallback (OnPeak) instead of Off
+        Assert.Equal(BeatBarMode.OnPeak, vm.Mode);
+    }
+
+    /// <summary>
+    /// Verifies that deferred external mode auto-selects when source registers,
+    /// even when fallback was loaded.
+    /// </summary>
+    [Fact]
+    public void BeatBar_FallbackMode_SwitchesToExternalWhenRegistered()
+    {
+        _settings.Osr2BeatBarMode = "pulse";
+        _settings.Osr2BeatBarFallbackMode = "OnPeak";
+
+        var vm = new BeatBarViewModel(_settingsService, _beatDetection);
+        Assert.Equal(BeatBarMode.OnPeak, vm.Mode);
+
+        // Pulse registers → should switch to the deferred external mode
+        var source = CreatePulseBeatSource();
+        vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+        {
+            Source = source,
+            IsRegistering = true,
+        });
+
+        Assert.True(vm.Mode.IsExternal);
+        Assert.Equal("pulse", vm.Mode.Id);
+    }
+
+    /// <summary>
+    /// Verifies that after fallback restore and external re-registration,
+    /// unregistering still restores the original built-in mode.
+    /// </summary>
+    [Fact]
+    public void BeatBar_SessionRestart_FullCycle_RestoresCorrectly()
+    {
+        _settings.Osr2BeatBarMode = "pulse";
+        _settings.Osr2BeatBarFallbackMode = "OnPeak";
+
+        var vm = new BeatBarViewModel(_settingsService, _beatDetection);
+
+        // Register Pulse
+        var source = CreatePulseBeatSource();
+        vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+        {
+            Source = source,
+            IsRegistering = true,
+        });
+        Assert.True(vm.Mode.IsExternal);
+
+        // Unregister Pulse → should restore OnPeak
+        vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+        {
+            Source = source,
+            IsRegistering = false,
+        });
+        Assert.Equal(BeatBarMode.OnPeak, vm.Mode);
+    }
+
+    /// <summary>
+    /// Verifies that fallback is cleared after successful restore (no external sources).
+    /// </summary>
+    [Fact]
+    public void BeatBar_FallbackCleared_AfterRestore()
+    {
+        var vm = new BeatBarViewModel(_settingsService, _beatDetection);
+        vm.Mode = BeatBarMode.OnPeak;
+
+        var source = CreatePulseBeatSource();
+        vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+        {
+            Source = source,
+            IsRegistering = true,
+        });
+        Assert.Equal("OnPeak", _settings.Osr2BeatBarFallbackMode);
+
+        vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+        {
+            Source = source,
+            IsRegistering = false,
+        });
+
+        // After restore with no external sources, fallback should be cleared
+        Assert.Equal("", _settings.Osr2BeatBarFallbackMode);
+    }
+
+    /// <summary>
+    /// Verifies that Mode is never set to a value not in AvailableModes (empty guard).
+    /// </summary>
+    [Fact]
+    public void BeatBar_ModeAlwaysInAvailableModes()
+    {
+        var vm = new BeatBarViewModel(_settingsService, _beatDetection);
+
+        var source = CreatePulseBeatSource();
+
+        // Register and unregister multiple times
+        for (int i = 0; i < 3; i++)
+        {
+            vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+            {
+                Source = source,
+                IsRegistering = true,
+            });
+            Assert.Contains(vm.AvailableModes, m => m == vm.Mode);
+
+            vm.OnBeatSourceRegistration(new ExternalBeatSourceRegistration
+            {
+                Source = source,
+                IsRegistering = false,
+            });
+            Assert.Contains(vm.AvailableModes, m => m == vm.Mode);
+        }
+    }
+
+    /// <summary>
+    /// Verifies that first-time startup defaults to Off (no previous selection).
+    /// </summary>
+    [Fact]
+    public void BeatBar_FirstStartup_DefaultsToOff()
+    {
+        _settings.Osr2BeatBarMode = "Off";
+        _settings.Osr2BeatBarFallbackMode = "";
+
+        var vm = new BeatBarViewModel(_settingsService, _beatDetection);
+
+        Assert.Equal(BeatBarMode.Off, vm.Mode);
+    }
+
+    private static IExternalBeatSource CreatePulseBeatSource()
+    {
+        var source = Substitute.For<IExternalBeatSource>();
+        source.Id.Returns("pulse");
+        source.DisplayName.Returns("Pulse");
+        source.IsAvailable.Returns(true);
+        source.HidesBuiltInModes.Returns(true);
+        return source;
+    }
+
+    // ═══════════════════════════════════════════════════════════
     //  PropertyChanged Tests
     // ═══════════════════════════════════════════════════════════
 

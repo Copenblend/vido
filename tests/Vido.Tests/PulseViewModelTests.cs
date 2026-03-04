@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Reflection;
 using NSubstitute;
 using Vido.Core.Events;
+using Vido.Core.Haptics;
 using Vido.Core.Logging;
 using Vido.Core.Models.Pulse;
 using Vido.Core.Settings;
@@ -93,6 +94,30 @@ public class PulseViewModelTests : IDisposable
 
         // UsePulse loads from settings (engine might override but field is set)
         Assert.Equal(2, vm.SelectedBeatRateIndex);
+    }
+
+    [Fact]
+    public void SidebarVM_Constructor_PersistedUsePulse_RegistersBeatSource()
+    {
+        _settings.PulseUsePulse = true;
+
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+
+        // SetEnabled(true) should publish ExternalBeatSourceRegistration
+        var regs = _eventBus.GetPublished<ExternalBeatSourceRegistration>();
+        Assert.Single(regs);
+        Assert.True(regs[0].IsRegistering);
+    }
+
+    [Fact]
+    public void SidebarVM_Constructor_PersistedUsePulseFalse_DoesNotRegisterBeatSource()
+    {
+        _settings.PulseUsePulse = false;
+
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+
+        var regs = _eventBus.GetPublished<ExternalBeatSourceRegistration>();
+        Assert.Empty(regs);
     }
 
     // ══════════════════════════════════════════════
@@ -974,6 +999,15 @@ public class PulseViewModelTests : IDisposable
             private readonly Action _onDispose;
             public Subscription(Action onDispose) => _onDispose = onDispose;
             public void Dispose() => _onDispose();
+        }
+
+        /// <summary>Returns all published events of the given type.</summary>
+        public List<TEvent> GetPublished<TEvent>()
+        {
+            lock (_lock)
+            {
+                return _published.OfType<TEvent>().ToList();
+            }
         }
     }
 

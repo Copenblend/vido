@@ -154,6 +154,12 @@ public sealed class AppSettings
     public string Osr2BeatBarMode { get; set; } = "Off";
 
     /// <summary>
+    /// Persisted built-in beat bar mode to restore when an external source
+    /// (e.g. Pulse) is deactivated. Empty string means no fallback saved.
+    /// </summary>
+    public string Osr2BeatBarFallbackMode { get; set; } = "";
+
+    /// <summary>
     /// Last active right panel ID for OSR2+ (used to restore panel state).
     /// </summary>
     public string Osr2LastRightPanel { get; set; } = "";
@@ -248,6 +254,7 @@ public sealed class AppSettings
         Osr2VisualizerMode = "Graph";
         Osr2VisualizerWindowDuration = 60;
         Osr2BeatBarMode = "Off";
+        Osr2BeatBarFallbackMode = "";
         Osr2LastRightPanel = "";
         Osr2AxisSettings = AxisSettingsData.CreateDefaults();
 
