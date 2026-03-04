@@ -2,7 +2,15 @@
 
 All notable changes to the Vido project will be documented in this file.
 
-## [0.14.0] - 2026-02-28
+## [0.14.0] - 2026-03-03
+
+### Plugin Integration (PI-024)
+- Removed Extensions button from activity bar (replaced by dedicated feature panel buttons already present).
+- Removed plugin sidebar button drag-and-drop reordering infrastructure from `ActivityBarView.xaml.cs` (`AddPluginButton`, `InsertPluginButton`, `RemovePluginButton`, `SetPluginButtonActive`, `PluginButtonReordered` event, and all drag-drop handlers).
+- Removed `PluginButtonsPanel` StackPanel from `ActivityBarView.xaml`.
+- Removed `PluginButtonReordered` event subscription from `MainWindow.xaml.cs`.
+- Activity bar now shows 5 fixed icons: Explorer, OSR2+, Pulse, Playlists, Settings (bottom).
+- No `PluginSidebarItem` references remain in the codebase.
 
 ### Plugin Integration (PI-023)
 - Refactored `SettingDisplayItem` to use `SettingDefinition` with getter/setter delegates instead of `SettingContribution` + `ISettingsStore`.

@@ -321,9 +321,6 @@ public partial class MainWindow : Window
         // Settings gear opens as a tab, not in the sidebar
         ActivityBar.SettingsRequested += (_, _) => _mainWindowViewModel.OpenSettings();
 
-        // Plugin sidebar button drag-and-drop reordering (vb-007)
-        ActivityBar.PluginButtonReordered += (oldIndex, newIndex) => { };
-
         // Initialize visual states
         ActivityBar.UpdateActiveStates();
     }

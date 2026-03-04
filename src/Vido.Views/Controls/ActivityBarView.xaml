@@ -13,7 +13,7 @@
     </UserControl.Resources>
 
     <DockPanel LastChildFill="False">
-        <!-- Top group: Explorer, Extensions, then plugin buttons -->
+        <!-- Top group: Explorer, then feature panel buttons -->
         <StackPanel DockPanel.Dock="Top">
             <!-- Explorer (VS Code codicon: files) -->
             <Button x:Name="ExplorerButton"
@@ -42,49 +42,6 @@
                     <Line Canvas.Left="7" Canvas.Top="15" X2="5" Y2="0"
                           Stroke="{DynamicResource ActiveIconBrush}" StrokeThickness="1"
                           StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
-                </Canvas>
-            </Button>
-
-            <!-- Extensions — Symmetric 2×2 puzzle icon (centered at 12,12) -->
-            <Button x:Name="ExtensionsButton"
-                    Style="{StaticResource ActivityBarButtonStyle}"
-                    ToolTip="Extensions"
-                    Click="OnExtensionsClick">
-                <Canvas Width="24" Height="24">
-                    <!-- Top-left piece -->
-                    <Rectangle Canvas.Left="3" Canvas.Top="3" Width="8" Height="8"
-                               RadiusX="1.5" RadiusY="1.5"
-                               Stroke="{DynamicResource InactiveIconBrush}"
-                               StrokeThickness="1.2" Fill="Transparent" />
-                    <!-- Top-right piece -->
-                    <Rectangle Canvas.Left="13" Canvas.Top="3" Width="8" Height="8"
-                               RadiusX="1.5" RadiusY="1.5"
-                               Stroke="{DynamicResource InactiveIconBrush}"
-                               StrokeThickness="1.2" Fill="Transparent" />
-                    <!-- Bottom-left piece -->
-                    <Rectangle Canvas.Left="3" Canvas.Top="13" Width="8" Height="8"
-                               RadiusX="1.5" RadiusY="1.5"
-                               Stroke="{DynamicResource InactiveIconBrush}"
-                               StrokeThickness="1.2" Fill="Transparent" />
-                    <!-- Bottom-right piece -->
-                    <Rectangle Canvas.Left="13" Canvas.Top="13" Width="8" Height="8"
-                               RadiusX="1.5" RadiusY="1.5"
-                               Stroke="{DynamicResource InactiveIconBrush}"
-                               StrokeThickness="1.2" Fill="Transparent" />
-                    <!-- Center connection nubs (horizontal) -->
-                    <Rectangle Canvas.Left="10" Canvas.Top="6" Width="4" Height="2"
-                               RadiusX="0.5" RadiusY="0.5"
-                               Fill="{DynamicResource InactiveIconBrush}" />
-                    <Rectangle Canvas.Left="10" Canvas.Top="16" Width="4" Height="2"
-                               RadiusX="0.5" RadiusY="0.5"
-                               Fill="{DynamicResource InactiveIconBrush}" />
-                    <!-- Center connection nubs (vertical) -->
-                    <Rectangle Canvas.Left="6" Canvas.Top="10" Width="2" Height="4"
-                               RadiusX="0.5" RadiusY="0.5"
-                               Fill="{DynamicResource InactiveIconBrush}" />
-                    <Rectangle Canvas.Left="16" Canvas.Top="10" Width="2" Height="4"
-                               RadiusX="0.5" RadiusY="0.5"
-                               Fill="{DynamicResource InactiveIconBrush}" />
                 </Canvas>
             </Button>
 
@@ -123,12 +80,6 @@
                        SnapsToDevicePixels="True"
                        Opacity="0.6" />
             </Button>
-
-            <!-- Plugin sidebar buttons — separate container for drag-and-drop reordering (vb-007) -->
-            <StackPanel x:Name="PluginButtonsPanel"
-                        AllowDrop="True"
-                        DragOver="OnPluginDragOver"
-                        Drop="OnPluginDrop" />
         </StackPanel>
 
         <!-- Bottom group: Settings -->
