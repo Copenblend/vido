@@ -11,7 +11,7 @@
 
     <UserControl.Resources>
         <ResourceDictionary>
-            <converters:BoolToVisibilityConverter x:Key="BoolToVis" />
+            <BooleanToVisibilityConverter x:Key="BoolToVis" />
             <converters:StateColorToBrushConverter x:Key="StateColorBrush" />
             <converters:FractionToPercentConverter x:Key="FracToPercent" />
         </ResourceDictionary>

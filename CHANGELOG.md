@@ -4,6 +4,14 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [0.14.0] - 2026-03-03
 
+### Plugin Integration (PI-027)
+- Audited all converters in `Vido.Views/Converters/` — no duplicates exist within the main solution.
+- Replaced custom `BoolToVisibilityConverter` with WPF's built-in `BooleanToVisibilityConverter` in 4 XAML files: `Osr2Plus/SidebarView.xaml`, `Osr2Plus/AxisControlView.xaml`, `Osr2Plus/AxisCardView.xaml`, `Pulse/PulseSidebarView.xaml`.
+- Removed `converters` xmlns from `Osr2Plus/SidebarView.xaml` and `Osr2Plus/AxisControlView.xaml` (no longer needed after BoolToVisibilityConverter removal).
+- Deleted `src/Vido.Views/Converters/BoolToVisibilityConverter.cs` — replaced by WPF built-in `BooleanToVisibilityConverter`.
+- All remaining converters (9 classes) are unique with no duplicates: `HexToBrushConverter`, `HexToLowOpacityBrushConverter`, `FillModeDisplayConverter`, `BeatBarModeDisplayConverter`, `StateColorToBrushConverter`, `FractionToPercentConverter`, `NotNullToBoolConverter`, `StringNotEmptyToVisibilityConverter`, `StringToBoolConverter`, `StringToGeometryConverter`.
+- All XAML converter references use `Vido.Views.Converters` namespace (or WPF built-in types).
+
 ### Plugin Integration (PI-026)
 - Confirmed all plugin wiring methods already removed from `MainWindow.xaml.cs` (completed in PI-020).
 - No `SetupPluginContributions()`, `WirePluginContributions()`, `UnwireStaleContributions()`, or any `Wire*`/`Unwire*` methods remain.

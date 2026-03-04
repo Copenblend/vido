@@ -8,7 +8,7 @@
 
     <UserControl.Resources>
         <ResourceDictionary>
-            <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
             <converters:HexToBrushConverter x:Key="HexToBrush" />
             <converters:HexToLowOpacityBrushConverter x:Key="HexToLowOpacityBrush" />
             <converters:FillModeDisplayConverter x:Key="FillModeDisplay" />
