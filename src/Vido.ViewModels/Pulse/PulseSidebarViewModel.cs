@@ -50,6 +50,12 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         _engine.BeatMapReady += OnBeatMapReady;
         _engine.ErrorOccurred += OnErrorOccurred;
 
+        // Restore persisted enabled state — the engine starts inactive,
+        // so we must call SetEnabled to register the beat source and
+        // suppress funscripts when the user previously left Pulse on.
+        if (_usePulse)
+            _engine.SetEnabled(true);
+
         UpdateStatusMessage();
     }
 

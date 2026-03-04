@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- App version -->
-    <VidoVersion>0.13.0</VidoVersion>
+    <VidoVersion>0.14.0</VidoVersion>
     <Company>Vido</Company>
     <Product>Vido</Product>
     <Authors>Vido</Authors>

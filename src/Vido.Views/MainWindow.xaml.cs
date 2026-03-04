@@ -27,9 +27,12 @@ using Vido.Core.Models.Osr2Plus;
 using Vido.Core.Playback;
 using Vido.Core.Updates;
 using Vido.Services.Osr2Plus;
+using Vido.Services.Pulse;
 using Vido.ViewModels.Osr2Plus;
+using Vido.ViewModels.Pulse;
 using Vido.Views.Controls;
 using Vido.Views.Osr2Plus;
+using Vido.Views.Pulse;
 
 namespace Vido.Views;
 
@@ -86,6 +89,16 @@ public partial class MainWindow : Window
     private readonly List<IDisposable> _osr2Subscriptions = [];
     private UIElement? _osr2SidebarContent;
     private double _lastSpeedRatio = 1.0;
+
+    // ── Pulse integrated feature ──────────────────────────────
+    private PulseEngine? _pulseEngine;
+    private AudioPreAnalysisService? _pulsePreAnalysis;
+    private PulseSidebarViewModel? _pulseSidebarVm;
+    private WaveformViewModel? _waveformVm;
+    private UIElement? _pulseSidebarContent;
+    private UIElement? _pulseBeatRateControl;
+    private readonly List<IDisposable> _pulseSubscriptions = [];
+    private IVideoEngine? _videoEngine;
 
     // Remembered panel dimensions for toggle persistence
     private double _bottomPanelHeight = 200;
@@ -152,6 +165,7 @@ public partial class MainWindow : Window
         IPluginHost pluginHost,
         IUpdateService updateService,
         IEventBus eventBus,
+        IVideoEngine videoEngine,
         FileExplorerViewModel fileExplorerViewModel,
         VideoPlayerViewModel videoPlayerViewModel,
         MainWindowViewModel mainWindowViewModel,
@@ -168,6 +182,7 @@ public partial class MainWindow : Window
         _pluginHost = pluginHost;
         _updateService = updateService;
         _eventBus = eventBus;
+        _videoEngine = videoEngine;
         _fileExplorerViewModel = fileExplorerViewModel;
         _videoPlayerViewModel = videoPlayerViewModel;
         _mainWindowViewModel = mainWindowViewModel;
@@ -197,6 +212,7 @@ public partial class MainWindow : Window
         SetupDragDrop();
         SetupPluginContributions();
         SetupOsr2Plus();
+        SetupPulse();
         RestoreWindowState();
         RestoreLayoutState();
 
@@ -1449,7 +1465,10 @@ public partial class MainWindow : Window
                 case SidebarPanelKind.Osr2Plus:
                     Sidebar.SetPanelContent(_osr2SidebarContent);
                     break;
-                // TODO PI-024: Add cases for Playlists, Pulse
+                case SidebarPanelKind.Pulse:
+                    Sidebar.SetPanelContent(_pulseSidebarContent);
+                    break;
+                // TODO PI-024: Add case for Playlists
                 default:
                     Sidebar.SetPanelContent(null);
                     break;
@@ -1492,6 +1511,20 @@ public partial class MainWindow : Window
         foreach (var sub in _osr2Subscriptions) sub.Dispose();
         _osr2Subscriptions.Clear();
         _tcode?.Dispose();
+
+        // Dispose Pulse resources
+        if (_videoEngine is not null)
+        {
+            _videoEngine.AudioSamplesAvailable -= OnPulseAudioSamplesAvailable;
+            _videoEngine.PositionChanged -= OnPulsePositionChanged;
+            _videoEngine.SeekCompleted -= OnPulseSeekCompleted;
+        }
+        foreach (var sub in _pulseSubscriptions) sub.Dispose();
+        _pulseSubscriptions.Clear();
+        _waveformVm?.Dispose();
+        _pulseSidebarVm?.Dispose();
+        _pulseEngine?.Dispose();
+        _pulsePreAnalysis?.Dispose();
 
         SaveWindowState();
         await _stateService.SaveAsync();
@@ -1891,6 +1924,126 @@ public partial class MainWindow : Window
             Apply();
         else
             Dispatcher.BeginInvoke(Apply);
+    }
+
+    // ── Pulse Integrated Feature ──
+
+    /// <summary>
+    /// Creates and wires all Pulse services, view models, views, event bus subscriptions,
+    /// and UI contribution points. This replaces the plugin-based <c>PulsePlugin.Activate()</c>
+    /// logic with direct integration into the main window.
+    /// </summary>
+    private void SetupPulse()
+    {
+        // ── Create Services ──────────────────────────────────
+        var decoder = new FfmpegAudioDecoder();
+        _pulsePreAnalysis = new AudioPreAnalysisService(decoder);
+        var liveAmplitude = new LiveAmplitudeService();
+        var mapper = new PulseTCodeMapper();
+
+        _pulseEngine = new PulseEngine(
+            _pulsePreAnalysis, liveAmplitude, mapper, _eventBus, _logService);
+
+        // ── Create ViewModels ────────────────────────────────
+        _pulseSidebarVm = new PulseSidebarViewModel(_pulseEngine, _settingsService);
+        _waveformVm = new WaveformViewModel(_pulseEngine, _settingsService);
+
+        // ── Wire Status Bar Updates ──────────────────────────
+        _pulseSidebarVm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(PulseSidebarViewModel.StatusBarText))
+            {
+                var statusItem = _statusBarViewModel.FindItem("pulse.status");
+                if (statusItem is not null)
+                    statusItem.Text = _pulseSidebarVm.StatusBarText;
+            }
+
+            if (e.PropertyName == nameof(PulseSidebarViewModel.UsePulse))
+            {
+                if (_pulseBeatRateControl is not null)
+                    _pulseBeatRateControl.Visibility = _pulseSidebarVm.UsePulse
+                        ? Visibility.Visible
+                        : Visibility.Collapsed;
+            }
+        };
+
+        // ── Wire IVideoEngine Events ─────────────────────────
+        if (_videoEngine is not null)
+        {
+            _videoEngine.AudioSamplesAvailable += OnPulseAudioSamplesAvailable;
+            _videoEngine.PositionChanged += OnPulsePositionChanged;
+            _videoEngine.SeekCompleted += OnPulseSeekCompleted;
+        }
+
+        // ── Wire SuppressFunscript → Auto-show Pulse Waveform ─
+        _pulseSubscriptions.Add(_eventBus.Subscribe<SuppressFunscriptEvent>(evt =>
+        {
+            if (evt.SuppressFunscripts)
+            {
+                Dispatcher.BeginInvoke(() =>
+                {
+                    _mainWindowViewModel.ActivateBottomPanelTab("pulse.waveform");
+                    if (_bottomPanelContents.TryGetValue("pulse.waveform", out var content))
+                        BottomPanelContent.Content = content;
+                });
+            }
+        }));
+
+        // ── Register UI Contributions ─────────────────────────
+        // Sidebar content
+        _pulseSidebarContent = new PulseSidebarView { DataContext = _pulseSidebarVm };
+
+        // Bottom panel tab: Pulse Waveform
+        var waveformView = new WaveformPanelView { DataContext = _waveformVm };
+        _bottomPanelContents["pulse.waveform"] = waveformView;
+        _mainWindowViewModel.OpenBottomPanelTab("pulse.waveform", "PULSE WAVEFORM");
+        TitleBar.AddBottomPanelTabMenuItem("pulse.waveform", "Pulse Waveform");
+
+        // Status bar item
+        var statusItem = _statusBarViewModel.RegisterItem("pulse.status", StatusBarAlignment.Right, 600);
+        statusItem.Text = _pulseSidebarVm.StatusBarText;
+        statusItem.Tooltip = "Pulse Beat Detection Status";
+        statusItem.IsVisible = true;
+        TitleBar.AddStatusBarMenuItem("pulse.status", "Pulse Status");
+
+        // Control bar: BeatRate ComboBox
+        var beatRateComboBox = new BeatRateComboBox { DataContext = _pulseSidebarVm };
+        beatRateComboBox.Visibility = _pulseSidebarVm.UsePulse
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        _pulseBeatRateControl = beatRateComboBox;
+        VideoPlayer.AddPluginControlBarItem("pulse.beat-rate", beatRateComboBox);
+
+        // ── Restore Persisted State ───────────────────────────
+        if (_settingsService.Current.PulseUsePulse)
+            _pulseSidebarVm.UsePulse = true;
+
+        _logService.Info("Pulse feature initialized", "Pulse");
+    }
+
+    /// <summary>
+    /// Forwards decoded audio samples from the video engine to the Pulse engine.
+    /// </summary>
+    private void OnPulseAudioSamplesAvailable(AudioSampleEventArgs args)
+    {
+        _pulseEngine?.OnAudioSamplesAvailable(args);
+    }
+
+    /// <summary>
+    /// Forwards playback position from the video engine to the Pulse engine and waveform view model.
+    /// </summary>
+    private void OnPulsePositionChanged(TimeSpan position)
+    {
+        _pulseEngine?.OnPositionChanged(position.TotalMilliseconds);
+        _waveformVm?.UpdateTime(position.TotalSeconds);
+    }
+
+    /// <summary>
+    /// Forwards seek completed event from the video engine to the Pulse engine.
+    /// </summary>
+    private void OnPulseSeekCompleted()
+    {
+        _pulseEngine?.OnSeekCompleted();
     }
 
     /// <summary>

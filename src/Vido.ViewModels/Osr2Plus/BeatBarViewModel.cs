@@ -77,9 +77,22 @@ public class BeatBarViewModel : INotifyPropertyChanged
                 // Don't overwrite if already saved (e.g. from RebuildAvailableModes
                 // hiding built-in modes before the external mode is selected).
                 if (value.IsExternal && !previousMode.IsExternal && _preExternalMode == null)
+                {
                     _preExternalMode = previousMode;
+                    PersistFallbackMode(previousMode);
+                }
                 else if (!value.IsExternal)
-                    _preExternalMode = null;
+                {
+                    // Only clear the pre-external fallback when no external sources
+                    // remain active. This preserves the original built-in selection
+                    // even if the user temporarily switches to Off while an external
+                    // source is active.
+                    if (!_externalSources.Any(s => s.IsAvailable))
+                    {
+                        _preExternalMode = null;
+                        PersistFallbackMode(null);
+                    }
+                }
 
                 // Track the last-selected external mode so we restore the
                 // correct one when external sources re-register.
@@ -298,15 +311,26 @@ public class BeatBarViewModel : INotifyPropertyChanged
             // If the current mode is a built-in mode being hidden because an
             // external source is taking over, save it so we can restore later.
             if (!_mode.IsExternal && _mode != BeatBarMode.Off && _preExternalMode == null)
+            {
                 _preExternalMode = _mode;
+                PersistFallbackMode(_mode);
+            }
 
-            // Try restoring the saved built-in mode from before external activation
+            // Try restoring the saved built-in mode from before external activation.
+            // Check in-memory first, then persisted fallback from a previous session.
             var restore = _preExternalMode != null
                 ? AvailableModes.FirstOrDefault(m => m == _preExternalMode)
                 : null;
+            if (restore == null)
+            {
+                var fallbackStr = _settingsService.Current.Osr2BeatBarFallbackMode;
+                if (!string.IsNullOrEmpty(fallbackStr))
+                    restore = AvailableModes.FirstOrDefault(m => m.Id == fallbackStr);
+            }
             if (restore != null)
             {
                 _preExternalMode = null;
+                PersistFallbackMode(null);
                 Mode = restore;
             }
             else
@@ -351,6 +375,29 @@ public class BeatBarViewModel : INotifyPropertyChanged
         else
         {
             _mode = matchingMode;
+
+            // If we have a saved pre-external mode and built-in modes are
+            // available again (the hiding external source was removed),
+            // restore the user's original selection instead of staying on
+            // whatever mode was active while the external source was running.
+            if (_preExternalMode != null && !hideBuiltIn)
+            {
+                var preRestore = AvailableModes.FirstOrDefault(m => m == _preExternalMode);
+                if (preRestore == null)
+                {
+                    var fallbackStr = _settingsService.Current.Osr2BeatBarFallbackMode;
+                    if (!string.IsNullOrEmpty(fallbackStr))
+                        preRestore = AvailableModes.FirstOrDefault(m => m.Id == fallbackStr);
+                }
+                if (preRestore != null)
+                {
+                    _preExternalMode = null;
+                    PersistFallbackMode(null);
+                    Mode = preRestore;
+                    return;
+                }
+            }
+
             OnPropertyChanged(nameof(Mode));
             OnPropertyChanged(nameof(IsActive));
             OnPropertyChanged(nameof(IsExternalMode));
@@ -376,6 +423,18 @@ public class BeatBarViewModel : INotifyPropertyChanged
                 Mode = pending;
             }
         }
+
+        // Safety: guarantee _mode is always in AvailableModes so the ComboBox
+        // never shows an empty/blank selection.
+        if (!AvailableModes.Contains(_mode))
+        {
+            _mode = BeatBarMode.Off;
+            OnPropertyChanged(nameof(Mode));
+            OnPropertyChanged(nameof(IsActive));
+            OnPropertyChanged(nameof(IsExternalMode));
+            ModeChanged?.Invoke(_mode);
+            RepaintRequested?.Invoke();
+        }
     }
 
     // ── Settings Persistence ─────────────────────────────────
@@ -395,6 +454,32 @@ public class BeatBarViewModel : INotifyPropertyChanged
             // Not a built-in mode — remember it so we can auto-select
             // when the external source registers later.
             _pendingExternalModeId = modeStr;
+
+            // Restore the persisted fallback built-in mode so the user
+            // sees their previous selection until the external source registers.
+            var fallbackStr = _settingsService.Current.Osr2BeatBarFallbackMode;
+            var fallback = BeatBarMode.BuiltInModes.FirstOrDefault(m => m.Id == fallbackStr);
+            if (fallback != null)
+            {
+                _suppressSave = true;
+                _mode = fallback;
+                _preExternalMode = fallback;
+                _suppressSave = false;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Persists or clears the fallback built-in mode in settings.
+    /// Called when <see cref="_preExternalMode"/> changes.
+    /// </summary>
+    private void PersistFallbackMode(BeatBarMode? mode)
+    {
+        var id = mode?.Id ?? "";
+        if (_settingsService.Current.Osr2BeatBarFallbackMode != id)
+        {
+            _settingsService.Current.Osr2BeatBarFallbackMode = id;
+            _settingsService.QueueSave();
         }
     }
 
