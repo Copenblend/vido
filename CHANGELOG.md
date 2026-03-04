@@ -7,6 +7,12 @@ All notable changes to the Vido project will be documented in this file.
 ### Plugin Integration (PI-001)
 - Added `SkiaSharp` 2.88.9 package reference to `Vido.Core` for `IExternalBeatSource` strong-typed canvas rendering.
 
+### Plugin Integration (PI-016)
+- Integrated 3 Playlist model types into `Vido.Core/Models/Playlists/`: `Playlist`, `PlaylistItem`, `RangeObservableCollection<T>`.
+- `Playlist`: Ordered item collection with dirty tracking, `INotifyPropertyChanged` support, auto-dirty on item collection changes.
+- `PlaylistItem`: File reference with case-insensitive `IEquatable<PlaylistItem>` equality, `FileName` derived from path.
+- `RangeObservableCollection<T>`: Bulk `AddRange`, `RemoveRange`, `ReplaceAll` with single-notification reset, suppresses per-item notifications during bulk ops.
+
 ### Plugin Integration (PI-015)
 - Added `SetupPulse()` method to `MainWindow.xaml.cs` wiring all Pulse services, ViewModels, views, event subscriptions, and UI contributions.
 - Created and wired Pulse services: `FfmpegAudioDecoder`, `AudioPreAnalysisService`, `LiveAmplitudeService`, `PulseTCodeMapper`, `PulseEngine`.
