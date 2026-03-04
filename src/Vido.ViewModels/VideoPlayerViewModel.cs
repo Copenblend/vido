@@ -6,7 +6,7 @@ using Vido.Core.FileSystem;
 using Vido.Core.Formatting;
 using Vido.Core.Logging;
 using Vido.Core.Playback;
-using Vido.Core.Plugin;
+using Vido.Core.Playlists;
 using Vido.Core.Settings;
 using Vido.Core.State;
 
@@ -23,7 +23,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     private readonly ILogService _logService;
     private readonly ISettingsService _settingsService;
     private readonly IStateService _stateService;
-    private readonly IContributionRegistry _contributionRegistry;
+    private readonly IPlaylistProvider? _playlistProvider;
     private bool _disposed;
     private bool _isSeeking;
     private double _lastSavedPositionSeconds;
@@ -207,16 +207,16 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// <param name="logService">Logging service for player operation diagnostics.</param>
     /// <param name="settingsService">Service for persisting playback preferences (volume, speed, loop).</param>
     /// <param name="stateService">Service for persisting runtime state (last video, position, recent files).</param>
-    /// <param name="contributionRegistry">Registry for looking up plugin-contributed playlist providers.</param>
+    /// <param name="playlistProvider">Optional playlist provider for playlist-aware skip/next behaviour.</param>
     public VideoPlayerViewModel(IVideoEngine engine, IEventBus eventBus, ILogService logService,
-        ISettingsService settingsService, IStateService stateService, IContributionRegistry contributionRegistry)
+        ISettingsService settingsService, IStateService stateService, IPlaylistProvider? playlistProvider = null)
     {
         _engine = engine;
         _eventBus = eventBus;
         _logService = logService;
         _settingsService = settingsService;
         _stateService = stateService;
-        _contributionRegistry = contributionRegistry;
+        _playlistProvider = playlistProvider;
 
         // Initialize from persisted settings (use backing fields to avoid triggering save handlers)
         var settings = settingsService.Current;
@@ -290,10 +290,9 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         if (!IsLooping)
         {
             // Delegate to playlist provider if one is registered and active
-            var provider = _contributionRegistry.GetPlaylistProvider();
-            if (provider is { IsActive: true })
+            if (_playlistProvider is { IsActive: true })
             {
-                var next = provider.GetNextFile();
+                var next = _playlistProvider.GetNextFile();
                 if (next is not null)
                 {
                     _ = LoadAndPlayAsync(next);
@@ -587,10 +586,9 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     public async Task SkipPrevious()
     {
         // Delegate to playlist provider if one is registered and active
-        var provider = _contributionRegistry.GetPlaylistProvider();
-        if (provider is { IsActive: true })
+        if (_playlistProvider is { IsActive: true })
         {
-            var prev = provider.GetPreviousFile();
+            var prev = _playlistProvider.GetPreviousFile();
             if (prev is not null)
             {
                 await LoadAndPlayAsync(prev);
@@ -610,10 +608,9 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     public async Task SkipNext()
     {
         // Delegate to playlist provider if one is registered and active
-        var provider = _contributionRegistry.GetPlaylistProvider();
-        if (provider is { IsActive: true })
+        if (_playlistProvider is { IsActive: true })
         {
-            var next = provider.GetNextFile();
+            var next = _playlistProvider.GetNextFile();
             if (next is not null)
             {
                 await LoadAndPlayAsync(next);
@@ -684,13 +681,12 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     partial void OnIsShufflingChanged(bool value)
     {
         // Propagate shuffle toggle to the active playlist provider (if any)
-        var provider = _contributionRegistry.GetPlaylistProvider();
-        if (provider is { IsActive: true })
+        if (_playlistProvider is { IsActive: true })
         {
             if (value)
-                provider.EnableShuffle();
+                _playlistProvider.EnableShuffle();
             else
-                provider.DisableShuffle();
+                _playlistProvider.DisableShuffle();
         }
 
         if (value)

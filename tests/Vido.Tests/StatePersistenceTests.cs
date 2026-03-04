@@ -1,6 +1,5 @@
 using NSubstitute;
 using Vido.Core.Logging;
-using Vido.Core.Plugin;
 using Vido.Core.Settings;
 using Vido.Core.State;
 using Vido.ViewModels;
@@ -271,20 +270,5 @@ public sealed class StatePersistenceTests
         {
             try { Directory.Delete(tempDir, recursive: true); } catch { }
         }
-    }
-
-    // ── PluginManagerViewModel persists section expanded state ──
-
-    // Plugin Manager persistence tests removed — PluginInstalledSectionExpanded/PluginAvailableSectionExpanded
-    // properties deleted from AppSettings in PI-003. PluginManagerViewModel will be removed in PI-022.
-
-    private static (IPluginHost host, IPluginInstaller installer, ISettingsService settings, ILogService log) CreatePluginMocks()
-    {
-        var host = Substitute.For<IPluginHost>();
-        var installer = Substitute.For<IPluginInstaller>();
-        var settings = Substitute.For<ISettingsService>();
-        var log = Substitute.For<ILogService>();
-        host.Plugins.Returns(Array.Empty<PluginInfo>());
-        return (host, installer, settings, log);
     }
 }

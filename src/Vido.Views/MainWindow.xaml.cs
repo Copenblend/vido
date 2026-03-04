@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -13,7 +13,6 @@ using Vido.Core.Keyboard;
 using Vido.Core.Layout;
 using KeyBinding = Vido.Core.Keyboard.KeyBinding;
 using Vido.Core.Menus;
-using Vido.Core.Plugin;
 using Vido.Core.Settings;
 using Vido.Core.State;
 using Vido.Core.Windowing;
@@ -58,9 +57,7 @@ public partial class MainWindow : Window
     private readonly VideoDetailsViewModel _videoDetailsViewModel;
     private readonly StatusBarViewModel _statusBarViewModel;
     private readonly IKeyboardShortcutService _keyboardShortcutService;
-    private readonly IContributionRegistry _contributionRegistry;
     private readonly IContextMenuRegistry _contextMenuRegistry;
-    private readonly IPluginHost _pluginHost;
     private readonly IUpdateService _updateService;
     private readonly IEventBus _eventBus;
 
@@ -77,12 +74,10 @@ public partial class MainWindow : Window
     private ActivityBarViewModel? _activityBarViewModel;
     private SidebarViewModel? _sidebarViewModel;
     private FileExplorerPanel? _fileExplorerPanel;
-    // TODO PI-022: PluginManagerPanel removed
-    private PluginManagerViewModel? _pluginManagerViewModel;
     private SettingsPage? _settingsPage;
     private readonly AppSettingsStore _appSettingsStore;
 
-    // ── OSR2+ integrated feature ──────────────────────────────
+    // â”€â”€ OSR2+ integrated feature â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private TCodeService? _tcode;
     private Osr2PlusSidebarViewModel? _osr2SidebarVm;
     private AxisControlViewModel? _axisControlVm;
@@ -93,7 +88,7 @@ public partial class MainWindow : Window
     private UIElement? _osr2SidebarContent;
     private double _lastSpeedRatio = 1.0;
 
-    // ── Pulse integrated feature ──────────────────────────────
+    // â”€â”€ Pulse integrated feature â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private PulseEngine? _pulseEngine;
     private AudioPreAnalysisService? _pulsePreAnalysis;
     private PulseSidebarViewModel? _pulseSidebarVm;
@@ -102,7 +97,7 @@ public partial class MainWindow : Window
     private UIElement? _pulseBeatRateControl;
     private readonly List<IDisposable> _pulseSubscriptions = [];
 
-    // ── Playlists integrated feature ──────────────────────────
+    // â”€â”€ Playlists integrated feature â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private PlaylistViewModel? _playlistVm;
     private PlaylistProvider? _playlistProvider;
     private UIElement? _playlistSidebarContent;
@@ -113,7 +108,7 @@ public partial class MainWindow : Window
     private double _bottomPanelHeight = 200;
     private double _rightPanelWidth = 300;
 
-    // ── Fullscreen state ──
+    // â”€â”€ Fullscreen state â”€â”€
     private bool _isFullscreen;
     private WindowState _preFullscreenWindowState;
     private double _preFullscreenLeft;
@@ -151,10 +146,7 @@ public partial class MainWindow : Window
     /// <param name="settingsService">Persists and restores user-configurable application settings.</param>
     /// <param name="logService">Centralized logging service for writing diagnostic messages.</param>
     /// <param name="keyboardShortcutService">Manages registration and dispatch of keyboard shortcuts.</param>
-    /// <param name="contributionRegistry">Registry of plugin UI contributions (panels, buttons, status bar items).</param>
     /// <param name="contextMenuRegistry">Registry of plugin context menu items for the file explorer.</param>
-    /// <param name="pluginInstaller">Service for installing and uninstalling plugins from registries.</param>
-    /// <param name="pluginHost">Host managing plugin lifecycle (activation, deactivation, discovery).</param>
     /// <param name="updateService">Service for checking and downloading application updates.</param>
     /// <param name="eventBus">Event bus for publishing and subscribing to application-wide events.</param>
     /// <param name="fileExplorerViewModel">View model for the file explorer sidebar panel.</param>
@@ -168,10 +160,7 @@ public partial class MainWindow : Window
         ISettingsService settingsService,
         ILogService logService,
         IKeyboardShortcutService keyboardShortcutService,
-        IContributionRegistry contributionRegistry,
         IContextMenuRegistry contextMenuRegistry,
-        IPluginInstaller pluginInstaller,
-        IPluginHost pluginHost,
         IUpdateService updateService,
         IEventBus eventBus,
         IVideoEngine videoEngine,
@@ -186,9 +175,7 @@ public partial class MainWindow : Window
         _settingsService = settingsService;
         _logService = logService;
         _keyboardShortcutService = keyboardShortcutService;
-        _contributionRegistry = contributionRegistry;
         _contextMenuRegistry = contextMenuRegistry;
-        _pluginHost = pluginHost;
         _updateService = updateService;
         _eventBus = eventBus;
         _videoEngine = videoEngine;
@@ -199,13 +186,9 @@ public partial class MainWindow : Window
         _videoDetailsViewModel = videoDetailsViewModel;
         _statusBarViewModel = statusBarViewModel;
 
-        // Shared settings store — used by SettingsPage and for direct change monitoring
+        // Shared settings store â€” used by SettingsPage and for direct change monitoring
         _appSettingsStore = new AppSettingsStore(settingsService);
         _appSettingsStore.SettingChanged += OnAppSettingChanged;
-
-        // Create the Plugin Manager ViewModel
-        _pluginManagerViewModel = new PluginManagerViewModel(
-            pluginHost, pluginInstaller, settingsService, logService);
 
         InitializeComponent();
         SetupWindowChrome();
@@ -219,7 +202,6 @@ public partial class MainWindow : Window
         SetupKeyboardShortcuts();
         SetupFileExplorer();
         SetupDragDrop();
-        SetupPluginContributions();
         SetupOsr2Plus();
         SetupPulse();
         SetupPlaylists();
@@ -311,7 +293,7 @@ public partial class MainWindow : Window
 
     private void OnWindowStateChanged(object? sender, EventArgs e)
     {
-        // In fullscreen mode, skip normal state sync — fullscreen manages its own chrome
+        // In fullscreen mode, skip normal state sync â€” fullscreen manages its own chrome
         if (_isFullscreen) return;
 
         var appState = WindowState switch
@@ -340,7 +322,6 @@ public partial class MainWindow : Window
         ActivityBar.SettingsRequested += (_, _) => _mainWindowViewModel.OpenSettings();
 
         // Plugin sidebar button drag-and-drop reordering (vb-007)
-        // TODO PI-024: Plugin sidebar ordering removed
         ActivityBar.PluginButtonReordered += (oldIndex, newIndex) => { };
 
         // Initialize visual states
@@ -361,7 +342,7 @@ public partial class MainWindow : Window
         };
 
         // Store panel content mapping for bottom panel tab switching
-        // (don't set BottomPanelContent.Content here — let UpdateBottomPanelContent
+        // (don't set BottomPanelContent.Content here â€” let UpdateBottomPanelContent
         //  choose the right content based on active tab, which may not be Log Output)
         _bottomPanelContents[MainWindowViewModel.OutputTabId] = outputLogPanel;
 
@@ -396,7 +377,7 @@ public partial class MainWindow : Window
         StatusBar.DataContext = _statusBarViewModel;
     }
 
-    // ── Keyboard Shortcuts ──
+    // â”€â”€ Keyboard Shortcuts â”€â”€
 
     /// <summary>
     /// Registers all default keyboard shortcuts and hooks PreviewKeyDown.
@@ -589,7 +570,7 @@ public partial class MainWindow : Window
         OnPanelChanged(this, new RoutedEventArgs());
     }
 
-    // ── Fullscreen ──
+    // â”€â”€ Fullscreen â”€â”€
 
     /// <summary>
     /// Toggles fullscreen mode on/off.
@@ -661,14 +642,14 @@ public partial class MainWindow : Window
         SidebarColumn.MaxWidth = 0;
 
         // Hide bottom panel, right panel, and status bar via VM properties
-        // Suppress settings save — these are transient fullscreen changes, not user preferences
+        // Suppress settings save â€” these are transient fullscreen changes, not user preferences
         _mainWindowViewModel.SuppressSettingsSave = true;
         _mainWindowViewModel.IsBottomPanelVisible = false;
         _mainWindowViewModel.IsRightPanelVisible = false;
         _mainWindowViewModel.IsStatusBarVisible = false;
         _mainWindowViewModel.SuppressSettingsSave = false;
 
-        // Force video tab active — fullscreen should always show the video player
+        // Force video tab active â€” fullscreen should always show the video player
         _preFullscreenActiveTabId = _mainWindowViewModel.ActiveTab?.Id;
         if (_preFullscreenActiveTabId != MainWindowViewModel.PlayerTabId)
         {
@@ -760,7 +741,7 @@ public partial class MainWindow : Window
             ActivityBar.UpdateActiveStates();
         }
 
-        // Restore panels — suppress save since we're restoring to the already-persisted state
+        // Restore panels â€” suppress save since we're restoring to the already-persisted state
         _mainWindowViewModel.SuppressSettingsSave = true;
         _mainWindowViewModel.IsBottomPanelVisible = _preFullscreenBottomPanelVisible;
         _mainWindowViewModel.IsBottomPanelCollapsed = _preFullscreenBottomPanelCollapsed;
@@ -805,7 +786,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Handles mouse movement during fullscreen — shows controls and resets hide timer.
+    /// Handles mouse movement during fullscreen â€” shows controls and resets hide timer.
     /// </summary>
     private void OnFullscreenMouseMove(object sender, MouseEventArgs e)
     {
@@ -918,7 +899,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Bottom panel tab click handler — activates the clicked tab.
+    /// Bottom panel tab click handler â€” activates the clicked tab.
     /// </summary>
     private void OnBottomPanelTabClick(object sender, MouseButtonEventArgs e)
     {
@@ -1009,7 +990,7 @@ public partial class MainWindow : Window
         // Wire Help menu events
         TitleBar.AboutRequested += ShowAboutDialog;
         TitleBar.CheckForUpdatesRequested += ShowCheckForUpdatesMessage;
-        // TODO PI-022: OnEnterRepositoryCode removed — plugin registry no longer needed
+        // TODO PI-022: OnEnterRepositoryCode removed â€” plugin registry no longer needed
         // TitleBar.EnterRepositoryCodeRequested += OnEnterRepositoryCode;
 
         // Wire screenshot button
@@ -1088,11 +1069,8 @@ public partial class MainWindow : Window
         // Wire file handler for plugin-registered extensions
         _fileExplorerPanel.FileHandlerRequested += OnFileHandlerRequested;
 
-        // Inject context menu registry for plugin-contributed menu items
+        // Inject context menu registry for context menu items
         _fileExplorerPanel.ContextMenuRegistry = _contextMenuRegistry;
-
-        // Inject contribution registry for plugin file icons
-        _fileExplorerPanel.ContributionRegistry = _contributionRegistry;
 
         // Subscribe to VM changes to update Close Folder menu state
         _fileExplorerViewModel.PropertyChanged += (_, e) =>
@@ -1207,7 +1185,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Handles files or folders added via File > Add File… / Add Folder… menu items.
+    /// Handles files or folders added via File > Add Fileâ€¦ / Add Folderâ€¦ menu items.
     /// Works the same as dropping files on the explorer panel (additive insert).
     /// </summary>
     private void OnFilesAddedFromMenu(string[] paths)
@@ -1275,7 +1253,7 @@ public partial class MainWindow : Window
         }
     }
 
-    // ── Tab content switching ──
+    // â”€â”€ Tab content switching â”€â”€
 
     /// <summary>
     /// Switches the visible content area based on the active tab.
@@ -1299,52 +1277,21 @@ public partial class MainWindow : Window
             VideoPlayer.Visibility = Visibility.Collapsed;
             if (_settingsPage is null)
             {
-                _settingsPage = new SettingsPage(_settingsService, _pluginHost, _appSettingsStore);
+                _settingsPage = new SettingsPage(_settingsService, _appSettingsStore);
             }
             DynamicTabContent.Content = _settingsPage;
             DynamicTabContent.Visibility = Visibility.Visible;
         }
-        else if (activeTab.Id.StartsWith("plugin.detail.", StringComparison.Ordinal))
-        {
-            // Show plugin detail panel
-            VideoPlayer.Visibility = Visibility.Collapsed;
-            var pluginId = activeTab.Id["plugin.detail.".Length..];
-            var panel = GetOrCreatePluginDetailPanel(pluginId);
-            DynamicTabContent.Content = panel;
-            DynamicTabContent.Visibility = Visibility.Visible;
-        }
         else
         {
-            // Future tabs — show empty for now
+            // Future tabs â€” show empty for now
             VideoPlayer.Visibility = Visibility.Collapsed;
             DynamicTabContent.Content = null;
             DynamicTabContent.Visibility = Visibility.Visible;
         }
     }
 
-    /// <summary>
-    /// Gets or creates a PluginDetailPanel for the given plugin ID.
-    /// </summary>
-    private PluginDetailPanel GetOrCreatePluginDetailPanel(string pluginId)
-    {
-        // Use an already-prepared panel if available (set by Open*Requested handlers)
-        if (_pluginDetailPanels.TryGetValue(pluginId, out var existing))
-            return existing;
-
-        // Fallback: look up the item from the manager VM (e.g. tab switching)
-        PluginItemViewModel? item = null;
-        if (_pluginManagerViewModel is not null)
-        {
-            item = _pluginManagerViewModel.InstalledPlugins.FirstOrDefault(p => p.Id == pluginId)
-                ?? _pluginManagerViewModel.AvailablePlugins.FirstOrDefault(p => p.Id == pluginId);
-        }
-
-        var panel = new PluginDetailPanel(item, _pluginManagerViewModel, _pluginHost, _logService);
-        _pluginDetailPanels[pluginId] = panel;
-        return panel;
-    }
-
-    // ── Panel visibility ──
+    // â”€â”€ Panel visibility â”€â”€
 
     private void UpdateBottomPanelVisibility()
     {
@@ -1452,10 +1399,6 @@ public partial class MainWindow : Window
         if (_activityBarViewModel is null || _sidebarViewModel is null)
             return;
 
-        // Clear plugin sidebar state when a built-in panel is selected
-        _activePluginSidebarId = null;
-        UpdatePluginSidebarButtonStates();
-
         // Update sidebar visibility
         if (_activityBarViewModel.IsSidebarVisible)
         {
@@ -1545,7 +1488,7 @@ public partial class MainWindow : Window
         base.OnClosing(e);
     }
 
-    // ── Drag and drop ──
+    // â”€â”€ Drag and drop â”€â”€
 
     /// <summary>
     /// Timer for auto-hiding the unsupported file notification.
@@ -1570,97 +1513,7 @@ public partial class MainWindow : Window
         DragOver += OnWindowDragOver;
     }
 
-    // ── Plugin Manager (Extensions sidebar) wiring ──
-
-    /// <summary>
-    /// Map of plugin ID → detail panel content for reuse (avoids re-creating panels).
-    /// </summary>
-    private readonly Dictionary<string, PluginDetailPanel> _pluginDetailPanels = [];
-
-    /// <summary>
-    /// Wires events from the Plugin Manager ViewModel to open detail panels and settings.
-    /// </summary>
-    private void WirePluginManagerEvents()
-    {
-        if (_pluginManagerViewModel is null) return;
-
-        _pluginManagerViewModel.OpenDetailRequested += item =>
-        {
-            var tabId = $"plugin.detail.{item.Id}";
-            var tabAlreadyOpen = _mainWindowViewModel.Tabs.Any(t => t.Id == tabId);
-
-            if (tabAlreadyOpen && _pluginDetailPanels.TryGetValue(item.Id, out var existingPanel))
-            {
-                // Tab already open — refresh the existing panel to reflect
-                // install/uninstall/update state changes (e.g. settings tab)
-                existingPanel.Refresh();
-                _mainWindowViewModel.OpenTab(tabId, item.DisplayName, isClosable: true);
-            }
-            else
-            {
-                // Create a new panel with the current item state
-                var panel = new PluginDetailPanel(item, _pluginManagerViewModel, _pluginHost, _logService);
-                _pluginDetailPanels[item.Id] = panel;
-                _mainWindowViewModel.OpenTab(tabId, item.DisplayName, isClosable: true);
-            }
-        };
-
-        _pluginManagerViewModel.OpenSettingsRequested += item =>
-        {
-            var tabId = $"plugin.detail.{item.Id}";
-            var panel = new PluginDetailPanel(item, _pluginManagerViewModel, _pluginHost, _logService);
-            _pluginDetailPanels[item.Id] = panel;
-
-            _mainWindowViewModel.OpenTab(tabId, item.DisplayName, isClosable: true);
-            // Scroll to settings tab
-            panel.SwitchToSettings();
-        };
-
-        _pluginManagerViewModel.RestartRequired += message =>
-        {
-            Dispatcher.Invoke(() =>
-            {
-                var result = MessageBox.Show(
-                    this,
-                    $"{message}\n\nWould you like to restart Vido now?",
-                    "Restart Required",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Information);
-
-                if (result == MessageBoxResult.Yes)
-                {
-                    // Restart the application
-                    var exePath = Environment.ProcessPath;
-                    if (exePath is not null)
-                    {
-                        System.Diagnostics.Process.Start(exePath);
-                        Application.Current.Shutdown();
-                    }
-                }
-            });
-        };
-    }
-
-    // ── Plugin contribution wiring ──
-
-    /// <summary>
-    /// Subscribes to contribution registry changes and wires any already-registered
-    /// plugin UI contributions (bottom panel tabs, status bar items, etc.).
-    /// Called during setup; plugins may be activated later, at which point
-    /// the <see cref="IContributionRegistry.ContributionsChanged"/> callback
-    /// picks up new contributions.
-    /// </summary>
-    private void SetupPluginContributions()
-    {
-        _contributionRegistry.ContributionsChanged += OnPluginContributionsChanged;
-        _contributionRegistry.RightPanelShowRequested += OnRightPanelShowRequested;
-        _contributionRegistry.BottomPanelShowRequested += OnBottomPanelShowRequested;
-        _contributionRegistry.ToolbarButtonHighlightChanged += OnToolbarButtonHighlightChanged;
-        _contributionRegistry.ControlBarOverlayToggled += OnControlBarOverlayToggled;
-        WirePluginContributions();
-    }
-
-    // ── OSR2+ Integrated Feature ──
+    // â”€â”€ OSR2+ Integrated Feature â”€â”€
 
     /// <summary>
     /// Creates and wires all OSR2+ services, view models, views, event bus subscriptions,
@@ -1669,20 +1522,20 @@ public partial class MainWindow : Window
     /// </summary>
     private void SetupOsr2Plus()
     {
-        // ── Create Services ──────────────────────────────────
+        // â”€â”€ Create Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var interpolation = new InterpolationService();
         _tcode = new TCodeService(interpolation);
         var parser = new FunscriptParser();
         var matcher = new FunscriptMatcher();
         _beatDetection = new BeatDetectionService();
 
-        // ── Create ViewModels ────────────────────────────────
+        // â”€â”€ Create ViewModels â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _osr2SidebarVm = new Osr2PlusSidebarViewModel(_tcode, _settingsService, _eventBus);
         _axisControlVm = new AxisControlViewModel(_tcode, _settingsService, parser, matcher);
         _visualizerVm = new VisualizerViewModel(_settingsService);
         _beatBarVm = new BeatBarViewModel(_settingsService, _beatDetection);
 
-        // ── Wire Sidebar Panel Requests ──────────────────────
+        // â”€â”€ Wire Sidebar Panel Requests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _osr2SidebarVm.ShowAxisSettingsRequested += () =>
         {
             SwitchRightPanel("osr2.axis-control");
@@ -1697,7 +1550,7 @@ public partial class MainWindow : Window
                 BottomPanelContent.Content = content;
         };
 
-        // ── Wire Device Connection State ─────────────────────
+        // â”€â”€ Wire Device Connection State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _osr2SidebarVm.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(Osr2PlusSidebarViewModel.IsConnected))
@@ -1714,10 +1567,10 @@ public partial class MainWindow : Window
             }
         };
 
-        // ── Wire Script Changes to Visualizer ────────────────
+        // â”€â”€ Wire Script Changes to Visualizer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _axisControlVm.ScriptsChanged += scripts => _visualizerVm.SetLoadedAxes(scripts);
 
-        // ── Wire Beat Bar ────────────────────────────────────
+        // â”€â”€ Wire Beat Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _axisControlVm.ScriptsChanged += scripts =>
         {
             if (scripts.TryGetValue("L0", out var l0Script))
@@ -1733,7 +1586,7 @@ public partial class MainWindow : Window
             SetOsr2BeatBarOverlayVisible(mode != BeatBarMode.Off);
         };
 
-        // ── Haptic Event Bus Subscriptions ────────────────────
+        // â”€â”€ Haptic Event Bus Subscriptions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _osr2Subscriptions.Add(_eventBus.Subscribe<ExternalBeatSourceRegistration>(
             reg => _beatBarVm.OnBeatSourceRegistration(reg)));
 
@@ -1756,7 +1609,7 @@ public partial class MainWindow : Window
         _osr2Subscriptions.Add(_eventBus.Subscribe<ExternalAxisPositionsEvent>(
             evt => _tcode.SetExternalPositions(evt.Positions)));
 
-        // ── Publish Script & Config Changes ───────────────────
+        // â”€â”€ Publish Script & Config Changes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _axisControlVm.ScriptsChanged += scripts =>
         {
             var scriptLoadedMap = new Dictionary<string, bool>(scripts.Count, StringComparer.Ordinal);
@@ -1781,7 +1634,7 @@ public partial class MainWindow : Window
         PublishOsr2AxisConfig();
         _axisControlVm.AxisConfigChanged += PublishOsr2AxisConfig;
 
-        // ── Wire File Dialog Factory ──────────────────────────
+        // â”€â”€ Wire File Dialog Factory â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         foreach (var card in _axisControlVm.AxisCards)
         {
             card.FileDialogFactory = () =>
@@ -1795,13 +1648,13 @@ public partial class MainWindow : Window
             };
         }
 
-        // ── Subscribe to Playback Events ──────────────────────
+        // â”€â”€ Subscribe to Playback Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _osr2Subscriptions.Add(_eventBus.Subscribe<VideoLoadedEvent>(OnOsr2VideoLoaded));
         _osr2Subscriptions.Add(_eventBus.Subscribe<VideoUnloadedEvent>(OnOsr2VideoUnloaded));
         _osr2Subscriptions.Add(_eventBus.Subscribe<PlaybackStateChangedEvent>(OnOsr2PlaybackStateChanged));
         _osr2Subscriptions.Add(_eventBus.Subscribe<PlaybackPositionChangedEvent>(OnOsr2PositionChanged));
 
-        // ── Register UI Contributions ─────────────────────────
+        // â”€â”€ Register UI Contributions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Sidebar content
         _osr2SidebarContent = new Osr2Plus.SidebarView { DataContext = _osr2SidebarVm };
 
@@ -1834,20 +1687,20 @@ public partial class MainWindow : Window
         var beatBarOverlay = new BeatBarOverlay { DataContext = _beatBarVm };
         VideoPlayer.AddPluginOverlay("osr2.beat-bar", beatBarOverlay);
 
-        // File icons — register .funscript extensions in file explorer
+        // File icons â€” register .funscript extensions in file explorer
         _fileExplorerViewModel.AdditionalAcceptedExtensions.Add(".funscript");
 
-        // Register funscript file icons with contribution registry for explorer display
+        // Register funscript file icons for explorer display
         const string iconBase = "pack://application:,,,/Vido.Views;component/Assets/Osr2Plus/";
-        _contributionRegistry.RegisterFileIcons("osr2plus", new Dictionary<string, string>
+        _fileExplorerPanel!.FileIcons = new Dictionary<string, string>
         {
             { ".funscript", iconBase + "funscript-stroke.png" },
             { ".twist.funscript", iconBase + "funscript-twist.png" },
             { ".roll.funscript", iconBase + "funscript-roll.png" },
             { ".pitch.funscript", iconBase + "funscript-pitch.png" },
-        });
+        };
 
-        // ── Restore Right Panel ──────────────────────────────
+        // â”€â”€ Restore Right Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var lastPanel = _settingsService.Current.Osr2LastRightPanel;
         if (!string.IsNullOrEmpty(lastPanel))
             SwitchRightPanel(lastPanel);
@@ -1939,7 +1792,7 @@ public partial class MainWindow : Window
             Dispatcher.BeginInvoke(Apply);
     }
 
-    // ── Pulse Integrated Feature ──
+    // â”€â”€ Pulse Integrated Feature â”€â”€
 
     /// <summary>
     /// Creates and wires all Pulse services, view models, views, event bus subscriptions,
@@ -1948,7 +1801,7 @@ public partial class MainWindow : Window
     /// </summary>
     private void SetupPulse()
     {
-        // ── Create Services ──────────────────────────────────
+        // â”€â”€ Create Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var decoder = new FfmpegAudioDecoder();
         _pulsePreAnalysis = new AudioPreAnalysisService(decoder);
         var liveAmplitude = new LiveAmplitudeService();
@@ -1957,11 +1810,11 @@ public partial class MainWindow : Window
         _pulseEngine = new PulseEngine(
             _pulsePreAnalysis, liveAmplitude, mapper, _eventBus, _logService);
 
-        // ── Create ViewModels ────────────────────────────────
+        // â”€â”€ Create ViewModels â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _pulseSidebarVm = new PulseSidebarViewModel(_pulseEngine, _settingsService);
         _waveformVm = new WaveformViewModel(_pulseEngine, _settingsService);
 
-        // ── Wire Status Bar Updates ──────────────────────────
+        // â”€â”€ Wire Status Bar Updates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _pulseSidebarVm.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(PulseSidebarViewModel.StatusBarText))
@@ -1980,7 +1833,7 @@ public partial class MainWindow : Window
             }
         };
 
-        // ── Wire IVideoEngine Events ─────────────────────────
+        // â”€â”€ Wire IVideoEngine Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (_videoEngine is not null)
         {
             _videoEngine.AudioSamplesAvailable += OnPulseAudioSamplesAvailable;
@@ -1988,7 +1841,7 @@ public partial class MainWindow : Window
             _videoEngine.SeekCompleted += OnPulseSeekCompleted;
         }
 
-        // ── Wire SuppressFunscript → Auto-show Pulse Waveform ─
+        // â”€â”€ Wire SuppressFunscript â†’ Auto-show Pulse Waveform â”€
         _pulseSubscriptions.Add(_eventBus.Subscribe<SuppressFunscriptEvent>(evt =>
         {
             if (evt.SuppressFunscripts)
@@ -2002,7 +1855,7 @@ public partial class MainWindow : Window
             }
         }));
 
-        // ── Register UI Contributions ─────────────────────────
+        // â”€â”€ Register UI Contributions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Sidebar content
         _pulseSidebarContent = new PulseSidebarView { DataContext = _pulseSidebarVm };
 
@@ -2027,14 +1880,14 @@ public partial class MainWindow : Window
         _pulseBeatRateControl = beatRateComboBox;
         VideoPlayer.AddPluginControlBarItem("pulse.beat-rate", beatRateComboBox);
 
-        // ── Restore Persisted State ───────────────────────────
+        // â”€â”€ Restore Persisted State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (_settingsService.Current.PulseUsePulse)
             _pulseSidebarVm.UsePulse = true;
 
         _logService.Info("Pulse feature initialized", "Pulse");
     }
 
-    // ── Playlists Integrated Feature ──
+    // â”€â”€ Playlists Integrated Feature â”€â”€
 
     /// <summary>
     /// Creates and wires all Playlist services, view models, views,
@@ -2043,13 +1896,13 @@ public partial class MainWindow : Window
     /// </summary>
     private void SetupPlaylists()
     {
-        // ── Create Services ──────────────────────────────────
+        // â”€â”€ Create Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var fileService = new PlaylistFileService();
         var dialogService = new Playlists.DialogService();
         _toastService = new ToastService();
         _playlistProvider = new PlaylistProvider();
 
-        // ── Create ViewModel ─────────────────────────────────
+        // â”€â”€ Create ViewModel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _playlistVm = new PlaylistViewModel(
             fileService,
             _videoEngine!,
@@ -2059,7 +1912,7 @@ public partial class MainWindow : Window
             _toastService,
             _playlistProvider);
 
-        // ── Wire Status Bar Updates ──────────────────────────
+        // â”€â”€ Wire Status Bar Updates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _playlistVm.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(PlaylistViewModel.StatusText))
@@ -2070,7 +1923,7 @@ public partial class MainWindow : Window
             }
         };
 
-        // ── Register UI Contributions ─────────────────────────
+        // â”€â”€ Register UI Contributions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Sidebar content
         _playlistSidebarContent = new PlaylistSidebarView { DataContext = _playlistVm };
 
@@ -2081,7 +1934,7 @@ public partial class MainWindow : Window
         statusItem.IsVisible = true;
         TitleBar.AddStatusBarMenuItem("playlists.status", "Playlist Status");
 
-        // ── Register Context Menu ─────────────────────────────
+        // â”€â”€ Register Context Menu â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _contextMenuRegistry.Register(new ContextMenuEntry
         {
             Id = "playlists.add-to-playlist",
@@ -2097,10 +1950,7 @@ public partial class MainWindow : Window
             IsEnabled = node => node is not null && node.IsVideoFile
         });
 
-        // ── Register Playlist Provider ────────────────────────
-        _contributionRegistry.RegisterPlaylistProvider("playlists", _playlistProvider);
-
-        // ── Register accepted file extensions ─────────────────
+        // â”€â”€ Register accepted file extensions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _fileExplorerViewModel.AdditionalAcceptedExtensions.Add(".vidpl");
 
         _logService.Info("Playlists feature initialized", "Playlists");
@@ -2168,10 +2018,10 @@ public partial class MainWindow : Window
         _eventBus.Publish(new HapticAxisConfigEvent { Axes = axisSnapshots });
     }
 
-    // ── OSR2+ Event Handlers ──────────────────────────────────
+    // â”€â”€ OSR2+ Event Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     /// <summary>
-    /// Handles <see cref="VideoLoadedEvent"/> — loads matching funscripts
+    /// Handles <see cref="VideoLoadedEvent"/> â€” loads matching funscripts
     /// and syncs speed ratio.
     /// </summary>
     private void OnOsr2VideoLoaded(VideoLoadedEvent e)
@@ -2194,7 +2044,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Handles <see cref="VideoUnloadedEvent"/> — clears scripts, stops TCode,
+    /// Handles <see cref="VideoUnloadedEvent"/> â€” clears scripts, stops TCode,
     /// and homes axes.
     /// </summary>
     private void OnOsr2VideoUnloaded(VideoUnloadedEvent e)
@@ -2222,7 +2072,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Handles <see cref="PlaybackStateChangedEvent"/> — starts/stops TCode output.
+    /// Handles <see cref="PlaybackStateChangedEvent"/> â€” starts/stops TCode output.
     /// </summary>
     private void OnOsr2PlaybackStateChanged(PlaybackStateChangedEvent e)
     {
@@ -2250,7 +2100,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Handles <see cref="PlaybackPositionChangedEvent"/> — updates time for
+    /// Handles <see cref="PlaybackPositionChangedEvent"/> â€” updates time for
     /// TCode interpolation, visualizer, and beat bar. Also syncs speed ratio.
     /// </summary>
     private void OnOsr2PositionChanged(PlaybackPositionChangedEvent e)
@@ -2284,651 +2134,15 @@ public partial class MainWindow : Window
         {
             _lastSpeedRatio = speed;
             _tcode.SetPlaybackSpeed((float)speed);
-            _logService.Debug($"[OSR2+] Playback speed updated: {speed:F2}×", "OSR2+");
+            _logService.Debug($"[OSR2+] Playback speed updated: {speed:F2}Ã—", "OSR2+");
         }
     }
 
     /// <summary>
-    /// Callback fired when plugins register or unregister UI contributions.
-    /// Dispatches to the UI thread to apply changes safely.
+    /// Map of file extensions to handler actions for non-video file double-clicks.
     /// </summary>
-    private void OnPluginContributionsChanged()
-    {
-        if (Dispatcher.CheckAccess())
-            WirePluginContributions();
-        else
-            Dispatcher.BeginInvoke(WirePluginContributions);
-    }
+    private readonly Dictionary<string, Action<FileNode>> _pluginFileHandlers = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>
-    /// Forces a reconciliation pass for plugin-contributed UI elements.
-    /// Use after runtime plugin lifecycle changes (install/update/uninstall)
-    /// to ensure sidebar/activity-bar state is synchronized.
-    /// </summary>
-    public void RefreshPluginContributions()
-    {
-        void Refresh()
-        {
-            WirePluginContributions();
-            UpdatePluginSidebarButtonStates();
-            ActivityBar.UpdateActiveStates();
-        }
-
-        if (Dispatcher.CheckAccess())
-            Refresh();
-        else
-            Dispatcher.BeginInvoke((Action)Refresh);
-    }
-
-    /// <summary>
-    /// Callback fired when a plugin sets or clears a toolbar button highlight.
-    /// Updates the button's background to AccentBrush (highlighted) or Transparent (normal).
-    /// </summary>
-    private void OnToolbarButtonHighlightChanged(string fullButtonId, bool highlighted)
-    {
-        void Apply()
-        {
-            if (!_pluginToolbarButtons.TryGetValue(fullButtonId, out var button)) return;
-
-            // Walk the visual tree to find the named "Bd" Border inside the template
-            if (button.Template?.FindName("Bd", button) is Border bd)
-            {
-                bd.Background = highlighted
-                    ? (Brush)FindResource("AccentBrush")
-                    : Brushes.Transparent;
-            }
-        }
-
-        if (Dispatcher.CheckAccess())
-            Apply();
-        else
-            Dispatcher.BeginInvoke(Apply);
-    }
-
-    /// <summary>
-    /// Callback fired when a plugin toggles a control-bar overlay on or off.
-    /// Dispatches to the UI thread to apply the visibility change.
-    /// </summary>
-    private void OnControlBarOverlayToggled(string fullId, bool visible)
-    {
-        void Apply() => VideoPlayer.SetPluginOverlayVisible(fullId, visible);
-
-        if (Dispatcher.CheckAccess())
-            Apply();
-        else
-            Dispatcher.BeginInvoke(Apply);
-    }
-
-    /// <summary>
-    /// Applies all current plugin contributions to the UI. Idempotent — safe to call
-    /// multiple times. Only adds contributions that aren't already wired.
-    /// Also removes contributions that are no longer registered (e.g. after disable/uninstall).
-    /// </summary>
-    private void WirePluginContributions()
-    {
-        UnwireStaleContributions();
-        WirePluginBottomPanels();
-        WirePluginStatusBarItems();
-        WirePluginSidebarPanels();
-        WirePluginToolbarButtons();
-        WirePluginRightPanels();
-        WirePluginFileHandlers();
-        WirePluginControlBarItems();
-    }
-
-    /// <summary>
-    /// Removes UI elements for contributions that are no longer in the registry.
-    /// This handles live removal when a plugin is disabled or uninstalled.
-    /// </summary>
-    private void UnwireStaleContributions()
-    {
-        // Build sets of currently registered full IDs
-        var currentBottomPanels = new HashSet<string>(
-            _contributionRegistry.GetBottomPanels().Select(p => $"plugin.{p.PluginId}.{p.ContributionId}"));
-        var currentStatusBars = new HashSet<string>(
-            _contributionRegistry.GetStatusBarItems().Select(i => $"plugin.{i.PluginId}.{i.ContributionId}"));
-        var currentSidebars = new HashSet<string>(
-            _contributionRegistry.GetSidebarPanels().Select(p => $"plugin.{p.PluginId}.{p.ContributionId}"));
-        var currentToolbars = new HashSet<string>(
-            _contributionRegistry.GetToolbarButtons().Select(b => $"plugin.{b.PluginId}.{b.ContributionId}"));
-        var currentRightPanels = new HashSet<string>(
-            _contributionRegistry.GetRightPanels().Select(p => $"plugin.{p.PluginId}.{p.ContributionId}"));
-        var currentFileHandlers = new HashSet<string>(
-            _contributionRegistry.GetFileHandlers().Select(h => $"plugin.{h.PluginId}.fileHandler"));
-        var currentControlBarItems = new HashSet<string>(
-            _contributionRegistry.GetControlBarItems().Select(c => $"plugin.{c.PluginId}.{c.ContributionId}"));
-
-        // Remove stale bottom panels
-        foreach (var id in _wiredBottomPanelIds.Where(id => !currentBottomPanels.Contains(id)).ToList())
-        {
-            _mainWindowViewModel.CloseBottomPanelTab(id);
-            _bottomPanelContents.Remove(id);
-            _wiredBottomPanelIds.Remove(id);
-            TitleBar.RemoveBottomPanelTabMenuItem(id);
-        }
-
-        // Remove stale status bar items
-        foreach (var id in _wiredStatusBarIds.Where(id => !currentStatusBars.Contains(id)).ToList())
-        {
-            _statusBarViewModel.UnregisterItem(id);
-            _wiredStatusBarIds.Remove(id);
-            TitleBar.RemoveStatusBarMenuItem(id);
-        }
-
-        // Remove stale sidebar panels
-        foreach (var id in _wiredSidebarPanelIds.Where(id => !currentSidebars.Contains(id)).ToList())
-        {
-            if (_pluginSidebarButtons.TryGetValue(id, out var button))
-            {
-                ActivityBar.RemovePluginButton(button);
-                _pluginSidebarButtons.Remove(id);
-            }
-            _pluginSidebarContents.Remove(id);
-            // TODO PI-024: RemovePluginItem removed from ActivityBarViewModel
-            if (_activePluginSidebarId == id)
-            {
-                _activePluginSidebarId = null;
-                // Switch sidebar back to explorer if it was showing this plugin panel
-                if (_activityBarViewModel is not null)
-                {
-                    _activityBarViewModel.ActivePanel = Core.Layout.SidebarPanelKind.Explorer;
-                    OnPanelChanged(this, new RoutedEventArgs());
-                }
-            }
-            _wiredSidebarPanelIds.Remove(id);
-        }
-
-        // Remove stale toolbar buttons
-        foreach (var id in _wiredToolbarButtonIds.Where(id => !currentToolbars.Contains(id)).ToList())
-        {
-            if (_pluginToolbarButtons.TryGetValue(id, out var button))
-            {
-                TitleBar.RemovePluginToolbarButton(button);
-                _pluginToolbarButtons.Remove(id);
-            }
-            _wiredToolbarButtonIds.Remove(id);
-        }
-
-        // Remove stale right panels
-        foreach (var id in _wiredRightPanelIds.Where(id => !currentRightPanels.Contains(id)).ToList())
-        {
-            TitleBar.RemoveRightPanelMenuItem(id);
-            _rightPanelContents.Remove(id);
-            _rightPanelTitles.Remove(id);
-            _wiredRightPanelIds.Remove(id);
-        }
-
-        // Remove stale file handlers
-        foreach (var id in _wiredFileHandlerIds.Where(id => !currentFileHandlers.Contains(id)).ToList())
-        {
-            _wiredFileHandlerIds.Remove(id);
-        }
-
-        // Remove stale control bar items
-        foreach (var id in _wiredControlBarIds.Where(id => !currentControlBarItems.Contains(id)).ToList())
-        {
-            VideoPlayer.RemovePluginControlBarItem(id);
-            VideoPlayer.RemovePluginOverlay(id);
-            _wiredControlBarIds.Remove(id);
-        }
-    }
-
-    /// <summary>
-    /// Tracking sets for idempotent wiring — prevent re-adding contributions.
-    /// </summary>
-    private readonly HashSet<string> _wiredBottomPanelIds = [];
-    private readonly HashSet<string> _wiredStatusBarIds = [];
-    private readonly HashSet<string> _wiredSidebarPanelIds = [];
-    private readonly HashSet<string> _wiredToolbarButtonIds = [];
-    private readonly HashSet<string> _wiredRightPanelIds = [];
-    private readonly HashSet<string> _wiredFileHandlerIds = [];
-    private readonly HashSet<string> _wiredControlBarIds = [];
-
-    /// <summary>
-    /// Wraps an object returned by a plugin's view factory into a UIElement.
-    /// Plugins may return a WPF control (UIElement), a string, or any other object.
-    /// Non-UIElement values are wrapped in a styled TextBlock so they display in the UI.
-    /// </summary>
-    private static UIElement WrapAsUIElement(object? content, string fallbackText = "")
-    {
-        return content switch
-        {
-            UIElement el => el,
-            string text => CreatePluginTextBlock(text),
-            null => CreatePluginTextBlock(fallbackText),
-            _ => CreatePluginTextBlock(content.ToString() ?? fallbackText)
-        };
-    }
-
-    /// <summary>
-    /// Creates a themed TextBlock for displaying plugin text content.
-    /// </summary>
-    private static TextBlock CreatePluginTextBlock(string text)
-    {
-        return new TextBlock
-        {
-            Text = text,
-            Foreground = (Brush)Application.Current.FindResource("PrimaryForegroundBrush"),
-            Padding = new Thickness(12, 8, 12, 8),
-            TextWrapping = TextWrapping.Wrap,
-            VerticalAlignment = VerticalAlignment.Top
-        };
-    }
-
-    // ── Bottom Panel wiring ──
-
-    /// <summary>
-    /// Invokes a plugin wiring action inside a try/catch that logs errors in a consistent format.
-    /// Prevents a single plugin contribution from crashing the whole wiring process.
-    /// </summary>
-    private void SafeWireContribution(string pluginId, string contributionId, string area, Action wireAction)
-    {
-        try
-        {
-            wireAction();
-        }
-        catch (Exception ex)
-        {
-            _logService.Error(
-                $"Plugin '{pluginId}' {area} '{contributionId}' failed: {ex.Message}",
-                "PluginHost");
-        }
-    }
-
-    private void WirePluginBottomPanels()
-    {
-        foreach (var panel in _contributionRegistry.GetBottomPanels())
-        {
-            var fullId = $"plugin.{panel.PluginId}.{panel.ContributionId}";
-            if (_wiredBottomPanelIds.Contains(fullId)) continue;
-
-            SafeWireContribution(panel.PluginId, panel.ContributionId, "bottom panel", () =>
-            {
-                _wiredBottomPanelIds.Add(fullId);
-                var view = panel.ViewFactory();
-                var uiElement = WrapAsUIElement(view, $"Plugin: {panel.Title}");
-                _bottomPanelContents[fullId] = uiElement;
-                _mainWindowViewModel.OpenBottomPanelTab(fullId, panel.Title.ToUpperInvariant());
-
-                // Add show/hide menu item for this tab
-                TitleBar.AddBottomPanelTabMenuItem(fullId, panel.Title);
-            });
-        }
-    }
-
-    // ── Status Bar wiring ──
-
-    private void WirePluginStatusBarItems()
-    {
-        var statusBarItems = _contributionRegistry.GetStatusBarItems();
-
-        foreach (var item in statusBarItems)
-        {
-            var fullId = $"plugin.{item.PluginId}.{item.ContributionId}";
-            if (_wiredStatusBarIds.Contains(fullId)) continue;
-
-            SafeWireContribution(item.PluginId, item.ContributionId, "status bar item", () =>
-            {
-                var alignment = item.Position.Equals("left", StringComparison.OrdinalIgnoreCase)
-                    ? Core.Layout.StatusBarAlignment.Left
-                    : Core.Layout.StatusBarAlignment.Right;
-
-                // Invoke the view factory FIRST — before registering the item.
-                // If the factory throws, we must not leave a half-wired item
-                // in RightItems with no content (which renders as invisible
-                // zero-width and is never retried).
-                object? content;
-                try
-                {
-                    content = item.ViewFactory();
-                }
-                catch (Exception factoryEx)
-                {
-                    _logService.Error(
-                        $"Status bar view factory for '{fullId}' threw: {factoryEx}", "PluginHost");
-                    // Use fallback text content so the item is still visible
-                    content = null;
-                }
-
-                // Use FindItem to handle retry after partial failure — if a prior
-                // attempt registered the item but threw before marking it as wired,
-                // reuse the existing item instead of throwing on duplicate.
-                var statusBarItem = _statusBarViewModel.FindItem(fullId)
-                    ?? _statusBarViewModel.RegisterItem(fullId, alignment, item.Order);
-
-                if (content is System.Windows.FrameworkElement fe)
-                {
-                    // Plugin returned a custom WPF element — host it directly
-                    statusBarItem.ContentView = fe;
-                    statusBarItem.Text = item.Name; // fallback text
-                }
-                else
-                {
-                    // Factory returned non-UIElement or threw — show text
-                    statusBarItem.Text = content switch
-                    {
-                        string text => text,
-                        null => item.Name, // fallback to contribution name
-                        _ => content.ToString() ?? item.Name
-                    };
-                }
-                statusBarItem.Tooltip = $"Plugin: {item.PluginId}";
-                statusBarItem.IsVisible = true;
-
-                // Store reference so plugins can push text updates via UpdateStatusBarItem
-                _contributionRegistry.SetStatusBarItemReference(fullId, statusBarItem);
-
-                // Mark as wired AFTER successful registration
-                _wiredStatusBarIds.Add(fullId);
-
-                // Add show/hide menu item under Status Bar submenu
-                TitleBar.AddStatusBarMenuItem(fullId, item.Name);
-            });
-        }
-    }
-
-    // ── Sidebar Panel wiring ──
-
-    /// <summary>
-    /// Map of plugin sidebar panel ID → content UIElement.
-    /// </summary>
-    private readonly Dictionary<string, UIElement> _pluginSidebarContents = [];
-
-    /// <summary>
-    /// Map of plugin sidebar panel ID → dynamically-added activity bar Button.
-    /// </summary>
-    private readonly Dictionary<string, Button> _pluginSidebarButtons = [];
-
-    /// <summary>
-    /// The currently active plugin sidebar panel ID, or null if none is active.
-    /// </summary>
-    private string? _activePluginSidebarId;
-
-    private void WirePluginSidebarPanels()
-    {
-        foreach (var panel in _contributionRegistry.GetSidebarPanels())
-        {
-            var fullId = $"plugin.{panel.PluginId}.{panel.ContributionId}";
-            if (_wiredSidebarPanelIds.Contains(fullId)) continue;
-
-            SafeWireContribution(panel.PluginId, panel.ContributionId, "sidebar panel", () =>
-            {
-                _wiredSidebarPanelIds.Add(fullId);
-                var view = panel.ViewFactory();
-                var uiElement = WrapAsUIElement(view, $"Plugin: {panel.Title}");
-                _pluginSidebarContents[fullId] = uiElement;
-
-                // Create an activity bar button for this panel
-                var panelId = fullId; // capture for closure
-                var button = CreatePluginActivityBarButton(panel.Title, panel.IconPath, () =>
-                {
-                    OnPluginSidebarButtonClick(panelId, panel.Title);
-                });
-                button.Uid = fullId;
-                _pluginSidebarButtons[fullId] = button;
-
-                // Register with ViewModel for ordering (vb-007)
-                // TODO PI-024: Plugin sidebar ordering replaced by fixed enum order
-
-                // Determine visual insertion index
-                ActivityBar.InsertPluginButton(button, 0);
-            });
-        }
-    }
-
-    /// <summary>
-    /// Creates a Button styled for the activity bar with a plugin icon.
-    /// Uses the plugin's custom icon if <paramref name="iconPath"/> points to a valid image file,
-    /// otherwise falls back to a generic puzzle-piece icon.
-    /// Style is applied by ActivityBarView.AddPluginButton since it's a local resource.
-    /// </summary>
-    private static Button CreatePluginActivityBarButton(string tooltip, string? iconPath, Action onClick)
-    {
-        UIElement icon;
-
-        if (!string.IsNullOrEmpty(iconPath) && System.IO.File.Exists(iconPath))
-        {
-            try
-            {
-                var bitmap = new System.Windows.Media.Imaging.BitmapImage();
-                bitmap.BeginInit();
-                bitmap.UriSource = new Uri(iconPath, UriKind.Absolute);
-                bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-                bitmap.Freeze();
-
-                icon = new Image
-                {
-                    Source = bitmap,
-                    Width = 24,
-                    Height = 24,
-                    Stretch = Stretch.Uniform,
-                    SnapsToDevicePixels = true,
-                    Opacity = 0.6
-                };
-            }
-            catch
-            {
-                // Fall back to default puzzle icon on load failure
-                icon = CreatePuzzlePieceIcon24();
-            }
-        }
-        else
-        {
-            icon = CreatePuzzlePieceIcon24();
-        }
-
-        var button = new Button
-        {
-            Content = icon,
-            ToolTip = tooltip
-        };
-        button.Click += (_, _) => onClick();
-        return button;
-    }
-
-    /// <summary>
-    /// Creates a 24×24 puzzle-piece Canvas icon for plugins without a custom icon.
-    /// </summary>
-    private static Canvas CreatePuzzlePieceIcon24()
-    {
-        var strokeBrush = Application.Current.TryFindResource("InactiveIconBrush") as Brush
-                         ?? Brushes.Gray;
-
-        var canvas = new Canvas { Width = 24, Height = 24 };
-        var path = new System.Windows.Shapes.Path
-        {
-            Data = Geometry.Parse("M 5,4 L 11,4 L 11,7 L 14,7 L 14,13 L 17,13 L 17,19 L 11,19 L 11,16 L 8,16 L 8,19 L 2,19 L 2,13 L 5,13 L 5,10 L 2,10 L 2,4 Z"),
-            Stroke = strokeBrush,
-            StrokeThickness = 1.2,
-            Fill = Brushes.Transparent,
-            StrokeLineJoin = PenLineJoin.Round
-        };
-        canvas.Children.Add(path);
-        return canvas;
-    }
-
-    /// <summary>
-    /// Handles click on a plugin sidebar panel button in the activity bar.
-    /// </summary>
-    private void OnPluginSidebarButtonClick(string panelId, string title)
-    {
-        if (_activePluginSidebarId == panelId && Sidebar.Visibility == Visibility.Visible)
-        {
-            // Toggle off — hide sidebar
-            _activePluginSidebarId = null;
-            _activityBarViewModel!.IsSidebarVisible = false;
-            Sidebar.Visibility = Visibility.Collapsed;
-            SidebarSplitter.Visibility = Visibility.Collapsed;
-            SidebarColumn.Width = new GridLength(0);
-            SidebarColumn.MinWidth = 0;
-            SidebarColumn.MaxWidth = 0;
-            UpdatePluginSidebarButtonStates();
-            ActivityBar.UpdateActiveStates();
-            return;
-        }
-
-        // Activate this plugin panel
-        _activePluginSidebarId = panelId;
-        _activityBarViewModel!.IsSidebarVisible = true;
-
-        // Clear the built-in active panel to avoid conflict
-        _activityBarViewModel.ClearActivePanel();
-
-        Sidebar.Visibility = Visibility.Visible;
-        SidebarSplitter.Visibility = Visibility.Visible;
-        SidebarColumn.Width = new GridLength(_settingsService.Current.SidebarWidth);
-        SidebarColumn.MinWidth = 170;
-        SidebarColumn.MaxWidth = 600;
-
-        _sidebarViewModel!.SetPanel(title.ToUpperInvariant());
-
-        if (_pluginSidebarContents.TryGetValue(panelId, out var content))
-            Sidebar.SetPanelContent(content);
-
-        UpdatePluginSidebarButtonStates();
-        ActivityBar.UpdateActiveStates();
-    }
-
-    /// <summary>
-    /// Updates visual active state for all plugin sidebar buttons.
-    /// </summary>
-    private void UpdatePluginSidebarButtonStates()
-    {
-        foreach (var (id, button) in _pluginSidebarButtons)
-        {
-            var isActive = id == _activePluginSidebarId && Sidebar.Visibility == Visibility.Visible;
-            button.Tag = isActive ? "Active" : null;
-            ActivityBar.SetPluginButtonActive(button, isActive);
-        }
-    }
-
-    // ── Toolbar Button wiring ──
-
-    /// <summary>
-    /// Map of toolbar button ID → Button element for removal.
-    /// </summary>
-    private readonly Dictionary<string, Button> _pluginToolbarButtons = [];
-
-    private void WirePluginToolbarButtons()
-    {
-        foreach (var toolbarBtn in _contributionRegistry.GetToolbarButtons())
-        {
-            var fullId = $"plugin.{toolbarBtn.PluginId}.{toolbarBtn.ContributionId}";
-            if (_wiredToolbarButtonIds.Contains(fullId)) continue;
-
-            SafeWireContribution(toolbarBtn.PluginId, toolbarBtn.ContributionId, "toolbar button", () =>
-            {
-                _wiredToolbarButtonIds.Add(fullId);
-                var handler = toolbarBtn.ClickHandler; // capture for closure
-                var button = CreatePluginToolbarButton(toolbarBtn.Tooltip, toolbarBtn.IconPath, handler);
-                _pluginToolbarButtons[fullId] = button;
-                TitleBar.AddPluginToolbarButton(button);
-            });
-        }
-    }
-
-    /// <summary>
-    /// Creates a small toolbar button for the title bar with menu-matching hover highlight.
-    /// </summary>
-    private static Button CreatePluginToolbarButton(string tooltip, string? iconPath, Action clickHandler)
-    {
-        UIElement icon;
-
-        if (!string.IsNullOrEmpty(iconPath) && System.IO.File.Exists(iconPath))
-        {
-            try
-            {
-                var bitmap = new System.Windows.Media.Imaging.BitmapImage();
-                bitmap.BeginInit();
-                bitmap.UriSource = new Uri(iconPath, UriKind.Absolute);
-                bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-                bitmap.Freeze();
-
-                icon = new Image
-                {
-                    Source = bitmap,
-                    Width = 16,
-                    Height = 16,
-                    Stretch = Stretch.Uniform,
-                    SnapsToDevicePixels = true
-                };
-            }
-            catch
-            {
-                // Fall back to default puzzle icon on load failure
-                icon = CreatePuzzlePieceIcon16();
-            }
-        }
-        else
-        {
-            icon = CreatePuzzlePieceIcon16();
-        }
-
-        var button = new Button
-        {
-            Content = icon,
-            ToolTip = tooltip,
-            Height = 22,
-            Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
-            Cursor = Cursors.Hand,
-            VerticalAlignment = VerticalAlignment.Center,
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            HorizontalContentAlignment = HorizontalAlignment.Center,
-            Padding = new Thickness(4, 2, 4, 2)
-        };
-
-        // Build a template — button stretches to fill container, highlight fills entire space
-        var template = new ControlTemplate(typeof(Button));
-        var borderFactory = new FrameworkElementFactory(typeof(Border));
-        borderFactory.Name = "Bd";
-        borderFactory.SetValue(Border.BackgroundProperty, Brushes.Transparent);
-        borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
-        borderFactory.SetValue(Border.PaddingProperty, new Thickness(6, 2, 6, 2));
-        var contentFactory = new FrameworkElementFactory(typeof(ContentPresenter));
-        contentFactory.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-        contentFactory.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-        borderFactory.AppendChild(contentFactory);
-        template.VisualTree = borderFactory;
-
-        // Hover trigger matching TitleBarMenuItemStyle
-        var hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-        hoverTrigger.Setters.Add(new Setter(Border.BackgroundProperty,
-            new DynamicResourceExtension("HoverBackgroundBrush"), "Bd"));
-        template.Triggers.Add(hoverTrigger);
-
-        button.Template = template;
-
-        button.Click += (_, _) =>
-        {
-            try { clickHandler(); }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Plugin toolbar button handler error: {ex.Message}"); }
-        };
-
-        return button;
-    }
-
-    /// <summary>
-    /// Creates a 16×16 puzzle-piece Canvas icon for plugins without a custom icon.
-    /// </summary>
-    private static Canvas CreatePuzzlePieceIcon16()
-    {
-        var canvas = new Canvas { Width = 16, Height = 16 };
-        var path = new System.Windows.Shapes.Path
-        {
-            Data = Geometry.Parse("M 3,2 L 7,2 L 7,4 L 9,4 L 9,8 L 11,8 L 11,12 L 7,12 L 7,10 L 5,10 L 5,12 L 1,12 L 1,8 L 3,8 L 3,6 L 1,6 L 1,2 Z"),
-            Stroke = (Brush)Application.Current.FindResource("PrimaryForegroundBrush"),
-            StrokeThickness = 1.0,
-            Fill = Brushes.Transparent,
-            StrokeLineJoin = PenLineJoin.Round
-        };
-        canvas.Children.Add(path);
-        return canvas;
-    }
-
-    // ── Right Panel wiring ──
 
     /// <summary>
     /// Map of right panel ID → content UIElement.
@@ -2939,27 +2153,6 @@ public partial class MainWindow : Window
     /// Map of right panel ID → display title.
     /// </summary>
     private readonly Dictionary<string, string> _rightPanelTitles = [];
-
-    private void WirePluginRightPanels()
-    {
-        foreach (var panel in _contributionRegistry.GetRightPanels())
-        {
-            var fullId = $"plugin.{panel.PluginId}.{panel.ContributionId}";
-            if (_wiredRightPanelIds.Contains(fullId)) continue;
-
-            SafeWireContribution(panel.PluginId, panel.ContributionId, "right panel", () =>
-            {
-                _wiredRightPanelIds.Add(fullId);
-                var view = panel.ViewFactory();
-                var uiElement = WrapAsUIElement(view, $"Plugin: {panel.Title}");
-                _rightPanelContents[fullId] = uiElement;
-                _rightPanelTitles[fullId] = panel.Title;
-
-                // Add menu item to View → Right Panel submenu
-                TitleBar.AddRightPanelMenuItem(fullId, panel.Title, () => SwitchRightPanel(fullId));
-            });
-        }
-    }
 
     /// <summary>
     /// Switches the right panel to show the specified panel's content.
@@ -2980,89 +2173,9 @@ public partial class MainWindow : Window
             RightPanelContent.Content = content;
             RightPanelTitle.Text = _rightPanelTitles.TryGetValue(panelId, out var title)
                 ? title.ToUpperInvariant()
-                : "PLUGIN";
+                : "PANEL";
         }
     }
-
-    /// <summary>
-    /// Handles a plugin's request to show a specific right panel.
-    /// Dispatches to the UI thread if needed.
-    /// </summary>
-    private void OnRightPanelShowRequested(string fullPanelId)
-    {
-        if (Dispatcher.CheckAccess())
-            SwitchRightPanel(fullPanelId);
-        else
-            Dispatcher.BeginInvoke(() => SwitchRightPanel(fullPanelId));
-    }
-
-    /// <summary>
-    /// Handles a plugin's request to show a specific bottom panel tab.
-    /// Dispatches to the UI thread if needed, activates the tab
-    /// and shows its cached content.
-    /// </summary>
-    private void OnBottomPanelShowRequested(string fullPanelId)
-    {
-        void Activate()
-        {
-            _mainWindowViewModel.ActivateBottomPanelTab(fullPanelId);
-
-            if (_bottomPanelContents.TryGetValue(fullPanelId, out var content))
-                BottomPanelContent.Content = content;
-        }
-
-        if (Dispatcher.CheckAccess())
-            Activate();
-        else
-            Dispatcher.BeginInvoke(Activate);
-    }
-
-    // ── File Handler wiring ──
-
-    /// <summary>
-    /// Registered plugin file handlers, keyed by extension (lowercase).
-    /// </summary>
-    private readonly Dictionary<string, Action<FileNode>> _pluginFileHandlers = new(StringComparer.OrdinalIgnoreCase);
-
-    private void WirePluginFileHandlers()
-    {
-        foreach (var handler in _contributionRegistry.GetFileHandlers())
-        {
-            var fullId = $"plugin.{handler.PluginId}.fileHandler";
-            if (_wiredFileHandlerIds.Contains(fullId)) continue;
-            _wiredFileHandlerIds.Add(fullId);
-
-            foreach (var ext in handler.Extensions)
-            {
-                var normalizedExt = ext.StartsWith('.') ? ext : $".{ext}";
-                _pluginFileHandlers[normalizedExt] = handler.Handler;
-                _fileExplorerViewModel.AdditionalAcceptedExtensions.Add(normalizedExt);
-            }
-        }
-    }
-
-    private void WirePluginControlBarItems()
-    {
-        foreach (var item in _contributionRegistry.GetControlBarItems())
-        {
-            var fullId = $"plugin.{item.PluginId}.{item.ContributionId}";
-            if (_wiredControlBarIds.Contains(fullId)) continue;
-
-            SafeWireContribution(item.PluginId, item.ContributionId, "control bar item", () =>
-            {
-                _wiredControlBarIds.Add(fullId);
-                var view = WrapAsUIElement(item.ViewFactory());
-                VideoPlayer.AddPluginControlBarItem(fullId, view);
-
-                if (item.OverlayFactory is not null)
-                {
-                    var overlay = WrapAsUIElement(item.OverlayFactory());
-                    VideoPlayer.AddPluginOverlay(fullId, overlay);
-                }
-            });
-        }
-    }
-
     /// <summary>
     /// Handles files/folders dropped onto the video player area.
     /// All items are added to the explorer additively. The first video file plays.
@@ -3236,7 +2349,7 @@ public partial class MainWindow : Window
         _bottomPanelHeight = settings.BottomPanelHeight;
         _rightPanelWidth = settings.RightPanelWidth;
 
-        // Restore sidebar width — applied when sidebar visibility fires via OnPanelChanged
+        // Restore sidebar width â€” applied when sidebar visibility fires via OnPanelChanged
         // The sidebar visibility itself is restored by the activity bar view model.
 
         // Restore active sidebar panel from state
@@ -3334,14 +2447,14 @@ public partial class MainWindow : Window
     /// </summary>
     private static void ApplyDarkDwmSurface(IntPtr hwnd)
     {
-        // Enable immersive dark mode — makes DWM use dark surface (Win10 1809+)
+        // Enable immersive dark mode â€” makes DWM use dark surface (Win10 1809+)
         const int DWMWA_USE_IMMERSIVE_DARK_MODE = 20;
         var darkMode = 1;
         DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, ref darkMode, sizeof(int));
 
         // Set caption color to our exact dark background (Win11 22000+, ignored on older)
         const int DWMWA_CAPTION_COLOR = 35;
-        var captionColor = 0x001F1F1F; // COLORREF: 0x00BBGGRR — matches #1f1f1f
+        var captionColor = 0x001F1F1F; // COLORREF: 0x00BBGGRR â€” matches #1f1f1f
         DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, ref captionColor, sizeof(int));
 
         // Set class background brush as fallback for any Win32 background painting
@@ -3427,7 +2540,7 @@ public partial class MainWindow : Window
 
     #endregion
 
-    // ── App Setting Changes ─────────────────────────────────────────
+    // â”€â”€ App Setting Changes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private void OnAppSettingChanged(string key)
     {
@@ -3450,7 +2563,7 @@ public partial class MainWindow : Window
         }
     }
 
-    // ── Help Menu ───────────────────────────────────────────────────
+    // â”€â”€ Help Menu â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     private void OnScreenshotRequested()
     {
@@ -3477,7 +2590,7 @@ public partial class MainWindow : Window
                 dpiY = 96.0 * source.CompositionTarget.TransformToDevice.M22;
             }
 
-            // Render the window's visual tree directly — pixel-perfect, no DWM border issues
+            // Render the window's visual tree directly â€” pixel-perfect, no DWM border issues
             var target = WindowBorder; // the root Border element inside the window
             int pixelWidth = (int)Math.Ceiling(target.ActualWidth * dpiX / 96.0);
             int pixelHeight = (int)Math.Ceiling(target.ActualHeight * dpiY / 96.0);
@@ -3525,7 +2638,7 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Plays a synthesized camera shutter click sound ("ka-click").
-    /// Generated in-memory — no packaged audio file required.
+    /// Generated in-memory â€” no packaged audio file required.
     /// </summary>
     private static void PlayScreenshotSound()
     {
@@ -3537,7 +2650,7 @@ public partial class MainWindow : Window
         }
         catch
         {
-            // Sound is non-critical — swallow any errors
+            // Sound is non-critical â€” swallow any errors
         }
     }
 
@@ -3674,7 +2787,7 @@ public partial class MainWindow : Window
             }
             else
             {
-                // No installer asset — fall back to opening the release page
+                // No installer asset â€” fall back to opening the release page
                 msg += "Open the release page to download manually?";
                 var mbResult = MessageBox.Show(
                     this, msg, "Update Available",
@@ -3726,7 +2839,7 @@ public partial class MainWindow : Window
                 _updateService.LaunchInstaller(_pendingInstallerPath);
                 Application.Current.Shutdown();
             }
-            // If No — the installer stays in temp. Next "Check for Updates" will
+            // If No â€” the installer stays in temp. Next "Check for Updates" will
             // offer to install it.
         }
         catch (Exception ex)
@@ -3753,5 +2866,5 @@ public partial class MainWindow : Window
         }
     }
 
-    // TODO PI-022: OnEnterRepositoryCode removed — plugin registry no longer needed
+    // TODO PI-022: OnEnterRepositoryCode removed â€” plugin registry no longer needed
 }

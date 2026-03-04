@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using Vido.Core.Models.Playlists;
-using Vido.Core.Plugin;
+using Vido.Core.Playlists;
 using Vido.Services.Playlists;
 using Xunit;
 

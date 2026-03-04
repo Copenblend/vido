@@ -7,7 +7,6 @@ using Vido.Core.FileSystem;
 using Vido.Core.Keyboard;
 using Vido.Core.Logging;
 using Vido.Core.Menus;
-using Vido.Core.Plugin;
 using Vido.Core.Settings;
 using Vido.Core.State;
 using Vido.Core.Updates;
@@ -55,18 +54,6 @@ public partial class App : Application
         var logService = _serviceProvider.GetRequiredService<ILogService>();
         FFmpegInitializer.Initialize(logService);
 
-        // Clean up deferred plugin uninstalls from previous sessions before
-        // the UI or plugin host attempts discovery/activation.
-        try
-        {
-            var pluginInstaller = _serviceProvider.GetRequiredService<IPluginInstaller>();
-            pluginInstaller.CleanupPendingUninstalls();
-        }
-        catch (Exception ex)
-        {
-            logService.Warning($"Deferred plugin uninstall cleanup failed: {ex.Message}", "PluginInstaller");
-        }
-
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
         MainWindow = mainWindow;
         mainWindow.FFmpegVersion = FFmpegInitializer.VersionString;
@@ -81,31 +68,10 @@ public partial class App : Application
             $"Window visible in {startupTimer.ElapsedMilliseconds} ms",
             "Startup");
 
-        // Defer plugin activation to run after the first render pass completes.
-        // This lets the window paint immediately without being blocked by
-        // synchronous plugin I/O (directory scan, assembly load, activation).
-        _ = Dispatcher.CurrentDispatcher.BeginInvoke(DispatcherPriority.Background, () =>
-        {
-            try
-            {
-                var pluginTimer = Stopwatch.StartNew();
-                var pluginHost = _serviceProvider.GetRequiredService<IPluginHost>();
-                pluginHost.ActivateAll();
-                pluginTimer.Stop();
-                logService.Info(
-                    $"Plugin activation completed in {pluginTimer.ElapsedMilliseconds} ms",
-                    "Startup");
-            }
-            catch (Exception ex)
-            {
-                logService.Error($"Plugin system initialization failed: {ex.Message}", "PluginHost");
-            }
-
-            startupTimer.Stop();
-            logService.Info(
-                $"Total startup completed in {startupTimer.ElapsedMilliseconds} ms",
-                "Startup");
-        });
+        startupTimer.Stop();
+        logService.Info(
+            $"Total startup completed in {startupTimer.ElapsedMilliseconds} ms",
+            "Startup");
     }
 
     /// <summary>
@@ -116,18 +82,6 @@ public partial class App : Application
     {
         if (_serviceProvider is not null)
         {
-            // Deactivate all plugins before shutdown
-            try
-            {
-                var pluginHost = _serviceProvider.GetRequiredService<IPluginHost>();
-                pluginHost.DeactivateAll();
-            }
-            catch (Exception ex)
-            {
-                // Plugin errors should not prevent shutdown
-                System.Diagnostics.Debug.WriteLine($"Plugin deactivation error during shutdown: {ex.Message}");
-            }
-
             // Persist state and flush any pending settings before shutdown
             var stateService = _serviceProvider.GetRequiredService<IStateService>();
             var settingsService = _serviceProvider.GetRequiredService<ISettingsService>();
@@ -159,12 +113,6 @@ public partial class App : Application
 
         // Keyboard shortcuts
         services.AddSingleton<IKeyboardShortcutService, KeyboardShortcutService>();
-
-        // Plugin system
-        services.AddSingleton<PluginHost.ContributionRegistry>();
-        services.AddSingleton<IContributionRegistry>(sp => sp.GetRequiredService<PluginHost.ContributionRegistry>());
-        services.AddSingleton<IPluginHost, PluginHost.PluginHost>();
-        services.AddSingleton<IPluginInstaller, Vido.Services.Plugin.PluginInstaller>();
 
         // Update checking
         var vidoVersion = typeof(App).Assembly

@@ -4,7 +4,6 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Win32;
-using Vido.Core.Plugin;
 using Vido.Core.Settings;
 using Vido.ViewModels;
 
@@ -19,17 +18,16 @@ public partial class SettingsPage : UserControl
     private readonly SettingsViewModel _viewModel;
     /// <summary>
     /// Creates the settings page, building the categorized settings UI from the current
-    /// application and plugin settings.
+    /// application settings.
     /// </summary>
     /// <param name="settingsService">Service providing access to persisted application settings.</param>
-    /// <param name="pluginHost">Plugin host for discovering plugin-contributed settings, or null if unavailable.</param>
     /// <param name="appSettingsStore">Shared settings store for two-way change notification, or null to create a new one.</param>
-    public SettingsPage(ISettingsService settingsService, IPluginHost? pluginHost, AppSettingsStore? appSettingsStore = null)
+    public SettingsPage(ISettingsService settingsService, AppSettingsStore? appSettingsStore = null)
     {
         InitializeComponent();
 
         appSettingsStore ??= new AppSettingsStore(settingsService);
-        _viewModel = new SettingsViewModel(settingsService, appSettingsStore, pluginHost);
+        _viewModel = new SettingsViewModel(settingsService, appSettingsStore);
 
         CategoriesControl.ItemsSource = _viewModel.FilteredCategories;
         UpdateNoResultsVisibility();

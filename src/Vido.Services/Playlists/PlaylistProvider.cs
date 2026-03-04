@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using Vido.Core.FileSystem;
 using Vido.Core.Models.Playlists;
-using Vido.Core.Plugin;
+using Vido.Core.Playlists;
 
 namespace Vido.Services.Playlists;
 

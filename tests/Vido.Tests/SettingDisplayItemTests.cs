@@ -1,5 +1,5 @@
-using NSubstitute;
-using Vido.Core.Plugin;
+﻿using NSubstitute;
+using Vido.Core.Settings;
 using Vido.ViewModels;
 using Xunit;
 
@@ -14,9 +14,9 @@ public sealed class SettingDisplayItemTests
     private static SettingContribution MakeStringListContribution(string id = "test.list") =>
         new() { Id = id, Type = "stringList", Title = "Test List", Description = "A list setting" };
 
-    private static IPluginSettingsStore CreateStore(List<string>? initialList = null)
+    private static ISettingsStore CreateStore(List<string>? initialList = null)
     {
-        var store = Substitute.For<IPluginSettingsStore>();
+        var store = Substitute.For<ISettingsStore>();
         store.Get(Arg.Any<string>(), Arg.Any<List<string>>())
             .Returns(initialList ?? []);
         return store;
@@ -209,7 +209,7 @@ public sealed class SettingDisplayItemTests
         Assert.False(item.IsEnum);
     }
 
-    // ── URL validation tests ──
+    // â”€â”€ URL validation tests â”€â”€
 
     private static SettingContribution MakeUrlValidatedContribution(string id = "test.urls") =>
         new() { Id = id, Type = "stringList", Title = "URLs", Description = "URL list", Validation = "url" };
@@ -332,7 +332,7 @@ public sealed class SettingDisplayItemTests
         Assert.Equal(string.Empty, item.ValidationError);
     }
 
-    // ── FolderPath type ──
+    // â”€â”€ FolderPath type â”€â”€
 
     /// <summary>
     /// Verifies that Is Folder Path true for folder path type.
@@ -340,7 +340,7 @@ public sealed class SettingDisplayItemTests
     [Fact]
     public void IsFolderPath_TrueForFolderPathType()
     {
-        var store = Substitute.For<IPluginSettingsStore>();
+        var store = Substitute.For<ISettingsStore>();
         store.Get(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
         var def = new SettingContribution { Id = "test.folder", Type = "folderPath", Title = "Dir", Description = "D" };
         var item = new SettingDisplayItem(def, store);
@@ -354,7 +354,7 @@ public sealed class SettingDisplayItemTests
     [Fact]
     public void IsFolderPath_FalseForStringType()
     {
-        var store = Substitute.For<IPluginSettingsStore>();
+        var store = Substitute.For<ISettingsStore>();
         store.Get(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
         var def = new SettingContribution { Id = "test.str", Type = "string", Title = "T", Description = "D" };
         var item = new SettingDisplayItem(def, store);
@@ -368,7 +368,7 @@ public sealed class SettingDisplayItemTests
     [Fact]
     public void SetFolderPath_UpdatesStringValue()
     {
-        var store = Substitute.For<IPluginSettingsStore>();
+        var store = Substitute.For<ISettingsStore>();
         store.Get(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
         var def = new SettingContribution { Id = "test.folder", Type = "folderPath", Title = "Dir", Description = "D" };
         var item = new SettingDisplayItem(def, store);
@@ -384,7 +384,7 @@ public sealed class SettingDisplayItemTests
     [Fact]
     public void SetFolderPath_NullDoesNothing()
     {
-        var store = Substitute.For<IPluginSettingsStore>();
+        var store = Substitute.For<ISettingsStore>();
         store.Get(Arg.Any<string>(), Arg.Any<string>()).Returns(@"C:\existing");
         var def = new SettingContribution { Id = "test.folder", Type = "folderPath", Title = "Dir", Description = "D" };
         var item = new SettingDisplayItem(def, store);
@@ -399,7 +399,7 @@ public sealed class SettingDisplayItemTests
     [Fact]
     public void BrowseFolder_RaisesBrowseFolderRequestedEvent()
     {
-        var store = Substitute.For<IPluginSettingsStore>();
+        var store = Substitute.For<ISettingsStore>();
         store.Get(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
         var def = new SettingContribution { Id = "test.folder", Type = "folderPath", Title = "Dir", Description = "D" };
         var item = new SettingDisplayItem(def, store);
