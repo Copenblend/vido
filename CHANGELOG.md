@@ -7,6 +7,13 @@ All notable changes to the Vido project will be documented in this file.
 ### Plugin Integration (PI-001)
 - Added `SkiaSharp` 2.88.9 package reference to `Vido.Core` for `IExternalBeatSource` strong-typed canvas rendering.
 
+### Plugin Integration (PI-017)
+- Integrated 4 Playlist service types: `PlaylistFileService`, `PlaylistProvider`, `IDialogService`, `DialogService`.
+- `PlaylistFileService`: JSON serialization/deserialization of `.vidpl` playlist files using `System.Text.Json` with internal DTOs.
+- `PlaylistProvider`: `IPlaylistProvider` implementation with Fisher-Yates shuffle, wrap-around navigation, video-only file filtering via `FileNode.VideoExtensions`.
+- `IDialogService`: Abstraction for file save/open and confirmation dialogs (in `Vido.Services/Playlists/`).
+- `DialogService`: WPF implementation of `IDialogService` using `Microsoft.Win32` dialogs (in `Vido.Views/Playlists/` — deviation due to WPF dependency).
+
 ### Plugin Integration (PI-016)
 - Integrated 3 Playlist model types into `Vido.Core/Models/Playlists/`: `Playlist`, `PlaylistItem`, `RangeObservableCollection<T>`.
 - `Playlist`: Ordered item collection with dirty tracking, `INotifyPropertyChanged` support, auto-dirty on item collection changes.

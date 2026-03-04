@@ -385,8 +385,9 @@ public class Osr2PlusSidebarViewModel : INotifyPropertyChanged
             // ListPorts can fail on some systems — swallow
         }
 
-        // Re-select the previously selected port if still available
-        if (string.IsNullOrEmpty(_selectedComPort) && AvailableComPorts.Count > 0)
+        // Auto-select first port if none selected or previous selection is no longer available
+        if (AvailableComPorts.Count > 0 &&
+            (string.IsNullOrEmpty(_selectedComPort) || !AvailableComPorts.Contains(_selectedComPort)))
         {
             SelectedComPort = AvailableComPorts[0];
         }
