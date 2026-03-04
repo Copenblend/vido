@@ -7,6 +7,19 @@ All notable changes to the Vido project will be documented in this file.
 ### Plugin Integration (PI-001)
 - Added `SkiaSharp` 2.88.9 package reference to `Vido.Core` for `IExternalBeatSource` strong-typed canvas rendering.
 
+### Plugin Integration (PI-018)
+- Integrated Playlist ViewModel, Views, and ToastService into the host application.
+- Created `PlaylistViewModel` in `Vido.ViewModels/Playlists/` — full playlist management with add/remove/move items, drag-and-drop, save/load, recent playlists, auto-save, and playback integration.
+- Created `PlaylistItemViewModel` in `Vido.ViewModels/Playlists/` — wraps `PlaylistItem` model for UI display with file-exists checking and playing state.
+- Created `IToastService` interface in `Vido.Services/Playlists/` — abstraction for toast notifications (deviation: extracted interface to break circular dependency between ViewModels and Views).
+- Created `ToastService` in `Vido.Views/Services/` implementing `IToastService` — VS Code-style toast notifications with fade animations.
+- Created `PlaylistSidebarView.xaml` and code-behind in `Vido.Views/Playlists/` — sidebar panel with drag-and-drop, context menu, recent playlists dropdown.
+- Created `PlaylistStyles.xaml` in `Vido.Views/Themes/` — dark theme resource dictionary with prefixed keys to avoid conflicts.
+- Copied 2 icon assets (`Playlist-plugin.png`, `sidebar-icon.png`) to `Vido.Views/Assets/Playlists/`.
+- Refactored `PlaylistViewModel` constructor: replaced `IPluginSettingsStore` with `ISettingsService`, removed `Action<string>?` callback, uses `CommunityToolkit.Mvvm.Input.RelayCommand`.
+- Settings access refactored to `ISettingsService.Current.PlaylistAutoSave/RecentPlaylists/LastPlaylistPath`.
+- Added 86 unit tests (14 PlaylistItemViewModel + 72 PlaylistViewModel). Total: 1952.
+
 ### Plugin Integration (PI-017)
 - Integrated 4 Playlist service types: `PlaylistFileService`, `PlaylistProvider`, `IDialogService`, `DialogService`.
 - `PlaylistFileService`: JSON serialization/deserialization of `.vidpl` playlist files using `System.Text.Json` with internal DTOs.

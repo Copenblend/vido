@@ -256,11 +256,16 @@ public class Osr2PlusSidebarViewModel : INotifyPropertyChanged
     /// <param name="tcode">TCode service for device communication.</param>
     /// <param name="settingsService">Settings service for persisting connection settings.</param>
     /// <param name="eventBus">Optional event bus for publishing transport state events.</param>
-    public Osr2PlusSidebarViewModel(TCodeService tcode, ISettingsService settingsService, IEventBus? eventBus = null)
+    /// <param name="portLister">Optional COM port lister for test injection. When <c>null</c>, uses <see cref="SerialTransportService.ListPorts"/>.</param>
+    public Osr2PlusSidebarViewModel(TCodeService tcode, ISettingsService settingsService, IEventBus? eventBus = null, Func<string[]>? portLister = null)
     {
         _tcode = tcode;
         _settingsService = settingsService;
         _eventBus = eventBus;
+
+        // Allow test injection of port lister before RefreshPorts runs
+        if (portLister is not null)
+            PortLister = portLister;
 
         // Initialize transport factory
         TransportFactory = DefaultTransportFactory;

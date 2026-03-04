@@ -1,0 +1,181 @@
+<UserControl x:Class="Vido.Views.Playlists.PlaylistSidebarView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Vido.ViewModels.Playlists;assembly=Vido.ViewModels"
+             d:DataContext="{d:DesignInstance vm:PlaylistViewModel}"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             Background="{StaticResource PlaylistPanelBackgroundBrush}">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <!-- Inverted BoolToVisibility: visible when false -->
+            <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Background="Transparent"
+          AllowDrop="True"
+          DragEnter="OnDragEnter"
+          DragOver="OnDragOver"
+          DragLeave="OnDragLeave"
+          Drop="OnDrop">
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- ═══ Header ═══ -->
+        <StackPanel Grid.Row="0" Margin="12,8,12,0">
+            <TextBlock Text="{Binding PlaylistName}"
+                       Style="{StaticResource PlaylistSectionLabelStyle}"
+                       TextTrimming="CharacterEllipsis" />
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <Button Content="New"
+                        Style="{StaticResource PlaylistButtonStyle}"
+                        Command="{Binding NewPlaylistCommand}"
+                        ToolTip="New Playlist"
+                        Margin="0,0,4,0" />
+                <Button Content="Open"
+                        Style="{StaticResource PlaylistButtonStyle}"
+                        Command="{Binding OpenPlaylistCommand}"
+                        ToolTip="Open Playlist"
+                        Margin="0,0,4,0" />
+                <Button Content="Save"
+                        Style="{StaticResource PlaylistButtonStyle}"
+                        Command="{Binding SavePlaylistCommand}"
+                        ToolTip="Save Playlist"
+                        Margin="0,0,4,0" />
+
+                <!-- Recent playlists dropdown -->
+                <Button x:Name="RecentButton"
+                        Content="▾"
+                        Style="{StaticResource PlaylistButtonStyle}"
+                        ToolTip="Recent Playlists"
+                        Click="OnRecentButtonClick"
+                        MinWidth="24" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- ═══ Divider ═══ -->
+        <Border Grid.Row="1" Style="{StaticResource PlaylistDividerStyle}" />
+
+        <!-- ═══ Playlist Content (switched between empty state and list) ═══ -->
+        <Grid Grid.Row="2">
+
+            <!-- Empty state message — visible when no items -->
+            <TextBlock x:Name="EmptyStateText"
+                       Text="Drag files here or use&#x0a;'Add to Playlist' from&#x0a;the Explorer"
+                       Foreground="{StaticResource PlaylistTextSecondaryBrush}"
+                       FontFamily="Segoe UI"
+                       FontSize="12"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"
+                       Margin="12"
+                       LineHeight="20"
+                       Opacity="0.7" />
+
+            <!-- Playlist items list -->
+            <ListBox x:Name="PlaylistListBox"
+                     Style="{StaticResource PlaylistListBoxStyle}"
+                     ItemsSource="{Binding Items}"
+                     SelectedItem="{Binding CurrentItem, Mode=TwoWay}"
+                     Background="Transparent"
+                     VirtualizingStackPanel.IsVirtualizing="True"
+                     VirtualizingStackPanel.VirtualizationMode="Recycling"
+                     ScrollViewer.CanContentScroll="True"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto">
+
+                <ListBox.Template>
+                    <ControlTemplate TargetType="ListBox">
+                        <ScrollViewer Style="{StaticResource PlaylistScrollViewerStyle}"
+                                      Focusable="False"
+                                      CanContentScroll="True">
+                            <ItemsPresenter />
+                        </ScrollViewer>
+                    </ControlTemplate>
+                </ListBox.Template>
+
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource PlaylistListBoxItemStyle}">
+                        <Setter Property="AllowDrop" Value="True" />
+                        <EventSetter Event="PreviewMouseRightButtonUp" Handler="OnItemPreviewMouseRightButtonUp" />
+                        <EventSetter Event="PreviewMouseLeftButtonDown" Handler="OnItemPreviewMouseLeftButtonDown" />
+                        <EventSetter Event="PreviewMouseMove" Handler="OnItemPreviewMouseMove" />
+                        <EventSetter Event="DragEnter" Handler="OnItemDragEnter" />
+                        <EventSetter Event="DragOver" Handler="OnItemDragOver" />
+                        <EventSetter Event="DragLeave" Handler="OnItemDragLeave" />
+                        <EventSetter Event="Drop" Handler="OnItemDrop" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
+
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:PlaylistItemViewModel}">
+                        <Grid Margin="0,1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Playing indicator -->
+                            <Border Grid.Column="0"
+                                    Width="3"
+                                    CornerRadius="1"
+                                    Margin="0,0,6,0"
+                                    Background="{StaticResource PlaylistPlayingIndicatorBrush}"
+                                    Visibility="{Binding IsPlaying, Converter={StaticResource BoolToVis}}" />
+
+                            <!-- File name -->
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding FileName}"
+                                       FontFamily="Segoe UI"
+                                       FontSize="13"
+                                       TextTrimming="CharacterEllipsis"
+                                       VerticalAlignment="Center"
+                                       ToolTip="{Binding ToolTipText}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="{StaticResource PlaylistTextPrimaryBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding FileExists}" Value="False">
+                                                <Setter Property="Foreground" Value="{StaticResource PlaylistMissingFileBrush}" />
+                                                <Setter Property="FontStyle" Value="Italic" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsPlaying}" Value="True">
+                                                <Setter Property="Foreground" Value="{StaticResource PlaylistAccentBrush}" />
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <!-- Drag-over overlay -->
+            <Border x:Name="DragOverlay"
+                    Background="{StaticResource PlaylistDropOverlayBrush}"
+                    BorderBrush="{StaticResource PlaylistAccentBrush}"
+                    BorderThickness="2"
+                    CornerRadius="4"
+                    Margin="4"
+                    Visibility="Collapsed"
+                    IsHitTestVisible="False">
+                <TextBlock Text="Drop files here"
+                           Foreground="{StaticResource PlaylistAccentBrush}"
+                           FontFamily="Segoe UI"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+            </Border>
+
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1191,10 +1191,11 @@ public class Osr2ViewModelTests : IDisposable
 
     private Osr2PlusSidebarViewModel CreateSidebarViewModel(IEventBus? eventBus = null)
     {
-        var vm = new Osr2PlusSidebarViewModel(_tcode, _settingsService, eventBus);
-        // Replace PortLister to avoid system COM port access during tests
-        vm.PortLister = () => Array.Empty<string>();
-        return vm;
+        // Inject empty PortLister via constructor to avoid system COM port detection
+        // during tests. Setting it after construction is too late — the constructor
+        // calls RefreshPorts() which would detect real ports (e.g. COM2 on GitHub CI).
+        return new Osr2PlusSidebarViewModel(_tcode, _settingsService, eventBus,
+            portLister: () => Array.Empty<string>());
     }
 
     // ═══════════════════════════════════════════════════════════

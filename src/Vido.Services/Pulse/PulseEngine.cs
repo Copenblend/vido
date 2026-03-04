@@ -367,7 +367,12 @@ internal sealed class PulseEngine : IDisposable
             {
                 shouldAnalyze = true;
                 _preAnalysisService.Cancel();
-                _beatSource.IsAvailable = false;
+                // Keep _beatSource.IsAvailable = true so the BeatBar mode
+                // persists across video switches. The beat source is still
+                // registered and Pulse is still enabled — only the analysis
+                // is re-running. Setting IsAvailable = false would trigger
+                // RebuildAvailableModes() and reset the user's BeatBar
+                // selection to Off.
                 _liveAmplitudeService.Stop();
                 _liveAmplitudeService.Reset();
                 stateChange = TransitionTo(PulseState.Analyzing);

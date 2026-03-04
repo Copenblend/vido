@@ -980,6 +980,34 @@ public class PulseRealtimeServiceTests
         Assert.NotNull(engine.CurrentBeatMap);
     }
 
+    /// <summary>
+    /// Regression: switching videos while Pulse is enabled must NOT set
+    /// BeatSource.IsAvailable to false. Flashing it to false causes
+    /// BeatBarViewModel.RebuildAvailableModes() to drop the Pulse mode
+    /// and reset the user's BeatBar selection to Off.
+    /// </summary>
+    [Fact]
+    public async Task PulseEngine_VideoSwitch_WhileEnabled_KeepsBeatSourceAvailable()
+    {
+        var bus = CreateEventBus();
+        var preAnalysis = CreatePreAnalysisWithClickTrack();
+        using var engine = CreateEngine(bus, preAnalysis: preAnalysis);
+
+        // Enable Pulse and load first video
+        engine.SetEnabled(true);
+        bus.Publish(MakeVideoLoaded(@"C:\Videos\first.mp4"));
+        await WaitForState(engine, PulseState.Ready);
+        Assert.True(engine.BeatSource.IsAvailable);
+
+        // Switch to a second video — BeatSource must stay available
+        bus.Publish(MakeVideoLoaded(@"C:\Videos\second.mp4"));
+
+        // Immediately after video switch, before analysis completes
+        Assert.True(engine.BeatSource.IsAvailable,
+            "BeatSource.IsAvailable must remain true during video switch so BeatBar mode persists");
+        Assert.Equal(PulseState.Analyzing, engine.State);
+    }
+
     [Fact]
     public void PulseEngine_VideoLoaded_WhileDisabled_DoesNotAnalyze()
     {
