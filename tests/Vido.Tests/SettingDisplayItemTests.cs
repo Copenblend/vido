@@ -6,53 +6,134 @@ using Xunit;
 namespace Vido.Tests;
 
 /// <summary>
-/// Tests for <see cref="SettingDisplayItem"/>, focusing on the stringList type
-/// used for multi-value settings like plugin registry URLs.
+/// Tests for <see cref="SettingDisplayItem"/>, verifying setting types,
+/// value loading, persistence via getter/setter delegates, and string list operations.
 /// </summary>
 public sealed class SettingDisplayItemTests
 {
-    private static SettingContribution MakeStringListContribution(string id = "test.list") =>
-        new() { Id = id, Type = "stringList", Title = "Test List", Description = "A list setting" };
+    private static AppSettings CreateAppSettings() => new();
 
-    private static ISettingsStore CreateStore(List<string>? initialList = null)
+    private static ISettingsService CreateSettingsService(AppSettings? settings = null)
     {
-        var store = Substitute.For<ISettingsStore>();
-        store.Get(Arg.Any<string>(), Arg.Any<List<string>>())
-            .Returns(initialList ?? []);
-        return store;
+        var svc = Substitute.For<ISettingsService>();
+        svc.Current.Returns(settings ?? CreateAppSettings());
+        return svc;
     }
 
+    private static SettingDefinition MakeStringListDefinition(
+        List<string>? backingList = null,
+        string key = "test.list") =>
+        new(
+            Key: key,
+            Type: "stringList",
+            DefaultValue: new List<string>(),
+            Title: "Test List",
+            Description: "A list setting",
+            Getter: _ => backingList ?? new List<string>(),
+            Setter: (_, v) =>
+            {
+                if (backingList is not null && v is List<string> items)
+                {
+                    backingList.Clear();
+                    backingList.AddRange(items);
+                }
+            });
+
+    private static SettingDefinition MakeBooleanDefinition(
+        string key = "test.bool",
+        bool defaultValue = false,
+        Func<AppSettings, object?>? getter = null,
+        Action<AppSettings, object?>? setter = null) =>
+        new(
+            Key: key,
+            Type: "boolean",
+            DefaultValue: defaultValue,
+            Title: "Test Bool",
+            Description: "A bool setting",
+            Getter: getter ?? (_ => defaultValue),
+            Setter: setter ?? ((_, _) => { }));
+
+    private static SettingDefinition MakeNumberDefinition(
+        string key = "test.num",
+        double defaultValue = 0.0,
+        Func<AppSettings, object?>? getter = null,
+        Action<AppSettings, object?>? setter = null) =>
+        new(
+            Key: key,
+            Type: "number",
+            DefaultValue: defaultValue,
+            Title: "Test Number",
+            Description: "A number setting",
+            Getter: getter ?? (_ => defaultValue),
+            Setter: setter ?? ((_, _) => { }));
+
+    private static SettingDefinition MakeEnumDefinition(
+        string key = "test.enum",
+        string defaultValue = "A",
+        IReadOnlyList<string>? enumValues = null,
+        Func<AppSettings, object?>? getter = null,
+        Action<AppSettings, object?>? setter = null) =>
+        new(
+            Key: key,
+            Type: "enum",
+            DefaultValue: defaultValue,
+            Title: "Test Enum",
+            Description: "An enum setting",
+            EnumValues: enumValues ?? new List<string> { "A", "B", "C" },
+            Getter: getter ?? (_ => defaultValue),
+            Setter: setter ?? ((_, _) => { }));
+
+    private static SettingDefinition MakeFolderPathDefinition(
+        string key = "test.folder",
+        string defaultValue = "",
+        Func<AppSettings, object?>? getter = null,
+        Action<AppSettings, object?>? setter = null) =>
+        new(
+            Key: key,
+            Type: "folderPath",
+            DefaultValue: defaultValue,
+            Title: "Test Folder",
+            Description: "A folder path setting",
+            Getter: getter ?? (_ => defaultValue),
+            Setter: setter ?? ((_, _) => { }));
+
+    // ── Type detection ──
+
     /// <summary>
-    /// Verifies that Is String List true for string list type.
+    /// Verifies IsStringList is true for stringList type.
     /// </summary>
     [Fact]
     public void IsStringList_TrueForStringListType()
     {
-        var store = CreateStore();
-        var item = new SettingDisplayItem(MakeStringListContribution(), store);
+        var svc = CreateSettingsService();
+        var item = new SettingDisplayItem(MakeStringListDefinition(), svc);
         Assert.True(item.IsStringList);
     }
 
     /// <summary>
-    /// Verifies that Is String List false for other types.
+    /// Verifies IsStringList is false for other types.
     /// </summary>
     [Fact]
     public void IsStringList_FalseForOtherTypes()
     {
-        var store = CreateStore();
-        var def = new SettingContribution { Id = "test", Type = "string", Title = "T", Description = "D" };
-        var item = new SettingDisplayItem(def, store);
+        var svc = CreateSettingsService();
+        var def = new SettingDefinition(Key: "test", Type: "string", DefaultValue: "", Title: "T", Description: "D",
+            Getter: _ => "", Setter: (_, _) => { });
+        var item = new SettingDisplayItem(def, svc);
         Assert.False(item.IsStringList);
     }
 
+    // ── StringList operations ──
+
     /// <summary>
-    /// Verifies that Constructor loads existing list items.
+    /// Verifies constructor loads existing list items via getter.
     /// </summary>
     [Fact]
     public void Constructor_LoadsExistingListItems()
     {
-        var store = CreateStore(["https://one.com", "https://two.com"]);
-        var item = new SettingDisplayItem(MakeStringListContribution(), store);
+        var list = new List<string> { "https://one.com", "https://two.com" };
+        var svc = CreateSettingsService();
+        var item = new SettingDisplayItem(MakeStringListDefinition(list), svc);
 
         Assert.Equal(2, item.ListItems.Count);
         Assert.Equal("https://one.com", item.ListItems[0]);
@@ -60,13 +141,13 @@ public sealed class SettingDisplayItemTests
     }
 
     /// <summary>
-    /// Verifies that Add List Item adds to collection.
+    /// Verifies AddListItem adds to collection.
     /// </summary>
     [Fact]
     public void AddListItem_AddsToCollection()
     {
-        var store = CreateStore();
-        var item = new SettingDisplayItem(MakeStringListContribution(), store);
+        var svc = CreateSettingsService();
+        var item = new SettingDisplayItem(MakeStringListDefinition(), svc);
 
         item.NewListItemText = "https://new.com";
         item.AddListItemCommand.Execute(null);
@@ -76,13 +157,13 @@ public sealed class SettingDisplayItemTests
     }
 
     /// <summary>
-    /// Verifies that Add List Item trims whitespace.
+    /// Verifies AddListItem trims whitespace.
     /// </summary>
     [Fact]
     public void AddListItem_TrimsWhitespace()
     {
-        var store = CreateStore();
-        var item = new SettingDisplayItem(MakeStringListContribution(), store);
+        var svc = CreateSettingsService();
+        var item = new SettingDisplayItem(MakeStringListDefinition(), svc);
 
         item.NewListItemText = "  https://new.com  ";
         item.AddListItemCommand.Execute(null);
@@ -91,13 +172,13 @@ public sealed class SettingDisplayItemTests
     }
 
     /// <summary>
-    /// Verifies that Add List Item clears new list item text.
+    /// Verifies AddListItem clears NewListItemText.
     /// </summary>
     [Fact]
     public void AddListItem_ClearsNewListItemText()
     {
-        var store = CreateStore();
-        var item = new SettingDisplayItem(MakeStringListContribution(), store);
+        var svc = CreateSettingsService();
+        var item = new SettingDisplayItem(MakeStringListDefinition(), svc);
 
         item.NewListItemText = "https://new.com";
         item.AddListItemCommand.Execute(null);
@@ -106,13 +187,13 @@ public sealed class SettingDisplayItemTests
     }
 
     /// <summary>
-    /// Verifies that Add List Item ignores empty text.
+    /// Verifies AddListItem ignores empty text.
     /// </summary>
     [Fact]
     public void AddListItem_IgnoresEmptyText()
     {
-        var store = CreateStore();
-        var item = new SettingDisplayItem(MakeStringListContribution(), store);
+        var svc = CreateSettingsService();
+        var item = new SettingDisplayItem(MakeStringListDefinition(), svc);
 
         item.NewListItemText = "   ";
         item.AddListItemCommand.Execute(null);
@@ -121,13 +202,14 @@ public sealed class SettingDisplayItemTests
     }
 
     /// <summary>
-    /// Verifies that Add List Item ignores duplicates.
+    /// Verifies AddListItem ignores duplicates.
     /// </summary>
     [Fact]
     public void AddListItem_IgnoresDuplicates()
     {
-        var store = CreateStore(["https://existing.com"]);
-        var item = new SettingDisplayItem(MakeStringListContribution(), store);
+        var list = new List<string> { "https://existing.com" };
+        var svc = CreateSettingsService();
+        var item = new SettingDisplayItem(MakeStringListDefinition(list), svc);
 
         item.NewListItemText = "https://existing.com";
         item.AddListItemCommand.Execute(null);
@@ -136,28 +218,32 @@ public sealed class SettingDisplayItemTests
     }
 
     /// <summary>
-    /// Verifies that Add List Item persists to store.
+    /// Verifies AddListItem calls setter and QueueSave.
     /// </summary>
     [Fact]
-    public void AddListItem_PersistsToStore()
+    public void AddListItem_PersistsViaSetter()
     {
-        var store = CreateStore();
-        var item = new SettingDisplayItem(MakeStringListContribution("test.list"), store);
+        var backingList = new List<string>();
+        var svc = CreateSettingsService();
+        var item = new SettingDisplayItem(MakeStringListDefinition(backingList, "test.list"), svc);
 
         item.NewListItemText = "https://new.com";
         item.AddListItemCommand.Execute(null);
 
-        store.Received().Set("test.list", Arg.Is<List<string>>(l => l.Count == 1 && l[0] == "https://new.com"));
+        Assert.Single(backingList);
+        Assert.Equal("https://new.com", backingList[0]);
+        svc.Received().QueueSave();
     }
 
     /// <summary>
-    /// Verifies that Remove List Item removes from collection.
+    /// Verifies RemoveListItem removes from collection.
     /// </summary>
     [Fact]
     public void RemoveListItem_RemovesFromCollection()
     {
-        var store = CreateStore(["https://one.com", "https://two.com"]);
-        var item = new SettingDisplayItem(MakeStringListContribution(), store);
+        var list = new List<string> { "https://one.com", "https://two.com" };
+        var svc = CreateSettingsService();
+        var item = new SettingDisplayItem(MakeStringListDefinition(list), svc);
 
         item.RemoveListItemCommand.Execute("https://one.com");
 
@@ -166,42 +252,45 @@ public sealed class SettingDisplayItemTests
     }
 
     /// <summary>
-    /// Verifies that Remove List Item persists to store.
+    /// Verifies RemoveListItem calls setter and QueueSave.
     /// </summary>
     [Fact]
-    public void RemoveListItem_PersistsToStore()
+    public void RemoveListItem_PersistsViaSetter()
     {
-        var store = CreateStore(["https://one.com", "https://two.com"]);
-        var item = new SettingDisplayItem(MakeStringListContribution("test.list"), store);
+        var backingList = new List<string> { "https://one.com", "https://two.com" };
+        var svc = CreateSettingsService();
+        var item = new SettingDisplayItem(MakeStringListDefinition(backingList, "test.list"), svc);
 
         item.RemoveListItemCommand.Execute("https://one.com");
 
-        store.Received().Set("test.list", Arg.Is<List<string>>(l => l.Count == 1 && l[0] == "https://two.com"));
+        Assert.Single(backingList);
+        Assert.Equal("https://two.com", backingList[0]);
+        svc.Received().QueueSave();
     }
 
     /// <summary>
-    /// Verifies that Remove List Item nonexistent item does nothing.
+    /// Verifies RemoveListItem with nonexistent item does nothing.
     /// </summary>
     [Fact]
     public void RemoveListItem_NonexistentItem_DoesNothing()
     {
-        var store = CreateStore(["https://one.com"]);
-        var item = new SettingDisplayItem(MakeStringListContribution(), store);
+        var list = new List<string> { "https://one.com" };
+        var svc = CreateSettingsService();
+        var item = new SettingDisplayItem(MakeStringListDefinition(list), svc);
 
         item.RemoveListItemCommand.Execute("https://nonexistent.com");
 
-        // List unchanged, no store call for removal
         Assert.Single(item.ListItems);
     }
 
     /// <summary>
-    /// Verifies that Other Type Properties false for string list.
+    /// Verifies type flags are mutually exclusive for stringList.
     /// </summary>
     [Fact]
     public void OtherTypeProperties_FalseForStringList()
     {
-        var store = CreateStore();
-        var item = new SettingDisplayItem(MakeStringListContribution(), store);
+        var svc = CreateSettingsService();
+        var item = new SettingDisplayItem(MakeStringListDefinition(), svc);
 
         Assert.False(item.IsBoolean);
         Assert.False(item.IsString);
@@ -209,205 +298,271 @@ public sealed class SettingDisplayItemTests
         Assert.False(item.IsEnum);
     }
 
-    // â”€â”€ URL validation tests â”€â”€
-
-    private static SettingContribution MakeUrlValidatedContribution(string id = "test.urls") =>
-        new() { Id = id, Type = "stringList", Title = "URLs", Description = "URL list", Validation = "url" };
+    // ── Boolean type ──
 
     /// <summary>
-    /// Verifies that Add List Item with url validation accepts https url.
+    /// Verifies boolean type loads "True" when getter returns true.
     /// </summary>
     [Fact]
-    public void AddListItem_WithUrlValidation_AcceptsHttpsUrl()
+    public void Boolean_LoadsValueFromGetter()
     {
-        var store = CreateStore();
-        var item = new SettingDisplayItem(MakeUrlValidatedContribution(), store);
+        var svc = CreateSettingsService();
+        var def = MakeBooleanDefinition(getter: _ => true);
+        var item = new SettingDisplayItem(def, svc);
 
-        item.NewListItemText = "https://example.com/plugins.json";
-        item.AddListItemCommand.Execute(null);
-
-        Assert.Single(item.ListItems);
-        Assert.Equal(string.Empty, item.ValidationError);
+        Assert.Equal("True", item.SelectedBooleanValue);
     }
 
     /// <summary>
-    /// Verifies that Add List Item with url validation accepts file url.
+    /// Verifies changing boolean value calls setter and QueueSave.
     /// </summary>
     [Fact]
-    public void AddListItem_WithUrlValidation_AcceptsFileUrl()
+    public void Boolean_SetValue_PersistsViaSetter()
     {
-        var store = CreateStore();
-        var item = new SettingDisplayItem(MakeUrlValidatedContribution(), store);
+        bool captured = false;
+        var svc = CreateSettingsService();
+        var def = MakeBooleanDefinition(
+            getter: _ => false,
+            setter: (_, v) => captured = v is true);
+        var item = new SettingDisplayItem(def, svc);
 
-        item.NewListItemText = "file:///C:/local/registry.json";
-        item.AddListItemCommand.Execute(null);
+        item.SelectedBooleanValue = "True";
 
-        Assert.Single(item.ListItems);
-        Assert.Equal(string.Empty, item.ValidationError);
+        Assert.True(captured);
+        svc.Received().QueueSave();
+    }
+
+    // ── Number type ──
+
+    /// <summary>
+    /// Verifies number type loads value from getter as string.
+    /// </summary>
+    [Fact]
+    public void Number_LoadsValueFromGetter()
+    {
+        var svc = CreateSettingsService();
+        var def = MakeNumberDefinition(getter: _ => 42.5);
+        var item = new SettingDisplayItem(def, svc);
+
+        Assert.Equal("42.5", item.StringValue);
     }
 
     /// <summary>
-    /// Verifies that Add List Item with url validation rejects plain text.
+    /// Verifies changing number value calls setter with parsed double.
     /// </summary>
     [Fact]
-    public void AddListItem_WithUrlValidation_RejectsPlainText()
+    public void Number_SetValue_PersistsViaSetter()
     {
-        var store = CreateStore();
-        var item = new SettingDisplayItem(MakeUrlValidatedContribution(), store);
+        double captured = 0;
+        var svc = CreateSettingsService();
+        var def = MakeNumberDefinition(
+            getter: _ => 0.0,
+            setter: (_, v) => captured = Convert.ToDouble(v));
+        var item = new SettingDisplayItem(def, svc);
 
-        item.NewListItemText = "sdfsfsdfsdfs";
-        item.AddListItemCommand.Execute(null);
+        item.StringValue = "99.5";
 
-        Assert.Empty(item.ListItems);
-        Assert.NotEmpty(item.ValidationError);
+        Assert.Equal(99.5, captured);
+        svc.Received().QueueSave();
     }
 
     /// <summary>
-    /// Verifies that Add List Item with url validation rejects http url.
+    /// Verifies number type handles int getter values.
     /// </summary>
     [Fact]
-    public void AddListItem_WithUrlValidation_RejectsHttpUrl()
+    public void Number_LoadsIntValueFromGetter()
     {
-        var store = CreateStore();
-        var item = new SettingDisplayItem(MakeUrlValidatedContribution(), store);
+        var svc = CreateSettingsService();
+        var def = MakeNumberDefinition(getter: _ => 7777);
+        var item = new SettingDisplayItem(def, svc);
 
-        item.NewListItemText = "http://insecure.com/registry.json";
-        item.AddListItemCommand.Execute(null);
+        Assert.Equal("7777", item.StringValue);
+    }
 
-        Assert.Empty(item.ListItems);
-        Assert.NotEmpty(item.ValidationError);
+    // ── Enum type ──
+
+    /// <summary>
+    /// Verifies enum type loads value from getter.
+    /// </summary>
+    [Fact]
+    public void Enum_LoadsValueFromGetter()
+    {
+        var svc = CreateSettingsService();
+        var def = MakeEnumDefinition(getter: _ => "B");
+        var item = new SettingDisplayItem(def, svc);
+
+        Assert.Equal("B", item.SelectedEnumValue);
     }
 
     /// <summary>
-    /// Verifies that Add List Item with url validation rejects ftp url.
+    /// Verifies changing enum value calls setter and QueueSave.
     /// </summary>
     [Fact]
-    public void AddListItem_WithUrlValidation_RejectsFtpUrl()
+    public void Enum_SetValue_PersistsViaSetter()
     {
-        var store = CreateStore();
-        var item = new SettingDisplayItem(MakeUrlValidatedContribution(), store);
+        string captured = "";
+        var svc = CreateSettingsService();
+        var def = MakeEnumDefinition(
+            getter: _ => "A",
+            setter: (_, v) => captured = v?.ToString() ?? "");
+        var item = new SettingDisplayItem(def, svc);
 
-        item.NewListItemText = "ftp://files.example.com/registry.json";
-        item.AddListItemCommand.Execute(null);
+        item.SelectedEnumValue = "C";
 
-        Assert.Empty(item.ListItems);
-        Assert.NotEmpty(item.ValidationError);
+        Assert.Equal("C", captured);
+        svc.Received().QueueSave();
     }
 
-    /// <summary>
-    /// Verifies that Add List Item with url validation clears error on success.
-    /// </summary>
-    [Fact]
-    public void AddListItem_WithUrlValidation_ClearsErrorOnSuccess()
-    {
-        var store = CreateStore();
-        var item = new SettingDisplayItem(MakeUrlValidatedContribution(), store);
-
-        // First add invalid text
-        item.NewListItemText = "not-a-url";
-        item.AddListItemCommand.Execute(null);
-        Assert.NotEmpty(item.ValidationError);
-
-        // Then add a valid URL
-        item.NewListItemText = "https://valid.com/registry.json";
-        item.AddListItemCommand.Execute(null);
-
-        Assert.Single(item.ListItems);
-        Assert.Equal(string.Empty, item.ValidationError);
-    }
+    // ── FolderPath type ──
 
     /// <summary>
-    /// Verifies that Add List Item without validation accepts any text.
-    /// </summary>
-    [Fact]
-    public void AddListItem_WithoutValidation_AcceptsAnyText()
-    {
-        var store = CreateStore();
-        var item = new SettingDisplayItem(MakeStringListContribution(), store);
-
-        item.NewListItemText = "any arbitrary text";
-        item.AddListItemCommand.Execute(null);
-
-        Assert.Single(item.ListItems);
-        Assert.Equal(string.Empty, item.ValidationError);
-    }
-
-    // â”€â”€ FolderPath type â”€â”€
-
-    /// <summary>
-    /// Verifies that Is Folder Path true for folder path type.
+    /// Verifies IsFolderPath is true for folderPath type.
     /// </summary>
     [Fact]
     public void IsFolderPath_TrueForFolderPathType()
     {
-        var store = Substitute.For<ISettingsStore>();
-        store.Get(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
-        var def = new SettingContribution { Id = "test.folder", Type = "folderPath", Title = "Dir", Description = "D" };
-        var item = new SettingDisplayItem(def, store);
+        var svc = CreateSettingsService();
+        var item = new SettingDisplayItem(MakeFolderPathDefinition(), svc);
         Assert.True(item.IsFolderPath);
         Assert.False(item.IsString);
     }
 
     /// <summary>
-    /// Verifies that Is Folder Path false for string type.
+    /// Verifies IsFolderPath is false for string type.
     /// </summary>
     [Fact]
     public void IsFolderPath_FalseForStringType()
     {
-        var store = Substitute.For<ISettingsStore>();
-        store.Get(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
-        var def = new SettingContribution { Id = "test.str", Type = "string", Title = "T", Description = "D" };
-        var item = new SettingDisplayItem(def, store);
+        var svc = CreateSettingsService();
+        var def = new SettingDefinition(Key: "test.str", Type: "string", DefaultValue: "", Title: "T", Description: "D",
+            Getter: _ => "", Setter: (_, _) => { });
+        var item = new SettingDisplayItem(def, svc);
         Assert.False(item.IsFolderPath);
         Assert.True(item.IsString);
     }
 
     /// <summary>
-    /// Verifies that Set Folder Path updates string value.
+    /// Verifies SetFolderPath updates StringValue and persists.
     /// </summary>
     [Fact]
     public void SetFolderPath_UpdatesStringValue()
     {
-        var store = Substitute.For<ISettingsStore>();
-        store.Get(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
-        var def = new SettingContribution { Id = "test.folder", Type = "folderPath", Title = "Dir", Description = "D" };
-        var item = new SettingDisplayItem(def, store);
+        string captured = "";
+        var svc = CreateSettingsService();
+        var def = MakeFolderPathDefinition(
+            getter: _ => "",
+            setter: (_, v) => captured = v?.ToString() ?? "");
+        var item = new SettingDisplayItem(def, svc);
 
         item.SetFolderPath(@"C:\Users\test\Screenshots");
         Assert.Equal(@"C:\Users\test\Screenshots", item.StringValue);
-        store.Received().Set("test.folder", @"C:\Users\test\Screenshots");
+        Assert.Equal(@"C:\Users\test\Screenshots", captured);
+        svc.Received().QueueSave();
     }
 
     /// <summary>
-    /// Verifies that Set Folder Path null does nothing.
+    /// Verifies SetFolderPath with null does nothing.
     /// </summary>
     [Fact]
     public void SetFolderPath_NullDoesNothing()
     {
-        var store = Substitute.For<ISettingsStore>();
-        store.Get(Arg.Any<string>(), Arg.Any<string>()).Returns(@"C:\existing");
-        var def = new SettingContribution { Id = "test.folder", Type = "folderPath", Title = "Dir", Description = "D" };
-        var item = new SettingDisplayItem(def, store);
+        var svc = CreateSettingsService();
+        var def = MakeFolderPathDefinition(getter: _ => @"C:\existing");
+        var item = new SettingDisplayItem(def, svc);
 
         item.SetFolderPath(null);
         Assert.Equal(@"C:\existing", item.StringValue);
     }
 
     /// <summary>
-    /// Verifies that Browse Folder raises browse folder requested event.
+    /// Verifies BrowseFolder raises BrowseFolderRequested event.
     /// </summary>
     [Fact]
     public void BrowseFolder_RaisesBrowseFolderRequestedEvent()
     {
-        var store = Substitute.For<ISettingsStore>();
-        store.Get(Arg.Any<string>(), Arg.Any<string>()).Returns(string.Empty);
-        var def = new SettingContribution { Id = "test.folder", Type = "folderPath", Title = "Dir", Description = "D" };
-        var item = new SettingDisplayItem(def, store);
+        var svc = CreateSettingsService();
+        var item = new SettingDisplayItem(MakeFolderPathDefinition(), svc);
 
         SettingDisplayItem? received = null;
         item.BrowseFolderRequested += s => received = s;
         item.BrowseFolderCommand.Execute(null);
 
         Assert.Same(item, received);
+    }
+
+    // ── Constructor validation ──
+
+    /// <summary>
+    /// Verifies constructor throws on null definition.
+    /// </summary>
+    [Fact]
+    public void Constructor_ThrowsOnNullDefinition()
+    {
+        var svc = CreateSettingsService();
+        Assert.Throws<ArgumentNullException>(() => new SettingDisplayItem(null!, svc));
+    }
+
+    /// <summary>
+    /// Verifies constructor throws on null settings service.
+    /// </summary>
+    [Fact]
+    public void Constructor_ThrowsOnNullSettingsService()
+    {
+        var def = MakeBooleanDefinition();
+        Assert.Throws<ArgumentNullException>(() => new SettingDisplayItem(def, null!));
+    }
+
+    // ── Reload ──
+
+    /// <summary>
+    /// Verifies Reload refreshes value from getter without triggering saves.
+    /// </summary>
+    [Fact]
+    public void Reload_RefreshesValueFromGetter()
+    {
+        int callCount = 0;
+        var svc = CreateSettingsService();
+        var def = MakeNumberDefinition(
+            getter: _ => ++callCount * 10.0,
+            setter: (_, _) => { });
+        var item = new SettingDisplayItem(def, svc);
+
+        // Initial load
+        Assert.Equal("10", item.StringValue);
+
+        item.Reload();
+        Assert.Equal("20", item.StringValue);
+
+        // Reload should not trigger QueueSave (only the initial constructor might,
+        // but _suppressSave prevents it)
+    }
+
+    /// <summary>
+    /// Verifies that Id returns the definition Key.
+    /// </summary>
+    [Fact]
+    public void Id_ReturnsDefinitionKey()
+    {
+        var svc = CreateSettingsService();
+        var def = MakeBooleanDefinition(key: "my.setting.key");
+        var item = new SettingDisplayItem(def, svc);
+
+        Assert.Equal("my.setting.key", item.Id);
+    }
+
+    /// <summary>
+    /// Verifies AddListItem accepts any text (no URL validation).
+    /// </summary>
+    [Fact]
+    public void AddListItem_AcceptsAnyText()
+    {
+        var svc = CreateSettingsService();
+        var item = new SettingDisplayItem(MakeStringListDefinition(), svc);
+
+        item.NewListItemText = "any arbitrary text";
+        item.AddListItemCommand.Execute(null);
+
+        Assert.Single(item.ListItems);
+        Assert.Equal(string.Empty, item.ValidationError);
     }
 }

@@ -4,6 +4,18 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [0.14.0] - 2026-02-28
 
+### Plugin Integration (PI-023)
+- Refactored `SettingDisplayItem` to use `SettingDefinition` with getter/setter delegates instead of `SettingContribution` + `ISettingsStore`.
+- Refactored `SettingsViewModel` to build feature categories directly using `SettingDefinition` with compile-time-safe `AppSettings` property accessors.
+- Removed `SettingContribution` class (`src/Vido.Core/Settings/SettingContribution.cs`) — fully replaced by `SettingDefinition`.
+- Removed `ISettingsStore` dependency from `SettingDisplayItem` and `SettingsViewModel`; now use `ISettingsService` directly.
+- Removed `IsPlugin` property from `SettingsCategoryViewModel` and plugin icon from `SettingsPage.xaml`.
+- Removed `RefreshRegistryUrls()` from `SettingsPage.xaml.cs` and `SettingsViewModel` (no longer needed without plugin registry URLs).
+- Removed `AppSettingsStore` parameter from `SettingsPage` constructor; simplified to `(ISettingsService)`.
+- Added new settings categories: OSR2+ (6 settings), Pulse (3 settings), Playlists (1 setting).
+- Screenshot directory visibility now uses `PropertyChanged` observation instead of `ISettingsStore.SettingChanged` event.
+- Updated all tests to use `SettingDefinition` + `ISettingsService` pattern; test count increased from 1606 to 1614.
+
 ### Plugin Integration (PI-020)
 - Removed the entire plugin system infrastructure from the Vido host application.
 - Deleted `src/Vido.Core/Plugin/` directory (31 files: IPluginHost, IContributionRegistry, IPluginInstaller, PluginManifest, PluginInfo, etc.).

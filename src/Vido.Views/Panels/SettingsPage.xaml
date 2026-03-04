@@ -146,20 +146,8 @@
                                         <Border Height="1"
                                                 Background="{DynamicResource PanelSeparatorBrush}"
                                                 Margin="0,0,0,10" />
-                                        <StackPanel Orientation="Horizontal">
-                                            <!-- Plugin icon for plugin categories -->
-                                            <Path Data="M 14.5,2 L 12,4.5 L 9.5,2 L 5,2 L 5,13 L 9.5,13 L 12,15.5 L 14.5,13 L 19,13 L 19,2 Z"
-                                                  Stroke="{DynamicResource SecondaryForegroundBrush}"
-                                                  StrokeThickness="1"
-                                                  Fill="Transparent"
-                                                  Stretch="Uniform"
-                                                  Width="14" Height="14"
-                                                  Margin="0,0,6,0"
-                                                  VerticalAlignment="Center"
-                                                  Visibility="{Binding IsPlugin, Converter={StaticResource BoolToVis}}" />
-                                            <TextBlock Text="{Binding Name}"
-                                                       Style="{StaticResource CategoryHeaderStyle}" />
-                                        </StackPanel>
+                                        <TextBlock Text="{Binding Name}"
+                                                   Style="{StaticResource CategoryHeaderStyle}" />
                                     </StackPanel>
                                 </Border>
 

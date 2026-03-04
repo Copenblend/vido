@@ -21,23 +21,15 @@ public partial class SettingsPage : UserControl
     /// application settings.
     /// </summary>
     /// <param name="settingsService">Service providing access to persisted application settings.</param>
-    /// <param name="appSettingsStore">Shared settings store for two-way change notification, or null to create a new one.</param>
-    public SettingsPage(ISettingsService settingsService, AppSettingsStore? appSettingsStore = null)
+    public SettingsPage(ISettingsService settingsService)
     {
         InitializeComponent();
 
-        appSettingsStore ??= new AppSettingsStore(settingsService);
-        _viewModel = new SettingsViewModel(settingsService, appSettingsStore);
+        _viewModel = new SettingsViewModel(settingsService);
 
         CategoriesControl.ItemsSource = _viewModel.FilteredCategories;
         UpdateNoResultsVisibility();
     }
-
-    /// <summary>
-    /// Reloads plugin registry URLs from the settings store so the list
-    /// reflects changes made externally (e.g. via "Enter Repository Code").
-    /// </summary>
-    public void RefreshRegistryUrls() => _viewModel.RefreshRegistryUrls();
 
     private void OnSearchTextChanged(object sender, TextChangedEventArgs e)
     {
