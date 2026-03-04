@@ -27,11 +27,14 @@ using Vido.Core.Models.Osr2Plus;
 using Vido.Core.Playback;
 using Vido.Core.Updates;
 using Vido.Services.Osr2Plus;
+using Vido.Services.Playlists;
 using Vido.Services.Pulse;
 using Vido.ViewModels.Osr2Plus;
+using Vido.ViewModels.Playlists;
 using Vido.ViewModels.Pulse;
 using Vido.Views.Controls;
 using Vido.Views.Osr2Plus;
+using Vido.Views.Playlists;
 using Vido.Views.Pulse;
 
 namespace Vido.Views;
@@ -98,6 +101,12 @@ public partial class MainWindow : Window
     private UIElement? _pulseSidebarContent;
     private UIElement? _pulseBeatRateControl;
     private readonly List<IDisposable> _pulseSubscriptions = [];
+
+    // ── Playlists integrated feature ──────────────────────────
+    private PlaylistViewModel? _playlistVm;
+    private PlaylistProvider? _playlistProvider;
+    private UIElement? _playlistSidebarContent;
+    private ToastService? _toastService;
     private IVideoEngine? _videoEngine;
 
     // Remembered panel dimensions for toggle persistence
@@ -213,6 +222,7 @@ public partial class MainWindow : Window
         SetupPluginContributions();
         SetupOsr2Plus();
         SetupPulse();
+        SetupPlaylists();
         RestoreWindowState();
         RestoreLayoutState();
 
@@ -1468,7 +1478,10 @@ public partial class MainWindow : Window
                 case SidebarPanelKind.Pulse:
                     Sidebar.SetPanelContent(_pulseSidebarContent);
                     break;
-                // TODO PI-024: Add case for Playlists
+                case SidebarPanelKind.Playlists:
+                    Sidebar.SetPanelContent(_playlistSidebarContent);
+                    break;
+                // TODO PI-024: Add case for Settings
                 default:
                     Sidebar.SetPanelContent(null);
                     break;
@@ -2019,6 +2032,78 @@ public partial class MainWindow : Window
             _pulseSidebarVm.UsePulse = true;
 
         _logService.Info("Pulse feature initialized", "Pulse");
+    }
+
+    // ── Playlists Integrated Feature ──
+
+    /// <summary>
+    /// Creates and wires all Playlist services, view models, views,
+    /// and UI contribution points. This replaces the plugin-based <c>PlaylistPlugin.Activate()</c>
+    /// logic with direct integration into the main window.
+    /// </summary>
+    private void SetupPlaylists()
+    {
+        // ── Create Services ──────────────────────────────────
+        var fileService = new PlaylistFileService();
+        var dialogService = new Playlists.DialogService();
+        _toastService = new ToastService();
+        _playlistProvider = new PlaylistProvider();
+
+        // ── Create ViewModel ─────────────────────────────────
+        _playlistVm = new PlaylistViewModel(
+            fileService,
+            _videoEngine!,
+            _eventBus,
+            dialogService,
+            _settingsService,
+            _toastService,
+            _playlistProvider);
+
+        // ── Wire Status Bar Updates ──────────────────────────
+        _playlistVm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(PlaylistViewModel.StatusText))
+            {
+                var statusItem = _statusBarViewModel.FindItem("playlists.status");
+                if (statusItem is not null)
+                    statusItem.Text = _playlistVm.StatusText;
+            }
+        };
+
+        // ── Register UI Contributions ─────────────────────────
+        // Sidebar content
+        _playlistSidebarContent = new PlaylistSidebarView { DataContext = _playlistVm };
+
+        // Status bar item
+        var statusItem = _statusBarViewModel.RegisterItem("playlists.status", StatusBarAlignment.Left, 100);
+        statusItem.Text = _playlistVm.StatusText;
+        statusItem.Tooltip = "Playlist Status";
+        statusItem.IsVisible = true;
+        TitleBar.AddStatusBarMenuItem("playlists.status", "Playlist Status");
+
+        // ── Register Context Menu ─────────────────────────────
+        _contextMenuRegistry.Register(new ContextMenuEntry
+        {
+            Id = "playlists.add-to-playlist",
+            Label = "Add to Playlist",
+            Target = ContextMenuTarget.File,
+            Group = "playlist",
+            Order = 100,
+            Handler = node =>
+            {
+                if (node is not null)
+                    _playlistVm.AddFromFileNode(node.FullPath, node.IsDirectory);
+            },
+            IsEnabled = node => node is not null && node.IsVideoFile
+        });
+
+        // ── Register Playlist Provider ────────────────────────
+        _contributionRegistry.RegisterPlaylistProvider("playlists", _playlistProvider);
+
+        // ── Register accepted file extensions ─────────────────
+        _fileExplorerViewModel.AdditionalAcceptedExtensions.Add(".vidpl");
+
+        _logService.Info("Playlists feature initialized", "Playlists");
     }
 
     /// <summary>
