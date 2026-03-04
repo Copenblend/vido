@@ -2,12 +2,11 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
-             xmlns:models="clr-namespace:Vido.Core.Models.Osr2Plus;assembly=Vido.Core"
-             xmlns:converters="clr-namespace:Vido.Views.Converters">
+             xmlns:models="clr-namespace:Vido.Core.Models.Osr2Plus;assembly=Vido.Core">
 
     <UserControl.Resources>
         <ResourceDictionary>
-            <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
             <!-- ConnectionMode enum values for ComboBox -->
             <ObjectDataProvider x:Key="ConnectionModes"
