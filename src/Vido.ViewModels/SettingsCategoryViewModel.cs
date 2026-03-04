@@ -7,7 +7,7 @@ namespace Vido.ViewModels;
 public sealed class SettingsCategoryViewModel
 {
     /// <summary>
-    /// Category display name (e.g. "Playback", "File Explorer", plugin name).
+    /// Category display name (e.g. "Playback", "File Explorer", "OSR2+").
     /// </summary>
     public string Name { get; }
 
@@ -17,20 +17,13 @@ public sealed class SettingsCategoryViewModel
     public IReadOnlyList<SettingDisplayItem> Settings { get; }
 
     /// <summary>
-    /// Whether this category represents plugin-contributed settings.
-    /// </summary>
-    public bool IsPlugin { get; }
-    
-    /// <summary>
-    /// Creates a settings category with the given name, settings, and plugin flag.
+    /// Creates a settings category with the given name and settings.
     /// </summary>
     /// <param name="name">Display name for the category heading.</param>
     /// <param name="settings">Settings items belonging to this category.</param>
-    /// <param name="isPlugin">Whether this category represents plugin-contributed settings.</param>
-    public SettingsCategoryViewModel(string name, IReadOnlyList<SettingDisplayItem> settings, bool isPlugin = false)
+    public SettingsCategoryViewModel(string name, IReadOnlyList<SettingDisplayItem> settings)
     {
         Name = name;
         Settings = settings;
-        IsPlugin = isPlugin;
     }
 }

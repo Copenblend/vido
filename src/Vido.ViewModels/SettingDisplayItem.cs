@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Vido.Core.Settings;
@@ -7,20 +6,20 @@ using Vido.Core.Settings;
 namespace Vido.ViewModels;
 
 /// <summary>
-/// Represents a single setting for display in the Plugin Detail Settings tab.
+/// Represents a single setting for display in the Settings panel.
 /// Binds to the appropriate control based on <see cref="SettingType"/> and
-/// persists changes immediately to the <see cref="ISettingsStore"/>.
+/// persists changes immediately via the <see cref="SettingDefinition"/> getter/setter delegates.
 /// </summary>
 public partial class SettingDisplayItem : ObservableObject
 {
-    private readonly ISettingsStore _store;
-    private readonly SettingContribution _definition;
+    private readonly ISettingsService _settingsService;
+    private readonly SettingDefinition _definition;
     private bool _suppressSave;
 
     /// <summary>
     /// Setting unique identifier.
     /// </summary>
-    public string Id => _definition.Id;
+    public string Id => _definition.Key;
 
     /// <summary>
     /// Display title.
@@ -45,7 +44,7 @@ public partial class SettingDisplayItem : ObservableObject
     /// <summary>
     /// Enum values (only for enum type).
     /// </summary>
-    public IReadOnlyList<string> EnumValues => _definition.EnumValues;
+    public IReadOnlyList<string> EnumValues => _definition.EnumValues ?? [];
 
     /// <summary>
     /// Whether this is a boolean setting.
@@ -108,11 +107,15 @@ public partial class SettingDisplayItem : ObservableObject
         if (IsNumber)
         {
             if (double.TryParse(value, out var num))
-                _store.Set(Id, num);
+            {
+                _definition.Setter?.Invoke(_settingsService.Current, num);
+                _settingsService.QueueSave();
+            }
         }
         else if (IsString || IsFolderPath)
         {
-            _store.Set(Id, value);
+            _definition.Setter?.Invoke(_settingsService.Current, value);
+            _settingsService.QueueSave();
         }
     }
 
@@ -125,7 +128,8 @@ public partial class SettingDisplayItem : ObservableObject
     partial void OnSelectedBooleanValueChanged(string value)
     {
         if (_suppressSave) return;
-        _store.Set(Id, value.Equals("True", StringComparison.OrdinalIgnoreCase));
+        _definition.Setter?.Invoke(_settingsService.Current, value.Equals("True", StringComparison.OrdinalIgnoreCase));
+        _settingsService.QueueSave();
     }
 
     /// <summary>
@@ -138,7 +142,10 @@ public partial class SettingDisplayItem : ObservableObject
     {
         if (_suppressSave) return;
         if (!string.IsNullOrEmpty(value))
-            _store.Set(Id, value);
+        {
+            _definition.Setter?.Invoke(_settingsService.Current, value);
+            _settingsService.QueueSave();
+        }
     }
 
     /// <summary>
@@ -168,18 +175,6 @@ public partial class SettingDisplayItem : ObservableObject
         if (string.IsNullOrWhiteSpace(text)) return;
         if (ListItems.Contains(text)) return; // no duplicates
 
-        // Validate if a validation rule is specified
-        if (!string.IsNullOrEmpty(_definition.Validation) &&
-            _definition.Validation.Equals("url", StringComparison.OrdinalIgnoreCase))
-        {
-            if (!Uri.TryCreate(text, UriKind.Absolute, out var uri) ||
-                (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeFile))
-            {
-                ValidationError = "Enter a valid URL (https:// or file://)";
-                return;
-            }
-        }
-
         ValidationError = string.Empty;
         ListItems.Add(text);
         NewListItemText = string.Empty;
@@ -202,7 +197,8 @@ public partial class SettingDisplayItem : ObservableObject
     /// </summary>
     private void SaveListToStore()
     {
-        _store.Set(Id, ListItems.ToList());
+        _definition.Setter?.Invoke(_settingsService.Current, ListItems.ToList());
+        _settingsService.QueueSave();
     }
 
     /// <summary>
@@ -225,17 +221,17 @@ public partial class SettingDisplayItem : ObservableObject
     }
     
     /// <summary>
-    /// Creates a setting display item backed by the given definition and store,
+    /// Creates a setting display item backed by the given definition and settings service,
     /// loading the current persisted value (or the default) for UI binding.
     /// </summary>
-    /// <param name="definition">Setting definition describing type, title, default, and validation rules.</param>
-    /// <param name="store">Backing store for reading and persisting the setting value.</param>
+    /// <param name="definition">Setting definition describing type, title, default, and getter/setter delegates.</param>
+    /// <param name="settingsService">Settings service for reading current values and persisting changes.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="definition"/> is null.</exception>
-    /// <exception cref="ArgumentNullException">Thrown if <paramref name="store"/> is null.</exception>
-    public SettingDisplayItem(SettingContribution definition, ISettingsStore store)
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="settingsService"/> is null.</exception>
+    public SettingDisplayItem(SettingDefinition definition, ISettingsService settingsService)
     {
         _definition = definition ?? throw new ArgumentNullException(nameof(definition));
-        _store = store ?? throw new ArgumentNullException(nameof(store));
+        _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
 
         _suppressSave = true;
         LoadCurrentValue();
@@ -253,67 +249,46 @@ public partial class SettingDisplayItem : ObservableObject
     }
 
     /// <summary>
-    /// Loads the current value from the store (or falls back to default).
+    /// Loads the current value from the settings service via the getter delegate (or falls back to default).
     /// </summary>
     private void LoadCurrentValue()
     {
+        var rawValue = _definition.Getter?.Invoke(_settingsService.Current) ?? _definition.DefaultValue;
+
         if (IsBoolean)
         {
-            var defaultVal = ConvertDefault(_definition.Default) is true;
-            var val = _store.Get(Id, defaultVal);
+            var val = rawValue is true;
             SelectedBooleanValue = val ? "True" : "False";
         }
         else if (IsString || IsFolderPath)
         {
-            var defaultVal = ConvertDefault(_definition.Default)?.ToString() ?? string.Empty;
-            StringValue = _store.Get(Id, defaultVal);
+            StringValue = rawValue?.ToString() ?? string.Empty;
         }
         else if (IsNumber)
         {
-            var defaultNum = ConvertDefault(_definition.Default) is double d ? d : 0.0;
-            try
+            StringValue = rawValue switch
             {
-                var val = _store.Get(Id, defaultNum);
-                StringValue = val.ToString();
-            }
-            catch
-            {
-                StringValue = defaultNum.ToString();
-            }
+                double d => d.ToString(),
+                int i => i.ToString(),
+                float f => f.ToString(),
+                _ => (_definition.DefaultValue ?? 0).ToString()!
+            };
         }
         else if (IsEnum)
         {
-            var defaultVal = ConvertDefault(_definition.Default)?.ToString()
-                ?? _definition.EnumValues.FirstOrDefault() ?? string.Empty;
-            var val = _store.Get(Id, defaultVal);
+            var val = rawValue?.ToString()
+                ?? _definition.EnumValues?.FirstOrDefault() ?? string.Empty;
             SelectedEnumValue = val;
         }
         else if (IsStringList)
         {
-            var defaultList = new List<string>();
-            var val = _store.Get(Id, defaultList);
             ListItems.Clear();
-            foreach (var item in val)
-                ListItems.Add(item);
+            if (rawValue is IEnumerable<string> items)
+            {
+                foreach (var item in items)
+                    ListItems.Add(item);
+            }
         }
     }
 
-    /// <summary>
-    /// Converts a default value from the manifest (which may be a JsonElement) to the appropriate type.
-    /// </summary>
-    private static object? ConvertDefault(object? value)
-    {
-        if (value is JsonElement je)
-        {
-            return je.ValueKind switch
-            {
-                JsonValueKind.True => true,
-                JsonValueKind.False => false,
-                JsonValueKind.Number => je.GetDouble(),
-                JsonValueKind.String => je.GetString(),
-                _ => null
-            };
-        }
-        return value;
-    }
 }

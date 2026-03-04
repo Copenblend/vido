@@ -6,46 +6,47 @@ using Xunit;
 namespace Vido.Tests;
 
 /// <summary>
-/// Tests for <see cref="SettingsViewModel"/> â€” settings categories,
-/// search filtering, and plugin settings integration.
+/// Tests for <see cref="SettingsViewModel"/> — settings categories,
+/// search filtering, and feature settings integration.
 /// </summary>
 public sealed class SettingsViewModelTests
 {
     private readonly ISettingsService _settingsService;
-    private readonly AppSettingsStore _appSettingsStore;
 
     /// <summary>
-    /// Sets up test dependencies and creates the system under test.
+    /// Sets up test dependencies.
     /// </summary>
     public SettingsViewModelTests()
     {
         var settings = new AppSettings();
         _settingsService = Substitute.For<ISettingsService>();
         _settingsService.Current.Returns(settings);
-        _appSettingsStore = new AppSettingsStore(_settingsService);
     }
 
     private SettingsViewModel CreateViewModel() =>
-        new(_settingsService, _appSettingsStore);
+        new(_settingsService);
 
-    // â”€â”€ Category construction â”€â”€
+    // — Category construction —
 
     /// <summary>
-    /// Verifies that Constructor creates app settings categories.
+    /// Verifies that Constructor creates all expected categories.
     /// </summary>
     [Fact]
-    public void Constructor_CreatesAppSettingsCategories()
+    public void Constructor_CreatesAllExpectedCategories()
     {
         var vm = CreateViewModel();
 
-        Assert.True(vm.AllCategories.Count >= 3, "Should have at least 3 app categories");
+        Assert.Equal(6, vm.AllCategories.Count);
         Assert.Contains(vm.AllCategories, c => c.Name == "Playback");
         Assert.Contains(vm.AllCategories, c => c.Name == "File Explorer");
-        Assert.Contains(vm.AllCategories, c => c.Name == "Plugins");
+        Assert.Contains(vm.AllCategories, c => c.Name == "Screenshot");
+        Assert.Contains(vm.AllCategories, c => c.Name == "OSR2+");
+        Assert.Contains(vm.AllCategories, c => c.Name == "Pulse");
+        Assert.Contains(vm.AllCategories, c => c.Name == "Playlists");
     }
 
     /// <summary>
-    /// Verifies that Constructor playback category has expected settings.
+    /// Verifies that Playback category has expected settings.
     /// </summary>
     [Fact]
     public void Constructor_PlaybackCategory_HasExpectedSettings()
@@ -60,7 +61,7 @@ public sealed class SettingsViewModelTests
     }
 
     /// <summary>
-    /// Verifies that Constructor file explorer category has expected settings.
+    /// Verifies that File Explorer category has expected settings.
     /// </summary>
     [Fact]
     public void Constructor_FileExplorerCategory_HasExpectedSettings()
@@ -73,32 +74,69 @@ public sealed class SettingsViewModelTests
     }
 
     /// <summary>
-    /// Verifies that Constructor plugins category has expected settings.
+    /// Verifies that Screenshot category has expected settings.
     /// </summary>
     [Fact]
-    public void Constructor_PluginsCategory_HasExpectedSettings()
+    public void Constructor_ScreenshotCategory_HasExpectedSettings()
     {
         var vm = CreateViewModel();
-        var plugins = vm.AllCategories.First(c => c.Name == "Plugins");
+        var category = vm.AllCategories.First(c => c.Name == "Screenshot");
 
-        Assert.Single(plugins.Settings);
-        Assert.Equal("plugins.registryUrls", plugins.Settings[0].Id);
+        Assert.Equal(2, category.Settings.Count);
+        Assert.Contains(category.Settings, s => s.Id == "screenshot.enabled");
+        Assert.Contains(category.Settings, s => s.Id == "screenshot.directory");
     }
 
     /// <summary>
-    /// Verifies that Constructor app categories are not marked as plugin.
+    /// Verifies that OSR2+ category has expected settings.
     /// </summary>
     [Fact]
-    public void Constructor_AppCategories_AreNotMarkedAsPlugin()
+    public void Constructor_Osr2PlusCategory_HasExpectedSettings()
     {
         var vm = CreateViewModel();
-        Assert.All(vm.AllCategories, c => Assert.False(c.IsPlugin));
+        var category = vm.AllCategories.First(c => c.Name == "OSR2+");
+
+        Assert.Equal(6, category.Settings.Count);
+        Assert.Contains(category.Settings, s => s.Id == "osr2.connectionMode");
+        Assert.Contains(category.Settings, s => s.Id == "osr2.udpPort");
+        Assert.Contains(category.Settings, s => s.Id == "osr2.baudRate");
+        Assert.Contains(category.Settings, s => s.Id == "osr2.outputRate");
+        Assert.Contains(category.Settings, s => s.Id == "osr2.globalOffset");
+        Assert.Contains(category.Settings, s => s.Id == "osr2.visualizerWindowDuration");
     }
 
-    // â”€â”€ Filtering â”€â”€
+    /// <summary>
+    /// Verifies that Pulse category has expected settings.
+    /// </summary>
+    [Fact]
+    public void Constructor_PulseCategory_HasExpectedSettings()
+    {
+        var vm = CreateViewModel();
+        var category = vm.AllCategories.First(c => c.Name == "Pulse");
+
+        Assert.Equal(3, category.Settings.Count);
+        Assert.Contains(category.Settings, s => s.Id == "pulse.beatSensitivity");
+        Assert.Contains(category.Settings, s => s.Id == "pulse.enableBpmPhaseLock");
+        Assert.Contains(category.Settings, s => s.Id == "pulse.waveformWindowDuration");
+    }
 
     /// <summary>
-    /// Verifies that Filtered Categories shows all when search empty.
+    /// Verifies that Playlists category has expected settings.
+    /// </summary>
+    [Fact]
+    public void Constructor_PlaylistsCategory_HasExpectedSettings()
+    {
+        var vm = CreateViewModel();
+        var category = vm.AllCategories.First(c => c.Name == "Playlists");
+
+        Assert.Single(category.Settings);
+        Assert.Equal("playlist.autoSave", category.Settings[0].Id);
+    }
+
+    // — Filtering —
+
+    /// <summary>
+    /// Verifies FilteredCategories shows all when search empty.
     /// </summary>
     [Fact]
     public void FilteredCategories_ShowsAll_WhenSearchEmpty()
@@ -109,7 +147,7 @@ public sealed class SettingsViewModelTests
     }
 
     /// <summary>
-    /// Verifies that Search Text filters settings by title.
+    /// Verifies SearchText filters settings by title.
     /// </summary>
     [Fact]
     public void SearchText_FiltersSettingsByTitle()
@@ -124,7 +162,7 @@ public sealed class SettingsViewModelTests
     }
 
     /// <summary>
-    /// Verifies that Search Text filters settings by description.
+    /// Verifies SearchText filters settings by description.
     /// </summary>
     [Fact]
     public void SearchText_FiltersSettingsByDescription()
@@ -138,7 +176,7 @@ public sealed class SettingsViewModelTests
     }
 
     /// <summary>
-    /// Verifies that Search Text matches category name shows entire category.
+    /// Verifies SearchText matches category name shows entire category.
     /// </summary>
     [Fact]
     public void SearchText_MatchesCategoryName_ShowsEntireCategory()
@@ -149,11 +187,11 @@ public sealed class SettingsViewModelTests
 
         Assert.Contains(vm.FilteredCategories, c => c.Name == "Playback");
         var playback = vm.FilteredCategories.First(c => c.Name == "Playback");
-        Assert.Equal(3, playback.Settings.Count); // All playback settings shown
+        Assert.Equal(3, playback.Settings.Count);
     }
 
     /// <summary>
-    /// Verifies that Search Text no match shows no categories.
+    /// Verifies SearchText no match shows no categories.
     /// </summary>
     [Fact]
     public void SearchText_NoMatch_ShowsNoCategories()
@@ -167,7 +205,7 @@ public sealed class SettingsViewModelTests
     }
 
     /// <summary>
-    /// Verifies that Search Text empty after filter shows all.
+    /// Verifies SearchText empty after filter shows all.
     /// </summary>
     [Fact]
     public void SearchText_EmptyAfterFilter_ShowsAll()
@@ -182,7 +220,7 @@ public sealed class SettingsViewModelTests
     }
 
     /// <summary>
-    /// Verifies that Search Text is case insensitive.
+    /// Verifies SearchText is case insensitive.
     /// </summary>
     [Fact]
     public void SearchText_IsCaseInsensitive()
@@ -195,7 +233,7 @@ public sealed class SettingsViewModelTests
     }
 
     /// <summary>
-    /// Verifies that No Results false when search empty.
+    /// Verifies NoResults is false when search empty.
     /// </summary>
     [Fact]
     public void NoResults_FalseWhenSearchEmpty()
@@ -205,31 +243,51 @@ public sealed class SettingsViewModelTests
         Assert.False(vm.NoResults);
     }
 
-    // â”€â”€ Plugin settings integration â”€â”€
-
-
-    // â”€â”€ Constructor validation â”€â”€
+    // — Constructor validation —
 
     /// <summary>
-    /// Verifies that Constructor throws on null settings service.
+    /// Verifies Constructor throws on null settings service.
     /// </summary>
     [Fact]
     public void Constructor_ThrowsOnNullSettingsService()
     {
         Assert.Throws<ArgumentNullException>(() =>
-            new SettingsViewModel(null!, _appSettingsStore));
+            new SettingsViewModel(null!));
+    }
+
+    // — Screenshot visibility —
+
+    /// <summary>
+    /// Verifies screenshot directory is hidden when screenshot is disabled.
+    /// </summary>
+    [Fact]
+    public void ScreenshotDirectory_HiddenWhenScreenshotDisabled()
+    {
+        var settings = new AppSettings { ScreenshotEnabled = false };
+        var svc = Substitute.For<ISettingsService>();
+        svc.Current.Returns(settings);
+        var vm = new SettingsViewModel(svc);
+
+        var screenshot = vm.AllCategories.First(c => c.Name == "Screenshot");
+        var dirItem = screenshot.Settings.First(s => s.Id == "screenshot.directory");
+
+        Assert.False(dirItem.IsSettingVisible);
     }
 
     /// <summary>
-    /// Verifies that Constructor throws on null app settings store.
+    /// Verifies screenshot directory is visible when screenshot is enabled.
     /// </summary>
     [Fact]
-    public void Constructor_ThrowsOnNullAppSettingsStore()
+    public void ScreenshotDirectory_VisibleWhenScreenshotEnabled()
     {
-        Assert.Throws<ArgumentNullException>(() =>
-            new SettingsViewModel(_settingsService, null!));
+        var settings = new AppSettings { ScreenshotEnabled = true };
+        var svc = Substitute.For<ISettingsService>();
+        svc.Current.Returns(settings);
+        var vm = new SettingsViewModel(svc);
+
+        var screenshot = vm.AllCategories.First(c => c.Name == "Screenshot");
+        var dirItem = screenshot.Settings.First(s => s.Id == "screenshot.directory");
+
+        Assert.True(dirItem.IsSettingVisible);
     }
-
-
-    // â”€â”€ Helpers â”€â”€
 }
