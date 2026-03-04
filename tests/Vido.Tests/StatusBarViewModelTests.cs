@@ -3,7 +3,6 @@ using Vido.Core.Events;
 using Vido.Core.Layout;
 using Vido.Core.Logging;
 using Vido.Core.Playback;
-using Vido.Core.Plugin;
 using Vido.Core.Settings;
 using Vido.Core.State;
 using Vido.ViewModels;
@@ -53,7 +52,7 @@ public class StatusBarViewModelTests : IDisposable
         _stateService = Substitute.For<IStateService>();
         _stateService.Current.Returns(new AppState());
         _engine.Volume.Returns(75);
-        _playerVm = new VideoPlayerViewModel(_engine, Substitute.For<IEventBus>(), _logService, _settingsService, _stateService, Substitute.For<IContributionRegistry>());
+        _playerVm = new VideoPlayerViewModel(_engine, Substitute.For<IEventBus>(), _logService, _settingsService, _stateService);
         _sut = new StatusBarViewModel(_playerVm);
     }
 

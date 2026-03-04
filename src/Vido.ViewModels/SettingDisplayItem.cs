@@ -2,18 +2,18 @@ using System.Collections.ObjectModel;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Vido.Core.Plugin;
+using Vido.Core.Settings;
 
 namespace Vido.ViewModels;
 
 /// <summary>
 /// Represents a single setting for display in the Plugin Detail Settings tab.
 /// Binds to the appropriate control based on <see cref="SettingType"/> and
-/// persists changes immediately to the <see cref="IPluginSettingsStore"/>.
+/// persists changes immediately to the <see cref="ISettingsStore"/>.
 /// </summary>
 public partial class SettingDisplayItem : ObservableObject
 {
-    private readonly IPluginSettingsStore _store;
+    private readonly ISettingsStore _store;
     private readonly SettingContribution _definition;
     private bool _suppressSave;
 
@@ -232,7 +232,7 @@ public partial class SettingDisplayItem : ObservableObject
     /// <param name="store">Backing store for reading and persisting the setting value.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="definition"/> is null.</exception>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="store"/> is null.</exception>
-    public SettingDisplayItem(SettingContribution definition, IPluginSettingsStore store)
+    public SettingDisplayItem(SettingContribution definition, ISettingsStore store)
     {
         _definition = definition ?? throw new ArgumentNullException(nameof(definition));
         _store = store ?? throw new ArgumentNullException(nameof(store));

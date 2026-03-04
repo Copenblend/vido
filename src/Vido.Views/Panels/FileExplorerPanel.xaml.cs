@@ -7,7 +7,6 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using Vido.Core.FileSystem;
 using Vido.Core.Menus;
-using Vido.Core.Plugin;
 using Vido.ViewModels;
 
 namespace Vido.Views.Panels;
@@ -58,10 +57,10 @@ public partial class FileExplorerPanel : UserControl
     public IContextMenuRegistry? ContextMenuRegistry { get; set; }
 
     /// <summary>
-    /// Optional contribution registry for querying plugin file icons.
+    /// Optional dictionary mapping file extensions to icon paths.
     /// Set by MainWindow after creating the panel.
     /// </summary>
-    public IContributionRegistry? ContributionRegistry { get; set; }
+    public Dictionary<string, string>? FileIcons { get; set; }
     /// <summary>
     /// Sets up the file explorer panel, wiring data context change and visibility handlers
     /// to keep the visual state synchronized with the view model.
@@ -178,12 +177,12 @@ public partial class FileExplorerPanel : UserControl
         }
 
         if (node.IsDirectory) return;
-        if (ContributionRegistry is null) return;
+        if (FileIcons is null) return;
 
         var ext = Path.GetExtension(node.Name);
         if (string.IsNullOrEmpty(ext)) return;
 
-        var icons = ContributionRegistry.GetFileIcons();
+        var icons = FileIcons;
 
         // Try compound extension first (e.g. ".twist.funscript")
         string? iconPath = null;

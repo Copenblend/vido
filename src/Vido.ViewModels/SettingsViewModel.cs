@@ -1,19 +1,17 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Vido.Core.Plugin;
 using Vido.Core.Settings;
 
 namespace Vido.ViewModels;
 
 /// <summary>
-/// ViewModel for the Settings tab. Manages application settings grouped by category,
-/// plugin settings gathered from active plugins, and search filtering.
+/// ViewModel for the Settings tab. Manages application settings grouped by category
+/// and search filtering.
 /// </summary>
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly ISettingsService _settingsService;
-    private readonly IPluginHost? _pluginHost;
-    private readonly IPluginSettingsStore _appSettingsStore;
+    private readonly ISettingsStore _appSettingsStore;
 
     /// <summary>
     /// Current search filter text.
@@ -37,22 +35,19 @@ public partial class SettingsViewModel : ObservableObject
     public bool NoResults => FilteredCategories.Count == 0 && !string.IsNullOrEmpty(SearchText);
     
     /// <summary>
-    /// Creates the settings view model, building app and plugin setting categories
+    /// Creates the settings view model, building app setting categories
     /// and applying the initial filter.
     /// </summary>
     /// <param name="settingsService">Service for reading application-level settings.</param>
     /// <param name="appSettingsStore">Backing store for application settings values.</param>
-    /// <param name="pluginHost">Optional plugin host for discovering plugin-contributed settings.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="settingsService"/> is null.</exception>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="appSettingsStore"/> is null.</exception>
-    public SettingsViewModel(ISettingsService settingsService, IPluginSettingsStore appSettingsStore, IPluginHost? pluginHost = null)
+    public SettingsViewModel(ISettingsService settingsService, ISettingsStore appSettingsStore)
     {
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
         _appSettingsStore = appSettingsStore ?? throw new ArgumentNullException(nameof(appSettingsStore));
-        _pluginHost = pluginHost;
 
         BuildAppSettings();
-        BuildPluginSettings();
         ApplyFilter();
     }
 
@@ -99,21 +94,13 @@ public partial class SettingsViewModel : ObservableObject
     /// </summary>
     public void RefreshPluginSettings()
     {
-        // Remove existing plugin categories
-        for (int i = AllCategories.Count - 1; i >= 0; i--)
-        {
-            if (AllCategories[i].IsPlugin)
-                AllCategories.RemoveAt(i);
-        }
-
-        BuildPluginSettings();
-        ApplyFilter();
+        // No-op: plugin settings system removed.
     }
 
     /// <summary>
     /// Creates app settings categories: Playback, File Explorer, Plugins.
     /// Each setting is defined as a <see cref="SettingContribution"/> and backed
-    /// by the <see cref="AppSettingsStore"/>.
+    /// by the <see cref="ISettingsStore"/>.
     /// </summary>
     private void BuildAppSettings()
     {
@@ -291,29 +278,11 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Adds a settings category for each active plugin that declares settings.
+    /// Reserved for future plugin settings support. Currently a no-op.
     /// </summary>
     private void BuildPluginSettings()
     {
-        if (_pluginHost is null) return;
-
-        foreach (var plugin in _pluginHost.Plugins)
-        {
-            if (plugin.State != PluginState.Active)
-                continue;
-
-            var settings = plugin.Manifest.Contributes.Settings;
-            if (settings.Count == 0)
-                continue;
-
-            var store = _pluginHost.GetSettingsStore(plugin.Manifest.Id);
-            var items = settings
-                .Select(s => new SettingDisplayItem(s, store))
-                .ToList();
-
-            AllCategories.Add(new SettingsCategoryViewModel(
-                plugin.Manifest.DisplayName, items, isPlugin: true));
-        }
+        // Plugin system removed — no dynamic settings to build.
     }
 
     /// <summary>

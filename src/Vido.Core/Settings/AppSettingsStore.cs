@@ -1,13 +1,11 @@
-using Vido.Core.Plugin;
-
 namespace Vido.Core.Settings;
 
 /// <summary>
-/// Adapts <see cref="AppSettings"/> properties to the <see cref="IPluginSettingsStore"/>
-/// interface, allowing reuse of SettingDisplayItem for app settings display.
+/// Exposes <see cref="AppSettings"/> properties through a key-value store interface,
+/// allowing reuse of SettingDisplayItem for app settings display.
 /// Each setting key maps to a specific strongly-typed property on <see cref="AppSettings"/>.
 /// </summary>
-public sealed class AppSettingsStore : IPluginSettingsStore
+public sealed class AppSettingsStore : ISettingsStore
 {
     private readonly ISettingsService _settingsService;
     private readonly Dictionary<string, Func<object>> _getters;

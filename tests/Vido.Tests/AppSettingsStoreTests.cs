@@ -1,5 +1,4 @@
 using NSubstitute;
-using Vido.Core.Plugin;
 using Vido.Core.Settings;
 using Xunit;
 

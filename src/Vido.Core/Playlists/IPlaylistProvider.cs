@@ -1,11 +1,10 @@
-namespace Vido.Core.Plugin;
+namespace Vido.Core.Playlists;
 
 /// <summary>
-/// Allows a plugin to override Vido's built-in next/previous file navigation.
-/// When a provider is registered and active, <see cref="IPluginContext.RegisterPlaylistProvider"/>
-/// causes <c>VideoPlayerViewModel</c> to delegate skip-next, skip-previous, and
-/// auto-advance-on-media-ended to this provider instead of using the default
-/// sibling-file-list logic.
+/// Allows a feature to override Vido's built-in next/previous file navigation.
+/// When a provider is registered and active, <c>VideoPlayerViewModel</c> delegates
+/// skip-next, skip-previous, and auto-advance-on-media-ended to this provider
+/// instead of using the default sibling-file-list logic.
 /// </summary>
 public interface IPlaylistProvider
 {

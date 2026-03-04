@@ -27,7 +27,6 @@
     <ProjectReference Include="..\Vido.Services\Vido.Services.csproj" />
     <ProjectReference Include="..\Vido.ViewModels\Vido.ViewModels.csproj" />
     <ProjectReference Include="..\Vido.Views\Vido.Views.csproj" />
-    <ProjectReference Include="..\Vido.PluginHost\Vido.PluginHost.csproj" />
   </ItemGroup>
 
 </Project>

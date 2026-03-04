@@ -2,7 +2,7 @@ using NSubstitute;
 using Vido.Core.Events;
 using Vido.Core.Logging;
 using Vido.Core.Playback;
-using Vido.Core.Plugin;
+using Vido.Core.Playlists;
 using Vido.Core.Settings;
 using Vido.Core.State;
 using Vido.ViewModels;
@@ -20,7 +20,7 @@ public class VideoPlayerViewModelTests : IDisposable
     private readonly ILogService _logService;
     private readonly ISettingsService _settingsService;
     private readonly IStateService _stateService;
-    private readonly IContributionRegistry _contributionRegistry;
+    private readonly IPlaylistProvider _playlistProvider;
     private readonly VideoPlayerViewModel _sut;
 
     /// <summary>
@@ -37,8 +37,8 @@ public class VideoPlayerViewModelTests : IDisposable
         _engine.Volume.Returns(75);
         _engine.IsMuted.Returns(false);
         _engine.IsLooping.Returns(false);
-        _contributionRegistry = Substitute.For<IContributionRegistry>();
-        _sut = new VideoPlayerViewModel(_engine, Substitute.For<IEventBus>(), _logService, _settingsService, _stateService, _contributionRegistry);
+        _playlistProvider = Substitute.For<IPlaylistProvider>();
+        _sut = new VideoPlayerViewModel(_engine, Substitute.For<IEventBus>(), _logService, _settingsService, _stateService, _playlistProvider);
     }
 
     // ── Initial State ──

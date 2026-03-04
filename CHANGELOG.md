@@ -2,6 +2,27 @@
 
 All notable changes to the Vido project will be documented in this file.
 
+## [0.14.0] - 2026-02-28
+
+### Plugin Integration (PI-020)
+- Removed the entire plugin system infrastructure from the Vido host application.
+- Deleted `src/Vido.Core/Plugin/` directory (31 files: IPluginHost, IContributionRegistry, IPluginInstaller, PluginManifest, PluginInfo, etc.).
+- Deleted `src/Vido.Services/Plugin/` directory (PluginInstaller.cs).
+- Deleted `src/Vido.PluginHost/` project entirely and removed from solution file.
+- Moved `IPlaylistProvider` from `Vido.Core.Plugin` to new `Vido.Core.Playlists` namespace.
+- Created `ISettingsStore` interface in `Vido.Core.Settings` (replacement for `IPluginSettingsStore`).
+- Created `SettingContribution` class in `Vido.Core.Settings` (relocated from deleted Plugin namespace).
+- Updated `AppSettingsStore` to implement `ISettingsStore`.
+- Removed all plugin DI registrations from `App.xaml.cs` (ContributionRegistry, IPluginHost, IPluginInstaller).
+- Removed plugin activation/deactivation lifecycle from `App.xaml.cs` startup and shutdown.
+- Removed Plugin Manager UI: `PluginManagerViewModel`, `PluginItemViewModel`, `PluginDetailPanel`, `PluginManagerPanel`.
+- Removed all plugin contribution wiring infrastructure from `MainWindow.xaml.cs` (~700 lines of WirePlugin* methods).
+- Updated `VideoPlayerViewModel` to accept `IPlaylistProvider?` directly instead of via `IContributionRegistry`.
+- Updated `SettingsViewModel` to use `ISettingsStore` instead of `IPluginSettingsStore`; gutted plugin settings building.
+- Updated `FileExplorerPanel` to use `Dictionary<string, string> FileIcons` instead of `IContributionRegistry`.
+- Removed `SettingsPage` `IPluginHost` constructor parameter.
+- Deleted 10 plugin-related test files; fixed 8 remaining test files with updated type references.
+
 ## [0.13.0] - 2026-02-28
 
 ### Plugin Integration (PI-019)
