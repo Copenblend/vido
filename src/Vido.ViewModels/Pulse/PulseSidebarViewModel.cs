@@ -1,7 +1,11 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
+using Vido.Core.Events;
 using Vido.Core.Models.Pulse;
 using Vido.Core.Settings;
+using Vido.Services.Osr2Plus;
 using Vido.Services.Playlists;
 using Vido.Services.Pulse;
 
@@ -17,6 +21,9 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
     private readonly PulseEngine _engine;
     private readonly ISettingsService _settingsService;
     private readonly IToastService? _toastService;
+    private readonly IEventBus _eventBus;
+    private readonly Func<string, string, Task<bool>>? _confirmOverwrite;
+    private readonly List<IDisposable> _subscriptions = [];
 
     private bool _usePulse;
     private PulseState _state;
@@ -27,6 +34,8 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
     private string? _errorMessage;
     private int _selectedBeatRateIndex;
     private bool _disposed;
+    private string? _currentVideoPath;
+    private bool _isGenerating;
 
     /// <summary>Raised when a property value changes.</summary>
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -34,15 +43,25 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
     /// <summary>Initializes a new instance of the sidebar view model.</summary>
     /// <param name="engine">Pulse engine that provides state, progress, and BPM updates.</param>
     /// <param name="settingsService">Settings service for persisting Pulse preferences.</param>
+    /// <param name="eventBus">Event bus for publishing/subscribing to application events.</param>
     /// <param name="toastService">Optional toast service for showing enable/disable notifications.</param>
-    public PulseSidebarViewModel(PulseEngine engine, ISettingsService settingsService, IToastService? toastService = null)
+    /// <param name="confirmOverwrite">Optional callback to confirm overwriting an existing funscript file.</param>
+    public PulseSidebarViewModel(
+        PulseEngine engine,
+        ISettingsService settingsService,
+        IEventBus eventBus,
+        IToastService? toastService = null,
+        Func<string, string, Task<bool>>? confirmOverwrite = null)
     {
         ArgumentNullException.ThrowIfNull(engine);
         ArgumentNullException.ThrowIfNull(settingsService);
+        ArgumentNullException.ThrowIfNull(eventBus);
 
         _engine = engine;
         _settingsService = settingsService;
+        _eventBus = eventBus;
         _toastService = toastService;
+        _confirmOverwrite = confirmOverwrite;
 
         // Load persisted state
         _usePulse = _settingsService.Current.PulseUsePulse;
@@ -53,6 +72,17 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         _engine.AnalysisProgress += OnAnalysisProgress;
         _engine.BeatMapReady += OnBeatMapReady;
         _engine.ErrorOccurred += OnErrorOccurred;
+
+        _subscriptions.Add(_eventBus.Subscribe<VideoLoadedEvent>(e =>
+        {
+            _currentVideoPath = e.FilePath;
+            OnPropertyChanged(nameof(CanGenerateFunscript));
+        }));
+        _subscriptions.Add(_eventBus.Subscribe<VideoUnloadedEvent>(_ =>
+        {
+            _currentVideoPath = null;
+            OnPropertyChanged(nameof(CanGenerateFunscript));
+        }));
 
         // Restore persisted enabled state — the engine starts inactive,
         // so we must call SetEnabled to register the beat source and
@@ -199,6 +229,65 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         "\u2022 OSR2+ axis Min/Max/Enabled settings still apply\n\n" +
         "Toggle off to restore normal funscript behavior.";
 
+    // ── Generate Funscript ──
+
+    /// <summary>Whether the Generate Funscript button should be enabled.</summary>
+    public bool CanGenerateFunscript =>
+        !_isGenerating
+        && _state is PulseState.Ready or PulseState.Active
+        && _engine.CurrentBeatMap is not null
+        && !string.IsNullOrEmpty(_currentVideoPath);
+
+    /// <summary>Command that generates a .funscript file from the current beat map.</summary>
+    public ICommand GenerateFunscriptCommand => _generateFunscriptCommand ??= new AsyncRelayCommand(GenerateFunscriptAsync);
+    private ICommand? _generateFunscriptCommand;
+
+    private async Task GenerateFunscriptAsync()
+    {
+        var beatMap = _engine.CurrentBeatMap;
+        var videoPath = _currentVideoPath;
+
+        if (beatMap is null || string.IsNullOrEmpty(videoPath))
+            return;
+
+        var targetPath = Path.ChangeExtension(videoPath, ".funscript");
+        var fileName = Path.GetFileName(targetPath);
+
+        if (File.Exists(targetPath))
+        {
+            if (_confirmOverwrite is not null)
+            {
+                var confirmed = await _confirmOverwrite(
+                    "Overwrite Funscript?",
+                    $"\"{fileName}\" already exists. Overwrite it?");
+                if (!confirmed) return;
+            }
+        }
+
+        _isGenerating = true;
+        OnPropertyChanged(nameof(CanGenerateFunscript));
+        try
+        {
+            var actions = FunscriptWriter.CreateActionsFromBeats(beatMap.Beats);
+            await FunscriptWriter.WriteAsync(actions, targetPath);
+            _toastService?.Show("Funscript generated:", fileName);
+            _eventBus.Publish(new FunscriptGeneratedEvent
+            {
+                FilePath = targetPath,
+                VideoPath = videoPath
+            });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _toastService?.ShowError("Failed to write funscript:", ex.Message);
+        }
+        finally
+        {
+            _isGenerating = false;
+            OnPropertyChanged(nameof(CanGenerateFunscript));
+        }
+    }
+
     // ── Engine callbacks ──
 
     private void OnEngineStateChanged(PulseState newState)
@@ -207,6 +296,7 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         if (newState != PulseState.Error)
             _errorMessage = null;
         UpdateStatusMessage();
+        OnPropertyChanged(nameof(CanGenerateFunscript));
     }
 
     private void OnAnalysisProgress(double progress)
@@ -219,6 +309,7 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
     {
         CurrentBpm = beatMap.Bpm;
         UpdateStatusMessage();
+        OnPropertyChanged(nameof(CanGenerateFunscript));
     }
 
     private void OnErrorOccurred(string message)
@@ -267,5 +358,9 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         _engine.AnalysisProgress -= OnAnalysisProgress;
         _engine.BeatMapReady -= OnBeatMapReady;
         _engine.ErrorOccurred -= OnErrorOccurred;
+
+        foreach (var sub in _subscriptions)
+            sub.Dispose();
+        _subscriptions.Clear();
     }
 }

@@ -61,20 +61,20 @@ public class PulseViewModelTests : IDisposable
     public void SidebarVM_Constructor_NullEngine_Throws()
     {
         Assert.Throws<ArgumentNullException>(() =>
-            new PulseSidebarViewModel(null!, _settingsService));
+            new PulseSidebarViewModel(null!, _settingsService, _eventBus));
     }
 
     [Fact]
     public void SidebarVM_Constructor_NullSettingsService_Throws()
     {
         Assert.Throws<ArgumentNullException>(() =>
-            new PulseSidebarViewModel(_engine, null!));
+            new PulseSidebarViewModel(_engine, null!, _eventBus));
     }
 
     [Fact]
     public void SidebarVM_Constructor_DefaultState_Inactive()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
 
         Assert.Equal(PulseState.Inactive, vm.State);
         Assert.False(vm.UsePulse);
@@ -91,7 +91,7 @@ public class PulseViewModelTests : IDisposable
         _settings.PulseUsePulse = true;
         _settings.PulseBeatRateIndex = 2;
 
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
 
         // UsePulse loads from settings (engine might override but field is set)
         Assert.Equal(2, vm.SelectedBeatRateIndex);
@@ -102,7 +102,7 @@ public class PulseViewModelTests : IDisposable
     {
         _settings.PulseUsePulse = true;
 
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
 
         // SetEnabled(true) should publish ExternalBeatSourceRegistration
         var regs = _eventBus.GetPublished<ExternalBeatSourceRegistration>();
@@ -115,7 +115,7 @@ public class PulseViewModelTests : IDisposable
     {
         _settings.PulseUsePulse = false;
 
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
 
         var regs = _eventBus.GetPublished<ExternalBeatSourceRegistration>();
         Assert.Empty(regs);
@@ -128,7 +128,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_UsePulse_SetTrue_RaisesPropertyChanged()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         var changed = new List<string?>();
         vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
@@ -140,7 +140,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_UsePulse_SetTrue_PersistsToSettings()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
 
         vm.UsePulse = true;
 
@@ -151,7 +151,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_UsePulse_SameValue_NoPropertyChanged()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         var changed = new List<string?>();
         vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
@@ -164,7 +164,7 @@ public class PulseViewModelTests : IDisposable
     public void SidebarVM_UsePulse_SetFalse_AfterTrue_PersistsToSettings()
     {
         _settings.PulseUsePulse = true;
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
 
         vm.UsePulse = false;
 
@@ -179,7 +179,7 @@ public class PulseViewModelTests : IDisposable
     public void SidebarVM_UsePulse_Enable_ShowsToast()
     {
         var toast = Substitute.For<IToastService>();
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService, toast);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus, toast);
 
         vm.UsePulse = true;
 
@@ -191,7 +191,7 @@ public class PulseViewModelTests : IDisposable
     {
         var toast = Substitute.For<IToastService>();
         _settings.PulseUsePulse = true;
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService, toast);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus, toast);
 
         vm.UsePulse = false;
 
@@ -205,7 +205,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_OnEngineStateChanged_Analyzing_UpdatesComputedProperties()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         var changed = new List<string?>();
         vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
@@ -224,7 +224,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_OnEngineStateChanged_SameState_NoPropertyChanged()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         var changed = new List<string?>();
         vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
@@ -236,7 +236,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_StateColor_Active_ReturnsGreen()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         InvokePrivate(vm, "OnEngineStateChanged", PulseState.Active);
 
         Assert.Equal("Green", vm.StateColor);
@@ -245,7 +245,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_StateColor_Ready_ReturnsYellow()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         InvokePrivate(vm, "OnEngineStateChanged", PulseState.Ready);
 
         Assert.Equal("Yellow", vm.StateColor);
@@ -254,7 +254,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_StateColor_Error_ReturnsRed()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         InvokePrivate(vm, "OnEngineStateChanged", PulseState.Error);
 
         Assert.Equal("Red", vm.StateColor);
@@ -263,7 +263,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_ShowBpm_ReadyOrActive_ReturnsTrue()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
 
         InvokePrivate(vm, "OnEngineStateChanged", PulseState.Ready);
         Assert.True(vm.ShowBpm);
@@ -279,7 +279,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_OnAnalysisProgress_UpdatesProperty()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         var changed = new List<string?>();
         vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
@@ -292,7 +292,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_OnAnalysisProgress_SameValue_NoPropertyChanged()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         InvokePrivate(vm, "OnAnalysisProgress", 0.0);
 
         var changed = new List<string?>();
@@ -306,7 +306,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_OnBeatMapReady_UpdatesCurrentBpm()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         var beatMap = CreateBeatMap(120.0);
 
         InvokePrivate(vm, "OnBeatMapReady", beatMap);
@@ -317,7 +317,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_OnBeatMapReady_SameBpm_NoPropertyChanged()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         var beatMap = CreateBeatMap(120.0);
         InvokePrivate(vm, "OnBeatMapReady", beatMap);
 
@@ -336,7 +336,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_StatusMessage_Inactive_Empty()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
 
         Assert.Equal(string.Empty, vm.StatusMessage);
     }
@@ -344,7 +344,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_StatusMessage_Analyzing_ContainsProgress()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         InvokePrivate(vm, "OnEngineStateChanged", PulseState.Analyzing);
         InvokePrivate(vm, "OnAnalysisProgress", 0.5);
 
@@ -355,7 +355,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_StatusMessage_Ready_ContainsBpm()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         InvokePrivate(vm, "OnBeatMapReady", CreateBeatMap(128.0));
         InvokePrivate(vm, "OnEngineStateChanged", PulseState.Ready);
 
@@ -366,7 +366,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_StatusMessage_Error_ContainsErrorMessage()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         InvokePrivate(vm, "OnErrorOccurred", "Decoder failed");
         InvokePrivate(vm, "OnEngineStateChanged", PulseState.Error);
 
@@ -377,7 +377,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_StatusBarText_UpdatesPerState()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
 
         InvokePrivate(vm, "OnEngineStateChanged", PulseState.Analyzing);
         Assert.Contains("Analyzing", vm.StatusBarText);
@@ -392,7 +392,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_StatusBarText_Active_ContainsBpm()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         InvokePrivate(vm, "OnBeatMapReady", CreateBeatMap(140.0));
         InvokePrivate(vm, "OnEngineStateChanged", PulseState.Active);
 
@@ -403,7 +403,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_StatusMessage_SameValue_NoPropertyChanged()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         var changed = new List<string?>();
         vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
@@ -416,7 +416,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_ErrorOccurred_ClearedOnNonErrorState()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         InvokePrivate(vm, "OnErrorOccurred", "Some error");
         InvokePrivate(vm, "OnEngineStateChanged", PulseState.Error);
         Assert.Contains("Some error", vm.StatusMessage);
@@ -443,7 +443,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_SelectedBeatRateIndex_Set_PersistsAndUpdatesEngine()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
 
         vm.SelectedBeatRateIndex = 2;
 
@@ -456,7 +456,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_SelectedBeatRateIndex_SameValue_NoPropertyChanged()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         var changed = new List<string?>();
         vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
@@ -472,7 +472,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_Description_ContainsKeyInfo()
     {
-        using var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
 
         Assert.Contains("beat detection", vm.Description);
         Assert.Contains("Funscript", vm.Description);
@@ -486,7 +486,7 @@ public class PulseViewModelTests : IDisposable
     public void SidebarVM_Dispose_UnsubscribesFromEngineEvents()
     {
         var engine = CreateEngine(_eventBus);
-        var vm = new PulseSidebarViewModel(engine, _settingsService);
+        var vm = new PulseSidebarViewModel(engine, _settingsService, _eventBus);
         vm.Dispose();
 
         // After dispose, engine events should not update VM
@@ -498,7 +498,7 @@ public class PulseViewModelTests : IDisposable
     [Fact]
     public void SidebarVM_Dispose_CalledTwice_NoException()
     {
-        var vm = new PulseSidebarViewModel(_engine, _settingsService);
+        var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus);
         vm.Dispose();
         vm.Dispose(); // should not throw
     }
