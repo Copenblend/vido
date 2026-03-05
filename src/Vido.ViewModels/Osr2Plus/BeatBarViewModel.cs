@@ -297,6 +297,8 @@ public class BeatBarViewModel : INotifyPropertyChanged
         {
             AvailableModes.Add(BeatBarMode.OnPeak);
             AvailableModes.Add(BeatBarMode.OnValley);
+            AvailableModes.Add(BeatBarMode.OnPeakAndValley);
+            AvailableModes.Add(BeatBarMode.MidStroke);
         }
 
         foreach (var source in _externalSources.Where(s => s.IsAvailable))
@@ -502,6 +504,14 @@ public class BeatBarViewModel : INotifyPropertyChanged
         else if (_mode == BeatBarMode.OnValley)
         {
             Beats = _beatDetection.DetectBeats(_currentScript, BeatDetectionMode.OnValley);
+        }
+        else if (_mode == BeatBarMode.OnPeakAndValley)
+        {
+            Beats = _beatDetection.DetectBeats(_currentScript, BeatDetectionMode.OnPeakAndValley);
+        }
+        else if (_mode == BeatBarMode.MidStroke)
+        {
+            Beats = _beatDetection.DetectBeats(_currentScript, BeatDetectionMode.MidStroke);
         }
         RepaintRequested?.Invoke();
     }

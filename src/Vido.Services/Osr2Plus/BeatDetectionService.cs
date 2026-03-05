@@ -39,6 +39,31 @@ public class BeatDetectionService
                 case BeatDetectionMode.OnValley when curr < prev && curr <= next:
                     beats.Add(actions[i].AtMs);
                     break;
+
+                case BeatDetectionMode.OnPeakAndValley:
+                    if ((curr > prev && curr >= next) || (curr < prev && curr <= next))
+                        beats.Add(actions[i].AtMs);
+                    break;
+            }
+        }
+
+        // MidStroke uses adjacent-pair iteration instead of the 3-point window above
+        if (mode == BeatDetectionMode.MidStroke)
+        {
+            beats.Clear();
+            for (int i = 0; i < actions.Count - 1; i++)
+            {
+                var a = actions[i];
+                var b = actions[i + 1];
+
+                // Only consider descending pairs (a.Pos > 50 and b.Pos < 50)
+                if (a.Pos > 50 && b.Pos < 50)
+                {
+                    // Linear interpolation to find when the value crosses 50
+                    var ratio = (a.Pos - 50.0) / (a.Pos - b.Pos);
+                    var crossingTimeMs = a.AtMs + ratio * (b.AtMs - a.AtMs);
+                    beats.Add(Math.Round(crossingTimeMs));
+                }
             }
         }
 

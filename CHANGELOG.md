@@ -9,6 +9,7 @@ All notable changes to the Vido project will be documented in this file.
 
 ### Added
 - **VI-0010**: Enforced single-instance application behavior using a named Mutex and named pipe IPC. When a second instance is launched with a file argument, it forwards the file path to the running instance via named pipe and exits. The primary instance brings itself to the foreground and opens the file. Graceful fallback: if the pipe connection fails, the second instance launches normally.
+- **VI-0002**: Added "On Peak & Valley" and "Mid Stroke" beat bar modes. "On Peak & Valley" detects both peaks and valleys in a single pass. "Mid Stroke" detects the midpoint of descending strokes where the funscript value crosses 50 descending, using linear interpolation for precise timing. Both modes appear in the beat bar dropdown and persist across sessions.
 
 ### Removed
 - **VI-0011**: Removed defunct "Enter Repository Code..." menu item from Help menu, along with the `EnterRepositoryCodeRequested` event, `OnEnterRepositoryCodeClick` handler, and all related TODO comments.

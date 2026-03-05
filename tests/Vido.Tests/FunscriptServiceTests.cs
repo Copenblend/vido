@@ -746,6 +746,45 @@ public class FunscriptServiceTests : IDisposable
         Assert.Empty(service.DetectBeats(script, BeatDetectionMode.OnValley));
     }
 
+    /// <summary>
+    /// Verifies that OnPeakAndValley detects both peaks and valleys in a single pass.
+    /// </summary>
+    [Fact]
+    public void BeatDetection_OnPeakAndValley_DetectsBoth()
+    {
+        var service = new BeatDetectionService();
+        var script = new FunscriptData
+        {
+            Actions =
+            [
+                new FunscriptAction(0, 0),
+                new FunscriptAction(500, 100),   // Peak
+                new FunscriptAction(1000, 0),    // Valley
+                new FunscriptAction(1500, 80),   // Peak
+                new FunscriptAction(2000, 10),   // Valley
+                new FunscriptAction(2500, 50),
+            ]
+        };
+
+        var result = service.DetectBeats(script, BeatDetectionMode.OnPeakAndValley);
+
+        Assert.Equal(4, result.Count);
+        Assert.Equal(500, result[0]);   // Peak
+        Assert.Equal(1000, result[1]);  // Valley
+        Assert.Equal(1500, result[2]);  // Peak
+        Assert.Equal(2000, result[3]);  // Valley
+    }
+
+    /// <summary>
+    /// Verifies that OnPeakAndValley returns an empty list for a null script.
+    /// </summary>
+    [Fact]
+    public void BeatDetection_OnPeakAndValley_NullScript_ReturnsEmpty()
+    {
+        var service = new BeatDetectionService();
+        Assert.Empty(service.DetectBeats(null, BeatDetectionMode.OnPeakAndValley));
+    }
+
     // ──────────────────────────────────────────────
     //  FunscriptLoadingService
     // ──────────────────────────────────────────────

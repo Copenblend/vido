@@ -10,5 +10,11 @@ public enum BeatDetectionMode
     OnPeak,
 
     /// <summary>Detect valleys (down→up direction changes).</summary>
-    OnValley
+    OnValley,
+
+    /// <summary>Detect both peaks and valleys (any direction change).</summary>
+    OnPeakAndValley,
+
+    /// <summary>Detect midpoints of descending strokes (50-crossing while descending).</summary>
+    MidStroke
 }
