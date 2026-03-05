@@ -10,6 +10,7 @@ namespace Vido.Services.Osr2Plus;
 public class SerialTransportService : ITransportService
 {
     private readonly object _lock = new();
+    private readonly object _sendLock = new();
     private SerialPort? _port;
 
     /// <inheritdoc/>
@@ -86,21 +87,19 @@ public class SerialTransportService : ITransportService
     public void Send(ReadOnlySpan<byte> data)
     {
         SerialPort? port;
+        lock (_lock) { port = _port; }
+        if (port?.IsOpen != true) return;
 
-        lock (_lock)
-        {
-            port = _port;
-        }
-
-        if (port?.IsOpen == true)
+        lock (_sendLock)
         {
             try
             {
-                port.BaseStream.Write(data);
+                if (port.IsOpen)
+                    port.BaseStream.Write(data);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is IOException or TimeoutException or InvalidOperationException or UnauthorizedAccessException)
             {
-                ErrorOccurred?.Invoke($"Serial send failed: {ex.Message}");
+                ErrorOccurred?.Invoke($"Serial send error: {ex.Message}");
             }
         }
     }
@@ -108,30 +107,40 @@ public class SerialTransportService : ITransportService
     /// <inheritdoc/>
     public void Disconnect()
     {
-        bool wasConnected;
-
+        SerialPort? portToClose;
         lock (_lock)
         {
-            wasConnected = _port != null;
+            portToClose = _port;
+            _port = null;               // Remove reference immediately so Send() sees null
+        }
 
-            if (_port != null)
+        if (portToClose is null) return;
+
+        var wasConnected = false;
+        try
+        {
+            wasConnected = portToClose.IsOpen;
+            // Close on ThreadPool to avoid blocking UI if a Write is in progress
+            ThreadPool.QueueUserWorkItem(_ =>
             {
                 try
                 {
-                    if (_port.IsOpen)
-                        _port.Close();
+                    portToClose.Close();
+                    portToClose.Dispose();
                 }
-                catch { /* Ignore close errors */ }
-
-                _port.Dispose();
-                _port = null;
-            }
+                catch (Exception)
+                {
+                    // Port may already be dead — best-effort cleanup
+                }
+            });
+        }
+        catch (Exception)
+        {
+            // Ignore — port is being abandoned
         }
 
         if (wasConnected)
-        {
             ConnectionChanged?.Invoke(false);
-        }
     }
 
     /// <summary>

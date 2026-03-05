@@ -353,4 +353,103 @@ public class TransportServiceTests
         // Reconnect should fire: false (disconnect old), true (connect new)
         Assert.Equal([false, true], states);
     }
+
+    // ──────────────────────────────────────────────
+    //  SerialTransportService — Thread Safety (VI-0009)
+    // ──────────────────────────────────────────────
+
+    /// <summary>
+    /// Verifies that concurrent <see cref="SerialTransportService.Send(string)"/> calls
+    /// on a disconnected transport do not throw exceptions.
+    /// </summary>
+    [Fact]
+    public void SerialTransport_ConcurrentSend_DoesNotThrow()
+    {
+        using var transport = new SerialTransportService();
+        var exceptions = new System.Collections.Concurrent.ConcurrentBag<Exception>();
+
+        var threads = new Thread[4];
+        for (int i = 0; i < threads.Length; i++)
+        {
+            threads[i] = new Thread(() =>
+            {
+                try
+                {
+                    for (int j = 0; j < 100; j++)
+                        transport.Send("L0500I1000\n");
+                }
+                catch (Exception ex)
+                {
+                    exceptions.Add(ex);
+                }
+            });
+        }
+
+        foreach (var t in threads) t.Start();
+        foreach (var t in threads) t.Join(2000);
+
+        Assert.Empty(exceptions);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="SerialTransportService.Disconnect"/> returns immediately
+    /// (does not hang waiting for pending writes) even when the transport was never connected.
+    /// </summary>
+    [Fact]
+    public void SerialTransport_DisconnectWhileSending_DoesNotHang()
+    {
+        using var transport = new SerialTransportService();
+        // Start sends on background threads (will no-op since disconnected)
+        var sendThread = new Thread(() =>
+        {
+            for (int i = 0; i < 1000; i++)
+                transport.Send("L0500I1000\n");
+        });
+        sendThread.Start();
+
+        // Disconnect concurrently — must return quickly
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        transport.Disconnect();
+        sw.Stop();
+
+        Assert.True(sw.ElapsedMilliseconds < 100,
+            $"Disconnect took {sw.ElapsedMilliseconds}ms, expected < 100ms");
+
+        sendThread.Join(2000);
+    }
+
+    /// <summary>
+    /// Verifies that <see cref="SerialTransportService.IsConnected"/> is false
+    /// immediately after <see cref="SerialTransportService.Disconnect"/> returns
+    /// (even though port close is asynchronous).
+    /// </summary>
+    [Fact]
+    public void SerialTransport_DisconnectSetsNotConnected()
+    {
+        using var transport = new SerialTransportService();
+
+        // Not connected to begin with
+        transport.Disconnect();
+        Assert.False(transport.IsConnected);
+        Assert.Null(transport.ConnectionLabel);
+    }
+
+    /// <summary>
+    /// Verifies that calling <see cref="SerialTransportService.Send(string)"/>
+    /// after <see cref="SerialTransportService.Disconnect"/> is a safe no-op.
+    /// </summary>
+    [Fact]
+    public void SerialTransport_SendAfterDisconnect_NoOp()
+    {
+        using var transport = new SerialTransportService();
+        string? error = null;
+        transport.ErrorOccurred += msg => error = msg;
+
+        transport.Disconnect();
+        transport.Send("L0500I1000\n");
+        transport.Send(System.Text.Encoding.UTF8.GetBytes("L0500I1000\n"));
+
+        // No error should have been raised — send should be a quiet no-op
+        Assert.Null(error);
+    }
 }
