@@ -108,7 +108,8 @@
                     IsDefault="True"
                     FontSize="13"
                     Foreground="{StaticResource ActiveIconBrush}"
-                    Cursor="Hand">
+                    Cursor="Hand"
+                    ToolTip="Close">
                 <Button.Style>
                     <Style TargetType="Button">
                         <Setter Property="Background" Value="{StaticResource ButtonBackgroundBrush}" />

@@ -201,7 +201,8 @@
                             Grid.Column="1"
                             Style="{StaticResource SeekSliderStyle}"
                             Value="{Binding SeekPosition, Mode=TwoWay}"
-                            IsEnabled="{Binding HasMedia}" />
+                            IsEnabled="{Binding HasMedia}"
+                            ToolTip="Seek position" />
 
                     <TextBlock Grid.Column="2"
                                Text="{Binding DurationText}"
@@ -228,7 +229,7 @@
                         <Button Style="{StaticResource TransportButtonStyle}"
                                 Command="{Binding SkipPreviousCommand}"
                                 IsEnabled="{Binding HasMedia}"
-                                ToolTip="Previous">
+                                ToolTip="Skip to previous file">
                             <Path Data="{StaticResource SkipPreviousGeometry}"
                                   Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   Stretch="Uniform" Width="14" Height="14" />
@@ -238,7 +239,7 @@
                         <Button Style="{StaticResource PlayPauseButtonStyle}"
                                 Command="{Binding PlayPauseCommand}"
                                 IsEnabled="{Binding HasMedia}"
-                                ToolTip="Play/Pause">
+                                ToolTip="Toggle play or pause">
                             <Grid>
                                 <Path x:Name="PlayIcon"
                                       Data="{StaticResource PlayIconGeometry}"
@@ -267,7 +268,7 @@
                         <Button Style="{StaticResource TransportButtonStyle}"
                                 Command="{Binding StopCommand}"
                                 IsEnabled="{Binding HasMedia}"
-                                ToolTip="Stop">
+                                ToolTip="Stop playback">
                             <Path Data="{StaticResource StopIconGeometry}"
                                   Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   Stretch="Uniform" Width="12" Height="12" />
@@ -277,7 +278,7 @@
                         <Button Style="{StaticResource TransportButtonStyle}"
                                 Command="{Binding SkipNextCommand}"
                                 IsEnabled="{Binding HasMedia}"
-                                ToolTip="Next">
+                                ToolTip="Skip to next file">
                             <Path Data="{StaticResource SkipNextGeometry}"
                                   Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
                                   Stretch="Uniform" Width="14" Height="14" />
@@ -301,7 +302,7 @@
                         <!-- Loop toggle -->
                         <ToggleButton Style="{StaticResource TransportToggleButtonStyle}"
                                       IsChecked="{Binding IsLooping}"
-                                      ToolTip="Loop">
+                                      ToolTip="Toggle loop playback">
                             <Path Data="{StaticResource LoopIconGeometry}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"
                                   StrokeThickness="1.2"
@@ -312,7 +313,7 @@
                         <!-- Shuffle toggle -->
                         <ToggleButton Style="{StaticResource TransportToggleButtonStyle}"
                                       IsChecked="{Binding IsShuffling}"
-                                      ToolTip="Shuffle">
+                                      ToolTip="Toggle shuffle mode">
                             <Path Data="{StaticResource ShuffleIconGeometry}"
                                   Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ToggleButton}}"
                                   StrokeThickness="1.2"
@@ -324,7 +325,7 @@
                         <Button x:Name="SpeedButton"
                                 Style="{StaticResource TransportButtonStyle}"
                                 Width="Auto" MinWidth="28" Height="28" Padding="4,5"
-                                ToolTip="Playback Speed"
+                                ToolTip="Change playback speed"
                                 Click="OnSpeedButtonClick">
                             <TextBlock Text="{Binding PlaybackSpeedText}"
                                        FontSize="11" FontWeight="SemiBold"
@@ -357,7 +358,7 @@
                         <Button Style="{StaticResource TransportButtonStyle}"
                                 Width="28" Height="28" Padding="5"
                                 Command="{Binding ToggleMuteCommand}"
-                                ToolTip="Mute">
+                                ToolTip="Toggle mute">
                             <Grid>
                                 <Path Data="{StaticResource VolumeHighGeometry}"
                                       Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}"
@@ -386,7 +387,7 @@
                         <Slider x:Name="VolumeSlider"
                                 Style="{StaticResource VolumeSliderStyle}"
                                 Value="{Binding Volume, Mode=TwoWay}"
-                                ToolTip="Volume"
+                                ToolTip="Adjust volume"
                                 Margin="4,0,0,0" />
                     </StackPanel>
                 </Grid>

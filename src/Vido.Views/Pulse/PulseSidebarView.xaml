@@ -48,6 +48,7 @@
                 <ToggleButton Grid.Column="0"
                               Style="{StaticResource PulseToggleStyle}"
                               IsChecked="{Binding UsePulse, Mode=TwoWay}"
+                              ToolTip="Enable or disable Pulse beat detection"
                               VerticalAlignment="Center" />
 
                 <TextBlock Grid.Column="1"
