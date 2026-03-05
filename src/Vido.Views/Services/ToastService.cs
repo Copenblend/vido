@@ -4,6 +4,7 @@ using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
+using Vido.Core.Settings;
 using Vido.Services.Playlists;
 
 namespace Vido.Views.Services;
@@ -21,12 +22,22 @@ public sealed class ToastService : IToastService
     private static readonly SolidColorBrush ErrorBorderBrush = CreateFrozenBrush(Color.FromRgb(0x9E, 0x22, 0x16));
     private static readonly System.Windows.Media.Effects.DropShadowEffect SharedShadowEffect = CreateFrozenShadowEffect();
 
+    private readonly ISettingsService? _settingsService;
     private Border? _currentToast;
     private DispatcherTimer? _hideTimer;
 
     /// <summary>
+    /// Creates a new ToastService, optionally reading toast duration from settings.
+    /// </summary>
+    /// <param name="settingsService">Optional settings service for configurable toast duration.</param>
+    public ToastService(ISettingsService? settingsService = null)
+    {
+        _settingsService = settingsService;
+    }
+
+    /// <summary>
     /// Shows an info toast (blue accent background).
-    /// Auto-dismisses after 3 seconds with a fade animation.
+    /// Auto-dismisses after the configured duration (default 3 seconds) with a fade animation.
     /// </summary>
     /// <param name="message">Primary toast message.</param>
     /// <param name="boldSuffix">Optional highlighted suffix text.</param>
@@ -132,7 +143,8 @@ public sealed class ToastService : IToastService
 
             // Auto-dismiss timer
             _hideTimer?.Stop();
-            _hideTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+            var duration = _settingsService?.Current.ToastDurationSeconds ?? 3.0;
+            _hideTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(duration) };
             _hideTimer.Tick += (_, _) =>
             {
                 _hideTimer.Stop();

@@ -1238,6 +1238,70 @@ public class VideoPlayerViewModelTests : IDisposable
     }
 
     /// <summary>
+    /// Verifies that RestoreLastVideoAsync does not show resume bar when ResumePlaybackPrompt is disabled.
+    /// </summary>
+    [Fact]
+    public async Task RestoreLastVideo_ResumePlaybackPromptDisabled_DoesNotShowBar()
+    {
+        var dir = CreateTempVideoDir("resume.mp4");
+        try
+        {
+            var filePath = Path.Combine(dir, "resume.mp4");
+            _stateService.Current.LastVideoPath = filePath;
+            _stateService.Current.LastVideoPosition = 30;
+            _settingsService.Current.ResumePlaybackPrompt = false;
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            // Use a TCS to unblock the seek-done wait
+            _engine.When(e => e.Play()).Do(_ =>
+            {
+                // Fire SeekCompleted after a tiny delay to prevent infinite wait
+                Task.Run(async () =>
+                {
+                    await Task.Delay(50);
+                    _engine.SeekCompleted += Raise.Event<Action>();
+                });
+            });
+
+            await _sut.RestoreLastVideoAsync();
+
+            Assert.False(_sut.ShowResumeBar);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    /// <summary>
+    /// Verifies that RestoreLastVideoAsync shows resume bar when ResumePlaybackPrompt is enabled (default).
+    /// </summary>
+    [Fact]
+    public async Task RestoreLastVideo_ResumePlaybackPromptEnabled_ShowsBar()
+    {
+        var dir = CreateTempVideoDir("resume.mp4");
+        try
+        {
+            var filePath = Path.Combine(dir, "resume.mp4");
+            _stateService.Current.LastVideoPath = filePath;
+            _stateService.Current.LastVideoPosition = 30;
+            _settingsService.Current.ResumePlaybackPrompt = true;
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            _engine.When(e => e.Play()).Do(_ =>
+            {
+                Task.Run(async () =>
+                {
+                    await Task.Delay(50);
+                    _engine.SeekCompleted += Raise.Event<Action>();
+                });
+            });
+
+            await _sut.RestoreLastVideoAsync();
+
+            Assert.True(_sut.ShowResumeBar);
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    /// <summary>
     /// Cleans up test resources after each test run.
     /// </summary>
     public void Dispose()

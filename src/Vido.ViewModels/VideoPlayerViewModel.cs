@@ -495,9 +495,12 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         _engine.SeekCompleted -= OnSeekDone;
         _engine.Pause();
 
-        // Show the resume bar prompt
-        ResumeBarTitle = Path.GetFileName(lastPath);
-        ShowResumeBar = true;
+        // Show the resume bar prompt (respects user setting)
+        if (_settingsService.Current.ResumePlaybackPrompt)
+        {
+            ResumeBarTitle = Path.GetFileName(lastPath);
+            ShowResumeBar = true;
+        }
 
         _logService.Info($"Restored: {Path.GetFileName(lastPath)} at {PositionText}", "Player");
     }
