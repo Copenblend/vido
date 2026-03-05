@@ -7,6 +7,7 @@ using Vido.Core.Logging;
 using Vido.Core.Models.Pulse;
 using Vido.Core.Settings;
 using Vido.Services.Events;
+using Vido.Services.Playlists;
 using Vido.Services.Pulse;
 using Vido.ViewModels.Pulse;
 using Xunit;
@@ -168,6 +169,33 @@ public class PulseViewModelTests : IDisposable
         vm.UsePulse = false;
 
         Assert.False(_settings.PulseUsePulse);
+    }
+
+    // ══════════════════════════════════════════════
+    //  PulseSidebarViewModel — UsePulse Toast Notifications
+    // ══════════════════════════════════════════════
+
+    [Fact]
+    public void SidebarVM_UsePulse_Enable_ShowsToast()
+    {
+        var toast = Substitute.For<IToastService>();
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, toast);
+
+        vm.UsePulse = true;
+
+        toast.Received(1).Show("Pulse enabled", Arg.Any<string?>());
+    }
+
+    [Fact]
+    public void SidebarVM_UsePulse_Disable_ShowsToast()
+    {
+        var toast = Substitute.For<IToastService>();
+        _settings.PulseUsePulse = true;
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, toast);
+
+        vm.UsePulse = false;
+
+        toast.Received(1).Show("Pulse disabled", Arg.Any<string?>());
     }
 
     // ══════════════════════════════════════════════

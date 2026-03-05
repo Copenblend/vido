@@ -1848,7 +1848,7 @@ public partial class MainWindow : Window
             _pulsePreAnalysis, liveAmplitude, mapper, _eventBus, _logService);
 
         // â”€â”€ Create ViewModels â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        _pulseSidebarVm = new PulseSidebarViewModel(_pulseEngine, _settingsService);
+        _pulseSidebarVm = new PulseSidebarViewModel(_pulseEngine, _settingsService, _toastService);
         _waveformVm = new WaveformViewModel(_pulseEngine, _settingsService);
 
         // â”€â”€ Wire Status Bar Updates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
