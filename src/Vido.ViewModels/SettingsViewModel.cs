@@ -39,9 +39,12 @@ public partial class SettingsViewModel : ObservableObject
     /// </summary>
     /// <param name="settingsService">Service for reading and persisting application settings.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="settingsService"/> is null.</exception>
-    public SettingsViewModel(ISettingsService settingsService)
+    private readonly ISettingsStore? _settingsStore;
+
+    public SettingsViewModel(ISettingsService settingsService, ISettingsStore? settingsStore = null)
     {
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
+        _settingsStore = settingsStore;
 
         BuildAppSettings();
         ApplyFilter();
@@ -95,7 +98,7 @@ public partial class SettingsViewModel : ObservableObject
         };
 
         var generalItems = generalDefinitions
-            .Select(d => new SettingDisplayItem(d, _settingsService))
+            .Select(d => new SettingDisplayItem(d, _settingsService, _settingsStore))
             .ToList();
         AllCategories.Add(new SettingsCategoryViewModel("General", generalItems));
 
@@ -160,7 +163,7 @@ public partial class SettingsViewModel : ObservableObject
         };
 
         var playbackItems = playbackDefinitions
-            .Select(d => new SettingDisplayItem(d, _settingsService))
+            .Select(d => new SettingDisplayItem(d, _settingsService, _settingsStore))
             .ToList();
         AllCategories.Add(new SettingsCategoryViewModel("Playback", playbackItems));
 
@@ -178,7 +181,7 @@ public partial class SettingsViewModel : ObservableObject
         };
 
         var explorerItems = explorerDefinitions
-            .Select(d => new SettingDisplayItem(d, _settingsService))
+            .Select(d => new SettingDisplayItem(d, _settingsService, _settingsStore))
             .ToList();
         AllCategories.Add(new SettingsCategoryViewModel("File Explorer", explorerItems));
 
@@ -204,7 +207,7 @@ public partial class SettingsViewModel : ObservableObject
         };
 
         var screenshotItems = screenshotDefinitions
-            .Select(d => new SettingDisplayItem(d, _settingsService))
+            .Select(d => new SettingDisplayItem(d, _settingsService, _settingsStore))
             .ToList();
         AllCategories.Add(new SettingsCategoryViewModel("Screenshot", screenshotItems));
 
@@ -306,7 +309,7 @@ public partial class SettingsViewModel : ObservableObject
         };
 
         var items = definitions
-            .Select(d => new SettingDisplayItem(d, _settingsService))
+            .Select(d => new SettingDisplayItem(d, _settingsService, _settingsStore))
             .ToList();
         AllCategories.Add(new SettingsCategoryViewModel("OSR2+", items));
     }
@@ -353,7 +356,7 @@ public partial class SettingsViewModel : ObservableObject
         };
 
         var items = definitions
-            .Select(d => new SettingDisplayItem(d, _settingsService))
+            .Select(d => new SettingDisplayItem(d, _settingsService, _settingsStore))
             .ToList();
         AllCategories.Add(new SettingsCategoryViewModel("Pulse", items));
     }
@@ -376,7 +379,7 @@ public partial class SettingsViewModel : ObservableObject
         };
 
         var items = definitions
-            .Select(d => new SettingDisplayItem(d, _settingsService))
+            .Select(d => new SettingDisplayItem(d, _settingsService, _settingsStore))
             .ToList();
         AllCategories.Add(new SettingsCategoryViewModel("Playlists", items));
     }
