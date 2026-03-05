@@ -271,6 +271,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     public void ToggleBottomPanel()
     {
+        if (IsFullscreen) return;
         IsBottomPanelVisible = !IsBottomPanelVisible;
         if (IsBottomPanelVisible)
             IsBottomPanelCollapsed = false;
@@ -282,6 +283,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     public void ToggleBottomPanelCollapse()
     {
+        if (IsFullscreen) return;
         if (!IsBottomPanelVisible)
         {
             // If panel is hidden entirely, show it expanded
@@ -420,7 +422,8 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         ActiveBottomPanelTab = tab;
-        IsBottomPanelVisible = true;
+        if (!IsFullscreen)
+            IsBottomPanelVisible = true;
     }
 
     /// <summary>
@@ -442,7 +445,8 @@ public partial class MainWindowViewModel : ObservableObject
         if (existing is not null)
         {
             ActiveBottomPanelTab = existing;
-            IsBottomPanelVisible = true;
+            if (!IsFullscreen)
+                IsBottomPanelVisible = true;
             return;
         }
 
@@ -458,7 +462,8 @@ public partial class MainWindowViewModel : ObservableObject
         var insertIndex = Math.Min(canonicalIndex, BottomPanelTabs.Count);
         BottomPanelTabs.Insert(insertIndex, tab);
         ActiveBottomPanelTab = tab;
-        IsBottomPanelVisible = true;
+        if (!IsFullscreen)
+            IsBottomPanelVisible = true;
 
         // Persist Log Output visibility when it's re-added via Show Output
         if (tabId == OutputTabId)
