@@ -533,6 +533,38 @@ public class Osr2ViewModelTests : IDisposable
     }
 
     /// <summary>
+    /// Verifies that after OnSuppressFunscript clears scripts, an empty L0 script
+    /// can be injected on TCodeService to prevent Serial freeze (VI-0012).
+    /// </summary>
+    [Fact]
+    public void AxisControl_SuppressThenEmptyL0Injection_HasScriptsLoaded()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+
+        // Load initial scripts
+        var script = MakeScript((0, 0), (1000, 100));
+        vm.FindMatchingScriptsFunc = _ => new Dictionary<string, string>
+        {
+            { "L0", @"C:\videos\test.L0.funscript" }
+        };
+        vm.TryParseMultiAxisFunc = _ => null;
+        vm.ParseFileFunc = (_, _) => script;
+        vm.LoadScriptsForVideo(@"C:\videos\test.mp4");
+        Assert.True(_tcode.HasScriptsLoaded);
+
+        // Suppress — ClearAllScripts leaves TCode with zero scripts
+        vm.OnSuppressFunscript(new SuppressFunscriptEvent { SuppressFunscripts = true });
+        Assert.False(_tcode.HasScriptsLoaded);
+
+        // Inject empty L0 (simulates MainWindow handler, VI-0012)
+        _tcode.SetScripts(new Dictionary<string, FunscriptData>
+        {
+            ["L0"] = new FunscriptData { AxisId = "L0", FilePath = "", Actions = [] }
+        });
+        Assert.True(_tcode.HasScriptsLoaded);
+    }
+
+    /// <summary>
     /// Verifies that SetVideoPlaying updates IsTestEnabled.
     /// </summary>
     [Fact]

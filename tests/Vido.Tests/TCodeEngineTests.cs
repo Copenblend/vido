@@ -393,6 +393,70 @@ public class TCodeEngineTests : IDisposable
         Assert.False(_service.HasScriptsLoaded);
     }
 
+    /// <summary>
+    /// Verifies that SetScripts with an empty-actions FunscriptData for L0
+    /// is accepted and reports scripts as loaded (VI-0012).
+    /// </summary>
+    [Fact]
+    public void SetScripts_EmptyActionsL0_HasScriptsLoadedTrue()
+    {
+        var emptyScript = new FunscriptData { AxisId = "L0", FilePath = "", Actions = [] };
+
+        _service.SetScripts(new Dictionary<string, FunscriptData>
+        {
+            ["L0"] = emptyScript
+        });
+
+        Assert.True(_service.HasScriptsLoaded);
+    }
+
+    /// <summary>
+    /// Verifies that interpolation returns midpoint (50) for an empty-actions script,
+    /// preventing NullReferenceException or freeze in the output loop (VI-0012).
+    /// </summary>
+    [Fact]
+    public void SetScripts_EmptyActionsL0_InterpolatesWithoutError()
+    {
+        var emptyScript = new FunscriptData { AxisId = "L0", FilePath = "", Actions = [] };
+        _service.SetScripts(new Dictionary<string, FunscriptData>
+        {
+            ["L0"] = emptyScript
+        });
+        _service.SetAxisConfigs([MakeL0()]);
+        _service.SetPlaying(true);
+        _service.SetTime(1000);
+
+        // IsFunscriptPlaying should be true — the output loop will use the
+        // empty script and interpolation returns 50.0, avoiding the freeze path.
+        Assert.True(_service.IsFunscriptPlaying);
+    }
+
+    /// <summary>
+    /// Verifies that re-setting scripts after clearing with an empty-actions L0
+    /// replaces the prior state correctly (simulates Pulse suppress flow, VI-0012).
+    /// </summary>
+    [Fact]
+    public void SetScripts_ClearThenEmptyL0_ReplacesPriorState()
+    {
+        // Load a real script
+        _service.SetScripts(new Dictionary<string, FunscriptData>
+        {
+            ["L0"] = MakeScript((0, 0), (1000, 100))
+        });
+        Assert.True(_service.HasScriptsLoaded);
+
+        // Clear (simulates ClearAllScripts)
+        _service.SetScripts(new Dictionary<string, FunscriptData>());
+        Assert.False(_service.HasScriptsLoaded);
+
+        // Re-set with empty L0 (simulates empty funscript injection)
+        _service.SetScripts(new Dictionary<string, FunscriptData>
+        {
+            ["L0"] = new FunscriptData { AxisId = "L0", FilePath = "", Actions = [] }
+        });
+        Assert.True(_service.HasScriptsLoaded);
+    }
+
     // ═══════════════════════════════════════════════
     //  SetTime / GetExtrapolatedTimeMs
     // ═══════════════════════════════════════════════

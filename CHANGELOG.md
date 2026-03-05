@@ -5,6 +5,7 @@ All notable changes to the Vido project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- **VI-0012**: Fixed application freeze when using Serial transport with Pulse and no funscript by injecting an empty L0 funscript when Pulse suppresses funscript auto-loading. This ensures `TCodeService` always has a valid script entry during Pulse+Serial playback, routing through the safe interpolation path instead of the fill-mode code path that could trigger a race condition.
 - **VI-0009**: Fixed critical application freeze when using Serial transport with Pulse (no funscript). Root cause was a race condition between `SerialPort.Close()` on the UI thread and `BaseStream.Write()` on the TCode output thread. `Disconnect()` now closes the port asynchronously on a ThreadPool thread. Added `_sendLock` to serialize concurrent serial writes. `HomeAxes()`, `SendMidpoint()`, and `SendPositionWithOffset()` now enqueue commands via the output thread instead of calling `_transport.Send()` directly from the UI thread. `StopTimer()` join timeout increased from 500ms to 1500ms with a non-blocking fallback.
 
 ### Added
