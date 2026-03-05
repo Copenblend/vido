@@ -323,11 +323,6 @@ public partial class TitleBarView : UserControl
     public event Action? CheckForUpdatesRequested;
 
     /// <summary>
-    /// Raised when Help > Enter Repository Code is clicked.
-    /// </summary>
-    public event Action? EnterRepositoryCodeRequested;
-
-    /// <summary>
     /// Raised when the screenshot button is clicked.
     /// </summary>
     public event Action? ScreenshotRequested;
@@ -549,11 +544,6 @@ public partial class TitleBarView : UserControl
     private void OnCheckForUpdatesClick(object sender, RoutedEventArgs e)
     {
         CheckForUpdatesRequested?.Invoke();
-    }
-
-    private void OnEnterRepositoryCodeClick(object sender, RoutedEventArgs e)
-    {
-        EnterRepositoryCodeRequested?.Invoke();
     }
 
     private void OnScreenshotClick(object sender, RoutedEventArgs e)
