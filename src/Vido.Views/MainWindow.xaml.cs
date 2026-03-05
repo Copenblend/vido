@@ -202,6 +202,7 @@ public partial class MainWindow : Window
         SetupKeyboardShortcuts();
         SetupFileExplorer();
         SetupDragDrop();
+        _toastService = new ToastService();
         SetupOsr2Plus();
         SetupPulse();
         SetupPlaylists();
@@ -1566,7 +1567,7 @@ public partial class MainWindow : Window
         _beatDetection = new BeatDetectionService();
 
         // â”€â”€ Create ViewModels â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        _osr2SidebarVm = new Osr2PlusSidebarViewModel(_tcode, _settingsService, _eventBus);
+        _osr2SidebarVm = new Osr2PlusSidebarViewModel(_tcode, _settingsService, _eventBus, toastService: _toastService);
         _axisControlVm = new AxisControlViewModel(_tcode, _settingsService, parser, matcher);
         _visualizerVm = new VisualizerViewModel(_settingsService);
         _beatBarVm = new BeatBarViewModel(_settingsService, _beatDetection);
@@ -1935,7 +1936,6 @@ public partial class MainWindow : Window
         // â”€â”€ Create Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         var fileService = new PlaylistFileService();
         var dialogService = new Playlists.DialogService();
-        _toastService = new ToastService();
         _playlistProvider = new PlaylistProvider();
 
         // â”€â”€ Create ViewModel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

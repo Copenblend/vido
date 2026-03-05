@@ -4,6 +4,7 @@ using Vido.Core.Haptics;
 using Vido.Core.Models.Osr2Plus;
 using Vido.Core.Settings;
 using Vido.Services.Osr2Plus;
+using Vido.Services.Playlists;
 using Vido.ViewModels.Osr2Plus;
 using Xunit;
 
@@ -1189,13 +1190,81 @@ public class Osr2ViewModelTests : IDisposable
         Assert.Empty(vm.AvailableComPorts);
     }
 
-    private Osr2PlusSidebarViewModel CreateSidebarViewModel(IEventBus? eventBus = null)
+    private Osr2PlusSidebarViewModel CreateSidebarViewModel(IEventBus? eventBus = null, IToastService? toastService = null)
     {
         // Inject empty PortLister via constructor to avoid system COM port detection
         // during tests. Setting it after construction is too late — the constructor
         // calls RefreshPorts() which would detect real ports (e.g. COM2 on GitHub CI).
         return new Osr2PlusSidebarViewModel(_tcode, _settingsService, eventBus,
-            portLister: () => Array.Empty<string>());
+            portLister: () => Array.Empty<string>(), toastService: toastService);
+    }
+
+    /// <summary>
+    /// Verifies that Connect via UDP shows a toast with the port number.
+    /// </summary>
+    [Fact]
+    public void Sidebar_Connect_UDP_ShowsToast()
+    {
+        var toast = Substitute.For<IToastService>();
+        var vm = CreateSidebarViewModel(toastService: toast);
+        vm.UdpPort = 9000;
+        var transport = Substitute.For<ITransportService>();
+        vm.TransportFactory = (_, _, _, _) => (transport, true);
+
+        vm.Connect();
+
+        toast.Received(1).Show(Arg.Is<string>(s => s.Contains("UDP port")), Arg.Any<string?>());
+    }
+
+    /// <summary>
+    /// Verifies that Connect via Serial shows a toast with the COM port name.
+    /// </summary>
+    [Fact]
+    public void Sidebar_Connect_Serial_ShowsToast()
+    {
+        _settings.Osr2ConnectionMode = "Serial";
+        _settings.Osr2ComPort = "COM4";
+        var toast = Substitute.For<IToastService>();
+        var vm = CreateSidebarViewModel(toastService: toast);
+        var transport = Substitute.For<ITransportService>();
+        vm.TransportFactory = (_, _, _, _) => (transport, true);
+
+        vm.Connect();
+
+        toast.Received(1).Show(Arg.Is<string>(s => s.Contains("Serial COM port")), Arg.Any<string?>());
+    }
+
+    /// <summary>
+    /// Verifies that Disconnect shows a toast notification.
+    /// </summary>
+    [Fact]
+    public void Sidebar_Disconnect_ShowsToast()
+    {
+        var toast = Substitute.For<IToastService>();
+        var vm = CreateSidebarViewModel(toastService: toast);
+        var transport = Substitute.For<ITransportService>();
+        vm.TransportFactory = (_, _, _, _) => (transport, true);
+        vm.Connect();
+        toast.ClearReceivedCalls();
+
+        vm.Disconnect();
+
+        toast.Received(1).Show(Arg.Is<string>(s => s.Contains("Disconnected")), Arg.Any<string?>());
+    }
+
+    /// <summary>
+    /// Verifies that connection failure shows an error toast.
+    /// </summary>
+    [Fact]
+    public void Sidebar_Connect_Failure_ShowsErrorToast()
+    {
+        var toast = Substitute.For<IToastService>();
+        var vm = CreateSidebarViewModel(toastService: toast);
+        vm.TransportFactory = (_, _, _, _) => (null, false);
+
+        vm.Connect();
+
+        toast.Received(1).ShowError(Arg.Is<string>(s => s.Contains("Connection failed")), Arg.Any<string?>());
     }
 
     // ═══════════════════════════════════════════════════════════

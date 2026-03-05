@@ -8,6 +8,7 @@ using Vido.Core.Haptics;
 using Vido.Core.Models.Osr2Plus;
 using Vido.Core.Settings;
 using Vido.Services.Osr2Plus;
+using Vido.Services.Playlists;
 
 namespace Vido.ViewModels.Osr2Plus;
 
@@ -22,6 +23,7 @@ public class Osr2PlusSidebarViewModel : INotifyPropertyChanged
     private readonly TCodeService _tcode;
     private readonly ISettingsService _settingsService;
     private readonly IEventBus? _eventBus;
+    private readonly IToastService? _toastService;
 
     // Connection state
     private ConnectionMode _selectedMode = ConnectionMode.UDP;
@@ -257,11 +259,13 @@ public class Osr2PlusSidebarViewModel : INotifyPropertyChanged
     /// <param name="settingsService">Settings service for persisting connection settings.</param>
     /// <param name="eventBus">Optional event bus for publishing transport state events.</param>
     /// <param name="portLister">Optional COM port lister for test injection. When <c>null</c>, uses <see cref="SerialTransportService.ListPorts"/>.</param>
-    public Osr2PlusSidebarViewModel(TCodeService tcode, ISettingsService settingsService, IEventBus? eventBus = null, Func<string[]>? portLister = null)
+    /// <param name="toastService">Optional toast service for showing connection notifications.</param>
+    public Osr2PlusSidebarViewModel(TCodeService tcode, ISettingsService settingsService, IEventBus? eventBus = null, Func<string[]>? portLister = null, IToastService? toastService = null)
     {
         _tcode = tcode;
         _settingsService = settingsService;
         _eventBus = eventBus;
+        _toastService = toastService;
 
         // Allow test injection of port lister before RefreshPorts runs
         if (portLister is not null)
@@ -315,6 +319,7 @@ public class Osr2PlusSidebarViewModel : INotifyPropertyChanged
         {
             // Connection failed — still update status to show "Disconnected"
             OnPropertyChanged(nameof(StatusText));
+            _toastService?.ShowError($"Connection failed: {StatusText}");
             return;
         }
 
@@ -335,6 +340,12 @@ public class Osr2PlusSidebarViewModel : INotifyPropertyChanged
 
         IsConnected = true;
         PublishTransportState(true);
+
+        // Show connection toast
+        if (_selectedMode == ConnectionMode.UDP)
+            _toastService?.Show($"Connected to UDP port {_udpPort}");
+        else
+            _toastService?.Show($"Connected to Serial COM port {_selectedComPort}");
     }
 
     /// <summary>
@@ -357,6 +368,12 @@ public class Osr2PlusSidebarViewModel : INotifyPropertyChanged
 
         IsConnected = false;
         PublishTransportState(false);
+
+        // Show disconnection toast
+        if (_settingsService.Current.Osr2ConnectionMode == "UDP")
+            _toastService?.Show($"Disconnected from UDP port {_settingsService.Current.Osr2UdpPort}");
+        else
+            _toastService?.Show($"Disconnected from Serial COM port {_settingsService.Current.Osr2ComPort}");
     }
 
     private void OnTransportConnectionChanged(bool connected)
@@ -369,6 +386,7 @@ public class Osr2PlusSidebarViewModel : INotifyPropertyChanged
             _transport = null;
             IsConnected = false;
             PublishTransportState(false);
+            _toastService?.ShowError("Device disconnected unexpectedly");
         }
     }
 
