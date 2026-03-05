@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -95,6 +95,7 @@ public partial class MainWindow : Window
     private WaveformViewModel? _waveformVm;
     private UIElement? _pulseSidebarContent;
     private UIElement? _pulseBeatRateControl;
+    private Button? _pulseToolbarButton;
     private readonly List<IDisposable> _pulseSubscriptions = [];
 
     // â”€â”€ Playlists integrated feature â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -1864,6 +1865,103 @@ public partial class MainWindow : Window
             Dispatcher.BeginInvoke(Apply);
     }
 
+
+    // ── Pulse Toolbar Button ──────────────────────────────────
+
+    /// <summary>
+    /// Creates and adds the Pulse toggle toolbar button to the title bar.
+    /// Uses a Path-based heart outline matching the screenshot button style.
+    /// </summary>
+    private void SetupPulseToolbarButton()
+    {
+        // Heart outline path matching the line-art style of other toolbar icons
+        var heartPath = new System.Windows.Shapes.Path
+        {
+            Data = System.Windows.Media.Geometry.Parse(
+                "M 8,14 C 5,11 1,8.5 1,5.5 C 1,3 3,1 5.5,1 C 6.8,1 7.8,1.5 8,2.5 C 8.2,1.5 9.2,1 10.5,1 C 13,1 15,3 15,5.5 C 15,8.5 11,11 8,14 Z"),
+            StrokeThickness = 1.2,
+            Fill = System.Windows.Media.Brushes.Transparent,
+            Stretch = System.Windows.Media.Stretch.Uniform,
+        };
+        heartPath.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "PrimaryForegroundBrush");
+
+        var canvas = new Canvas { Width = 16, Height = 16 };
+        canvas.Children.Add(heartPath);
+        Canvas.SetLeft(heartPath, 1);
+        Canvas.SetTop(heartPath, 1);
+        heartPath.Width = 14;
+        heartPath.Height = 14;
+
+        _pulseToolbarButton = new Button
+        {
+            Content = canvas,
+            ToolTip = "Toggle Pulse",
+            Tag = "pulse-toggle",
+            Height = 22,
+            Background = System.Windows.Media.Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Cursor = System.Windows.Input.Cursors.Hand,
+            VerticalAlignment = VerticalAlignment.Center,
+            Padding = new Thickness(4, 2, 4, 2),
+            VerticalContentAlignment = VerticalAlignment.Center,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+        };
+
+        // Custom template matching the toolbar button style
+        var bdName = "Bd";
+        var template = new ControlTemplate(typeof(Button));
+        var borderFactory = new FrameworkElementFactory(typeof(Border), bdName);
+        borderFactory.SetValue(Border.BackgroundProperty, System.Windows.Media.Brushes.Transparent);
+        borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
+        borderFactory.SetValue(Border.PaddingProperty, new Thickness(6, 2, 6, 2));
+        borderFactory.AppendChild(new FrameworkElementFactory(typeof(ContentPresenter)));
+
+        var hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
+        hoverTrigger.Setters.Add(new Setter(Border.BackgroundProperty,
+            new DynamicResourceExtension("HoverBackgroundBrush"), bdName));
+        template.Triggers.Add(hoverTrigger);
+        template.VisualTree = borderFactory;
+        _pulseToolbarButton.Template = template;
+
+        // Click toggles PulseUsePulse via the sidebar ViewModel
+        _pulseToolbarButton.Click += (_, _) =>
+        {
+            if (_pulseSidebarVm is not null)
+                _pulseSidebarVm.UsePulse = !_pulseSidebarVm.UsePulse;
+        };
+
+        // Sync icon when sidebar ViewModel changes (bidirectional)
+        if (_pulseSidebarVm is not null)
+        {
+            _pulseSidebarVm.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(PulseSidebarViewModel.UsePulse))
+                    UpdatePulseToolbarIcon(_pulseSidebarVm.UsePulse);
+            };
+
+            // Set initial icon state
+            UpdatePulseToolbarIcon(_pulseSidebarVm.UsePulse);
+        }
+
+        TitleBar.AddPluginToolbarButton(_pulseToolbarButton);
+    }
+
+    /// <summary>
+    /// Updates the Pulse toolbar button highlight based on the active state.
+    /// </summary>
+    /// <param name="isActive">Whether Pulse is currently enabled.</param>
+    private void UpdatePulseToolbarIcon(bool isActive)
+    {
+        void Apply()
+        {
+            TitleBar.SetToolbarButtonHighlight("pulse-toggle", isActive);
+        }
+
+        if (Dispatcher.CheckAccess())
+            Apply();
+        else
+            Dispatcher.BeginInvoke(Apply);
+    }
     // â”€â”€ Pulse Integrated Feature â”€â”€
 
     /// <summary>
@@ -1955,6 +2053,9 @@ public partial class MainWindow : Window
         // â”€â”€ Restore Persisted State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (_settingsService.Current.PulseUsePulse)
             _pulseSidebarVm.UsePulse = true;
+
+        // Toolbar button: Toggle Pulse
+        SetupPulseToolbarButton();
 
         _logService.Info("Pulse feature initialized", "Pulse");
     }
