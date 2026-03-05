@@ -1582,7 +1582,7 @@ public class Osr2ViewModelTests : IDisposable
         });
 
         // No external modes should be added
-        Assert.Equal(3, vm.AvailableModes.Count); // Off, OnPeak, OnValley
+        Assert.Equal(5, vm.AvailableModes.Count); // Off, OnPeak, OnValley, OnPeakAndValley, MidStroke
     }
 
     // ═══════════════════════════════════════════════════════════

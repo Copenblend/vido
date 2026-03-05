@@ -15,8 +15,14 @@ public sealed class BeatBarMode : IEquatable<BeatBarMode>
     /// <summary>Beat markers appear at valleys (down→up direction changes).</summary>
     public static readonly BeatBarMode OnValley = new("OnValley", "OnValley", isExternal: false);
 
+    /// <summary>Beat markers appear at both peaks and valleys (any direction change).</summary>
+    public static readonly BeatBarMode OnPeakAndValley = new("OnPeakAndValley", "On Peak & Valley", isExternal: false);
+
+    /// <summary>Beat markers appear at the midpoint of descending strokes (50-crossing).</summary>
+    public static readonly BeatBarMode MidStroke = new("MidStroke", "Mid Stroke", isExternal: false);
+
     /// <summary>All built-in modes in display order.</summary>
-    public static readonly IReadOnlyList<BeatBarMode> BuiltInModes = [Off, OnPeak, OnValley];
+    public static readonly IReadOnlyList<BeatBarMode> BuiltInModes = [Off, OnPeak, OnValley, OnPeakAndValley, MidStroke];
 
     /// <summary>
     /// Unique identifier for this mode.

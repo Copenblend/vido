@@ -327,15 +327,17 @@ public sealed class Osr2PlusModelTests
     // ╚══════════════════════════════════════════════════════════════════╝
 
     /// <summary>
-    /// Verifies that BuiltInModes contains Off, OnPeak, OnValley in order.
+    /// Verifies that BuiltInModes contains Off, OnPeak, OnValley, OnPeakAndValley, MidStroke in order.
     /// </summary>
     [Fact]
     public void BeatBarMode_BuiltInModes_ContainsThreeModes()
     {
-        Assert.Equal(3, BeatBarMode.BuiltInModes.Count);
+        Assert.Equal(5, BeatBarMode.BuiltInModes.Count);
         Assert.Same(BeatBarMode.Off, BeatBarMode.BuiltInModes[0]);
         Assert.Same(BeatBarMode.OnPeak, BeatBarMode.BuiltInModes[1]);
         Assert.Same(BeatBarMode.OnValley, BeatBarMode.BuiltInModes[2]);
+        Assert.Same(BeatBarMode.OnPeakAndValley, BeatBarMode.BuiltInModes[3]);
+        Assert.Same(BeatBarMode.MidStroke, BeatBarMode.BuiltInModes[4]);
     }
 
     /// <summary>
@@ -347,6 +349,8 @@ public sealed class Osr2PlusModelTests
         Assert.False(BeatBarMode.Off.IsExternal);
         Assert.False(BeatBarMode.OnPeak.IsExternal);
         Assert.False(BeatBarMode.OnValley.IsExternal);
+        Assert.False(BeatBarMode.OnPeakAndValley.IsExternal);
+        Assert.False(BeatBarMode.MidStroke.IsExternal);
     }
 
     /// <summary>
@@ -358,6 +362,8 @@ public sealed class Osr2PlusModelTests
         Assert.Equal("Off", BeatBarMode.Off.Id);
         Assert.Equal("OnPeak", BeatBarMode.OnPeak.Id);
         Assert.Equal("OnValley", BeatBarMode.OnValley.Id);
+        Assert.Equal("OnPeakAndValley", BeatBarMode.OnPeakAndValley.Id);
+        Assert.Equal("MidStroke", BeatBarMode.MidStroke.Id);
     }
 
     /// <summary>
@@ -443,7 +449,7 @@ public sealed class Osr2PlusModelTests
     [Fact]
     public void BeatDetectionMode_HasTwoMembers()
     {
-        Assert.Equal(2, Enum.GetValues<BeatDetectionMode>().Length);
+        Assert.Equal(4, Enum.GetValues<BeatDetectionMode>().Length);
     }
 
     /// <summary>
@@ -452,6 +458,8 @@ public sealed class Osr2PlusModelTests
     [Theory]
     [InlineData(BeatDetectionMode.OnPeak)]
     [InlineData(BeatDetectionMode.OnValley)]
+    [InlineData(BeatDetectionMode.OnPeakAndValley)]
+    [InlineData(BeatDetectionMode.MidStroke)]
     public void BeatDetectionMode_ContainsExpectedMember(BeatDetectionMode mode)
     {
         Assert.True(Enum.IsDefined(mode));

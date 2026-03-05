@@ -27,6 +27,8 @@ public sealed class BeatBarModeDisplayConverter : IValueConverter
         if (mode == BeatBarMode.Off) return "No Beat Bar";
         if (mode == BeatBarMode.OnPeak) return "On Peak";
         if (mode == BeatBarMode.OnValley) return "On Valley";
+        if (mode == BeatBarMode.OnPeakAndValley) return "On Peak & Valley";
+        if (mode == BeatBarMode.MidStroke) return "Mid Stroke";
 
         // External mode — use the display name from the registered source.
         return mode.DisplayName;
