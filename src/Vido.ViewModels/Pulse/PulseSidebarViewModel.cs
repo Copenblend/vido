@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Vido.Core.Models.Pulse;
 using Vido.Core.Settings;
+using Vido.Services.Playlists;
 using Vido.Services.Pulse;
 
 namespace Vido.ViewModels.Pulse;
@@ -15,6 +16,7 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
 {
     private readonly PulseEngine _engine;
     private readonly ISettingsService _settingsService;
+    private readonly IToastService? _toastService;
 
     private bool _usePulse;
     private PulseState _state;
@@ -32,13 +34,15 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
     /// <summary>Initializes a new instance of the sidebar view model.</summary>
     /// <param name="engine">Pulse engine that provides state, progress, and BPM updates.</param>
     /// <param name="settingsService">Settings service for persisting Pulse preferences.</param>
-    public PulseSidebarViewModel(PulseEngine engine, ISettingsService settingsService)
+    /// <param name="toastService">Optional toast service for showing enable/disable notifications.</param>
+    public PulseSidebarViewModel(PulseEngine engine, ISettingsService settingsService, IToastService? toastService = null)
     {
         ArgumentNullException.ThrowIfNull(engine);
         ArgumentNullException.ThrowIfNull(settingsService);
 
         _engine = engine;
         _settingsService = settingsService;
+        _toastService = toastService;
 
         // Load persisted state
         _usePulse = _settingsService.Current.PulseUsePulse;
@@ -73,6 +77,7 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
             _engine.SetEnabled(value);
             _settingsService.Current.PulseUsePulse = value;
             _settingsService.QueueSave();
+            _toastService?.Show(value ? "Pulse enabled" : "Pulse disabled");
         }
     }
 
