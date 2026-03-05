@@ -13,6 +13,7 @@ namespace Vido.ViewModels;
 public partial class SettingDisplayItem : ObservableObject
 {
     private readonly ISettingsService _settingsService;
+    private readonly ISettingsStore? _settingsStore;
     private readonly SettingDefinition _definition;
     private bool _suppressSave;
 
@@ -108,14 +109,28 @@ public partial class SettingDisplayItem : ObservableObject
         {
             if (double.TryParse(value, out var num))
             {
-                _definition.Setter?.Invoke(_settingsService.Current, num);
-                _settingsService.QueueSave();
+                if (_settingsStore is not null)
+                {
+                    _settingsStore.Set(_definition.Key, num);
+                }
+                else
+                {
+                    _definition.Setter?.Invoke(_settingsService.Current, num);
+                    _settingsService.QueueSave();
+                }
             }
         }
         else if (IsString || IsFolderPath)
         {
-            _definition.Setter?.Invoke(_settingsService.Current, value);
-            _settingsService.QueueSave();
+            if (_settingsStore is not null)
+            {
+                _settingsStore.Set(_definition.Key, value);
+            }
+            else
+            {
+                _definition.Setter?.Invoke(_settingsService.Current, value);
+                _settingsService.QueueSave();
+            }
         }
     }
 
@@ -128,8 +143,16 @@ public partial class SettingDisplayItem : ObservableObject
     partial void OnSelectedBooleanValueChanged(string value)
     {
         if (_suppressSave) return;
-        _definition.Setter?.Invoke(_settingsService.Current, value.Equals("True", StringComparison.OrdinalIgnoreCase));
-        _settingsService.QueueSave();
+        var boolValue = value.Equals("True", StringComparison.OrdinalIgnoreCase);
+        if (_settingsStore is not null)
+        {
+            _settingsStore.Set(_definition.Key, boolValue);
+        }
+        else
+        {
+            _definition.Setter?.Invoke(_settingsService.Current, boolValue);
+            _settingsService.QueueSave();
+        }
     }
 
     /// <summary>
@@ -143,8 +166,15 @@ public partial class SettingDisplayItem : ObservableObject
         if (_suppressSave) return;
         if (!string.IsNullOrEmpty(value))
         {
-            _definition.Setter?.Invoke(_settingsService.Current, value);
-            _settingsService.QueueSave();
+            if (_settingsStore is not null)
+            {
+                _settingsStore.Set(_definition.Key, value);
+            }
+            else
+            {
+                _definition.Setter?.Invoke(_settingsService.Current, value);
+                _settingsService.QueueSave();
+            }
         }
     }
 
@@ -197,8 +227,15 @@ public partial class SettingDisplayItem : ObservableObject
     /// </summary>
     private void SaveListToStore()
     {
-        _definition.Setter?.Invoke(_settingsService.Current, ListItems.ToList());
-        _settingsService.QueueSave();
+        if (_settingsStore is not null)
+        {
+            _settingsStore.Set(_definition.Key, ListItems.ToList());
+        }
+        else
+        {
+            _definition.Setter?.Invoke(_settingsService.Current, ListItems.ToList());
+            _settingsService.QueueSave();
+        }
     }
 
     /// <summary>
@@ -228,10 +265,11 @@ public partial class SettingDisplayItem : ObservableObject
     /// <param name="settingsService">Settings service for reading current values and persisting changes.</param>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="definition"/> is null.</exception>
     /// <exception cref="ArgumentNullException">Thrown if <paramref name="settingsService"/> is null.</exception>
-    public SettingDisplayItem(SettingDefinition definition, ISettingsService settingsService)
+    public SettingDisplayItem(SettingDefinition definition, ISettingsService settingsService, ISettingsStore? settingsStore = null)
     {
         _definition = definition ?? throw new ArgumentNullException(nameof(definition));
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
+        _settingsStore = settingsStore;
 
         _suppressSave = true;
         LoadCurrentValue();

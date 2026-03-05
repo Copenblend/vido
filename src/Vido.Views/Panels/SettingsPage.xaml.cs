@@ -21,11 +21,11 @@ public partial class SettingsPage : UserControl
     /// application settings.
     /// </summary>
     /// <param name="settingsService">Service providing access to persisted application settings.</param>
-    public SettingsPage(ISettingsService settingsService)
+    public SettingsPage(ISettingsService settingsService, ISettingsStore? settingsStore = null)
     {
         InitializeComponent();
 
-        _viewModel = new SettingsViewModel(settingsService);
+        _viewModel = new SettingsViewModel(settingsService, settingsStore);
 
         CategoriesControl.ItemsSource = _viewModel.FilteredCategories;
         UpdateNoResultsVisibility();

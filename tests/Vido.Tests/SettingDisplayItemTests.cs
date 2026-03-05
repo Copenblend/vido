@@ -565,4 +565,98 @@ public sealed class SettingDisplayItemTests
         Assert.Single(item.ListItems);
         Assert.Equal(string.Empty, item.ValidationError);
     }
+
+    // ── SettingsStore routing ──
+
+    /// <summary>
+    /// Verifies that when an ISettingsStore is provided, boolean changes route through
+    /// ISettingsStore.Set instead of calling the setter delegate directly.
+    /// </summary>
+    [Fact]
+    public void Boolean_WithSettingsStore_RoutesViaStoreSet()
+    {
+        var svc = CreateSettingsService();
+        var store = Substitute.For<ISettingsStore>();
+        var def = MakeBooleanDefinition(key: "screenshot.enabled", getter: _ => false);
+        var item = new SettingDisplayItem(def, svc, store);
+
+        item.SelectedBooleanValue = "True";
+
+        store.Received(1).Set("screenshot.enabled", true);
+        svc.DidNotReceive().QueueSave();
+    }
+
+    /// <summary>
+    /// Verifies that when an ISettingsStore is provided, number changes route through
+    /// ISettingsStore.Set instead of calling the setter delegate directly.
+    /// </summary>
+    [Fact]
+    public void Number_WithSettingsStore_RoutesViaStoreSet()
+    {
+        var svc = CreateSettingsService();
+        var store = Substitute.For<ISettingsStore>();
+        var def = MakeNumberDefinition(key: "test.num", getter: _ => 0.0);
+        var item = new SettingDisplayItem(def, svc, store);
+
+        item.StringValue = "42.5";
+
+        store.Received(1).Set("test.num", 42.5);
+        svc.DidNotReceive().QueueSave();
+    }
+
+    /// <summary>
+    /// Verifies that when an ISettingsStore is provided, enum changes route through
+    /// ISettingsStore.Set instead of calling the setter delegate directly.
+    /// </summary>
+    [Fact]
+    public void Enum_WithSettingsStore_RoutesViaStoreSet()
+    {
+        var svc = CreateSettingsService();
+        var store = Substitute.For<ISettingsStore>();
+        var def = MakeEnumDefinition(key: "test.enum", getter: _ => "A");
+        var item = new SettingDisplayItem(def, svc, store);
+
+        item.SelectedEnumValue = "C";
+
+        store.Received(1).Set("test.enum", "C");
+        svc.DidNotReceive().QueueSave();
+    }
+
+    /// <summary>
+    /// Verifies that when an ISettingsStore is provided, string (folderPath) changes
+    /// route through ISettingsStore.Set.
+    /// </summary>
+    [Fact]
+    public void FolderPath_WithSettingsStore_RoutesViaStoreSet()
+    {
+        var svc = CreateSettingsService();
+        var store = Substitute.For<ISettingsStore>();
+        var def = MakeFolderPathDefinition(key: "test.folder", getter: _ => "");
+        var item = new SettingDisplayItem(def, svc, store);
+
+        item.StringValue = @"C:\Screenshots";
+
+        store.Received(1).Set("test.folder", @"C:\Screenshots");
+        svc.DidNotReceive().QueueSave();
+    }
+
+    /// <summary>
+    /// Verifies that when settingsStore is null (default), boolean changes still
+    /// use the direct setter + QueueSave path (backward compatibility).
+    /// </summary>
+    [Fact]
+    public void Boolean_WithoutSettingsStore_UsesFallbackPath()
+    {
+        bool captured = false;
+        var svc = CreateSettingsService();
+        var def = MakeBooleanDefinition(
+            getter: _ => false,
+            setter: (_, v) => captured = v is true);
+        var item = new SettingDisplayItem(def, svc);
+
+        item.SelectedBooleanValue = "True";
+
+        Assert.True(captured);
+        svc.Received().QueueSave();
+    }
 }

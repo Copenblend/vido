@@ -1353,7 +1353,7 @@ public partial class MainWindow : Window
             VideoPlayer.Visibility = Visibility.Collapsed;
             if (_settingsPage is null)
             {
-                _settingsPage = new SettingsPage(_settingsService);
+                _settingsPage = new SettingsPage(_settingsService, _appSettingsStore);
             }
             DynamicTabContent.Content = _settingsPage;
             DynamicTabContent.Visibility = Visibility.Visible;
