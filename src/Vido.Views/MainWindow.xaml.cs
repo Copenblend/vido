@@ -1673,9 +1673,18 @@ public partial class MainWindow : Window
         {
             _axisControlVm.OnSuppressFunscript(evt);
 
-            // When switching back to funscript, show the Funscript Visualizer
-            if (!evt.SuppressFunscripts)
+            if (evt.SuppressFunscripts)
             {
+                // Inject an empty L0 funscript so TCodeService always has a valid
+                // script entry during Pulse+Serial — prevents output-loop freeze.
+                _tcode?.SetScripts(new Dictionary<string, FunscriptData>
+                {
+                    ["L0"] = new FunscriptData { AxisId = "L0", FilePath = "", Actions = [] }
+                });
+            }
+            else
+            {
+                // When switching back to funscript, show the Funscript Visualizer
                 _mainWindowViewModel.ActivateBottomPanelTab("osr2.visualizer");
                 if (_bottomPanelContents.TryGetValue("osr2.visualizer", out var content))
                     BottomPanelContent.Content = content;
