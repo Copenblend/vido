@@ -130,7 +130,6 @@ public partial class MainWindow : Window
     // Fullscreen auto-hide timer
     private DispatcherTimer? _fullscreenHideTimer;
     private bool _controlsVisible = true;
-    private const int FullscreenHideDelayMs = 3000;
     private const int ControlsFadeDurationMs = 200;
 
     /// <summary>
@@ -203,7 +202,7 @@ public partial class MainWindow : Window
         SetupKeyboardShortcuts();
         SetupFileExplorer();
         SetupDragDrop();
-        _toastService = new ToastService();
+        _toastService = new ToastService(_settingsService);
         SetupOsr2Plus();
         SetupPulse();
         SetupPlaylists();
@@ -823,7 +822,7 @@ public partial class MainWindow : Window
         {
             _fullscreenHideTimer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromMilliseconds(FullscreenHideDelayMs)
+                Interval = TimeSpan.FromSeconds(_settingsService.Current.FullscreenAutoHideSeconds)
             };
             _fullscreenHideTimer.Tick += (_, _) =>
             {
@@ -832,6 +831,8 @@ public partial class MainWindow : Window
             };
         }
 
+        // Re-read setting each time fullscreen is entered (setting may have changed)
+        _fullscreenHideTimer.Interval = TimeSpan.FromSeconds(_settingsService.Current.FullscreenAutoHideSeconds);
         _fullscreenHideTimer.Start();
         _controlsVisible = true;
     }
@@ -846,7 +847,9 @@ public partial class MainWindow : Window
         if (!_controlsVisible)
             ShowFullscreenControls(animate: true);
 
-        // Reset the auto-hide timer
+        // Reset the auto-hide timer with current setting value
+        if (_fullscreenHideTimer is not null)
+            _fullscreenHideTimer.Interval = TimeSpan.FromSeconds(_settingsService.Current.FullscreenAutoHideSeconds);
         _fullscreenHideTimer?.Stop();
         _fullscreenHideTimer?.Start();
     }
