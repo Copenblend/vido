@@ -511,6 +511,13 @@ public partial class VideoPlayerControl : UserControl
         ControlsOverlay.Background = FullscreenOverlayGradient;
         ControlsOverlay.BorderThickness = new Thickness(0);
         ControlsOverlay.Padding = new Thickness(16, 8, 16, 8);
+
+        // Show the video name overlay if it has text
+        if (!string.IsNullOrEmpty(VideoNameText.Text))
+        {
+            VideoNameOverlay.Visibility = Visibility.Visible;
+            VideoNameOverlay.Opacity = 1.0;
+        }
     }
 
     /// <summary>
@@ -529,7 +536,24 @@ public partial class VideoPlayerControl : UserControl
         ControlsOverlay.BorderBrush = (Brush)FindResource("PrimaryBorderBrush");
         ControlsOverlay.BorderThickness = new Thickness(0, 1, 0, 0);
         ControlsOverlay.Padding = new Thickness(8, 4, 8, 4);
+
+        // Hide the video name overlay when leaving fullscreen
+        VideoNameOverlay.Visibility = Visibility.Collapsed;
     }
+
+    /// <summary>
+    /// Sets the video name displayed in the fullscreen overlay (without extension).
+    /// </summary>
+    /// <param name="videoName">The video name to display, or null to clear.</param>
+    public void SetVideoName(string? videoName)
+    {
+        VideoNameText.Text = videoName ?? string.Empty;
+    }
+
+    /// <summary>
+    /// Gets the video name overlay border for animation purposes.
+    /// </summary>
+    public Border VideoNameOverlayElement => VideoNameOverlay;
 
     /// <summary>
     /// Gets the controls overlay border for animation purposes.

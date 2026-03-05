@@ -61,6 +61,28 @@
               Grid.Row="0"
               IsHitTestVisible="False" />
 
+        <!-- Video name for fullscreen overlay -->
+        <Border x:Name="VideoNameOverlay"
+                Grid.Row="0"
+                VerticalAlignment="Top"
+                HorizontalAlignment="Left"
+                Margin="16,12,0,0"
+                Padding="10,5"
+                CornerRadius="4"
+                IsHitTestVisible="False"
+                Visibility="Collapsed">
+            <Border.Background>
+                <SolidColorBrush Color="Black" Opacity="0.55" />
+            </Border.Background>
+            <TextBlock x:Name="VideoNameText"
+                       Foreground="White"
+                       FontFamily="Segoe UI"
+                       FontSize="14"
+                       FontWeight="SemiBold"
+                       TextTrimming="CharacterEllipsis"
+                       MaxWidth="600" />
+        </Border>
+
         <!-- Loading indicator overlay -->
         <StackPanel x:Name="LoadingOverlay"
                     Grid.Row="0"
