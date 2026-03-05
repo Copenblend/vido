@@ -987,8 +987,6 @@ public partial class MainWindow : Window
         // Wire Help menu events
         TitleBar.AboutRequested += ShowAboutDialog;
         TitleBar.CheckForUpdatesRequested += ShowCheckForUpdatesMessage;
-        // TODO PI-022: OnEnterRepositoryCode removed â€” plugin registry no longer needed
-        // TitleBar.EnterRepositoryCodeRequested += OnEnterRepositoryCode;
 
         // Wire screenshot button
         TitleBar.ScreenshotRequested += OnScreenshotRequested;
@@ -2863,5 +2861,4 @@ public partial class MainWindow : Window
         }
     }
 
-    // TODO PI-022: OnEnterRepositoryCode removed â€” plugin registry no longer needed
 }
