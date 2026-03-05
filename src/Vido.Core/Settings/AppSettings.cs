@@ -203,6 +203,30 @@ public sealed class AppSettings
     /// </summary>
     public int PulseBeatRateIndex { get; set; } = 0;
 
+    // --- General ---
+
+    /// <summary>
+    /// Duration in seconds before toast notifications auto-dismiss. Clamped 1.0–10.0.
+    /// </summary>
+    public double ToastDurationSeconds { get; set; } = 3.0;
+
+    // --- Playback (continued) ---
+
+    /// <summary>
+    /// Seconds of mouse inactivity before fullscreen controls auto-hide. Clamped 1.0–30.0.
+    /// </summary>
+    public double FullscreenAutoHideSeconds { get; set; } = 3.0;
+
+    /// <summary>
+    /// Whether to show the video filename in the fullscreen overlay.
+    /// </summary>
+    public bool FullscreenShowVideoName { get; set; } = true;
+
+    /// <summary>
+    /// Whether to show the resume playback prompt when re-opening a previously played video.
+    /// </summary>
+    public bool ResumePlaybackPrompt { get; set; } = true;
+
     // --- Playlist Settings ---
 
     /// <summary>
@@ -264,6 +288,14 @@ public sealed class AppSettings
         PulseWaveformWindowDuration = 30;
         PulseUsePulse = false;
         PulseBeatRateIndex = 0;
+
+        // General settings
+        ToastDurationSeconds = 3.0;
+
+        // Playback (continued)
+        FullscreenAutoHideSeconds = 3.0;
+        FullscreenShowVideoName = true;
+        ResumePlaybackPrompt = true;
 
         // Playlist settings
         PlaylistAutoSave = false;

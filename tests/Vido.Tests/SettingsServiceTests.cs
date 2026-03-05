@@ -53,6 +53,10 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.True(svc.Current.BottomPanelVisible);
         Assert.True(svc.Current.RightPanelVisible);
         Assert.False(svc.Current.ShowHiddenFiles);
+        Assert.Equal(3.0, svc.Current.ToastDurationSeconds);
+        Assert.Equal(3.0, svc.Current.FullscreenAutoHideSeconds);
+        Assert.True(svc.Current.FullscreenShowVideoName);
+        Assert.True(svc.Current.ResumePlaybackPrompt);
     }
 
     /// <summary>
@@ -191,5 +195,25 @@ public sealed class SettingsServiceTests : IDisposable
         var field = typeof(SettingsService).GetField("_debounceTimer", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         Assert.NotNull(field);
         Assert.Null(field!.GetValue(svc));
+    }
+
+    /// <summary>
+    /// Verifies that loading a settings.json without the new VI-0001 keys
+    /// produces correct default values for the new properties.
+    /// </summary>
+    [Fact]
+    public async Task LoadAsync_MissingNewKeys_DefaultsApplied()
+    {
+        // Write a minimal JSON without the new keys
+        var json = "{}";
+        File.WriteAllText(_settingsPath, json);
+
+        using var svc = CreateService();
+        await svc.LoadAsync();
+
+        Assert.Equal(3.0, svc.Current.ToastDurationSeconds);
+        Assert.Equal(3.0, svc.Current.FullscreenAutoHideSeconds);
+        Assert.True(svc.Current.FullscreenShowVideoName);
+        Assert.True(svc.Current.ResumePlaybackPrompt);
     }
 }

@@ -80,6 +80,25 @@ public partial class SettingsViewModel : ObservableObject
     /// </summary>
     private void BuildAppSettings()
     {
+        // ── General ──
+        var generalDefinitions = new List<SettingDefinition>
+        {
+            new(
+                Key: "general.toastDuration",
+                Type: "number",
+                DefaultValue: 3.0,
+                Title: "Toast Notification Duration",
+                Description: "How long toast notifications are displayed before auto-dismissing (seconds).",
+                Validation: new SettingValidation(Min: 1.0, Max: 10.0),
+                Getter: s => s.ToastDurationSeconds,
+                Setter: (s, v) => s.ToastDurationSeconds = Math.Clamp(Convert.ToDouble(v), 1.0, 10.0)),
+        };
+
+        var generalItems = generalDefinitions
+            .Select(d => new SettingDisplayItem(d, _settingsService))
+            .ToList();
+        AllCategories.Add(new SettingsCategoryViewModel("General", generalItems));
+
         // ── Playback ──
         var playbackDefinitions = new List<SettingDefinition>
         {
@@ -113,6 +132,31 @@ public partial class SettingsViewModel : ObservableObject
                 Description: "Automatically loop videos when they reach the end.",
                 Getter: s => s.LoopPlayback,
                 Setter: (s, v) => s.LoopPlayback = v is true),
+            new(
+                Key: "playback.fullscreenAutoHide",
+                Type: "number",
+                DefaultValue: 3.0,
+                Title: "Fullscreen Auto-Hide Delay",
+                Description: "Seconds of mouse inactivity before fullscreen controls hide automatically.",
+                Validation: new SettingValidation(Min: 1.0, Max: 30.0),
+                Getter: s => s.FullscreenAutoHideSeconds,
+                Setter: (s, v) => s.FullscreenAutoHideSeconds = Math.Clamp(Convert.ToDouble(v), 1.0, 30.0)),
+            new(
+                Key: "playback.fullscreenShowVideoName",
+                Type: "boolean",
+                DefaultValue: true,
+                Title: "Show Video Name in Fullscreen",
+                Description: "Display the current video filename in the fullscreen overlay.",
+                Getter: s => s.FullscreenShowVideoName,
+                Setter: (s, v) => s.FullscreenShowVideoName = v is true),
+            new(
+                Key: "playback.resumePlaybackPrompt",
+                Type: "boolean",
+                DefaultValue: true,
+                Title: "Resume Playback Prompt",
+                Description: "Show a prompt to resume playback when re-opening a previously played video.",
+                Getter: s => s.ResumePlaybackPrompt,
+                Setter: (s, v) => s.ResumePlaybackPrompt = v is true),
         };
 
         var playbackItems = playbackDefinitions
