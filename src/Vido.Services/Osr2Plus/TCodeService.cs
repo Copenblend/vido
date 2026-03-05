@@ -20,6 +20,10 @@ public class TCodeService : IDisposable
     private Thread? _outputThread;
     private volatile bool _threadRunning;
 
+    // Pending direct command: written by UI thread (HomeAxes, SendMidpoint, SendPositionWithOffset),
+    // consumed by the output thread to avoid cross-thread serial writes.
+    private string? _pendingDirectCommand;
+
     // Playback state (written by UI thread, read by output thread)
     private volatile bool _isPlaying;
     private volatile float _playbackSpeed = 1.0f;
@@ -341,12 +345,21 @@ public class TCodeService : IDisposable
 
     /// <summary>
     /// Stops the TCode output thread and clears all state.
+    /// Uses a 1500ms join timeout to avoid blocking the UI thread indefinitely
+    /// if the background thread is stuck in a serial write.
     /// </summary>
     public void StopTimer()
     {
         _threadRunning = false;
-        _outputThread?.Join(500);
-        _outputThread = null;
+        if (_outputThread is not null)
+        {
+            if (!_outputThread.Join(1500))
+            {
+                // Thread is stuck in a serial write — it will exit when the write completes
+                // or when the process exits. Do not block the UI.
+            }
+            _outputThread = null;
+        }
         _lastSentValues.Clear();
         lock (_testLock) _testingAxes.Clear();
     }
@@ -498,6 +511,11 @@ public class TCodeService : IDisposable
 
             try
             {
+                // Drain any pending direct command (HomeAxes, SendMidpoint, etc.)
+                var pending = Interlocked.Exchange(ref _pendingDirectCommand, null);
+                if (pending is not null)
+                    _transport?.Send(pending);
+
                 if (_transport?.IsConnected == true)
                 {
                     bool hasTestAxes;
@@ -1040,14 +1058,16 @@ public class TCodeService : IDisposable
     }
 
     /// <summary>
-    /// Sends a midpoint command (500) for the given axis to the transport.
+    /// Enqueues a midpoint command (500) for the given axis.
+    /// The command is sent by the output thread to avoid cross-thread serial writes.
     /// </summary>
     private void SendMidpoint(string axisId)
     {
         var config = FindAxisConfig(axisId);
         if (config == null || _transport?.IsConnected != true) return;
-        _transport.Send(FormatTCodeCommand(config, 500, 500) + "\n");
+        var command = FormatTCodeCommand(config, 500, 500) + "\n";
         _lastSentValues.Remove(axisId);
+        Volatile.Write(ref _pendingDirectCommand, command);
     }
 
     /// <summary>
@@ -1065,8 +1085,9 @@ public class TCodeService : IDisposable
         var baseTcode = PositionToTCode(config, 50.0);
         var offsetTcode = ApplyPositionOffset(config, baseTcode);
 
-        _transport.Send(FormatTCodeCommand(config, offsetTcode, 200) + "\n");
+        var command = FormatTCodeCommand(config, offsetTcode, 200) + "\n";
         _lastSentValues[axisId] = offsetTcode;
+        Volatile.Write(ref _pendingDirectCommand, command);
     }
 
     /// <summary>
@@ -1095,6 +1116,6 @@ public class TCodeService : IDisposable
             _lastSentValues[config.Id] = homeTcode;
         }
 
-        _transport.Send(string.Join(" ", parts) + "\n");
+        Volatile.Write(ref _pendingDirectCommand, string.Join(" ", parts) + "\n");
     }
 }

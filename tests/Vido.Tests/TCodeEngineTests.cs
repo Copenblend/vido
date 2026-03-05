@@ -927,7 +927,11 @@ public class TCodeEngineTests : IDisposable
             MakeR0()
         });
 
+        // Start output thread so the pending command gets dispatched
+        _service.Start();
         _service.HomeAxes();
+        Thread.Sleep(50);
+        _service.StopTimer();
 
         Assert.True(transport.SentMessages.Count > 0);
         var msg = transport.SentMessages[0];
@@ -961,7 +965,11 @@ public class TCodeEngineTests : IDisposable
         _service.Transport = transport;
         _service.SetAxisConfigs(new List<AxisConfig> { MakeL0(positionOffset: 10) });
 
+        // Start output thread so the pending command gets dispatched
+        _service.Start();
         _service.SendPositionWithOffset("L0");
+        Thread.Sleep(50);
+        _service.StopTimer();
 
         Assert.True(transport.SentMessages.Count > 0);
         var msg = transport.SentMessages[0];
