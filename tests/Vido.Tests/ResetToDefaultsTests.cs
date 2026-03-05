@@ -34,6 +34,10 @@ public sealed class ResetToDefaultsTests
             RightPanelCollapsed = true,
             RightPanelWidth = 999,
             ShowHiddenFiles = true,
+            ToastDurationSeconds = 8.0,
+            FullscreenAutoHideSeconds = 15.0,
+            FullscreenShowVideoName = false,
+            ResumePlaybackPrompt = false,
         };
 
         settings.ResetToDefaults();
@@ -52,6 +56,10 @@ public sealed class ResetToDefaultsTests
         Assert.False(settings.RightPanelCollapsed);
         Assert.Equal(300, settings.RightPanelWidth);
         Assert.False(settings.ShowHiddenFiles);
+        Assert.Equal(3.0, settings.ToastDurationSeconds);
+        Assert.Equal(3.0, settings.FullscreenAutoHideSeconds);
+        Assert.True(settings.FullscreenShowVideoName);
+        Assert.True(settings.ResumePlaybackPrompt);
     }
 
     /// <summary>
@@ -86,6 +94,10 @@ public sealed class ResetToDefaultsTests
         Assert.Equal(fresh.RightPanelCollapsed, mutated.RightPanelCollapsed);
         Assert.Equal(fresh.RightPanelWidth, mutated.RightPanelWidth);
         Assert.Equal(fresh.ShowHiddenFiles, mutated.ShowHiddenFiles);
+        Assert.Equal(fresh.ToastDurationSeconds, mutated.ToastDurationSeconds);
+        Assert.Equal(fresh.FullscreenAutoHideSeconds, mutated.FullscreenAutoHideSeconds);
+        Assert.Equal(fresh.FullscreenShowVideoName, mutated.FullscreenShowVideoName);
+        Assert.Equal(fresh.ResumePlaybackPrompt, mutated.ResumePlaybackPrompt);
     }
 
     /// <summary>

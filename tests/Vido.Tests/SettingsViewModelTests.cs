@@ -36,7 +36,8 @@ public sealed class SettingsViewModelTests
     {
         var vm = CreateViewModel();
 
-        Assert.Equal(6, vm.AllCategories.Count);
+        Assert.Equal(7, vm.AllCategories.Count);
+        Assert.Contains(vm.AllCategories, c => c.Name == "General");
         Assert.Contains(vm.AllCategories, c => c.Name == "Playback");
         Assert.Contains(vm.AllCategories, c => c.Name == "File Explorer");
         Assert.Contains(vm.AllCategories, c => c.Name == "Screenshot");
@@ -54,10 +55,13 @@ public sealed class SettingsViewModelTests
         var vm = CreateViewModel();
         var playback = vm.AllCategories.First(c => c.Name == "Playback");
 
-        Assert.Equal(3, playback.Settings.Count);
+        Assert.Equal(6, playback.Settings.Count);
         Assert.Contains(playback.Settings, s => s.Id == "playback.volume");
         Assert.Contains(playback.Settings, s => s.Id == "playback.speed");
         Assert.Contains(playback.Settings, s => s.Id == "playback.loop");
+        Assert.Contains(playback.Settings, s => s.Id == "playback.fullscreenAutoHide");
+        Assert.Contains(playback.Settings, s => s.Id == "playback.fullscreenShowVideoName");
+        Assert.Contains(playback.Settings, s => s.Id == "playback.resumePlaybackPrompt");
     }
 
     /// <summary>
@@ -187,7 +191,7 @@ public sealed class SettingsViewModelTests
 
         Assert.Contains(vm.FilteredCategories, c => c.Name == "Playback");
         var playback = vm.FilteredCategories.First(c => c.Name == "Playback");
-        Assert.Equal(3, playback.Settings.Count);
+        Assert.Equal(6, playback.Settings.Count);
     }
 
     /// <summary>
