@@ -7,6 +7,9 @@ All notable changes to the Vido project will be documented in this file.
 ### Fixed
 - **VI-0009**: Fixed critical application freeze when using Serial transport with Pulse (no funscript). Root cause was a race condition between `SerialPort.Close()` on the UI thread and `BaseStream.Write()` on the TCode output thread. `Disconnect()` now closes the port asynchronously on a ThreadPool thread. Added `_sendLock` to serialize concurrent serial writes. `HomeAxes()`, `SendMidpoint()`, and `SendPositionWithOffset()` now enqueue commands via the output thread instead of calling `_transport.Send()` directly from the UI thread. `StopTimer()` join timeout increased from 500ms to 1500ms with a non-blocking fallback.
 
+### Added
+- **VI-0010**: Enforced single-instance application behavior using a named Mutex and named pipe IPC. When a second instance is launched with a file argument, it forwards the file path to the running instance via named pipe and exits. The primary instance brings itself to the foreground and opens the file. Graceful fallback: if the pipe connection fails, the second instance launches normally.
+
 ### Removed
 - **VI-0011**: Removed defunct "Enter Repository Code..." menu item from Help menu, along with the `EnterRepositoryCodeRequested` event, `OnEnterRepositoryCodeClick` handler, and all related TODO comments.
 
