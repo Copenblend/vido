@@ -371,6 +371,17 @@ public partial class MainWindow : Window
     {
         VideoPlayer.DataContext = _videoPlayerViewModel;
         VideoPlayer.FullscreenToggleRequested += ToggleFullscreen;
+
+        // Subscribe to video load/unload events to update video name overlay
+        _eventBus.Subscribe<VideoLoadedEvent>(e =>
+        {
+            var videoName = Path.GetFileNameWithoutExtension(e.FilePath);
+            Dispatcher.BeginInvoke(() => VideoPlayer.SetVideoName(videoName));
+        });
+        _eventBus.Subscribe<VideoUnloadedEvent>(_ =>
+        {
+            Dispatcher.BeginInvoke(() => VideoPlayer.SetVideoName(null));
+        });
     }
 
     private void SetupOutputLog()
@@ -861,6 +872,23 @@ public partial class MainWindow : Window
             overlay.Opacity = 1.0;
         }
         overlay.IsHitTestVisible = true;
+
+        // Show the video name overlay if the setting is enabled
+        if (_settingsService.Current.FullscreenShowVideoName)
+        {
+            var nameOverlay = VideoPlayer.VideoNameOverlayElement;
+            nameOverlay.Visibility = Visibility.Visible;
+            if (animate)
+            {
+                var fadeIn = new DoubleAnimation(1.0, TimeSpan.FromMilliseconds(ControlsFadeDurationMs));
+                nameOverlay.BeginAnimation(OpacityProperty, fadeIn);
+            }
+            else
+            {
+                nameOverlay.BeginAnimation(OpacityProperty, null);
+                nameOverlay.Opacity = 1.0;
+            }
+        }
     }
 
     /// <summary>
@@ -884,6 +912,13 @@ public partial class MainWindow : Window
             }
         };
         overlay.BeginAnimation(OpacityProperty, fadeOut);
+
+        // Also fade out the video name overlay
+        var nameOverlay = VideoPlayer.VideoNameOverlayElement;
+        var nameFadeOut = new DoubleAnimation(0.0, TimeSpan.FromMilliseconds(ControlsFadeDurationMs));
+        nameFadeOut.EasingFunction = new CubicEase { EasingMode = EasingMode.EaseIn };
+        nameFadeOut.Completed += (_, _) => nameOverlay.Visibility = Visibility.Collapsed;
+        nameOverlay.BeginAnimation(OpacityProperty, nameFadeOut);
     }
 
     /// <summary>
