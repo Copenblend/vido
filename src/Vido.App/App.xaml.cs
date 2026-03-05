@@ -18,6 +18,7 @@ using Vido.Services.Menus;
 using Vido.Services.Settings;
 using Vido.Services.State;
 using Vido.Services.Updates;
+using Vido.Services.SingleInstance;
 using Vido.Services.Video;
 using Vido.ViewModels;
 using Vido.Views;
@@ -30,6 +31,7 @@ namespace Vido.App;
 public partial class App : Application
 {
     private ServiceProvider? _serviceProvider;
+    private SingleInstanceService? _singleInstanceService;
 
     /// <summary>
     /// Performs asynchronous application startup, dependency initialization, and main window launch.
@@ -39,6 +41,29 @@ public partial class App : Application
     {
         var startupTimer = Stopwatch.StartNew();
         base.OnStartup(e);
+
+        // ── Single-instance check ──
+        _singleInstanceService = new SingleInstanceService();
+        if (!_singleInstanceService.IsFirstInstance)
+        {
+            // Forward file path to existing instance and exit
+            try
+            {
+                var filePath = e.Args.Length > 0 ? e.Args[0].Trim('"') : null;
+                if (!string.IsNullOrWhiteSpace(filePath) && System.IO.File.Exists(filePath))
+                    _singleInstanceService.SendFileToExistingInstance(filePath);
+            }
+            catch
+            {
+                // If pipe fails, the existing instance is unreachable — exit silently.
+                // The first instance continues running.
+            }
+
+            _singleInstanceService.Dispose();
+            _singleInstanceService = null;
+            Shutdown();
+            return;
+        }
 
         var services = new ServiceCollection();
         ConfigureServices(services);
@@ -63,6 +88,10 @@ public partial class App : Application
         mainWindow.ProcessCommandLineArgs(e.Args);
         mainWindow.Show();
 
+        // Start listening for file paths from secondary instances
+        _singleInstanceService.FileReceived += mainWindow.HandleExternalFileOpen;
+        _singleInstanceService.StartListening();
+
         // Log time-to-visible before kicking off deferred work
         logService.Info(
             $"Window visible in {startupTimer.ElapsedMilliseconds} ms",
@@ -80,6 +109,9 @@ public partial class App : Application
     /// <param name="e">Exit event arguments for application shutdown.</param>
     protected override async void OnExit(ExitEventArgs e)
     {
+        _singleInstanceService?.Dispose();
+        _singleInstanceService = null;
+
         if (_serviceProvider is not null)
         {
             // Persist state and flush any pending settings before shutdown

@@ -223,6 +223,47 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
+    /// Handles a file path received from a secondary application instance via
+    /// the single-instance named pipe. Brings the window to the foreground and
+    /// loads the specified video file.
+    /// </summary>
+    /// <param name="filePath">The absolute file path forwarded by the secondary instance.</param>
+    public void HandleExternalFileOpen(string filePath)
+    {
+        Dispatcher.BeginInvoke(async () =>
+        {
+            // Bring window to foreground
+            if (WindowState == WindowState.Minimized)
+                WindowState = WindowState.Normal;
+
+            Activate();
+            Topmost = true;
+            Topmost = false;
+            Focus();
+
+            // Open the file using the same logic as command-line args
+            if (File.Exists(filePath))
+            {
+                _logService.Info($"Opening file from external instance: {filePath}", "App");
+
+                var parentDir = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(parentDir))
+                {
+                    var currentFolder = _fileExplorerViewModel.FolderPath;
+                    if (currentFolder is null ||
+                        !string.Equals(currentFolder, parentDir, StringComparison.OrdinalIgnoreCase))
+                    {
+                        OnFolderOpened(parentDir);
+                    }
+                }
+
+                _mainWindowViewModel.ActivateTab(MainWindowViewModel.PlayerTabId);
+                await _videoPlayerViewModel.LoadAndPlayAsync(filePath);
+            }
+        });
+    }
+
+    /// <summary>
     /// Executes the stored command-line arguments. Called from the Loaded event
     /// to ensure the video engine and visual tree are fully initialized.
     /// </summary>
