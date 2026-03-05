@@ -1167,4 +1167,111 @@ public class MainWindowViewModelTests
         Assert.NotNull(tab);
         Assert.False(tab!.IsClosable);
     }
+
+    // ── Fullscreen bottom panel guards ──
+
+    /// <summary>
+    /// Verifies that ActivateBottomPanelTab does not show the panel during fullscreen.
+    /// </summary>
+    [Fact]
+    public void ActivateBottomPanelTab_WhenFullscreen_DoesNotShowPanel()
+    {
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings());
+        var vm = new MainWindowViewModel(settingsSvc);
+        vm.OpenBottomPanelTab("osr2.visualizer", "OSR2+ VISUALIZER");
+        vm.IsBottomPanelVisible = false;
+        vm.IsFullscreen = true;
+
+        vm.ActivateBottomPanelTab("osr2.visualizer");
+
+        Assert.False(vm.IsBottomPanelVisible);
+    }
+
+    /// <summary>
+    /// Verifies that ActivateBottomPanelTab still selects the correct tab during fullscreen.
+    /// </summary>
+    [Fact]
+    public void ActivateBottomPanelTab_WhenFullscreen_StillActivatesTab()
+    {
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings());
+        var vm = new MainWindowViewModel(settingsSvc);
+        vm.OpenBottomPanelTab("osr2.visualizer", "OSR2+ VISUALIZER");
+        vm.IsBottomPanelVisible = false;
+        vm.IsFullscreen = true;
+
+        vm.ActivateBottomPanelTab("osr2.visualizer");
+
+        Assert.Equal("osr2.visualizer", vm.ActiveBottomPanelTab?.Id);
+    }
+
+    /// <summary>
+    /// Verifies that OpenBottomPanelTab does not show the panel during fullscreen.
+    /// </summary>
+    [Fact]
+    public void OpenBottomPanelTab_WhenFullscreen_DoesNotShowPanel()
+    {
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings());
+        var vm = new MainWindowViewModel(settingsSvc);
+        vm.IsFullscreen = true;
+        vm.IsBottomPanelVisible = false;
+
+        vm.OpenBottomPanelTab("osr2.visualizer", "OSR2+ VISUALIZER");
+
+        Assert.False(vm.IsBottomPanelVisible);
+        Assert.NotNull(vm.FindBottomPanelTab("osr2.visualizer"));
+    }
+
+    /// <summary>
+    /// Verifies that ToggleBottomPanel is a no-op during fullscreen.
+    /// </summary>
+    [Fact]
+    public void ToggleBottomPanel_WhenFullscreen_NoOp()
+    {
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings());
+        var vm = new MainWindowViewModel(settingsSvc);
+        vm.IsFullscreen = true;
+        vm.IsBottomPanelVisible = false;
+
+        vm.ToggleBottomPanel();
+
+        Assert.False(vm.IsBottomPanelVisible);
+    }
+
+    /// <summary>
+    /// Verifies that ToggleBottomPanelCollapse is a no-op during fullscreen.
+    /// </summary>
+    [Fact]
+    public void ToggleBottomPanelCollapse_WhenFullscreen_NoOp()
+    {
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings());
+        var vm = new MainWindowViewModel(settingsSvc);
+        vm.IsFullscreen = true;
+        vm.IsBottomPanelVisible = false;
+
+        vm.ToggleBottomPanelCollapse();
+
+        Assert.False(vm.IsBottomPanelVisible);
+    }
+
+    /// <summary>
+    /// Verifies that ActivateBottomPanelTab still shows the panel when not fullscreen (regression check).
+    /// </summary>
+    [Fact]
+    public void ActivateBottomPanelTab_WhenNotFullscreen_ShowsPanel()
+    {
+        var settingsSvc = Substitute.For<ISettingsService>();
+        settingsSvc.Current.Returns(new AppSettings());
+        var vm = new MainWindowViewModel(settingsSvc);
+        vm.OpenBottomPanelTab("osr2.visualizer", "OSR2+ VISUALIZER");
+        vm.IsBottomPanelVisible = false;
+
+        vm.ActivateBottomPanelTab("osr2.visualizer");
+
+        Assert.True(vm.IsBottomPanelVisible);
+    }
 }
