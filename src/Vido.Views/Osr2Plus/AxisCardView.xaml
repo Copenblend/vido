@@ -52,6 +52,7 @@
                     <ToggleButton Grid.Column="0"
                                   Style="{StaticResource Osr2ChevronStyle}"
                                   IsChecked="{Binding IsExpanded}"
+                                  ToolTip="Expand or collapse axis details"
                                   VerticalAlignment="Center"
                                   Margin="0,0,8,0" />
 
@@ -90,6 +91,7 @@
                     <CheckBox Grid.Column="5"
                               Style="{StaticResource Osr2ToggleSwitchStyle}"
                               IsChecked="{Binding Enabled}"
+                              ToolTip="Enable or disable this axis"
                               VerticalAlignment="Center" />
                 </Grid>
 
@@ -116,6 +118,7 @@
                                               MinValue="{Binding Min, Mode=TwoWay}"
                                               MaxValue="{Binding Max, Mode=TwoWay}"
                                               TrackColor="{Binding AxisColor, Converter={StaticResource HexToBrush}}"
+                                              ToolTip="Adjust axis range"
                                               Height="24"
                                               VerticalAlignment="Center" />
 
@@ -137,7 +140,8 @@
                         <ComboBox Style="{StaticResource Osr2ComboBoxStyle}"
                                   ItemContainerStyle="{StaticResource Osr2ComboBoxItemStyle}"
                                   ItemsSource="{Binding AvailableFillModes}"
-                                  SelectedItem="{Binding FillMode}">
+                                  SelectedItem="{Binding FillMode}"
+                                  ToolTip="Select fill mode">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding Converter={StaticResource FillModeDisplay}}" />
@@ -150,6 +154,7 @@
                                   Content="Sync with Stroke"
                                   IsChecked="{Binding SyncWithStroke}"
                                   IsEnabled="{Binding IsSyncEditable}"
+                                  ToolTip="Synchronize this axis with the stroke axis"
                                   Visibility="{Binding ShowSyncToggle, Converter={StaticResource BoolToVisibility}}"
                                   Margin="0,6,0,0" />
 
@@ -170,6 +175,7 @@
                                         Minimum="0.1" Maximum="3.0"
                                         SmallChange="0.1" LargeChange="0.5"
                                         Value="{Binding FillSpeedHz}"
+                                        ToolTip="Adjust fill speed"
                                         VerticalAlignment="Center" />
                                 <TextBlock Grid.Column="1"
                                        Foreground="{StaticResource TextSecondaryBrush}"
@@ -208,6 +214,7 @@
                                 Content="Open"
                                 Style="{StaticResource Osr2SmallButtonStyle}"
                                 Command="{Binding OpenScriptCommand}"
+                                ToolTip="Browse for funscript file"
                                 Margin="8,0,0,0"
                                 VerticalAlignment="Center" />
                     </Grid>
@@ -229,6 +236,7 @@
                                     Maximum="{Binding PositionOffsetMax}"
                                     SmallChange="1" LargeChange="5"
                                     Value="{Binding PositionOffset}"
+                                    ToolTip="Adjust position offset"
                                     VerticalAlignment="Center" />
                             <TextBlock Grid.Column="1"
                                        Text="{Binding PositionOffsetLabel}"

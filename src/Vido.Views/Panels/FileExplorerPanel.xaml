@@ -116,6 +116,7 @@
                     Background="{DynamicResource ButtonBackgroundBrush}"
                     BorderThickness="0"
                     Cursor="Hand"
+                    ToolTip="Open folder"
                     Click="OnOpenFolderButtonClick">
                 <Button.Template>
                     <ControlTemplate TargetType="Button">

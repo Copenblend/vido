@@ -40,7 +40,8 @@
                       ItemContainerStyle="{StaticResource Osr2ComboBoxItemStyle}"
                       ItemsSource="{Binding Source={StaticResource ConnectionModes}}"
                       SelectedItem="{Binding SelectedMode}"
-                      IsEnabled="{Binding IsNotConnected}" />
+                      IsEnabled="{Binding IsNotConnected}"
+                      ToolTip="Select connection mode" />
 
             <!-- ── UDP Section ─────────────────────────────── -->
             <StackPanel Visibility="{Binding IsUdpMode, Converter={StaticResource BoolToVisibility}}"
@@ -72,7 +73,8 @@
                               Style="{StaticResource Osr2ComboBoxStyle}"
                               ItemContainerStyle="{StaticResource Osr2ComboBoxItemStyle}"
                               ItemsSource="{Binding AvailableComPorts}"
-                              SelectedItem="{Binding SelectedComPort}" />
+                              SelectedItem="{Binding SelectedComPort}"
+                              ToolTip="Select COM port" />
 
                     <!-- Refresh button — matches Vido plugin manager style -->
                     <Button Grid.Column="1"
@@ -120,13 +122,15 @@
                 <ComboBox Style="{StaticResource Osr2ComboBoxStyle}"
                           ItemContainerStyle="{StaticResource Osr2ComboBoxItemStyle}"
                           ItemsSource="{Binding AvailableBaudRates}"
-                          SelectedItem="{Binding SelectedBaudRate}" />
+                          SelectedItem="{Binding SelectedBaudRate}"
+                          ToolTip="Select baud rate" />
             </StackPanel>
 
             <!-- Connect / Disconnect Button -->
             <Button x:Name="ConnectBtn"
                     Command="{Binding ConnectCommand}"
                     Content="{Binding ConnectButtonText}"
+                    ToolTip="Connect or disconnect OSR2+ device"
                     HorizontalAlignment="Stretch"
                     FontFamily="Segoe UI" FontSize="13"
                     Foreground="White" Cursor="Hand"
@@ -195,7 +199,8 @@
                         Minimum="30" Maximum="200"
                         Value="{Binding OutputRateHz}"
                         TickFrequency="10"
-                        IsSnapToTickEnabled="True" />
+                        IsSnapToTickEnabled="True"
+                        ToolTip="Adjust output rate" />
                 <TextBlock Grid.Column="1"
                            HorizontalAlignment="Right"
                            VerticalAlignment="Center"
@@ -232,7 +237,8 @@
                         Minimum="-500" Maximum="500"
                         Value="{Binding GlobalOffsetMs}"
                         TickFrequency="10"
-                        IsSnapToTickEnabled="True" />
+                        IsSnapToTickEnabled="True"
+                        ToolTip="Adjust global timing offset" />
                 <TextBlock Grid.Column="1"
                            HorizontalAlignment="Right"
                            VerticalAlignment="Center"
@@ -256,12 +262,14 @@
             <Button Style="{StaticResource Osr2ButtonStyle}"
                     Content="Show Axis Settings"
                     Command="{Binding ShowAxisSettingsCommand}"
+                    ToolTip="Open axis configuration panel"
                     HorizontalAlignment="Stretch"
                     Margin="0,2" />
 
             <Button Style="{StaticResource Osr2ButtonStyle}"
                     Content="Show Funscript Visualizer"
                     Command="{Binding ShowVisualizerCommand}"
+                    ToolTip="Open funscript visualizer panel"
                     HorizontalAlignment="Stretch"
                     Margin="0,2" />
 

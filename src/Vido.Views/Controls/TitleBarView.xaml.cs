@@ -614,7 +614,7 @@ public partial class TitleBarView : UserControl
 
         var button = new Button
         {
-            ToolTip = "Take Screenshot",
+            ToolTip = "Capture screenshot",
             Content = canvas,
             Height = 22,
             Background = System.Windows.Media.Brushes.Transparent,

@@ -199,6 +199,7 @@
                                                             Margin="6,0,0,0"
                                                             Padding="12,4"
                                                             Cursor="Hand"
+                                                            ToolTip="Browse for folder"
                                                             Click="OnBrowseFolderClick">
                                                         <Button.Style>
                                                             <Style TargetType="Button">
@@ -269,7 +270,8 @@
                                                                                 VerticalAlignment="Center"
                                                                                 Click="OnRemoveListItem"
                                                                                 Tag="{Binding}"
-                                                                                Cursor="Hand">
+                                                                                Cursor="Hand"
+                                                                                ToolTip="Remove this item">
                                                                             <Button.Style>
                                                                                 <Style TargetType="Button">
                                                                                     <Setter Property="Background" Value="Transparent" />
@@ -316,7 +318,8 @@
                                                                 Margin="6,0,0,0"
                                                                 Padding="12,4"
                                                                 Click="OnAddListItemClick"
-                                                                Cursor="Hand">
+                                                                Cursor="Hand"
+                                                                ToolTip="Add item to list">
                                                             <Button.Style>
                                                                 <Style TargetType="Button">
                                                                     <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}" />

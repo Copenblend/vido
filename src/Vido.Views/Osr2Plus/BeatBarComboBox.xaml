@@ -23,7 +23,7 @@
                   ItemsSource="{Binding AvailableModes}"
                   SelectedItem="{Binding Mode}"
                   Width="115"
-                  ToolTip="Beat Bar Mode">
+                  ToolTip="Select beat bar mode">
             <ComboBox.ItemTemplate>
                 <DataTemplate>
                     <TextBlock Text="{Binding Converter={StaticResource ModeDisplayConverter}}" />
