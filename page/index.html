@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vido — Ultra-Performant Video Player for Windows</title>
+  <meta name="description" content="A modern video player for Windows with built-in haptic device control, audio-driven beat detection, and playlist management.">
+  <link rel="icon" type="image/png" href="assets/images/vido-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="header-brand">
+        <img src="assets/images/vido-logo.png" alt="Vido" width="32" height="32">
+        <span>Vido</span>
+      </a>
+      <nav class="header-nav" role="navigation" aria-label="Main navigation">
+        <a href="index.html" class="active">Home</a>
+        <a href="install.html">Install</a>
+        <a href="guide/getting-started.html">Docs</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest" class="header-cta">
+          <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 2a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 10.586V3a1 1 0 011-1z"/><path d="M3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+          Download
+        </a>
+      </nav>
+      <button class="mobile-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge">Windows Desktop Application</div>
+      <h1>Ultra-Performant<br>Video Player</h1>
+      <p class="hero-tagline">
+        A modern video player for Windows with built-in haptic device control,
+        real-time audio beat detection, and seamless playlist management.
+      </p>
+      <div class="hero-actions">
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest" class="btn btn-primary">
+          <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 2a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 10.586V3a1 1 0 011-1z"/><path d="M3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+          Download Latest Release
+        </a>
+        <a href="guide/getting-started.html" class="btn btn-secondary">
+          Read the Docs
+        </a>
+      </div>
+      <div class="hero-screenshot">
+        <img src="assets/images/hero-screenshot.png"
+             alt="Vido application showing a video player with dark theme, sidebar panels, and transport controls">
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="stats">
+    <div class="section-inner">
+      <div class="stats-grid">
+        <div>
+          <div class="stat-value">7+</div>
+          <div class="stat-label">Video Formats</div>
+        </div>
+        <div>
+          <div class="stat-value">4</div>
+          <div class="stat-label">Device Axes</div>
+        </div>
+        <div>
+          <div class="stat-value">9</div>
+          <div class="stat-label">Fill Modes</div>
+        </div>
+        <div>
+          <div class="stat-value">Real-time</div>
+          <div class="stat-label">Beat Detection</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features">
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="section-label">Features</span>
+        <h2>Everything you need. Nothing you don't.</h2>
+        <p>Vido combines high-performance video playback with professional-grade haptic device control in a single, elegant application.</p>
+      </div>
+      <div class="feature-grid">
+
+        <div class="feature-card animate-in">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </div>
+          <h3>Video Playback</h3>
+          <p>Hardware-accelerated decoding with GPU acceleration. Supports MP4, MKV, AVI, MOV, WMV, FLV, and WebM. Full transport controls, speed adjustment, looping, and shuffle.</p>
+          <a href="guide/video-playback.html" class="feature-link">
+            Learn more
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6.22 3.22a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 010-1.06z"/></svg>
+          </a>
+        </div>
+
+        <div class="feature-card animate-in">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </div>
+          <h3>OSR2+ Device Control</h3>
+          <p>Native support for the OSR2+ haptic device over UDP or Serial. Four-axis control with real-time position updates at up to 200 Hz.</p>
+          <a href="guide/osr2-device-control.html" class="feature-link">
+            Learn more
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6.22 3.22a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 010-1.06z"/></svg>
+          </a>
+        </div>
+
+        <div class="feature-card animate-in">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+          </div>
+          <h3>Pulse Beat Detection</h3>
+          <p>Analyze video audio to detect beats automatically. Drive your device in sync with the music. Generate funscript files from detected beats.</p>
+          <a href="guide/pulse-beat-detection.html" class="feature-link">
+            Learn more
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6.22 3.22a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 010-1.06z"/></svg>
+          </a>
+        </div>
+
+        <div class="feature-card animate-in">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+          </div>
+          <h3>Funscript Playback</h3>
+          <p>Automatic funscript detection and loading. Multi-axis support with real-time graph and heatmap visualizers in the bottom panel.</p>
+          <a href="guide/funscript-playback.html" class="feature-link">
+            Learn more
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6.22 3.22a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 010-1.06z"/></svg>
+          </a>
+        </div>
+
+        <div class="feature-card animate-in">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </div>
+          <h3>Playlists</h3>
+          <p>Create, organize, and save playlists with drag-and-drop reordering, shuffle mode, auto-save, and automatic restore on startup.</p>
+          <a href="guide/playlists.html" class="feature-link">
+            Learn more
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6.22 3.22a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 010-1.06z"/></svg>
+          </a>
+        </div>
+
+        <div class="feature-card animate-in">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          </div>
+          <h3>Fill Modes &amp; Profiles</h3>
+          <p>Nine continuous movement patterns for axes without funscripts. Save complete axis configurations as named profiles and switch instantly.</p>
+          <a href="guide/fill-profiles.html" class="feature-link">
+            Learn more
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M6.22 3.22a.75.75 0 011.06 0l4.25 4.25a.75.75 0 010 1.06l-4.25 4.25a.75.75 0 01-1.06-1.06L9.94 8 6.22 4.28a.75.75 0 010-1.06z"/></svg>
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Start -->
+  <section class="quickstart" id="quickstart">
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="section-label">Quick Start</span>
+        <h2>Up and running in under two minutes</h2>
+      </div>
+      <div class="steps">
+        <div class="step animate-in">
+          <h4>Download</h4>
+          <p>Grab the MSI installer or portable ZIP from the latest release on GitHub.</p>
+        </div>
+        <div class="step animate-in">
+          <h4>Install</h4>
+          <p>Run the installer or extract the ZIP to any folder. No complex setup required.</p>
+        </div>
+        <div class="step animate-in">
+          <h4>Open a Video</h4>
+          <p>Drag a video onto the window, press <kbd>Ctrl</kbd>+<kbd>O</kbd>, or double-click from Windows Explorer.</p>
+        </div>
+        <div class="step animate-in">
+          <h4>Play</h4>
+          <p>Press <kbd>Space</kbd> to start playback. Connect a device, enable Pulse, or create a playlist.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Showcase: Interface -->
+  <section>
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="section-label">Interface</span>
+        <h2>Designed for focus</h2>
+        <p>A clean, dark interface inspired by modern code editors. Every element is exactly where you need it.</p>
+      </div>
+
+      <div class="showcase">
+        <div class="showcase-text">
+          <h3>Activity Bar &amp; Sidebar</h3>
+          <p>Five panel icons give you instant access to every major feature. Click once to open, click again to collapse.</p>
+          <ul class="showcase-list">
+            <li>File Explorer for browsing video folders</li>
+            <li>OSR2+ panel for device control and axis configuration</li>
+            <li>Pulse panel for audio beat detection</li>
+            <li>Playlists panel for organizing your videos</li>
+            <li>Settings panel for customizing everything</li>
+          </ul>
+        </div>
+        <div class="showcase-visual">
+          <figure>
+            <div class="screenshot-placeholder">Activity bar and OSR2+ sidebar panel</div>
+            <figcaption>Screenshot: Activity bar and OSR2+ sidebar panel</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div class="showcase reverse">
+        <div class="showcase-text">
+          <h3>Bottom &amp; Right Panels</h3>
+          <p>Contextual information panels that appear when you need them and stay out of the way when you don't.</p>
+          <ul class="showcase-list">
+            <li>Funscript visualizer with graph and heatmap modes</li>
+            <li>Pulse waveform with beat markers and BPM</li>
+            <li>Video details showing codec, resolution, and metadata</li>
+            <li>Application log output</li>
+          </ul>
+        </div>
+        <div class="showcase-visual">
+          <figure>
+            <div class="screenshot-placeholder">Bottom panel with funscript visualizer</div>
+            <figcaption>Screenshot: Bottom panel with funscript visualizer</figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Keyboard Shortcuts Preview -->
+  <section class="quickstart">
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="section-label">Shortcuts</span>
+        <h2>Keyboard-first design</h2>
+        <p>Control every aspect of playback without touching the mouse.</p>
+      </div>
+      <div class="shortcut-grid">
+        <div class="shortcut-item animate-in">
+          <span class="shortcut-action">Play / Pause</span>
+          <kbd>Space</kbd>
+        </div>
+        <div class="shortcut-item animate-in">
+          <span class="shortcut-action">Toggle Fullscreen</span>
+          <kbd>F11</kbd>
+        </div>
+        <div class="shortcut-item animate-in">
+          <span class="shortcut-action">Open File</span>
+          <kbd>Ctrl</kbd> + <kbd>O</kbd>
+        </div>
+        <div class="shortcut-item animate-in">
+          <span class="shortcut-action">Toggle Sidebar</span>
+          <kbd>Ctrl</kbd> + <kbd>B</kbd>
+        </div>
+        <div class="shortcut-item animate-in">
+          <span class="shortcut-action">Volume Up / Down</span>
+          <kbd>&#x2191;</kbd> / <kbd>&#x2193;</kbd>
+        </div>
+        <div class="shortcut-item animate-in">
+          <span class="shortcut-action">Toggle Mute</span>
+          <kbd>M</kbd>
+        </div>
+        <div class="shortcut-item animate-in">
+          <span class="shortcut-action">Previous / Next Video</span>
+          <kbd>PgUp</kbd> / <kbd>PgDn</kbd>
+        </div>
+        <div class="shortcut-item animate-in">
+          <span class="shortcut-action">Toggle Bottom Panel</span>
+          <kbd>Ctrl</kbd> + <kbd>J</kbd>
+        </div>
+      </div>
+      <p class="text-center" style="margin-top: var(--space-lg);">
+        <a href="guide/keyboard-shortcuts.html" class="btn btn-secondary">View All Shortcuts</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- Requirements -->
+  <section>
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="section-label">Requirements</span>
+        <h2>Minimal. Straightforward.</h2>
+      </div>
+      <div style="max-width: 600px; margin: 0 auto;">
+        <table>
+          <tbody>
+            <tr>
+              <td><strong>Operating System</strong></td>
+              <td>Windows 10 or Windows 11 (64-bit)</td>
+            </tr>
+            <tr>
+              <td><strong>Runtime</strong></td>
+              <td><a href="https://dotnet.microsoft.com/download/dotnet/8.0">.NET 8 Desktop Runtime</a></td>
+            </tr>
+            <tr>
+              <td><strong>Disk Space</strong></td>
+              <td>~100 MB</td>
+            </tr>
+            <tr>
+              <td><strong>Supported Formats</strong></td>
+              <td>MP4, MKV, AVI, MOV, WMV, FLV, WebM</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="quickstart">
+    <div class="section-inner text-center">
+      <h2>Ready to get started?</h2>
+      <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto var(--space-xl);">
+        Download Vido and start playing videos with full haptic device integration in under two minutes.
+      </p>
+      <div class="hero-actions">
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest" class="btn btn-primary">
+          <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 2a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 10.586V3a1 1 0 011-1z"/><path d="M3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+          Download Latest Release
+        </a>
+        <a href="install.html" class="btn btn-secondary">
+          Installation Guide
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">
+          <img src="assets/images/vido-logo.png" alt="" width="28" height="28">
+          <span>Vido</span>
+        </div>
+        <p class="footer-desc">Ultra-performant video player for Windows with built-in haptic device control and audio beat detection.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="index.html">Home</a>
+        <a href="install.html">Install</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest">Download</a>
+        <a href="https://github.com/AnotherFoxGuy/vido">GitHub</a>
+      </div>
+      <div class="footer-col">
+        <h4>Documentation</h4>
+        <a href="guide/getting-started.html">Getting Started</a>
+        <a href="guide/video-playback.html">Video Playback</a>
+        <a href="guide/osr2-device-control.html">Device Control</a>
+        <a href="guide/pulse-beat-detection.html">Pulse</a>
+      </div>
+      <div class="footer-col">
+        <h4>More</h4>
+        <a href="guide/playlists.html">Playlists</a>
+        <a href="guide/settings.html">Settings</a>
+        <a href="guide/keyboard-shortcuts.html">Shortcuts</a>
+        <a href="guide/fill-profiles.html">Fill Profiles</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Vido. All rights reserved.</span>
+      <a href="https://github.com/AnotherFoxGuy/vido/blob/main/LICENSE">License</a>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Playlists — Vido</title>
+  <meta name="description" content="Organize your videos into playlists for seamless, back-to-back playback in Vido.">
+  <link rel="icon" type="image/png" href="../assets/images/vido-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="header-brand">
+        <img src="../assets/images/vido-logo.png" alt="Vido" width="32" height="32">
+        <span>Vido</span>
+      </a>
+      <nav class="header-nav" role="navigation" aria-label="Main navigation">
+        <a href="../index.html">Home</a>
+        <a href="../install.html">Install</a>
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest" class="header-cta">Download</a>
+      </nav>
+      <button class="mobile-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="guide-layout">
+    <aside class="guide-sidebar">
+      <div class="guide-sidebar-title">Documentation</div>
+      <nav>
+        <a href="getting-started.html">Getting Started</a>
+        <a href="user-interface.html">User Interface</a>
+        <a href="video-playback.html">Video Playback</a>
+        <a href="file-explorer.html">File Explorer</a>
+        <a href="playlists.html" class="active">Playlists</a>
+        <a href="osr2-device-control.html">OSR2+ Device Control</a>
+        <a href="funscript-playback.html">Funscript Playback</a>
+        <a href="fill-profiles.html">Fill Profiles</a>
+        <a href="pulse-beat-detection.html">Pulse Beat Detection</a>
+        <a href="screenshots.html">Screenshots</a>
+        <a href="keyboard-shortcuts.html">Keyboard Shortcuts</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+    </aside>
+
+    <main class="guide-content">
+      <div class="breadcrumbs">
+        <a href="../index.html">Home</a>
+        <span class="sep">/</span>
+        <a href="getting-started.html">Docs</a>
+        <span class="sep">/</span>
+        <span>Playlists</span>
+      </div>
+
+      <h1>Playlists</h1>
+      <p class="guide-intro">Organize your videos into playlists for seamless, back-to-back playback. Create playlists, add files, reorder them, and let Vido handle the rest.</p>
+
+      <h2>Opening the Playlist Panel</h2>
+      <p>Click the <strong>list icon</strong> in the activity bar (fourth icon from top) to open the Playlists sidebar panel.</p>
+
+      <h2>Creating a Playlist</h2>
+      <ol>
+        <li>Click the <strong>New</strong> button in the playlist toolbar</li>
+        <li>An empty playlist is created with a default name</li>
+        <li>Type a name in the text field at the top to rename it</li>
+      </ol>
+
+      <h2>Opening a Saved Playlist</h2>
+      <ul>
+        <li>Click <strong>Open</strong> to browse for a <code>.vidpl</code> playlist file</li>
+        <li>Use the <strong>Recent</strong> dropdown to pick from your last 10 playlists</li>
+        <li>Drag and drop a <code>.vidpl</code> file onto the playlist panel</li>
+      </ul>
+      <div class="callout">
+        <div class="callout-label">Tip</div>
+        <p>The last playlist you had open is automatically restored when Vido starts.</p>
+      </div>
+
+      <h2>Adding Videos</h2>
+      <table>
+        <thead><tr><th>Method</th><th>How To</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Add Files button</strong></td><td>Click the add button in the playlist toolbar to browse for videos</td></tr>
+          <tr><td><strong>File Explorer</strong></td><td>Right-click a video in the file explorer &rarr; <strong>Add to Playlist</strong></td></tr>
+          <tr><td><strong>Drag from Windows</strong></td><td>Drag video files from Windows Explorer onto the playlist panel</td></tr>
+          <tr><td><strong>Drag folders</strong></td><td>Drag an entire folder — all videos inside are added</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li>Duplicate files are automatically skipped</li>
+        <li>Non-video files are rejected with an error notification</li>
+      </ul>
+
+      <h2>Organizing</h2>
+      <table>
+        <thead><tr><th>Action</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Move Up</strong></td><td>Move the selected item up one position</td></tr>
+          <tr><td><strong>Move Down</strong></td><td>Move the selected item down one position</td></tr>
+          <tr><td><strong>Move to Top</strong></td><td>Move the selected item to the beginning</td></tr>
+          <tr><td><strong>Move to Bottom</strong></td><td>Move the selected item to the end</td></tr>
+          <tr><td><strong>Drag and drop</strong></td><td>Drag items within the list to reorder</td></tr>
+          <tr><td><strong>Remove</strong></td><td>Remove the selected item from the playlist</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Playing from a Playlist</h2>
+      <ul>
+        <li><strong>Double-click</strong> any item to play it</li>
+        <li>The currently playing item is highlighted</li>
+        <li>Use <kbd>Page Down</kbd> to skip to the next item and <kbd>Page Up</kbd> for the previous one</li>
+        <li>The status bar shows playlist progress: <code>Playing 2 of 10 — My Playlist</code></li>
+      </ul>
+
+      <h2>Shuffle</h2>
+      <p>Toggle shuffle mode to randomize the playback order. When shuffle is on:</p>
+      <ul>
+        <li>Videos play in a random order</li>
+        <li>Every video plays once before the order resets</li>
+        <li>No repeats until all items have been played</li>
+      </ul>
+
+      <h2>Saving</h2>
+      <table>
+        <thead><tr><th>Action</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Save</strong></td><td>Save the current playlist to its file (or prompt for a location if unsaved)</td></tr>
+          <tr><td><strong>Save As</strong></td><td>Save the playlist to a new <code>.vidpl</code> file</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Auto-Save</h3>
+      <p>Enable <strong>Auto-Save</strong> in <strong>Settings</strong> &rarr; <strong>Playlists</strong> to automatically save the playlist whenever you add, remove, or reorder items. No need to remember to save manually.</p>
+
+      <h2>Naming Your Playlist</h2>
+      <p>The text field at the top of the playlist panel shows the playlist name. Click it and type to rename. The name is saved with the playlist file.</p>
+
+      <h2>Status Bar</h2>
+      <p>When a playlist is active, the status bar shows:</p>
+      <ul>
+        <li>During playback: <code>Playing 2 of 10 — My Playlist</code></li>
+        <li>When idle: <code>My Playlist — 10 items</code></li>
+      </ul>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="video-playback.html">Video Playback</a> — playback controls and navigation</li>
+        <li><a href="file-explorer.html">File Explorer</a> — adding files from the explorer</li>
+        <li><a href="settings.html">Settings</a> — playlist auto-save setting</li>
+      </ul>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">
+          <img src="../assets/images/vido-logo.png" alt="" width="28" height="28">
+          <span>Vido</span>
+        </div>
+        <p class="footer-desc">Ultra-performant video player for Windows with built-in haptic device control and audio beat detection.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="../index.html">Home</a>
+        <a href="../install.html">Install</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest">Download</a>
+      </div>
+      <div class="footer-col">
+        <h4>Documentation</h4>
+        <a href="getting-started.html">Getting Started</a>
+        <a href="video-playback.html">Video Playback</a>
+        <a href="osr2-device-control.html">Device Control</a>
+      </div>
+      <div class="footer-col">
+        <h4>More</h4>
+        <a href="playlists.html">Playlists</a>
+        <a href="settings.html">Settings</a>
+        <a href="keyboard-shortcuts.html">Shortcuts</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Vido. All rights reserved.</span>
+      <a href="https://github.com/AnotherFoxGuy/vido/blob/main/LICENSE">License</a>
+    </div>
+  </footer>
+
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

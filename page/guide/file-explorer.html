@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Explorer — Vido</title>
+  <meta name="description" content="Browse folders of videos directly inside Vido with the built-in file explorer.">
+  <link rel="icon" type="image/png" href="../assets/images/vido-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="header-brand">
+        <img src="../assets/images/vido-logo.png" alt="Vido" width="32" height="32">
+        <span>Vido</span>
+      </a>
+      <nav class="header-nav" role="navigation" aria-label="Main navigation">
+        <a href="../index.html">Home</a>
+        <a href="../install.html">Install</a>
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest" class="header-cta">Download</a>
+      </nav>
+      <button class="mobile-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="guide-layout">
+    <aside class="guide-sidebar">
+      <div class="guide-sidebar-title">Documentation</div>
+      <nav>
+        <a href="getting-started.html">Getting Started</a>
+        <a href="user-interface.html">User Interface</a>
+        <a href="video-playback.html">Video Playback</a>
+        <a href="file-explorer.html" class="active">File Explorer</a>
+        <a href="playlists.html">Playlists</a>
+        <a href="osr2-device-control.html">OSR2+ Device Control</a>
+        <a href="funscript-playback.html">Funscript Playback</a>
+        <a href="fill-profiles.html">Fill Profiles</a>
+        <a href="pulse-beat-detection.html">Pulse Beat Detection</a>
+        <a href="screenshots.html">Screenshots</a>
+        <a href="keyboard-shortcuts.html">Keyboard Shortcuts</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+    </aside>
+
+    <main class="guide-content">
+      <div class="breadcrumbs">
+        <a href="../index.html">Home</a>
+        <span class="sep">/</span>
+        <a href="getting-started.html">Docs</a>
+        <span class="sep">/</span>
+        <span>File Explorer</span>
+      </div>
+
+      <h1>File Explorer</h1>
+      <p class="guide-intro">The File Explorer lets you browse a folder of videos directly inside Vido. Open a folder once and navigate through all your videos without leaving the app.</p>
+
+      <h2>Opening a Folder</h2>
+      <table>
+        <thead><tr><th>Method</th><th>How To</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Menu</strong></td><td><strong>File</strong> &rarr; <strong>Open Folder</strong></td></tr>
+          <tr><td><strong>Shortcut</strong></td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></td></tr>
+          <tr><td><strong>Drag and drop</strong></td><td>Drop a folder onto the Vido window</td></tr>
+          <tr><td><strong>Command line</strong></td><td><code>Vido.exe "C:\Videos\"</code></td></tr>
+        </tbody>
+      </table>
+      <p>Once opened, a tree view of the folder's contents appears in the sidebar (click the folder icon in the activity bar if the sidebar isn't visible).</p>
+
+      <figure>
+        <div class="screenshot-placeholder">File Explorer sidebar with folder tree</div>
+        <figcaption>The File Explorer sidebar showing a folder tree with expandable directories and video files.</figcaption>
+      </figure>
+
+      <h2>Browsing Files</h2>
+      <ul>
+        <li>The explorer shows a hierarchical tree of folders and video files</li>
+        <li><strong>Double-click</strong> a video to play it</li>
+        <li>Folders expand and collapse as you click them</li>
+        <li>The tree loads content on demand for fast browsing of large directories</li>
+      </ul>
+
+      <h2>Folder Actions</h2>
+      <table>
+        <thead><tr><th>Action</th><th>Shortcut</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Rescan Folder</strong></td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd></td><td>Refresh the tree to pick up new or deleted files</td></tr>
+          <tr><td><strong>Close Folder</strong></td><td><kbd>Ctrl</kbd>+<kbd>K</kbd></td><td>Close the explorer and clear the tree</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Hidden Files</h2>
+      <p>By default, files and folders marked as hidden in Windows are not shown. To reveal them:</p>
+      <ol>
+        <li>Go to <strong>View</strong> &rarr; <strong>Show Hidden Files</strong> in the menu bar, or</li>
+        <li>Go to <strong>Settings</strong> &rarr; <strong>File Explorer</strong> &rarr; <strong>Show Hidden Files</strong></li>
+      </ol>
+      <p>Hidden files appear slightly dimmed when visible.</p>
+
+      <h2>Adding to Playlists</h2>
+      <p>Right-click a video file in the explorer to add it to the current playlist. You can also drag files or folders from the explorer into the <a href="playlists.html">Playlists</a> panel.</p>
+
+      <h2>Drag and Drop</h2>
+      <ul>
+        <li><strong>Drop a video file</strong> onto Vido to open and play it immediately</li>
+        <li><strong>Drop a folder</strong> onto Vido to open it in the file explorer</li>
+        <li><strong>Drop files onto the playlist panel</strong> to add them to the current playlist</li>
+        <li>Unsupported file types show a brief overlay message</li>
+      </ul>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="getting-started.html">Getting Started</a> — opening your first video</li>
+        <li><a href="playlists.html">Playlists</a> — organize files into playlists</li>
+        <li><a href="video-playback.html">Video Playback</a> — playback controls</li>
+      </ul>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">
+          <img src="../assets/images/vido-logo.png" alt="" width="28" height="28">
+          <span>Vido</span>
+        </div>
+        <p class="footer-desc">Ultra-performant video player for Windows with built-in haptic device control and audio beat detection.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="../index.html">Home</a>
+        <a href="../install.html">Install</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest">Download</a>
+      </div>
+      <div class="footer-col">
+        <h4>Documentation</h4>
+        <a href="getting-started.html">Getting Started</a>
+        <a href="video-playback.html">Video Playback</a>
+        <a href="osr2-device-control.html">Device Control</a>
+      </div>
+      <div class="footer-col">
+        <h4>More</h4>
+        <a href="playlists.html">Playlists</a>
+        <a href="settings.html">Settings</a>
+        <a href="keyboard-shortcuts.html">Shortcuts</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Vido. All rights reserved.</span>
+      <a href="https://github.com/AnotherFoxGuy/vido/blob/main/LICENSE">License</a>
+    </div>
+  </footer>
+
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

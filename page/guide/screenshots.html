@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Screenshots — Vido</title>
+  <meta name="description" content="Capture and save individual frames from your videos as image files in Vido.">
+  <link rel="icon" type="image/png" href="../assets/images/vido-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="header-brand">
+        <img src="../assets/images/vido-logo.png" alt="Vido" width="32" height="32">
+        <span>Vido</span>
+      </a>
+      <nav class="header-nav" role="navigation" aria-label="Main navigation">
+        <a href="../index.html">Home</a>
+        <a href="../install.html">Install</a>
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest" class="header-cta">Download</a>
+      </nav>
+      <button class="mobile-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="guide-layout">
+    <aside class="guide-sidebar">
+      <div class="guide-sidebar-title">Documentation</div>
+      <nav>
+        <a href="getting-started.html">Getting Started</a>
+        <a href="user-interface.html">User Interface</a>
+        <a href="video-playback.html">Video Playback</a>
+        <a href="file-explorer.html">File Explorer</a>
+        <a href="playlists.html">Playlists</a>
+        <a href="osr2-device-control.html">OSR2+ Device Control</a>
+        <a href="funscript-playback.html">Funscript Playback</a>
+        <a href="fill-profiles.html">Fill Profiles</a>
+        <a href="pulse-beat-detection.html">Pulse Beat Detection</a>
+        <a href="screenshots.html" class="active">Screenshots</a>
+        <a href="keyboard-shortcuts.html">Keyboard Shortcuts</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+    </aside>
+
+    <main class="guide-content">
+      <div class="breadcrumbs">
+        <a href="../index.html">Home</a>
+        <span class="sep">/</span>
+        <a href="getting-started.html">Docs</a>
+        <span class="sep">/</span>
+        <span>Screenshots</span>
+      </div>
+
+      <h1>Screenshots</h1>
+      <p class="guide-intro">Capture and save individual frames from your videos as image files.</p>
+
+      <h2>Enabling Screenshots</h2>
+      <p>Screenshot capture is disabled by default. To enable it:</p>
+      <ol>
+        <li>Open <strong>Settings</strong> (click the gear icon in the activity bar)</li>
+        <li>Go to <strong>Screenshot</strong></li>
+        <li>Turn on <strong>Enable Screenshot Capture</strong></li>
+      </ol>
+      <p>A <strong>camera button</strong> immediately appears in the title bar toolbar.</p>
+
+      <h2>Taking a Screenshot</h2>
+      <ol>
+        <li>Play or pause a video at the frame you want to capture</li>
+        <li>Click the <strong>camera button</strong> in the title bar</li>
+        <li>A shutter sound plays to confirm the capture</li>
+        <li>The image is saved to your screenshot folder</li>
+      </ol>
+
+      <h2>Screenshot Save Directory</h2>
+      <p>By default, screenshots are saved to:</p>
+      <pre><code>%USERPROFILE%\Pictures\Screenshots</code></pre>
+      <p>To change the save location:</p>
+      <ol>
+        <li>Open <strong>Settings</strong> &rarr; <strong>Screenshot</strong></li>
+        <li>Set the <strong>Screenshot Save Directory</strong> to your preferred folder</li>
+      </ol>
+      <div class="callout">
+        <div class="callout-label">Tip</div>
+        <p>The save directory setting only appears when screenshot capture is enabled.</p>
+      </div>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="user-interface.html">User Interface</a> — title bar toolbar buttons</li>
+        <li><a href="settings.html">Settings</a> — screenshot settings</li>
+        <li><a href="video-playback.html">Video Playback</a> — playback controls</li>
+      </ul>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">
+          <img src="../assets/images/vido-logo.png" alt="" width="28" height="28">
+          <span>Vido</span>
+        </div>
+        <p class="footer-desc">Ultra-performant video player for Windows with built-in haptic device control and audio beat detection.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="../index.html">Home</a>
+        <a href="../install.html">Install</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest">Download</a>
+      </div>
+      <div class="footer-col">
+        <h4>Documentation</h4>
+        <a href="getting-started.html">Getting Started</a>
+        <a href="video-playback.html">Video Playback</a>
+        <a href="osr2-device-control.html">Device Control</a>
+      </div>
+      <div class="footer-col">
+        <h4>More</h4>
+        <a href="playlists.html">Playlists</a>
+        <a href="settings.html">Settings</a>
+        <a href="keyboard-shortcuts.html">Shortcuts</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Vido. All rights reserved.</span>
+      <a href="https://github.com/AnotherFoxGuy/vido/blob/main/LICENSE">License</a>
+    </div>
+  </footer>
+
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Interface — Vido</title>
+  <meta name="description" content="Vido's interface layout — title bar, activity bar, sidebar, panels, status bar, menus, toasts, and fullscreen mode.">
+  <link rel="icon" type="image/png" href="../assets/images/vido-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="header-brand">
+        <img src="../assets/images/vido-logo.png" alt="Vido" width="32" height="32">
+        <span>Vido</span>
+      </a>
+      <nav class="header-nav" role="navigation" aria-label="Main navigation">
+        <a href="../index.html">Home</a>
+        <a href="../install.html">Install</a>
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest" class="header-cta">Download</a>
+      </nav>
+      <button class="mobile-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="guide-layout">
+    <aside class="guide-sidebar">
+      <div class="guide-sidebar-title">Documentation</div>
+      <nav>
+        <a href="getting-started.html">Getting Started</a>
+        <a href="user-interface.html" class="active">User Interface</a>
+        <a href="video-playback.html">Video Playback</a>
+        <a href="file-explorer.html">File Explorer</a>
+        <a href="playlists.html">Playlists</a>
+        <a href="osr2-device-control.html">OSR2+ Device Control</a>
+        <a href="funscript-playback.html">Funscript Playback</a>
+        <a href="fill-profiles.html">Fill Profiles</a>
+        <a href="pulse-beat-detection.html">Pulse Beat Detection</a>
+        <a href="screenshots.html">Screenshots</a>
+        <a href="keyboard-shortcuts.html">Keyboard Shortcuts</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+    </aside>
+
+    <main class="guide-content">
+      <div class="breadcrumbs">
+        <a href="../index.html">Home</a>
+        <span class="sep">/</span>
+        <a href="getting-started.html">Docs</a>
+        <span class="sep">/</span>
+        <span>User Interface</span>
+      </div>
+
+      <h1>User Interface</h1>
+      <p class="guide-intro">Vido's interface is inspired by a modern code editor layout — clean, dark, and fully customizable. This guide walks through every part of the window.</p>
+
+      <h2>Window Layout</h2>
+      <p>The main window is divided into these areas:</p>
+      <pre><code>+----------------------------------------------+
+|  Title Bar (menus, toolbar buttons, window)  |
++--+-----------------------------------+-------+
+|  |                                   |       |
+|A |         Video Area                | Right |
+|c |                                   | Panel |
+|t |                                   |       |
+|. |                                   |       |
+|  |                                   |       |
+|B +-----------------------------------+       |
+|a |      Transport Controls           |       |
+|r +-----------------------------------+-------+
+|  |      Bottom Panel (tabs)          |       |
++--+-----------------------------------+-------+
+|  Status Bar                                  |
++----------------------------------------------+</code></pre>
+
+      <figure>
+        <div class="screenshot-placeholder">Main window layout with labeled areas</div>
+        <figcaption>The Vido window showing all interface regions: title bar, activity bar, sidebar, video area, panels, and status bar.</figcaption>
+      </figure>
+
+      <h2>Title Bar</h2>
+      <p>The title bar spans the top of the window and contains:</p>
+      <table>
+        <thead><tr><th>Area</th><th>Contents</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Left</strong></td><td>Application icon, menu bar (File, View, Playback, Help)</td></tr>
+          <tr><td><strong>Center</strong></td><td>"Vido" + current video filename (draggable to move the window)</td></tr>
+          <tr><td><strong>Right</strong></td><td>Toolbar buttons, window controls (minimize, maximize, close)</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Title Bar Toolbar Buttons</h3>
+      <table>
+        <thead><tr><th>Button</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>OSR2+ Connect</strong></td><td>Connect or disconnect your OSR2+ device</td></tr>
+          <tr><td><strong>Pulse Toggle</strong></td><td>Enable or disable Pulse beat detection — filled heart when active</td></tr>
+          <tr><td><strong>Screenshot</strong></td><td>Capture the current video frame (only visible when enabled in Settings)</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Activity Bar</h2>
+      <p>The activity bar is the narrow column of icons on the far left edge. It controls which panel appears in the sidebar.</p>
+      <table>
+        <thead><tr><th>Position</th><th>Panel</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><a href="file-explorer.html">File Explorer</a></td><td>Browse video files in a folder</td></tr>
+          <tr><td>2</td><td><a href="osr2-device-control.html">OSR2+ Control</a></td><td>Connect and control your haptic device</td></tr>
+          <tr><td>3</td><td><a href="pulse-beat-detection.html">Pulse</a></td><td>Audio beat detection and haptic sync</td></tr>
+          <tr><td>4</td><td><a href="playlists.html">Playlists</a></td><td>Manage playlists</td></tr>
+          <tr><td>5</td><td><a href="settings.html">Settings</a></td><td>Application settings (pinned to bottom)</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li><strong>Click an icon</strong> to open that panel in the sidebar</li>
+        <li><strong>Click the active icon again</strong> to collapse the sidebar</li>
+        <li>The active panel is highlighted</li>
+      </ul>
+
+      <h2>Sidebar</h2>
+      <p>The sidebar fills the space between the activity bar and the video area. Its contents change based on which activity bar icon is selected.</p>
+      <table>
+        <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>B</kbd></td><td>Toggle sidebar visibility</td></tr>
+        </tbody>
+      </table>
+      <p>The sidebar width is resizable — drag the edge to adjust. Your preferred width is remembered between sessions.</p>
+
+      <h2>Bottom Panel</h2>
+      <p>A collapsible panel below the video area with tabbed content:</p>
+      <table>
+        <thead><tr><th>Tab</th><th>When It Appears</th><th>Contents</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Log Output</strong></td><td>Always present</td><td>Application log messages</td></tr>
+          <tr><td><strong>Funscript Visualizer</strong></td><td>When OSR2+ has scripts loaded</td><td>Real-time funscript graph or heatmap</td></tr>
+          <tr><td><strong>Pulse Waveform</strong></td><td>When Pulse analyzes a file</td><td>Audio waveform with beat markers</td></tr>
+        </tbody>
+      </table>
+      <table>
+        <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>J</kbd></td><td>Toggle bottom panel visibility</td></tr>
+        </tbody>
+      </table>
+      <ul>
+        <li>Individual tabs can be closed (except Log Output)</li>
+        <li>The panel can be collapsed to show only the tab bar</li>
+        <li>Height is resizable and remembered between sessions</li>
+      </ul>
+
+      <h2>Right Panel</h2>
+      <p>The right panel shows detailed information about the currently playing video — file name, path, size, duration, resolution, codecs, frame rate, bitrate, container format, and audio details.</p>
+      <table>
+        <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>H</kbd></td><td>Toggle right panel visibility</td></tr>
+        </tbody>
+      </table>
+      <p>Width is resizable and remembered between sessions.</p>
+
+      <h2>Status Bar</h2>
+      <p>A thin bar at the very bottom of the window showing contextual information:</p>
+      <table>
+        <thead><tr><th>Position</th><th>Content</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Left</strong></td><td>Current video filename, playlist status</td></tr>
+          <tr><td><strong>Right</strong></td><td>Video duration, resolution, codec, OSR2+ connection, Pulse state/BPM</td></tr>
+        </tbody>
+      </table>
+      <table>
+        <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td><td>Toggle status bar visibility</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Menus</h2>
+
+      <h3>File Menu</h3>
+      <table>
+        <thead><tr><th>Item</th><th>Shortcut</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>Open File</td><td><kbd>Ctrl</kbd>+<kbd>O</kbd></td><td>Browse for a video file</td></tr>
+          <tr><td>Open Folder</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></td><td>Open a folder in the file explorer</td></tr>
+          <tr><td>Close Folder</td><td><kbd>Ctrl</kbd>+<kbd>K</kbd></td><td>Close the current folder</td></tr>
+          <tr><td>Rescan Folder</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd></td><td>Refresh the file explorer tree</td></tr>
+          <tr><td>Add File</td><td>—</td><td>Add a video file to the current context</td></tr>
+          <tr><td>Add Folder</td><td>—</td><td>Add a folder to the current context</td></tr>
+          <tr><td>Recent Files</td><td>—</td><td>Submenu of recently opened videos</td></tr>
+          <tr><td>Exit</td><td><kbd>Alt</kbd>+<kbd>F4</kbd></td><td>Close Vido</td></tr>
+        </tbody>
+      </table>
+
+      <h3>View Menu</h3>
+      <table>
+        <thead><tr><th>Item</th><th>Shortcut</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>Show Sidebar</td><td><kbd>Ctrl</kbd>+<kbd>B</kbd></td><td>Toggle sidebar</td></tr>
+          <tr><td>Fullscreen</td><td><kbd>F11</kbd></td><td>Toggle fullscreen mode</td></tr>
+          <tr><td>Show Right Panel</td><td><kbd>Ctrl</kbd>+<kbd>H</kbd></td><td>Toggle right panel</td></tr>
+          <tr><td>Show Bottom Panel</td><td><kbd>Ctrl</kbd>+<kbd>J</kbd></td><td>Toggle bottom panel</td></tr>
+          <tr><td>Show Status Bar</td><td><kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd></td><td>Toggle status bar</td></tr>
+          <tr><td>Show Hidden Files</td><td>—</td><td>Toggle hidden files in file explorer</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Playback Menu</h3>
+      <table>
+        <thead><tr><th>Item</th><th>Shortcut</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>Play/Pause</td><td><kbd>Space</kbd></td><td>Toggle playback</td></tr>
+          <tr><td>Stop</td><td><kbd>S</kbd></td><td>Stop playback</td></tr>
+          <tr><td>Skip Forward</td><td><kbd>Page Down</kbd></td><td>Next video</td></tr>
+          <tr><td>Skip Backward</td><td><kbd>Page Up</kbd></td><td>Previous video</td></tr>
+          <tr><td>Loop</td><td>—</td><td>Toggle loop mode</td></tr>
+          <tr><td>Playback Speed</td><td>—</td><td>Submenu with speed options</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Help Menu</h3>
+      <table>
+        <thead><tr><th>Item</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>About</td><td>Shows version, runtime, and FFmpeg information</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Fullscreen Mode</h2>
+      <p>Press <kbd>F11</kbd> or <kbd>F</kbd> to enter fullscreen. The entire window is hidden except for:</p>
+      <ul>
+        <li>The <strong>video</strong> fills the screen</li>
+        <li><strong>Transport controls</strong> appear at the bottom when you move the mouse</li>
+        <li><strong>Video filename</strong> appears top-left (if enabled in Settings)</li>
+      </ul>
+      <p>Controls auto-hide after a few seconds of inactivity. Press <kbd>Escape</kbd> or <kbd>F11</kbd> to exit.</p>
+
+      <h2>Toast Notifications</h2>
+      <p>Vido shows brief notification popups for important events:</p>
+      <ul>
+        <li>Device connected/disconnected</li>
+        <li>Pulse enabled/disabled</li>
+        <li>Funscript generated</li>
+        <li>Errors and warnings</li>
+      </ul>
+      <p>Toast notifications auto-dismiss after a configurable duration (see <strong>Settings</strong> &rarr; <strong>General</strong> &rarr; <strong>Toast Notification Duration</strong>).</p>
+
+      <h2>Single Instance</h2>
+      <p>Only one copy of Vido can run at a time. If you try to open a second instance (e.g., by double-clicking another video), the file is sent to the already-running window, which comes to the foreground and plays it.</p>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="keyboard-shortcuts.html">Keyboard Shortcuts</a> — complete shortcut reference</li>
+        <li><a href="settings.html">Settings</a> — customize the interface</li>
+        <li><a href="video-playback.html">Video Playback</a> — all playback controls</li>
+      </ul>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">
+          <img src="../assets/images/vido-logo.png" alt="" width="28" height="28">
+          <span>Vido</span>
+        </div>
+        <p class="footer-desc">Ultra-performant video player for Windows with built-in haptic device control and audio beat detection.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="../index.html">Home</a>
+        <a href="../install.html">Install</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest">Download</a>
+      </div>
+      <div class="footer-col">
+        <h4>Documentation</h4>
+        <a href="getting-started.html">Getting Started</a>
+        <a href="video-playback.html">Video Playback</a>
+        <a href="osr2-device-control.html">Device Control</a>
+      </div>
+      <div class="footer-col">
+        <h4>More</h4>
+        <a href="playlists.html">Playlists</a>
+        <a href="settings.html">Settings</a>
+        <a href="keyboard-shortcuts.html">Shortcuts</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Vido. All rights reserved.</span>
+      <a href="https://github.com/AnotherFoxGuy/vido/blob/main/LICENSE">License</a>
+    </div>
+  </footer>
+
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

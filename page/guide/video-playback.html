@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Playback — Vido</title>
+  <meta name="description" content="Everything about playing videos in Vido — transport controls, speed, volume, looping, shuffle, fullscreen, and resuming playback.">
+  <link rel="icon" type="image/png" href="../assets/images/vido-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="header-brand">
+        <img src="../assets/images/vido-logo.png" alt="Vido" width="32" height="32">
+        <span>Vido</span>
+      </a>
+      <nav class="header-nav" role="navigation" aria-label="Main navigation">
+        <a href="../index.html">Home</a>
+        <a href="../install.html">Install</a>
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest" class="header-cta">Download</a>
+      </nav>
+      <button class="mobile-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="guide-layout">
+    <aside class="guide-sidebar">
+      <div class="guide-sidebar-title">Documentation</div>
+      <nav>
+        <a href="getting-started.html">Getting Started</a>
+        <a href="user-interface.html">User Interface</a>
+        <a href="video-playback.html" class="active">Video Playback</a>
+        <a href="file-explorer.html">File Explorer</a>
+        <a href="playlists.html">Playlists</a>
+        <a href="osr2-device-control.html">OSR2+ Device Control</a>
+        <a href="funscript-playback.html">Funscript Playback</a>
+        <a href="fill-profiles.html">Fill Profiles</a>
+        <a href="pulse-beat-detection.html">Pulse Beat Detection</a>
+        <a href="screenshots.html">Screenshots</a>
+        <a href="keyboard-shortcuts.html">Keyboard Shortcuts</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+    </aside>
+
+    <main class="guide-content">
+      <div class="breadcrumbs">
+        <a href="../index.html">Home</a>
+        <span class="sep">/</span>
+        <a href="getting-started.html">Docs</a>
+        <span class="sep">/</span>
+        <span>Video Playback</span>
+      </div>
+
+      <h1>Video Playback</h1>
+      <p class="guide-intro">Everything you need to know about playing videos in Vido — transport controls, speed, volume, looping, shuffle, fullscreen, and resuming playback.</p>
+
+      <h2>Transport Controls</h2>
+      <p>The transport bar sits at the bottom of the video area and contains all playback controls:</p>
+      <table>
+        <thead><tr><th>Control</th><th>Action</th><th>Shortcut</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Play / Pause</strong></td><td>Toggle playback</td><td><kbd>Space</kbd></td></tr>
+          <tr><td><strong>Stop</strong></td><td>Stop playback completely</td><td><kbd>S</kbd></td></tr>
+          <tr><td><strong>Previous</strong></td><td>Go to the previous video</td><td><kbd>Page Up</kbd></td></tr>
+          <tr><td><strong>Next</strong></td><td>Go to the next video</td><td><kbd>Page Down</kbd></td></tr>
+          <tr><td><strong>Seek Bar</strong></td><td>Click or drag to jump to any position</td><td>—</td></tr>
+          <tr><td><strong>Volume</strong></td><td>Adjust volume level (0–100%)</td><td><kbd>Up</kbd> / <kbd>Down</kbd></td></tr>
+          <tr><td><strong>Mute</strong></td><td>Toggle audio on/off</td><td><kbd>M</kbd></td></tr>
+          <tr><td><strong>Playback Speed</strong></td><td>Change playback speed</td><td>—</td></tr>
+          <tr><td><strong>Loop</strong></td><td>Toggle looping for the current video</td><td>—</td></tr>
+          <tr><td><strong>Shuffle</strong></td><td>Randomize play order in current folder</td><td>—</td></tr>
+        </tbody>
+      </table>
+
+      <figure>
+        <div class="screenshot-placeholder">Transport controls bar</div>
+        <figcaption>The transport bar at the bottom of the video area with all playback controls.</figcaption>
+      </figure>
+
+      <h2>Opening Videos</h2>
+      <table>
+        <thead><tr><th>Method</th><th>How To</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Drag and drop</strong></td><td>Drop a video file onto the Vido window</td></tr>
+          <tr><td><strong>Open File</strong></td><td><strong>File</strong> &rarr; <strong>Open File</strong>, or press <kbd>Ctrl</kbd>+<kbd>O</kbd></td></tr>
+          <tr><td><strong>Open Folder</strong></td><td><strong>File</strong> &rarr; <strong>Open Folder</strong>, or press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>O</kbd></td></tr>
+          <tr><td><strong>Double-click</strong></td><td>Click a video in the <a href="file-explorer.html">File Explorer</a> sidebar</td></tr>
+          <tr><td><strong>Recent Files</strong></td><td><strong>File</strong> &rarr; <strong>Recent Files</strong></td></tr>
+          <tr><td><strong>File association</strong></td><td>Double-click a video in Windows Explorer (MSI install)</td></tr>
+          <tr><td><strong>Command line</strong></td><td>Run <code>Vido.exe "path\to\video.mp4"</code></td></tr>
+        </tbody>
+      </table>
+      <p><strong>Supported formats:</strong> <code>.mp4</code> &middot; <code>.mkv</code> &middot; <code>.avi</code> &middot; <code>.mov</code> &middot; <code>.wmv</code> &middot; <code>.flv</code> &middot; <code>.webm</code></p>
+
+      <h2>Playback Speed</h2>
+      <p>Click the speed button in the transport bar (shows "1x" by default) to cycle through speeds:</p>
+      <table>
+        <thead><tr><th>Speed</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>0.25x</td><td>Quarter speed (slow motion)</td></tr>
+          <tr><td>0.5x</td><td>Half speed</td></tr>
+          <tr><td>1.0x</td><td>Normal speed (default)</td></tr>
+          <tr><td>1.5x</td><td>50% faster</td></tr>
+          <tr><td>2.0x</td><td>Double speed</td></tr>
+        </tbody>
+      </table>
+      <p>You can also set the default speed in <strong>Settings</strong> &rarr; <strong>Playback</strong> &rarr; <strong>Default Playback Speed</strong>.</p>
+
+      <h2>Volume</h2>
+      <ul>
+        <li>Use the <kbd>Up</kbd> and <kbd>Down</kbd> arrow keys to adjust volume by 5%</li>
+        <li>Press <kbd>M</kbd> to mute/unmute</li>
+        <li>The volume level is remembered between sessions</li>
+      </ul>
+      <p>Set the default starting volume in <strong>Settings</strong> &rarr; <strong>Playback</strong> &rarr; <strong>Default Volume</strong>.</p>
+
+      <h2>Loop Playback</h2>
+      <p>Click the <strong>loop icon</strong> in the transport bar to toggle looping. When enabled, the video restarts automatically when it reaches the end.</p>
+      <p>Set this as the default in <strong>Settings</strong> &rarr; <strong>Playback</strong> &rarr; <strong>Loop Playback</strong>.</p>
+
+      <h2>Shuffle</h2>
+      <p>Click the <strong>shuffle icon</strong> in the transport bar to randomize playback order. When you reach the end of a video, the next video in the shuffled order plays automatically. Every video plays once before the order resets.</p>
+
+      <h2>Fullscreen</h2>
+      <table>
+        <thead><tr><th>Action</th><th>How To</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Enter fullscreen</strong></td><td>Press <kbd>F11</kbd>, press <kbd>F</kbd>, or use <strong>View</strong> &rarr; <strong>Fullscreen</strong></td></tr>
+          <tr><td><strong>Exit fullscreen</strong></td><td>Press <kbd>Escape</kbd>, <kbd>F11</kbd> again, or <kbd>F</kbd> again</td></tr>
+        </tbody>
+      </table>
+      <p>In fullscreen mode:</p>
+      <ul>
+        <li>The title bar, sidebar, status bar, and panels are hidden</li>
+        <li>The video fills the entire screen</li>
+        <li>Transport controls appear at the bottom when you move the mouse, and fade away after a few seconds of inactivity</li>
+        <li>The video filename appears in the top-left corner (can be disabled in Settings)</li>
+      </ul>
+      <div class="callout">
+        <div class="callout-label">Tip</div>
+        <p>Adjust how long the controls stay visible before fading in <strong>Settings</strong> &rarr; <strong>Playback</strong> &rarr; <strong>Fullscreen Auto-Hide Delay</strong>.</p>
+      </div>
+
+      <h2>Resume Playback</h2>
+      <p>When you reopen a video you've watched before, a bar appears at the top asking if you'd like to resume from where you left off:</p>
+      <ul>
+        <li>Click <strong>Yes</strong> to jump to your previous position</li>
+        <li>Click <strong>No</strong> to start from the beginning</li>
+      </ul>
+      <div class="callout">
+        <div class="callout-label">Tip</div>
+        <p>Disable this prompt in <strong>Settings</strong> &rarr; <strong>Playback</strong> &rarr; <strong>Resume Playback Prompt</strong>.</p>
+      </div>
+
+      <h2>Navigating Between Videos</h2>
+      <p>Use <kbd>Page Down</kbd> to skip to the next video and <kbd>Page Up</kbd> for the previous one. The behavior depends on what's active:</p>
+      <ul>
+        <li><strong>With a playlist open</strong> — skips to the next/previous playlist item</li>
+        <li><strong>With a folder open</strong> — skips to the next/previous video in the folder</li>
+      </ul>
+
+      <h2>Video Details</h2>
+      <p>Press <kbd>Ctrl</kbd>+<kbd>H</kbd> to open the right panel, which shows detailed information about the current video:</p>
+      <ul>
+        <li>File name and full path</li>
+        <li>File size and duration</li>
+        <li>Resolution (width x height)</li>
+        <li>Video and audio codecs</li>
+        <li>Frame rate and bitrate</li>
+        <li>Container format</li>
+        <li>Audio channels and sample rate</li>
+      </ul>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="user-interface.html">User Interface</a> — learn the full window layout</li>
+        <li><a href="playlists.html">Playlists</a> — organize your videos into playlists</li>
+        <li><a href="keyboard-shortcuts.html">Keyboard Shortcuts</a> — all shortcuts at a glance</li>
+        <li><a href="settings.html">Settings</a> — customize playback defaults</li>
+      </ul>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">
+          <img src="../assets/images/vido-logo.png" alt="" width="28" height="28">
+          <span>Vido</span>
+        </div>
+        <p class="footer-desc">Ultra-performant video player for Windows with built-in haptic device control and audio beat detection.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="../index.html">Home</a>
+        <a href="../install.html">Install</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest">Download</a>
+      </div>
+      <div class="footer-col">
+        <h4>Documentation</h4>
+        <a href="getting-started.html">Getting Started</a>
+        <a href="video-playback.html">Video Playback</a>
+        <a href="osr2-device-control.html">Device Control</a>
+      </div>
+      <div class="footer-col">
+        <h4>More</h4>
+        <a href="playlists.html">Playlists</a>
+        <a href="settings.html">Settings</a>
+        <a href="keyboard-shortcuts.html">Shortcuts</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Vido. All rights reserved.</span>
+      <a href="https://github.com/AnotherFoxGuy/vido/blob/main/LICENSE">License</a>
+    </div>
+  </footer>
+
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>
