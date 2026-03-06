@@ -33,6 +33,7 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
     private string _statusBarText = "\u2665 Pulse: Off";
     private string? _errorMessage;
     private int _selectedBeatRateIndex;
+    private int _selectedFunscriptBeatRateIndex;
     private bool _disposed;
     private string? _currentVideoPath;
     private bool _isGenerating;
@@ -66,6 +67,7 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         // Load persisted state
         _usePulse = _settingsService.Current.PulseUsePulse;
         _selectedBeatRateIndex = _settingsService.Current.PulseBeatRateIndex;
+        _selectedFunscriptBeatRateIndex = _settingsService.Current.PulseFunscriptBeatRateIndex;
         _state = _engine.State;
 
         _engine.StateChanged += OnEngineStateChanged;
@@ -218,6 +220,23 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         }
     }
 
+    /// <summary>
+    /// Selected beat rate index for funscript generation (0 = every beat, 1 = every 2nd, etc.).
+    /// Independent from the live playback beat rate.
+    /// </summary>
+    public int SelectedFunscriptBeatRateIndex
+    {
+        get => _selectedFunscriptBeatRateIndex;
+        set
+        {
+            if (_selectedFunscriptBeatRateIndex == value) return;
+            _selectedFunscriptBeatRateIndex = value;
+            OnPropertyChanged();
+            _settingsService.Current.PulseFunscriptBeatRateIndex = value;
+            _settingsService.QueueSave();
+        }
+    }
+
     /// <summary>Description text explaining Pulse behaviour.</summary>
     public string Description =>
         "When Use Pulse is enabled:\n" +
@@ -227,6 +246,10 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         "\u2022 L0 axis is driven by beat-synchronized strokes\n" +
         "\u2022 Other axes (R0/R1/R2) continue with fill modes\n" +
         "\u2022 OSR2+ axis Min/Max/Enabled settings still apply\n\n" +
+        "Generate Funscript:\n" +
+        "Use the beat rate selector to choose which beats are included (Every Beat, Every 2nd/3rd/4th Beat), " +
+        "then click Generate Funscript to create a .funscript file. " +
+        "The generated script mirrors the Pulse waveform amplitude, producing strokes that match the audio intensity.\n\n" +
         "Toggle off to restore normal funscript behavior.";
 
     // ── Generate Funscript ──
@@ -268,7 +291,9 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         OnPropertyChanged(nameof(CanGenerateFunscript));
         try
         {
-            var actions = FunscriptWriter.CreateActionsFromBeatMap(beatMap);
+            int divisor = _selectedFunscriptBeatRateIndex + 1;
+            var filteredBeatMap = FunscriptWriter.FilterBeatsByDivisor(beatMap, divisor);
+            var actions = FunscriptWriter.CreateActionsFromBeatMap(filteredBeatMap);
             await FunscriptWriter.WriteAsync(actions, targetPath);
             _toastService?.Show("Funscript generated:", fileName);
             _eventBus.Publish(new FunscriptGeneratedEvent

@@ -315,6 +315,68 @@ public class PulseSidebarViewModelTests : IDisposable
     }
 
     // ══════════════════════════════════════════════
+    //  Funscript Beat Rate Selector (VI-0024)
+    // ══════════════════════════════════════════════
+
+    [Fact]
+    public void SelectedFunscriptBeatRateIndex_DefaultsFromSettings()
+    {
+        _settings.PulseFunscriptBeatRateIndex = 2;
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus, _toastService);
+
+        Assert.Equal(2, vm.SelectedFunscriptBeatRateIndex);
+    }
+
+    [Fact]
+    public void SelectedFunscriptBeatRateIndex_PersistsToSettings()
+    {
+        using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus, _toastService);
+
+        vm.SelectedFunscriptBeatRateIndex = 3;
+
+        Assert.Equal(3, _settings.PulseFunscriptBeatRateIndex);
+        _settingsService.Received().QueueSave();
+    }
+
+    [Fact]
+    public async Task GenerateFunscript_WithBeatRate2_GeneratesFilteredFunscript()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "vido_fsgen_test_" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            Directory.CreateDirectory(tempDir);
+            var videoPath = Path.Combine(tempDir, "test.mp4");
+            File.WriteAllText(videoPath, "dummy");
+
+            using var vm = new PulseSidebarViewModel(_engine, _settingsService, _eventBus, _toastService);
+            InvokePrivate(vm, "OnEngineStateChanged", PulseState.Ready);
+            _eventBus.Publish(new VideoLoadedEvent { FilePath = videoPath });
+            var beatMap = CreateBeatMap(120);
+            SetPrivateField(_engine, "_currentBeatMap", beatMap);
+            InvokePrivate(vm, "OnBeatMapReady", beatMap);
+
+            vm.SelectedFunscriptBeatRateIndex = 1; // divisor 2
+
+            await InvokePrivateAsync(vm, "GenerateFunscriptAsync");
+
+            var fsPath = Path.ChangeExtension(videoPath, ".funscript");
+            Assert.True(File.Exists(fsPath));
+
+            var json = File.ReadAllText(fsPath);
+            // Count actions in the JSON — the filtered count should be half (rounded up) of the original
+            int totalBeats = beatMap.Beats.Count;
+            int expectedFiltered = (totalBeats + 1) / 2; // ceiling division for step-by-2
+            int actionCount = System.Text.Json.JsonDocument.Parse(json)
+                .RootElement.GetProperty("actions").GetArrayLength();
+            Assert.Equal(expectedFiltered, actionCount);
+        }
+        finally
+        {
+            try { Directory.Delete(tempDir, true); } catch { }
+        }
+    }
+
+    // ══════════════════════════════════════════════
     //  Dispose — subscription cleanup
     // ══════════════════════════════════════════════
 

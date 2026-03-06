@@ -394,4 +394,95 @@ public class FunscriptWriterTests : IDisposable
         var result = FunscriptWriter.SampleWaveformAmplitude(waveform, 100, 0.0);
         Assert.Equal(1.0, result);
     }
+
+    // ══════════════════════════════════════════════
+    //  FilterBeatsByDivisor (VI-0024)
+    // ══════════════════════════════════════════════
+
+    [Fact]
+    public void FilterBeatsByDivisor_Divisor1_ReturnsSameBeatMap()
+    {
+        var beatMap = MakeBeatMap(
+            Enumerable.Range(0, 10).Select(i => new BeatEvent { TimestampMs = i * 500, Strength = 0.8 }).ToList(),
+            new float[] { 0.5f, 0.6f, 0.7f }, waveformSampleRate: 100, bpm: 120);
+
+        var result = FunscriptWriter.FilterBeatsByDivisor(beatMap, 1);
+
+        Assert.Same(beatMap, result);
+    }
+
+    [Fact]
+    public void FilterBeatsByDivisor_Divisor2_TakesEveryOtherBeat()
+    {
+        var beats = Enumerable.Range(0, 10)
+            .Select(i => new BeatEvent { TimestampMs = i * 500, Strength = 0.8 }).ToList();
+        var beatMap = MakeBeatMap(beats, new float[] { 0.5f }, waveformSampleRate: 100, bpm: 120);
+
+        var result = FunscriptWriter.FilterBeatsByDivisor(beatMap, 2);
+
+        Assert.Equal(5, result.Beats.Count);
+        Assert.Equal(0, result.Beats[0].TimestampMs);
+        Assert.Equal(1000, result.Beats[1].TimestampMs);
+        Assert.Equal(2000, result.Beats[2].TimestampMs);
+        Assert.Equal(3000, result.Beats[3].TimestampMs);
+        Assert.Equal(4000, result.Beats[4].TimestampMs);
+        Assert.Equal(60.0, result.Bpm);
+    }
+
+    [Fact]
+    public void FilterBeatsByDivisor_Divisor3_TakesEveryThirdBeat()
+    {
+        var beats = Enumerable.Range(0, 9)
+            .Select(i => new BeatEvent { TimestampMs = i * 500, Strength = 0.8 }).ToList();
+        var beatMap = MakeBeatMap(beats, new float[] { 0.5f }, waveformSampleRate: 100, bpm: 120);
+
+        var result = FunscriptWriter.FilterBeatsByDivisor(beatMap, 3);
+
+        Assert.Equal(3, result.Beats.Count);
+        Assert.Equal(0, result.Beats[0].TimestampMs);
+        Assert.Equal(1500, result.Beats[1].TimestampMs);
+        Assert.Equal(3000, result.Beats[2].TimestampMs);
+        Assert.Equal(40.0, result.Bpm);
+    }
+
+    [Fact]
+    public void FilterBeatsByDivisor_Divisor4_TakesEveryFourthBeat()
+    {
+        var beats = Enumerable.Range(0, 12)
+            .Select(i => new BeatEvent { TimestampMs = i * 500, Strength = 0.8 }).ToList();
+        var beatMap = MakeBeatMap(beats, new float[] { 0.5f }, waveformSampleRate: 100, bpm: 120);
+
+        var result = FunscriptWriter.FilterBeatsByDivisor(beatMap, 4);
+
+        Assert.Equal(3, result.Beats.Count);
+        Assert.Equal(0, result.Beats[0].TimestampMs);
+        Assert.Equal(2000, result.Beats[1].TimestampMs);
+        Assert.Equal(4000, result.Beats[2].TimestampMs);
+        Assert.Equal(30.0, result.Bpm);
+    }
+
+    [Fact]
+    public void FilterBeatsByDivisor_EmptyBeats_ReturnsEmptyBeats()
+    {
+        var beatMap = MakeBeatMap(new List<BeatEvent>(), new float[] { 0.5f }, waveformSampleRate: 100, bpm: 120);
+
+        var result = FunscriptWriter.FilterBeatsByDivisor(beatMap, 2);
+
+        Assert.Empty(result.Beats);
+    }
+
+    [Fact]
+    public void FilterBeatsByDivisor_PreservesWaveformData()
+    {
+        var waveform = new float[] { 0.1f, 0.5f, 0.9f };
+        var beats = Enumerable.Range(0, 6)
+            .Select(i => new BeatEvent { TimestampMs = i * 500, Strength = 0.8 }).ToList();
+        var beatMap = MakeBeatMap(beats, waveform, waveformSampleRate: 44100, bpm: 120);
+
+        var result = FunscriptWriter.FilterBeatsByDivisor(beatMap, 2);
+
+        Assert.Same(waveform, result.WaveformSamples);
+        Assert.Equal(44100, result.WaveformSampleRate);
+        Assert.Equal(beatMap.DurationMs, result.DurationMs);
+    }
 }

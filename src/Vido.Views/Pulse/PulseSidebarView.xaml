@@ -14,6 +14,42 @@
             <BooleanToVisibilityConverter x:Key="BoolToVis" />
             <converters:StateColorToBrushConverter x:Key="StateColorBrush" />
             <converters:FractionToPercentConverter x:Key="FracToPercent" />
+
+            <Style x:Key="GenerateFunscriptButtonStyle" TargetType="Button">
+                <Setter Property="Background" Value="#2D2D2D" />
+                <Setter Property="Foreground" Value="#CCCCCC" />
+                <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="8,5" />
+                <Setter Property="FontSize" Value="11" />
+                <Setter Property="FontFamily" Value="Segoe UI" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Border" Property="Background"
+                                            Value="{DynamicResource AccentBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter TargetName="Border" Property="Opacity" Value="0.4" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -87,19 +123,29 @@
             </StackPanel>
 
             <!-- ════ Generate Funscript ════ -->
-            <Button Content="Generate Funscript"
-                    Command="{Binding GenerateFunscriptCommand}"
-                    IsEnabled="{Binding CanGenerateFunscript}"
-                    Visibility="{Binding ShowBpm, Converter={StaticResource BoolToVis}}"
-                    Margin="0,0,0,8"
-                    Padding="8,5"
-                    HorizontalAlignment="Stretch"
-                    Background="#2D2D2D"
-                    Foreground="#CCCCCC"
-                    BorderBrush="{StaticResource BorderBrush}"
-                    BorderThickness="1"
-                    FontSize="11" FontFamily="Segoe UI"
-                    ToolTip="Generate a .funscript file from the detected beats" />
+            <Grid Visibility="{Binding ShowBpm, Converter={StaticResource BoolToVis}}"
+                  Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <ComboBox Grid.Column="0"
+                          Style="{StaticResource PulseComboBoxStyle}"
+                          ItemContainerStyle="{StaticResource PulseComboBoxItemStyle}"
+                          ItemsSource="{Binding BeatRateOptions}"
+                          SelectedIndex="{Binding SelectedFunscriptBeatRateIndex, Mode=TwoWay}"
+                          VerticalAlignment="Stretch"
+                          ToolTip="Beat rate for generated funscript" />
+
+                <Button Grid.Column="2"
+                        Content="Generate Funscript"
+                        Style="{StaticResource GenerateFunscriptButtonStyle}"
+                        Command="{Binding GenerateFunscriptCommand}"
+                        IsEnabled="{Binding CanGenerateFunscript}"
+                        ToolTip="Generate a .funscript file from the detected beats" />
+            </Grid>
 
             <!-- ════ Separator ════ -->
             <Border Height="1"
