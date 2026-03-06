@@ -1060,6 +1060,177 @@ public class TCodeEngineTests : IDisposable
     }
 
     // ═══════════════════════════════════════════════
+    //  VI-0022: Stroke tracking priority (external vs script)
+    // ═══════════════════════════════════════════════
+
+    /// <summary>
+    /// When both an empty L0 script and external L0 positions exist,
+    /// the first-pass stroke tracking must use the external position.
+    /// This ensures SyncWithStroke fills accumulate stroke distance from
+    /// Pulse-driven L0 movement instead of the empty script's fixed 50.0.
+    /// </summary>
+    [Fact]
+    public void OutputTick_WithExternalL0_SyncWithStrokeFillAnimates()
+    {
+        var transport = new FakeTransport { IsConnected = true };
+        _service.Transport = transport;
+
+        // Configure L0 enabled + R0 with SyncWithStroke Triangle fill
+        _service.SetAxisConfigs(new List<AxisConfig>
+        {
+            MakeL0(),
+            MakeR0(fillMode: AxisFillMode.Triangle)
+        });
+
+        // Inject empty L0 script (simulates VI-0012 Pulse suppress flow)
+        _service.SetScripts(new Dictionary<string, FunscriptData>
+        {
+            ["L0"] = new FunscriptData { AxisId = "L0", FilePath = "", Actions = [] }
+        });
+        _service.SetPlaying(true);
+
+        _service.Start();
+
+        // Simulate Pulse sending varying L0 external positions over time
+        // to drive stroke distance accumulation
+        for (int i = 0; i < 30; i++)
+        {
+            double position = (i % 2 == 0) ? 10.0 : 90.0;
+            _service.SetExternalPositions(new AxisPosition[]
+            {
+                new() { AxisId = "L0", Position = position }
+            });
+            Thread.Sleep(20);
+        }
+
+        _service.StopTimer();
+
+        // Parse R0 tcode values from sent bytes
+        var r0Values = ParseAxisValues(transport.SentBytes, "R0");
+
+        // R0 must have received output commands (fill is active)
+        Assert.True(r0Values.Count >= 2,
+            $"Expected R0 to receive fill output, but got {r0Values.Count} commands");
+
+        // R0 values should NOT all be the same (fill is animating, not stuck)
+        var distinctValues = r0Values.Distinct().Count();
+        Assert.True(distinctValues >= 2,
+            $"Expected R0 fill to animate (distinct values), but all {r0Values.Count} values were identical: {r0Values.FirstOrDefault()}");
+    }
+
+    /// <summary>
+    /// When no external positions are set, stroke tracking must fall back
+    /// to the L0 script interpolation (regression test).
+    /// </summary>
+    [Fact]
+    public void OutputTick_WithoutExternalPositions_UsesScriptForStrokeTracking()
+    {
+        var transport = new FakeTransport { IsConnected = true };
+        _service.Transport = transport;
+
+        // Configure L0 + R0 with SyncWithStroke Triangle fill
+        _service.SetAxisConfigs(new List<AxisConfig>
+        {
+            MakeL0(),
+            MakeR0(fillMode: AxisFillMode.Triangle)
+        });
+
+        // Load a real L0 script with significant movement
+        _service.SetScripts(new Dictionary<string, FunscriptData>
+        {
+            ["L0"] = MakeScript((0, 0), (500, 100), (1000, 0), (1500, 100), (2000, 0))
+        });
+        _service.SetPlaying(true);
+        _service.SetTime(0);
+
+        _service.Start();
+        Thread.Sleep(300);
+        _service.StopTimer();
+
+        // L0 should have received script-driven output
+        var l0Values = ParseAxisValues(transport.SentBytes, "L0");
+        Assert.True(l0Values.Count >= 2,
+            $"Expected L0 script output, but got {l0Values.Count} commands");
+
+        // L0 values should vary (script has movement 0→100→0)
+        var l0Distinct = l0Values.Distinct().Count();
+        Assert.True(l0Distinct >= 2,
+            $"Expected varying L0 values from script, got {l0Distinct} distinct values");
+    }
+
+    /// <summary>
+    /// Time-based (non-SyncWithStroke) fills must continue to work
+    /// during Pulse playback with external L0 positions.
+    /// </summary>
+    [Fact]
+    public void OutputTick_TimeBasedFill_WorksDuringExternalPositions()
+    {
+        var transport = new FakeTransport { IsConnected = true };
+        _service.Transport = transport;
+
+        // Configure L0 + R1 with time-based (non-sync) Triangle fill
+        _service.SetAxisConfigs(new List<AxisConfig>
+        {
+            MakeL0(),
+            MakeConfig("R1", "Roll", "rotation", fillMode: AxisFillMode.Triangle, syncWithStroke: false)
+        });
+
+        // Inject empty L0 script + external positions (Pulse flow)
+        _service.SetScripts(new Dictionary<string, FunscriptData>
+        {
+            ["L0"] = new FunscriptData { AxisId = "L0", FilePath = "", Actions = [] }
+        });
+        _service.SetPlaying(true);
+
+        // Set external L0 (Pulse driving L0)
+        _service.SetExternalPositions(new AxisPosition[]
+        {
+            new() { AxisId = "L0", Position = 50.0 }
+        });
+
+        _service.Start();
+        Thread.Sleep(300);
+        _service.StopTimer();
+
+        // R1 time-based fill should produce varying output
+        var r1Values = ParseAxisValues(transport.SentBytes, "R1");
+        Assert.True(r1Values.Count >= 2,
+            $"Expected R1 fill output, but got {r1Values.Count} commands");
+
+        var r1Distinct = r1Values.Distinct().Count();
+        Assert.True(r1Distinct >= 2,
+            $"Expected R1 time-based fill to animate, got {r1Distinct} distinct values");
+    }
+
+    /// <summary>
+    /// Parses TCode axis values from raw byte output.
+    /// TCode format: "L0500 R0300 R1200 R2100 I10\n" (space-separated, newline-terminated).
+    /// </summary>
+    private static List<int> ParseAxisValues(List<byte[]> sentBytes, string axisId)
+    {
+        var values = new List<int>();
+        foreach (var bytes in sentBytes)
+        {
+            var message = System.Text.Encoding.ASCII.GetString(bytes);
+            // Commands are space-separated, each like "R0500I10" or "L0499I10"
+            foreach (var segment in message.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var trimmed = segment.TrimEnd('\n');
+                if (trimmed.StartsWith(axisId, StringComparison.Ordinal) && trimmed.Length > axisId.Length)
+                {
+                    var rest = trimmed[axisId.Length..];
+                    // Rest is like "500I10" — extract digits before 'I'
+                    var iPos = rest.IndexOf('I');
+                    var valueStr = iPos >= 0 ? rest[..iPos] : rest;
+                    if (int.TryParse(valueStr, out var val))
+                        values.Add(val);
+                }
+            }
+        }
+        return values;
+    }
+
+    // ═══════════════════════════════════════════════
     //  Fake transport helper
     // ═══════════════════════════════════════════════
 

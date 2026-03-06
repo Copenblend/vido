@@ -5,6 +5,7 @@ All notable changes to the Vido project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- **VI-0022**: Fixed SyncWithStroke fill modes (R0/R1/R2) getting stuck at a fixed position when switching from funscript to Pulse mode. The empty L0 script injected by VI-0012 was winning the stroke tracking priority check in `OutputTick`, causing `_cumulativeStrokeDistance` to never accumulate. Swapped priority so external positions (Pulse) are checked before scripts for stroke tracking.
 - **VI-0021**: Fixed bottom panel appearing over fullscreen video when the next video auto-plays and scripts load. `ActivateBottomPanelTab`, `OpenBottomPanelTab`, `ToggleBottomPanel`, and `ToggleBottomPanelCollapse` now guard `IsBottomPanelVisible = true` with `if (!IsFullscreen)`. The active tab is still set correctly so the right tab is visible when exiting fullscreen.
 
 ### Added
