@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Windows;
 using System.Windows.Controls;
+using Vido.Services.Pulse;
 using Vido.ViewModels.Pulse;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
@@ -19,6 +20,7 @@ public partial class WaveformPanelView : UserControl
 {
     private WaveformViewModel? _viewModel;
     private SKElement? _skiaCanvas;
+    private WaveformStripRenderer? _stripRenderer;
 
     // ── Pulse theme colors ──
     private static readonly SKColor BackgroundColor = SKColor.Parse("#1E1E1E");
@@ -116,6 +118,7 @@ public partial class WaveformPanelView : UserControl
             _skiaCanvas = new SKElement();
             _skiaCanvas.PaintSurface += OnPaintSurface;
             CanvasHost.Content = _skiaCanvas;
+            _stripRenderer = new WaveformStripRenderer();
         }
         catch (Exception)
         {
@@ -156,10 +159,35 @@ public partial class WaveformPanelView : UserControl
             case nameof(WaveformViewModel.IsActive):
             case nameof(WaveformViewModel.FullWaveform):
                 DispatchIfNeeded(UpdateEmptyState);
+                UpdateStripRendererData();
+                break;
+            case nameof(WaveformViewModel.AllBeats):
+                UpdateStripRendererData();
                 break;
             case nameof(WaveformViewModel.CurrentBpm):
                 DispatchIfNeeded(UpdateBpmReadout);
                 break;
+            case nameof(WaveformViewModel.WindowDurationSeconds):
+                _waveformPathCacheValid = false;
+                break;
+        }
+    }
+
+    private void UpdateStripRendererData()
+    {
+        if (_stripRenderer == null || _viewModel == null) return;
+
+        if (_viewModel.FullWaveform != null)
+        {
+            _stripRenderer.SetData(
+                _viewModel.FullWaveform,
+                _viewModel.WaveformSampleRate,
+                _viewModel.TotalDurationSeconds,
+                _viewModel.AllBeats);
+        }
+        else
+        {
+            _stripRenderer.SetData(null, 0, 0, null);
         }
     }
 
@@ -228,7 +256,20 @@ public partial class WaveformPanelView : UserControl
         double windowStartTime = currentTime - (windowDuration * CursorFraction);
         double windowEndTime = windowStartTime + windowDuration;
 
-        // Draw order: grid → waveform → cursor → time labels
+        // Fast path: use pre-rendered strip bitmap if available
+        if (_stripRenderer != null)
+        {
+            _stripRenderer.SetViewport((int)width, (int)height, windowDuration);
+            var strip = _stripRenderer.GetStrip(currentTime, out var srcRect);
+            if (strip != null)
+            {
+                canvas.DrawBitmap(strip, srcRect, new SKRect(0, 0, width, height));
+                DrawCursor(canvas, cursorX, height);
+                return;
+            }
+        }
+
+        // Fallback: path-based rendering (first frame or strip not yet ready)
         DrawGridLines(canvas, width, height, windowStartTime, windowEndTime);
         DrawWaveform(canvas, waveform, waveformSampleRate, totalDuration, width, height, windowStartTime, windowEndTime);
         DrawCursor(canvas, cursorX, height);
@@ -422,6 +463,10 @@ public partial class WaveformPanelView : UserControl
             _viewModel.RepaintRequested += OnRepaintRequested;
         }
 
+        // Re-create strip renderer if it was disposed during Unloaded
+        _stripRenderer ??= new WaveformStripRenderer();
+        UpdateStripRendererData();
+
         _waveformPathCacheValid = false;
         UpdateEmptyState();
         UpdateBpmReadout();
@@ -441,6 +486,8 @@ public partial class WaveformPanelView : UserControl
             _viewModel = null;
         }
 
+        _stripRenderer?.Dispose();
+        _stripRenderer = null;
         _waveformPathCacheValid = false;
     }
 }
