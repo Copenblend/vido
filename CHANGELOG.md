@@ -4,6 +4,9 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **VI-0024**: Added beat rate selector ComboBox to the Pulse sidebar, placed to the left of the "Generate Funscript" button. Offers the same four options as the beat bar rate selector ("Every Beat" through "Every 4th Beat") but is independent from live playback beat rate. New `FilterBeatsByDivisor` method in `FunscriptWriter` filters the raw beat map before generation. Setting persisted as `PulseFunscriptBeatRateIndex` in `AppSettings`.
+
 ### Fixed
 - **VI-0023**: Fixed generated funscripts from Pulse using fixed 0/100 positions instead of matching the audio waveform amplitude. New `CreateActionsFromBeatMap(BeatMap)` method in `FunscriptWriter` replicates `PulseTCodeMapper`'s amplitude-aware position formula — sampling `BeatMap.WaveformSamples` at each beat timestamp and scaling stroke range by `amplitudeScale * (0.5 + 0.5 * beatStrength)`. `PulseSidebarViewModel.GenerateFunscriptAsync` now calls the new overload. Original `CreateActionsFromBeats` preserved for backward compatibility.
 - **VI-0022**: Fixed SyncWithStroke fill modes (R0/R1/R2) getting stuck at a fixed position when switching from funscript to Pulse mode. The empty L0 script injected by VI-0012 was winning the stroke tracking priority check in `OutputTick`, causing `_cumulativeStrokeDistance` to never accumulate. Swapped priority so external positions (Pulse) are checked before scripts for stroke tracking.

@@ -81,6 +81,34 @@ public static class FunscriptWriter
     }
 
     /// <summary>
+    /// Filters a beat map by taking every Nth beat, where N is the divisor.
+    /// Replicates <c>PulseEngine.RebuildEffectiveBeatMap</c> logic.
+    /// If <paramref name="divisor"/> is 1 or less, returns the input unchanged.
+    /// </summary>
+    /// <param name="beatMap">The beat map to filter.</param>
+    /// <param name="divisor">Beat divisor: 1 = every beat, 2 = every other, 3 = every 3rd, 4 = every 4th.</param>
+    /// <returns>A filtered beat map with scaled BPM and preserved waveform data.</returns>
+    public static BeatMap FilterBeatsByDivisor(BeatMap beatMap, int divisor)
+    {
+        if (divisor <= 1) return beatMap;
+
+        var beats = beatMap.Beats;
+        var filtered = new List<BeatEvent>();
+        for (int i = 0; i < beats.Count; i += divisor)
+            filtered.Add(beats[i]);
+
+        return new BeatMap
+        {
+            Beats = filtered,
+            Bpm = beatMap.Bpm / divisor,
+            BpmConfidence = beatMap.BpmConfidence,
+            DurationMs = beatMap.DurationMs,
+            WaveformSamples = beatMap.WaveformSamples,
+            WaveformSampleRate = beatMap.WaveformSampleRate
+        };
+    }
+
+    /// <summary>
     /// Samples the pre-computed waveform amplitude at the given timestamp.
     /// Returns 0.0 if waveform data is empty or the timestamp is out of range.
     /// </summary>

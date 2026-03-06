@@ -203,6 +203,11 @@ public sealed class AppSettings
     /// </summary>
     public int PulseBeatRateIndex { get; set; } = 0;
 
+    /// <summary>
+    /// Index of the selected beat rate for funscript generation (independent from live beat rate).
+    /// </summary>
+    public int PulseFunscriptBeatRateIndex { get; set; } = 0;
+
     // --- General ---
 
     /// <summary>
@@ -288,6 +293,7 @@ public sealed class AppSettings
         PulseWaveformWindowDuration = 30;
         PulseUsePulse = false;
         PulseBeatRateIndex = 0;
+        PulseFunscriptBeatRateIndex = 0;
 
         // General settings
         ToastDurationSeconds = 3.0;
