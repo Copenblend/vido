@@ -1993,7 +1993,8 @@ public partial class MainWindow : Window
             _pulsePreAnalysis, liveAmplitude, mapper, _eventBus, _logService);
 
         // â”€â”€ Create ViewModels â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        _pulseSidebarVm = new PulseSidebarViewModel(_pulseEngine, _settingsService, _toastService);
+        _pulseSidebarVm = new PulseSidebarViewModel(
+            _pulseEngine, _settingsService, _eventBus, _toastService, ConfirmOverwriteAsync);
         _waveformVm = new WaveformViewModel(_pulseEngine, _settingsService);
 
         // â”€â”€ Wire Status Bar Updates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -2037,6 +2038,15 @@ public partial class MainWindow : Window
             }
         }));
 
+        // Wire FunscriptGenerated -> Reload scripts in AxisControl
+        _pulseSubscriptions.Add(_eventBus.Subscribe<FunscriptGeneratedEvent>(e =>
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                _axisControlVm?.LoadScriptsForVideo(e.VideoPath);
+            });
+        }));
+
         // â”€â”€ Register UI Contributions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Sidebar content
         _pulseSidebarContent = new PulseSidebarView { DataContext = _pulseSidebarVm };
@@ -2070,6 +2080,13 @@ public partial class MainWindow : Window
         SetupPulseToolbarButton();
 
         _logService.Info("Pulse feature initialized", "Pulse");
+    }
+
+    private Task<bool> ConfirmOverwriteAsync(string title, string message)
+    {
+        var result = MessageBox.Show(this, message, title,
+            MessageBoxButton.YesNo, MessageBoxImage.Warning);
+        return Task.FromResult(result == MessageBoxResult.Yes);
     }
 
     // â”€â”€ Playlists Integrated Feature â”€â”€

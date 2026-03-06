@@ -86,6 +86,21 @@
                            FontSize="14" FontWeight="SemiBold" FontFamily="Segoe UI" />
             </StackPanel>
 
+            <!-- ════ Generate Funscript ════ -->
+            <Button Content="Generate Funscript"
+                    Command="{Binding GenerateFunscriptCommand}"
+                    IsEnabled="{Binding CanGenerateFunscript}"
+                    Visibility="{Binding ShowBpm, Converter={StaticResource BoolToVis}}"
+                    Margin="0,0,0,8"
+                    Padding="8,5"
+                    HorizontalAlignment="Stretch"
+                    Background="#2D2D2D"
+                    Foreground="#CCCCCC"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="1"
+                    FontSize="11" FontFamily="Segoe UI"
+                    ToolTip="Generate a .funscript file from the detected beats" />
+
             <!-- ════ Separator ════ -->
             <Border Height="1"
                     Background="{StaticResource BorderBrush}"

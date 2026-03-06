@@ -56,6 +56,9 @@ internal sealed class PulseEngine : IDisposable
     /// <summary>Most recent beat map (null until analysis completes).</summary>
     public BeatMap? CurrentBeatMap { get { lock (_lock) return _currentBeatMap; } }
 
+    /// <summary>Path of the currently loaded media file, or null if no media is loaded.</summary>
+    public string? CurrentMediaPath { get { lock (_lock) return _currentMediaPath; } }
+
     /// <summary>Whether the user has enabled Pulse.</summary>
     public bool IsEnabled { get { lock (_lock) return _enabled; } }
 
