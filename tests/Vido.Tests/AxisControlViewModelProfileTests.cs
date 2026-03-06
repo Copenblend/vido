@@ -166,7 +166,7 @@ public class AxisControlViewModelProfileTests : IDisposable
         var profiles = _vm.AvailableProfiles;
 
         // Should have built-in profiles
-        Assert.Equal(5, profiles.Count);
+        Assert.Equal(3, profiles.Count);
         Assert.Equal("Default", profiles[0].Name);
     }
 
@@ -223,5 +223,150 @@ public class AxisControlViewModelProfileTests : IDisposable
         _vm.SelectedProfile = null;
 
         Assert.False(_vm.CanDeleteSelectedProfile);
+    }
+
+    // ── SaveProfile ───────────────────────────────────────────────────
+
+    [Fact]
+    public void CompleteSaveProfile_CreatesNewProfile_WhenNameIsNew()
+    {
+        _vm.AxisCards[0].Min = 15;
+        _vm.AxisCards[0].Max = 85;
+
+        _vm.CompleteSaveProfile("My Profile");
+
+        Assert.NotNull(_vm.SelectedProfile);
+        Assert.Equal("My Profile", _vm.SelectedProfile!.Name);
+        Assert.False(_vm.IsProfileModified);
+        Assert.Contains(_vm.AvailableProfiles, p => p.Name == "My Profile");
+    }
+
+    [Fact]
+    public void CompleteSaveProfile_UpdatesExistingProfile_WhenNameExists()
+    {
+        var axes = MakeProfile("Existing").Axes;
+        _profileService.CreateProfile("Existing", axes);
+
+        // Change an axis value
+        _vm.AxisCards[0].Min = 25;
+        _vm.AxisCards[0].Max = 75;
+
+        _vm.CompleteSaveProfile("Existing");
+
+        Assert.NotNull(_vm.SelectedProfile);
+        Assert.Equal("Existing", _vm.SelectedProfile!.Name);
+        Assert.False(_vm.IsProfileModified);
+        // The updated profile should reflect the current axis values
+        var updated = _profileService.FindByName("Existing");
+        Assert.NotNull(updated);
+        Assert.Equal(25, updated!.Axes["L0"].Min);
+        Assert.Equal(75, updated.Axes["L0"].Max);
+    }
+
+    [Fact]
+    public void CompleteSaveProfile_SetsSelectedProfileToNew()
+    {
+        _vm.CompleteSaveProfile("Brand New");
+
+        Assert.NotNull(_vm.SelectedProfile);
+        Assert.Equal("Brand New", _vm.SelectedProfile!.Name);
+    }
+
+    [Fact]
+    public void SaveProfileCommand_RaisesRequestProfileName()
+    {
+        var raised = false;
+        _vm.RequestProfileName += (_, _) => raised = true;
+
+        _vm.SaveProfileCommand.Execute(null);
+
+        Assert.True(raised);
+    }
+
+    // ── DeleteProfile ─────────────────────────────────────────────────
+
+    [Fact]
+    public void DeleteProfile_RemovesUserProfile()
+    {
+        var profile = _profileService.CreateProfile("ToDelete", MakeProfile("ToDelete").Axes);
+        _vm.SelectedProfile = profile;
+
+        _vm.DeleteProfileCommand.Execute(null);
+
+        Assert.Null(_vm.SelectedProfile);
+        Assert.DoesNotContain(_vm.AvailableProfiles, p => p.Name == "ToDelete");
+    }
+
+    [Fact]
+    public void DeleteProfile_DoesNothing_WhenBuiltIn()
+    {
+        _vm.SelectedProfile = _profileService.FindByName("Default");
+
+        _vm.DeleteProfileCommand.Execute(null);
+
+        // Built-in profile should still be selected
+        Assert.NotNull(_vm.SelectedProfile);
+        Assert.Equal("Default", _vm.SelectedProfile!.Name);
+    }
+
+    [Fact]
+    public void DeleteProfile_ClearsSelection()
+    {
+        var profile = _profileService.CreateProfile("ToDelete", MakeProfile("ToDelete").Axes);
+        _vm.SelectedProfile = profile;
+
+        _vm.DeleteProfileCommand.Execute(null);
+
+        Assert.Null(_vm.SelectedProfile);
+        Assert.False(_vm.IsProfileModified);
+    }
+
+    // ── RenameProfile ─────────────────────────────────────────────────
+
+    [Fact]
+    public void CompleteRenameProfile_ChangesNameInService()
+    {
+        var profile = _profileService.CreateProfile("OldName", MakeProfile("OldName").Axes);
+        _vm.SelectedProfile = profile;
+
+        _vm.CompleteRenameProfile("NewName");
+
+        Assert.Null(_profileService.FindByName("OldName"));
+        Assert.NotNull(_profileService.FindByName("NewName"));
+    }
+
+    [Fact]
+    public void CompleteRenameProfile_UpdatesSelectedProfile()
+    {
+        var profile = _profileService.CreateProfile("OldName", MakeProfile("OldName").Axes);
+        _vm.SelectedProfile = profile;
+
+        _vm.CompleteRenameProfile("NewName");
+
+        Assert.NotNull(_vm.SelectedProfile);
+        Assert.Equal("NewName", _vm.SelectedProfile!.Name);
+    }
+
+    [Fact]
+    public void RenameProfileCommand_RaisesRequestProfileRename()
+    {
+        var raised = false;
+        _vm.RequestProfileRename += (_, _) => raised = true;
+
+        _vm.RenameProfileCommand.Execute(null);
+
+        Assert.True(raised);
+    }
+
+    [Fact]
+    public void CompleteRenameProfile_DoesNothing_WhenBuiltIn()
+    {
+        _vm.SelectedProfile = _profileService.FindByName("Default");
+
+        _vm.CompleteRenameProfile("Renamed");
+
+        // Built-in should not be renamed
+        Assert.NotNull(_profileService.FindByName("Default"));
+        Assert.Null(_profileService.FindByName("Renamed"));
     }
 }

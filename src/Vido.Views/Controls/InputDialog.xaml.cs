@@ -19,11 +19,14 @@ public partial class InputDialog : Window
     /// </summary>
     /// <param name="title">Window title.</param>
     /// <param name="prompt">Prompt text shown above the input box.</param>
-    public InputDialog(string title, string prompt)
+    /// <param name="defaultValue">Optional default text to pre-fill in the input box.</param>
+    public InputDialog(string title, string prompt, string? defaultValue = null)
     {
         InitializeComponent();
         Title = title;
         PromptText.Text = prompt;
+        if (defaultValue is not null)
+            InputBox.Text = defaultValue;
     }
 
     /// <summary>
@@ -32,9 +35,10 @@ public partial class InputDialog : Window
     /// <param name="owner">The parent window that owns the dialog.</param>
     /// <param name="title">Window title shown in the dialog title bar.</param>
     /// <param name="prompt">Prompt text displayed above the input box.</param>
-    public static string? ShowInputDialog(Window owner, string title, string prompt)
+    /// <param name="defaultValue">Optional default text to pre-fill in the input box.</param>
+    public static string? ShowInputDialog(Window owner, string title, string prompt, string? defaultValue = null)
     {
-        var dialog = new InputDialog(title, prompt) { Owner = owner };
+        var dialog = new InputDialog(title, prompt, defaultValue) { Owner = owner };
         return dialog.ShowDialog() == true ? dialog.InputText : null;
     }
 
