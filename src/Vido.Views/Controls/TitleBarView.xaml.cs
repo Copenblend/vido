@@ -896,6 +896,7 @@ public partial class TitleBarView : UserControl
         {
             if (child is Button btn && btn.Tag as string == tag)
             {
+                btn.ApplyTemplate();
                 if (btn.Template?.FindName("Bd", btn) is Border bd)
                 {
                     bd.Background = highlighted
