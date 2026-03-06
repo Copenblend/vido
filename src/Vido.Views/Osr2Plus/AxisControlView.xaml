@@ -33,6 +33,13 @@
 
                 <!-- Action Buttons (right-docked) -->
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Margin="4,0,0,0">
+                    <TextBlock Text="(modified)"
+                               Foreground="#CC9900"
+                               FontSize="10"
+                               FontStyle="Italic"
+                               VerticalAlignment="Center"
+                               Margin="0,0,4,0"
+                               Visibility="{Binding IsProfileModified, Converter={StaticResource BoolToVisibility}}"/>
                     <Button ToolTip="Save current settings as new profile"
                             Command="{Binding SaveProfileCommand}"
                             Style="{StaticResource Osr2SmallButtonStyle}"
