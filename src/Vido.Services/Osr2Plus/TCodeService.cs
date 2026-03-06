@@ -582,20 +582,17 @@ public class TCodeService : IDisposable
         double strokePosition = 50.0;
         bool hasStrokeScript = false;
         var strokeConfig = _cachedStrokeConfig;
-        if (strokeConfig != null && _scripts.TryGetValue("L0", out var strokeScript))
+        if (strokeConfig != null && _hasExternalPositions && _extPosSet[0])
+        {
+            // When an external source (e.g. Pulse) drives L0, prefer its position
+            // for stroke tracking so SyncWithStroke fill modes work correctly.
+            strokePosition = _extPosValues[0];
+            hasStrokeScript = true;
+        }
+        else if (strokeConfig != null && _scripts.TryGetValue("L0", out var strokeScript))
         {
             strokePosition = _interpolation.GetPosition(strokeScript, currentTimeMs, "L0");
             hasStrokeScript = true;
-        }
-        else
-        {
-            // When an external source (e.g. Pulse) drives L0, use its position
-            // for stroke tracking so fill modes (SyncWithStroke) work.
-            if (strokeConfig != null && _hasExternalPositions && _extPosSet[0])
-            {
-                strokePosition = _extPosValues[0];
-                hasStrokeScript = true;
-            }
         }
         // Accumulate stroke travel distance for random/sync fill speed
         var strokeDelta = strokePosition - _lastStrokePosition;
