@@ -28,6 +28,10 @@ public class AxisControlViewModel : INotifyPropertyChanged
     private bool _isTesting;
     private bool _funscriptsSuppressed;
     private string? _currentVideoPath;
+    private IFillProfileService? _profileService;
+    private FillProfile? _selectedProfile;
+    private bool _isProfileModified;
+    private bool _suppressConfigChanged;
 
     /// <summary>The four axis cards: L0, R0, R1, R2.</summary>
     public ObservableCollection<AxisCardViewModel> AxisCards { get; }
@@ -42,6 +46,47 @@ public class AxisControlViewModel : INotifyPropertyChanged
     /// Raised when any axis configuration changes (min/max/enabled/fill settings).
     /// </summary>
     public event Action? AxisConfigChanged;
+
+    /// <summary>The currently selected fill profile.</summary>
+    public FillProfile? SelectedProfile
+    {
+        get => _selectedProfile;
+        set
+        {
+            if (_selectedProfile != value)
+            {
+                _selectedProfile = value;
+                OnPropertyChanged();
+                OnSelectedProfileChanged(value);
+            }
+        }
+    }
+
+    /// <summary>Whether the current axis settings have diverged from the selected profile.</summary>
+    public bool IsProfileModified
+    {
+        get => _isProfileModified;
+        private set
+        {
+            if (_isProfileModified != value)
+            {
+                _isProfileModified = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    /// <summary>Ordered list of available profiles for dropdown binding.</summary>
+    public IReadOnlyList<FillProfile> AvailableProfiles =>
+        _profileService?.Profiles ?? Array.Empty<FillProfile>();
+
+    /// <summary>Whether the selected profile is user-created (enables delete/rename).</summary>
+    public bool CanDeleteSelectedProfile =>
+        _selectedProfile is not null && !_selectedProfile.IsBuiltIn;
+
+    /// <summary>Whether the selected profile can be renamed.</summary>
+    public bool CanRenameSelectedProfile =>
+        _selectedProfile is not null && !_selectedProfile.IsBuiltIn;
 
     /// <summary>Whether test mode is currently active.</summary>
     public bool IsTesting
@@ -377,10 +422,19 @@ public class AxisControlViewModel : INotifyPropertyChanged
 
     private void OnCardConfigChanged()
     {
+        if (_suppressConfigChanged) return;
+
         // Re-push configs to TCodeService and persist
         _tcode.SetAxisConfigs(_configs);
         SaveSettings();
         AxisConfigChanged?.Invoke();
+
+        // Check if settings still match the selected profile
+        if (_selectedProfile is not null)
+        {
+            var currentAxes = CaptureCurrentAxes();
+            IsProfileModified = !_selectedProfile.MatchesAxes(currentAxes);
+        }
     }
 
     // ═══════════════════════════════════════════════════════
@@ -416,6 +470,91 @@ public class AxisControlViewModel : INotifyPropertyChanged
     private void OnAllTestsStopped()
     {
         IsTesting = false;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    //  Profile Management
+    // ═══════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Sets the fill profile service. Called from MainWindow after construction.
+    /// </summary>
+    /// <param name="profileService">The fill profile service to use.</param>
+    public void SetProfileService(IFillProfileService profileService)
+    {
+        _profileService = profileService;
+        _profileService.ProfilesChanged += () =>
+        {
+            OnPropertyChanged(nameof(AvailableProfiles));
+        };
+        OnPropertyChanged(nameof(AvailableProfiles));
+    }
+
+    /// <summary>
+    /// Captures the current axis card settings as a dictionary of <see cref="FillAxisSettings"/>.
+    /// </summary>
+    public Dictionary<string, FillAxisSettings> CaptureCurrentAxes()
+    {
+        var axes = new Dictionary<string, FillAxisSettings>();
+        foreach (var card in AxisCards)
+        {
+            axes[card.AxisId] = new FillAxisSettings
+            {
+                Enabled = card.Enabled,
+                Min = card.Min,
+                Max = card.Max,
+                FillMode = card.FillMode.ToString(),
+                SyncWithStroke = card.SyncWithStroke,
+                FillSpeedHz = card.FillSpeedHz,
+            };
+        }
+        return axes;
+    }
+
+    private void OnSelectedProfileChanged(FillProfile? value)
+    {
+        if (value is null)
+        {
+            IsProfileModified = false;
+            OnPropertyChanged(nameof(CanDeleteSelectedProfile));
+            OnPropertyChanged(nameof(CanRenameSelectedProfile));
+            return;
+        }
+
+        ApplyProfile(value);
+        IsProfileModified = false;
+        OnPropertyChanged(nameof(CanDeleteSelectedProfile));
+        OnPropertyChanged(nameof(CanRenameSelectedProfile));
+    }
+
+    private void ApplyProfile(FillProfile profile)
+    {
+        _suppressConfigChanged = true;
+        try
+        {
+            foreach (var card in AxisCards)
+            {
+                if (!profile.Axes.TryGetValue(card.AxisId, out var axisSettings))
+                    continue;
+
+                card.Enabled = axisSettings.Enabled;
+                card.Min = axisSettings.Min;
+                card.Max = axisSettings.Max;
+
+                if (Enum.TryParse<AxisFillMode>(axisSettings.FillMode, true, out var mode))
+                    card.FillMode = mode;
+
+                card.SyncWithStroke = axisSettings.SyncWithStroke;
+                card.FillSpeedHz = axisSettings.FillSpeedHz;
+            }
+        }
+        finally
+        {
+            _suppressConfigChanged = false;
+        }
+
+        // Fire a single config change after all axes are updated
+        OnCardConfigChanged();
     }
 
     // ═══════════════════════════════════════════════════════
