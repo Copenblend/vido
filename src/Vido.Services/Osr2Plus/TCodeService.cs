@@ -539,12 +539,11 @@ public class TCodeService : IDisposable
     }
 
     /// <summary>
-    /// Precise sleep using Stopwatch + SpinWait for sub-2ms accuracy.
-    /// Uses Thread.Sleep for longer waits to reduce CPU usage, then SpinWait for the final stretch.
+    /// Precise sleep using Stopwatch + Thread.Sleep tiers.
+    /// Uses graduated sleep intervals to balance CPU usage and timing accuracy.
     /// </summary>
     internal static void SleepPrecise(Stopwatch stopwatch, double millisecondsTimeout)
     {
-        var spinner = new SpinWait();
         var frequencyInverse = 1.0 / Stopwatch.Frequency;
 
         while (true)
@@ -554,9 +553,7 @@ public class TCodeService : IDisposable
 
             if (remaining <= 0) break;
 
-            if (remaining <= 2)
-                spinner.SpinOnce(-1);
-            else if (remaining < 5)
+            if (remaining < 5)
                 Thread.Sleep(1);
             else if (remaining < 15)
                 Thread.Sleep(5);
