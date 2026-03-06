@@ -22,6 +22,27 @@
                        Style="{StaticResource SectionLabelStyle}"
                        Margin="0,4,0,8" />
 
+            <!-- Profile Selection -->
+            <DockPanel Margin="0,0,0,6">
+                <TextBlock Text="Profile"
+                           Foreground="#999999"
+                           FontSize="11"
+                           VerticalAlignment="Center"
+                           DockPanel.Dock="Left"
+                           Margin="0,0,8,0"/>
+                <ComboBox Style="{StaticResource Osr2ComboBoxStyle}"
+                          ItemContainerStyle="{StaticResource Osr2ComboBoxItemStyle}"
+                          ItemsSource="{Binding AvailableProfiles}"
+                          SelectedItem="{Binding SelectedProfile, Mode=TwoWay}"
+                          HorizontalAlignment="Stretch">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </DockPanel>
+
             <!-- Axis Cards -->
             <ItemsControl ItemsSource="{Binding AxisCards}">
                 <ItemsControl.ItemTemplate>
