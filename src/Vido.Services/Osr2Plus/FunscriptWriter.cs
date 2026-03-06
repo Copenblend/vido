@@ -33,6 +33,71 @@ public static class FunscriptWriter
     }
 
     /// <summary>
+    /// Converts a beat map into amplitude-aware funscript actions.
+    /// Replicates PulseTCodeMapper's intensity formula: at each beat, the
+    /// waveform amplitude is sampled from <see cref="BeatMap.WaveformSamples"/>
+    /// and combined with <see cref="BeatEvent.Strength"/> to scale the stroke range.
+    /// Even-indexed beats produce upstroke (top) positions, odd-indexed beats
+    /// produce downstroke (bottom) positions.
+    /// </summary>
+    /// <param name="beatMap">Beat map containing beats, waveform samples, and sample rate.</param>
+    /// <returns>List of amplitude-scaled funscript actions.</returns>
+    public static List<FunscriptAction> CreateActionsFromBeatMap(BeatMap beatMap)
+    {
+        const double MinPosition = 5.0;
+        const double MaxPosition = 95.0;
+        const double RestPosition = 50.0;
+        const double MinAmplitudeScale = 0.15;
+
+        var beats = beatMap.Beats;
+        var actions = new List<FunscriptAction>(beats.Count);
+        if (beats.Count == 0) return actions;
+
+        var waveform = beatMap.WaveformSamples;
+        int sampleRate = beatMap.WaveformSampleRate;
+
+        for (int i = 0; i < beats.Count; i++)
+        {
+            var beat = beats[i];
+            double beatStrength = Math.Clamp(beat.Strength, 0.0, 1.0);
+
+            // Sample amplitude from the pre-computed waveform envelope
+            double amplitude = SampleWaveformAmplitude(waveform, sampleRate, beat.TimestampMs);
+
+            // Replicate PulseTCodeMapper intensity formula
+            double amplitudeScale = MinAmplitudeScale + (1.0 - MinAmplitudeScale) * amplitude;
+            double intensityScale = amplitudeScale * (0.5 + 0.5 * beatStrength);
+
+            double halfRange = (MaxPosition - MinPosition) / 2.0 * intensityScale;
+            double top = Math.Min(RestPosition + halfRange, MaxPosition);
+            double bottom = Math.Max(RestPosition - halfRange, MinPosition);
+
+            // Even beats → top (upstroke peak), odd beats → bottom (downstroke trough)
+            double position = (i % 2 == 0) ? top : bottom;
+            actions.Add(new FunscriptAction((long)beat.TimestampMs, (int)Math.Round(position)));
+        }
+
+        return actions;
+    }
+
+    /// <summary>
+    /// Samples the pre-computed waveform amplitude at the given timestamp.
+    /// Returns 0.0 if waveform data is empty or the timestamp is out of range.
+    /// </summary>
+    internal static double SampleWaveformAmplitude(
+        IReadOnlyList<float> waveformSamples, int sampleRate, double timestampMs)
+    {
+        if (waveformSamples == null || waveformSamples.Count == 0 || sampleRate <= 0)
+            return 0.0;
+
+        int index = (int)(timestampMs / 1000.0 * sampleRate);
+        if (index < 0) return 0.0;
+        if (index >= waveformSamples.Count) return 0.0;
+
+        return Math.Clamp(waveformSamples[index], 0f, 1f);
+    }
+
+    /// <summary>
     /// Serializes funscript actions to a standard .funscript JSON string.
     /// Output format: <c>{"version":"1.0","actions":[{"at":1250,"pos":100},...]}</c>.
     /// </summary>
