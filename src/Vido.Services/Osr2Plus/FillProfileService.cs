@@ -296,30 +296,6 @@ public sealed class FillProfileService : IFillProfileService
                     ["R2"] = new() { Enabled = true, Min = 0, Max = 100, FillMode = "Random", SyncWithStroke = false, FillSpeedHz = 1.0 },
                 },
             },
-            new FillProfile
-            {
-                Name = "Grinding",
-                IsBuiltIn = true,
-                Axes = new()
-                {
-                    ["L0"] = new() { Enabled = true, Min = 0, Max = 100, FillMode = "None", SyncWithStroke = false, FillSpeedHz = 1.0 },
-                    ["R0"] = new() { Enabled = true, Min = 0, Max = 100, FillMode = "None", SyncWithStroke = false, FillSpeedHz = 1.0 },
-                    ["R1"] = new() { Enabled = true, Min = 0, Max = 100, FillMode = "None", SyncWithStroke = false, FillSpeedHz = 1.0 },
-                    ["R2"] = new() { Enabled = true, Min = 0, Max = 100, FillMode = "Square", SyncWithStroke = true, FillSpeedHz = 1.0 },
-                },
-            },
-            new FillProfile
-            {
-                Name = "Reverse Grinding",
-                IsBuiltIn = true,
-                Axes = new()
-                {
-                    ["L0"] = new() { Enabled = true, Min = 0, Max = 100, FillMode = "None", SyncWithStroke = false, FillSpeedHz = 1.0 },
-                    ["R0"] = new() { Enabled = true, Min = 0, Max = 100, FillMode = "None", SyncWithStroke = false, FillSpeedHz = 1.0 },
-                    ["R1"] = new() { Enabled = true, Min = 0, Max = 100, FillMode = "None", SyncWithStroke = false, FillSpeedHz = 1.0 },
-                    ["R2"] = new() { Enabled = true, Min = 100, Max = 0, FillMode = "Square", SyncWithStroke = true, FillSpeedHz = 1.0 },
-                },
-            },
         ];
     }
 

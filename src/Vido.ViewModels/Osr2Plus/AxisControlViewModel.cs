@@ -47,6 +47,21 @@ public class AxisControlViewModel : INotifyPropertyChanged
     /// </summary>
     public event Action? AxisConfigChanged;
 
+    /// <summary>Raised to request a profile name from the view (save operation).</summary>
+    public event EventHandler? RequestProfileName;
+
+    /// <summary>Raised to request a new name from the view (rename operation).</summary>
+    public event EventHandler? RequestProfileRename;
+
+    /// <summary>Command to save the current axis settings as a profile.</summary>
+    public ICommand SaveProfileCommand { get; }
+
+    /// <summary>Command to delete the selected user profile.</summary>
+    public ICommand DeleteProfileCommand { get; }
+
+    /// <summary>Command to rename the selected user profile.</summary>
+    public ICommand RenameProfileCommand { get; }
+
     /// <summary>The currently selected fill profile.</summary>
     public FillProfile? SelectedProfile
     {
@@ -149,6 +164,11 @@ public class AxisControlViewModel : INotifyPropertyChanged
         // Test command
         TestCommand = new RelayCommand(ExecuteTest);
         _tcode.AllTestsStopped += OnAllTestsStopped;
+
+        // Profile commands
+        SaveProfileCommand = new RelayCommand(SaveProfile);
+        DeleteProfileCommand = new RelayCommand(DeleteProfile);
+        RenameProfileCommand = new RelayCommand(RenameProfile);
 
         // Create axis configs from defaults, then load persisted settings
         _configs = AxisConfig.CreateDefaults();
@@ -488,6 +508,12 @@ public class AxisControlViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(AvailableProfiles));
         };
         OnPropertyChanged(nameof(AvailableProfiles));
+
+        // Auto-select Default profile on startup
+        if (_selectedProfile is null)
+        {
+            SelectedProfile = _profileService.FindByName("Default");
+        }
     }
 
     /// <summary>
@@ -555,6 +581,81 @@ public class AxisControlViewModel : INotifyPropertyChanged
 
         // Fire a single config change after all axes are updated
         OnCardConfigChanged();
+    }
+
+    /// <summary>
+    /// Called by the view after the user provides a profile name for saving.
+    /// Creates a new profile or updates an existing user profile.
+    /// </summary>
+    /// <param name="name">The profile name.</param>
+    public void CompleteSaveProfile(string name)
+    {
+        if (_profileService is null) return;
+
+        var axes = CaptureCurrentAxes();
+        try
+        {
+            var existing = _profileService.FindByName(name);
+            if (existing is not null && !existing.IsBuiltIn)
+            {
+                _profileService.UpdateProfile(name, axes);
+                OnPropertyChanged(nameof(AvailableProfiles));
+                SelectedProfile = _profileService.FindByName(name);
+            }
+            else
+            {
+                var profile = _profileService.CreateProfile(name, axes);
+                OnPropertyChanged(nameof(AvailableProfiles));
+                SelectedProfile = profile;
+            }
+            IsProfileModified = false;
+        }
+        catch (ArgumentException)
+        {
+            // Name validation failed — view handles error display
+        }
+    }
+
+    /// <summary>
+    /// Called by the view after the user provides a new name for renaming.
+    /// </summary>
+    /// <param name="newName">The new profile name.</param>
+    public void CompleteRenameProfile(string newName)
+    {
+        if (_profileService is null || _selectedProfile is null || _selectedProfile.IsBuiltIn)
+            return;
+
+        try
+        {
+            _profileService.RenameProfile(_selectedProfile.Name, newName);
+            OnPropertyChanged(nameof(AvailableProfiles));
+            SelectedProfile = _profileService.FindByName(newName);
+        }
+        catch (ArgumentException)
+        {
+            // Name validation failed — view handles error display
+        }
+    }
+
+    private void SaveProfile()
+    {
+        RequestProfileName?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void DeleteProfile()
+    {
+        if (_profileService is null || _selectedProfile is null || _selectedProfile.IsBuiltIn)
+            return;
+
+        _profileService.DeleteProfile(_selectedProfile.Name);
+        SelectedProfile = null;
+        OnPropertyChanged(nameof(AvailableProfiles));
+        IsProfileModified = false;
+    }
+
+    private void RenameProfile()
+    {
+        RequestProfileRename?.Invoke(this, EventArgs.Empty);
     }
 
     // ═══════════════════════════════════════════════════════

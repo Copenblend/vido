@@ -30,6 +30,31 @@
                            VerticalAlignment="Center"
                            DockPanel.Dock="Left"
                            Margin="0,0,8,0"/>
+
+                <!-- Action Buttons (right-docked) -->
+                <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Margin="4,0,0,0">
+                    <Button ToolTip="Save current settings as new profile"
+                            Command="{Binding SaveProfileCommand}"
+                            Style="{StaticResource Osr2SmallButtonStyle}"
+                            Width="26" Height="26" Padding="0" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                            Content="&#xE710;"/>
+                    <Button ToolTip="Rename selected profile"
+                            Command="{Binding RenameProfileCommand}"
+                            Style="{StaticResource Osr2SmallButtonStyle}"
+                            Width="26" Height="26" Padding="0" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                            Content="&#xE70F;"
+                            Margin="2,0,0,0"
+                            Visibility="{Binding CanRenameSelectedProfile, Converter={StaticResource BoolToVisibility}}"/>
+                    <Button ToolTip="Delete selected profile"
+                            Command="{Binding DeleteProfileCommand}"
+                            Style="{StaticResource Osr2SmallButtonStyle}"
+                            Width="26" Height="26" Padding="0" FontFamily="Segoe MDL2 Assets" FontSize="12"
+                            Content="&#xE74D;"
+                            Margin="2,0,0,0"
+                            Visibility="{Binding CanDeleteSelectedProfile, Converter={StaticResource BoolToVisibility}}"/>
+                </StackPanel>
+
+                <!-- ComboBox fills remaining space -->
                 <ComboBox Style="{StaticResource Osr2ComboBoxStyle}"
                           ItemContainerStyle="{StaticResource Osr2ComboBoxItemStyle}"
                           ItemsSource="{Binding AvailableProfiles}"

@@ -45,7 +45,7 @@ public sealed class FillProfileServiceTests : IDisposable
         var svc = CreateService();
         svc.Load();
 
-        Assert.Equal(5, svc.Profiles.Count);
+        Assert.Equal(3, svc.Profiles.Count);
         Assert.All(svc.Profiles, p => Assert.True(p.IsBuiltIn));
     }
 
@@ -82,7 +82,7 @@ public sealed class FillProfileServiceTests : IDisposable
         var svc = CreateService();
         svc.Load();
 
-        Assert.Equal(5, svc.Profiles.Count);
+        Assert.Equal(3, svc.Profiles.Count);
         Assert.All(svc.Profiles, p => Assert.True(p.IsBuiltIn));
         _logService.Received(1).Warning(Arg.Is<string>(s => s.Contains("Failed to load fill profiles")), "FillProfiles");
     }
@@ -243,13 +243,13 @@ public sealed class FillProfileServiceTests : IDisposable
 
         var profiles = svc.Profiles;
 
-        // First 5 are built-in
+        // First 3 are built-in
         Assert.True(profiles[0].IsBuiltIn);
-        Assert.True(profiles[4].IsBuiltIn);
+        Assert.True(profiles[2].IsBuiltIn);
 
         // User profiles sorted alphabetically after built-ins
-        Assert.Equal("Alpha", profiles[5].Name);
-        Assert.Equal("Zebra", profiles[6].Name);
+        Assert.Equal("Alpha", profiles[3].Name);
+        Assert.Equal("Zebra", profiles[4].Name);
     }
 
     // ── FindByName ────────────────────────────────────────────────────
@@ -319,17 +319,15 @@ public sealed class FillProfileServiceTests : IDisposable
     // ── GetBuiltInProfiles ────────────────────────────────────────────
 
     [Fact]
-    public void GetBuiltInProfiles_ReturnsFiveDefaults()
+    public void GetBuiltInProfiles_ReturnsThreeDefaults()
     {
         var svc = CreateService();
         var builtIns = svc.GetBuiltInProfiles();
 
-        Assert.Equal(5, builtIns.Count);
+        Assert.Equal(3, builtIns.Count);
         Assert.Equal("Default", builtIns[0].Name);
         Assert.Equal("Gentle Wave", builtIns[1].Name);
         Assert.Equal("Full Random", builtIns[2].Name);
-        Assert.Equal("Grinding", builtIns[3].Name);
-        Assert.Equal("Reverse Grinding", builtIns[4].Name);
         Assert.All(builtIns, p => Assert.True(p.IsBuiltIn));
     }
 
@@ -428,42 +426,6 @@ public sealed class FillProfileServiceTests : IDisposable
             Assert.Equal(100, a.Max);
             Assert.Equal("Random", a.FillMode);
             Assert.Equal(1.0, a.FillSpeedHz);
-        }
-    }
-
-    [Fact]
-    public void GetBuiltInProfiles_Grinding_HasCorrectValues()
-    {
-        var svc = CreateService();
-        var profile = svc.FindByName("Grinding")!;
-
-        var r2 = profile.Axes["R2"];
-        Assert.Equal("Square", r2.FillMode);
-        Assert.True(r2.SyncWithStroke);
-        Assert.Equal(0, r2.Min);
-        Assert.Equal(100, r2.Max);
-
-        foreach (var axis in new[] { "L0", "R0", "R1" })
-        {
-            Assert.Equal("None", profile.Axes[axis].FillMode);
-        }
-    }
-
-    [Fact]
-    public void GetBuiltInProfiles_ReverseGrinding_HasCorrectValues()
-    {
-        var svc = CreateService();
-        var profile = svc.FindByName("Reverse Grinding")!;
-
-        var r2 = profile.Axes["R2"];
-        Assert.Equal("Square", r2.FillMode);
-        Assert.True(r2.SyncWithStroke);
-        Assert.Equal(100, r2.Min);
-        Assert.Equal(0, r2.Max);
-
-        foreach (var axis in new[] { "L0", "R0", "R1" })
-        {
-            Assert.Equal("None", profile.Axes[axis].FillMode);
         }
     }
 
