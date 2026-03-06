@@ -696,7 +696,9 @@ public class PulseViewModelTests : IDisposable
         bool repaintFired = false;
         vm.RepaintRequested += () => repaintFired = true;
 
+        // First call skips (throttle), second call fires
         vm.UpdateTime(10.0);
+        vm.UpdateTime(10.5);
 
         Assert.True(repaintFired);
     }
@@ -706,13 +708,15 @@ public class PulseViewModelTests : IDisposable
     {
         using var vm = new WaveformViewModel(_engine, _settingsService);
         vm.UpdateTime(10.0);
+        vm.UpdateTime(10.5); // fire so next skip aligns
 
         bool repaintFired = false;
         vm.RepaintRequested += () => repaintFired = true;
 
-        vm.UpdateTime(10.0); // time unchanged (within threshold)
+        vm.UpdateTime(10.0); // skip (throttle)
+        vm.UpdateTime(10.0); // fire — time unchanged but repaint still fires
 
-        Assert.True(repaintFired); // repaint always fires
+        Assert.True(repaintFired);
     }
 
     [Fact]
@@ -724,8 +728,34 @@ public class PulseViewModelTests : IDisposable
         vm.Dispose();
 
         vm.UpdateTime(10.0);
+        vm.UpdateTime(10.5);
 
         Assert.False(repaintFired);
+    }
+
+    [Fact]
+    public void WaveformVM_UpdateTime_ThrottlesToHalfRate()
+    {
+        using var vm = new WaveformViewModel(_engine, _settingsService);
+        int repaintCount = 0;
+        vm.RepaintRequested += () => repaintCount++;
+
+        for (int i = 0; i < 10; i++)
+            vm.UpdateTime(i * 0.5);
+
+        Assert.Equal(5, repaintCount);
+    }
+
+    [Fact]
+    public void WaveformVM_UpdateTime_CurrentTimeUpdatedOnEveryCall()
+    {
+        using var vm = new WaveformViewModel(_engine, _settingsService);
+
+        for (int i = 1; i <= 6; i++)
+        {
+            vm.UpdateTime(i * 1.0);
+            Assert.Equal(i * 1.0, vm.CurrentTimeSeconds, 0.01);
+        }
     }
 
     // ══════════════════════════════════════════════

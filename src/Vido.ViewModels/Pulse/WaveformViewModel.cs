@@ -24,6 +24,7 @@ internal sealed class WaveformViewModel : INotifyPropertyChanged, IDisposable
     private double _currentAmplitude;
     private bool _isActive;
     private bool _disposed;
+    private bool _repaintSkip;
 
     /// <summary>Raised when a property value changes.</summary>
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -163,12 +164,19 @@ internal sealed class WaveformViewModel : INotifyPropertyChanged, IDisposable
 
     /// <summary>
     /// Update current playback position. Called at ~60 Hz during playback.
+    /// Fires <see cref="RepaintRequested"/> at ~30 Hz (every other call) to
+    /// halve rendering cost without visible quality loss.
     /// </summary>
     public void UpdateTime(double seconds)
     {
         if (_disposed) return;
         CurrentTimeSeconds = seconds;
         CurrentAmplitude = _engine.CurrentAmplitude;
+
+        // Throttle to ~30 Hz: skip every other repaint request.
+        _repaintSkip = !_repaintSkip;
+        if (_repaintSkip) return;
+
         RepaintRequested?.Invoke();
     }
 
