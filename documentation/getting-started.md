@@ -20,13 +20,13 @@ Get up and running with Vido in under two minutes. This guide covers installatio
 
 ### Option 1: MSI Installer (Recommended)
 
-1. Download the latest MSI installer from the [Releases page](https://github.com/AnotherFoxGuy/vido/releases/latest)
+1. Download the latest MSI installer from the [Releases page](https://github.com/copenblend/vido/releases/latest)
 2. Double-click the `.msi` file and follow the prompts
 3. Vido is added to your Start Menu and file associations are configured automatically
 
 ### Option 2: Portable ZIP
 
-1. Download the latest portable ZIP from the [Releases page](https://github.com/AnotherFoxGuy/vido/releases/latest)
+1. Download the latest portable ZIP from the [Releases page](https://github.com/copenblend/vido/releases/latest)
 2. Extract the ZIP to any folder (e.g., `C:\Tools\Vido\`)
 3. Run `Vido.exe` from the extracted folder — no installation needed
 
