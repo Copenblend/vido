@@ -5,6 +5,7 @@ All notable changes to the Vido project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **VI-0028**: Throttled waveform `RepaintRequested` from ~60 Hz to ~30 Hz by skipping every other `UpdateTime()` call. `CurrentTimeSeconds` and `CurrentAmplitude` still update at full 60 Hz rate. Halves `OnPaintSurface` invocations without visible quality loss.
 - **VI-0027**: Integrated `WaveformStripRenderer` into `WaveformPanelView` for GPU-accelerated bitmap-blit waveform scrolling. `OnPaintSurface` now attempts strip-based rendering first (pre-rendered bitmap + cursor overlay), falling back to the existing per-frame SKPath rendering when the strip is not yet available. Strip renderer data is updated on `FullWaveform`, `AllBeats`, and `WindowDurationSeconds` property changes. Strip renderer is disposed on Unloaded and re-created on Loaded.
 - **VI-0026**: Added `WaveformStripRenderer` in `Vido.Services.Pulse` — a double-buffered off-screen waveform renderer that pre-renders a 3× canvas-width strip on a background thread and swaps it atomically for GPU-accelerated scrolling. Supports proactive re-render when the viewport approaches the strip edge, cancellation-safe rendering with periodic `CancellationToken` checks, and renders grid lines, waveform fill/outline, beat markers, and time labels.
 - **VI-0019**: Added "(modified)" visual indicator in the profile toolbar that appears in italic amber (#CC9900) text when current axis settings diverge from the selected profile. Uses existing `IsProfileModified` property and `BoolToVisibility` converter.
