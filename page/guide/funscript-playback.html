@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Funscript Playback — Vido</title>
+  <meta name="description" content="Auto-load and manage funscript files for haptic device control in Vido. Visualize scripts in real time with graph and heatmap modes.">
+  <link rel="icon" type="image/png" href="../assets/images/vido-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="header-brand">
+        <img src="../assets/images/vido-logo.png" alt="Vido" width="32" height="32">
+        <span>Vido</span>
+      </a>
+      <nav class="header-nav" role="navigation" aria-label="Main navigation">
+        <a href="../index.html">Home</a>
+        <a href="../install.html">Install</a>
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest" class="header-cta">Download</a>
+      </nav>
+      <button class="mobile-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="guide-layout">
+    <aside class="guide-sidebar">
+      <div class="guide-sidebar-title">Documentation</div>
+      <nav>
+        <a href="getting-started.html">Getting Started</a>
+        <a href="user-interface.html">User Interface</a>
+        <a href="video-playback.html">Video Playback</a>
+        <a href="file-explorer.html">File Explorer</a>
+        <a href="playlists.html">Playlists</a>
+        <a href="osr2-device-control.html">OSR2+ Device Control</a>
+        <a href="funscript-playback.html" class="active">Funscript Playback</a>
+        <a href="fill-profiles.html">Fill Profiles</a>
+        <a href="pulse-beat-detection.html">Pulse Beat Detection</a>
+        <a href="screenshots.html">Screenshots</a>
+        <a href="keyboard-shortcuts.html">Keyboard Shortcuts</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+    </aside>
+
+    <main class="guide-content">
+      <div class="breadcrumbs">
+        <a href="../index.html">Home</a>
+        <span class="sep">/</span>
+        <a href="getting-started.html">Docs</a>
+        <span class="sep">/</span>
+        <span>Funscript Playback</span>
+      </div>
+
+      <h1>Funscript Playback</h1>
+      <p class="guide-intro">Funscripts are files that control haptic device movement in sync with video content. Vido automatically loads matching funscripts and provides a real-time visualizer to see what's happening across all axes.</p>
+
+      <h2>What Is a Funscript?</h2>
+      <p>A <code>.funscript</code> file contains timed position data that tells the device where to move at each moment during a video. Each axis can have its own funscript file.</p>
+
+      <h2>Auto-Loading</h2>
+      <p>When you open a video, Vido automatically searches the same folder for matching funscript files:</p>
+      <table>
+        <thead><tr><th>Axis</th><th>Auto-Detection Pattern</th></tr></thead>
+        <tbody>
+          <tr><td><strong>L0 (Stroke)</strong></td><td><code>video.funscript</code></td></tr>
+          <tr><td><strong>R0 (Twist)</strong></td><td><code>video.twist.funscript</code></td></tr>
+          <tr><td><strong>R1 (Roll)</strong></td><td><code>video.roll.funscript</code></td></tr>
+          <tr><td><strong>R2 (Pitch)</strong></td><td><code>video.pitch.funscript</code></td></tr>
+        </tbody>
+      </table>
+      <p>If matching files are found, they're loaded automatically — no action needed.</p>
+      <div class="callout">
+        <div class="callout-label">Tip</div>
+        <p>If <a href="pulse-beat-detection.html">Pulse</a> is enabled, auto-loading for the Stroke (L0) axis is suppressed because Pulse takes over L0 control.</p>
+      </div>
+
+      <h2>Manual Loading</h2>
+      <p>To manually assign a funscript to any axis:</p>
+      <ol>
+        <li>Open the <strong>OSR2+</strong> sidebar panel</li>
+        <li>Find the axis card you want (L0, R0, R1, or R2)</li>
+        <li>Click the <strong>Load Funscript</strong> button</li>
+        <li>Browse to your <code>.funscript</code> file and click <strong>Open</strong></li>
+      </ol>
+      <p>Manually loaded scripts take priority over auto-detected ones and persist until you clear them.</p>
+
+      <h2>Funscript Visualizer</h2>
+      <p>When funscripts are loaded, a <strong>Funscript Visualizer</strong> tab appears in the bottom panel showing your scripts in real time.</p>
+
+      <figure>
+        <div class="screenshot-placeholder">Funscript Visualizer in the bottom panel</div>
+        <figcaption>The Funscript Visualizer showing a multi-axis graph with a playback cursor and axis legend.</figcaption>
+      </figure>
+
+      <h3>Graph Mode</h3>
+      <ul>
+        <li>Multi-axis line graph showing position over time</li>
+        <li>Color-coded lines for each axis</li>
+        <li>A playback cursor tracks the current position</li>
+        <li>Axis legend identifies each line</li>
+      </ul>
+
+      <h3>Heatmap Mode</h3>
+      <ul>
+        <li>Speed-based color heatmap for the Stroke (L0) axis</li>
+        <li>Colors range from cool (slow) to hot (fast)</li>
+        <li>Useful for seeing intensity patterns at a glance</li>
+      </ul>
+
+      <h3>Window Duration</h3>
+      <p>Control how much time is visible in the visualizer:</p>
+      <table>
+        <thead><tr><th>Duration</th><th>Best For</th></tr></thead>
+        <tbody>
+          <tr><td>30 seconds</td><td>Detailed view of nearby movements</td></tr>
+          <tr><td>60 seconds</td><td>Default — good balance</td></tr>
+          <tr><td>2 minutes</td><td>Broader context</td></tr>
+          <tr><td>5 minutes</td><td>Full overview</td></tr>
+        </tbody>
+      </table>
+      <p>Change the window duration in <strong>Settings</strong> &rarr; <strong>OSR2+</strong> &rarr; <strong>Visualizer Window Duration</strong>.</p>
+
+      <h2>Timing Adjustment</h2>
+      <p>If movements feel out of sync with the video, adjust the <strong>Global Funscript Offset</strong> in <strong>Settings</strong> &rarr; <strong>OSR2+</strong>. Negative values shift movements earlier, positive values shift them later (range: -500 to +500 ms).</p>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="osr2-device-control.html">OSR2+ Device Control</a> — connecting your device and axis configuration</li>
+        <li><a href="pulse-beat-detection.html">Pulse Beat Detection</a> — auto-generating movement from audio</li>
+        <li><a href="fill-profiles.html">Fill Profiles</a> — saving axis configurations</li>
+      </ul>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">
+          <img src="../assets/images/vido-logo.png" alt="" width="28" height="28">
+          <span>Vido</span>
+        </div>
+        <p class="footer-desc">Ultra-performant video player for Windows with built-in haptic device control and audio beat detection.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="../index.html">Home</a>
+        <a href="../install.html">Install</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest">Download</a>
+      </div>
+      <div class="footer-col">
+        <h4>Documentation</h4>
+        <a href="getting-started.html">Getting Started</a>
+        <a href="video-playback.html">Video Playback</a>
+        <a href="osr2-device-control.html">Device Control</a>
+      </div>
+      <div class="footer-col">
+        <h4>More</h4>
+        <a href="playlists.html">Playlists</a>
+        <a href="settings.html">Settings</a>
+        <a href="keyboard-shortcuts.html">Shortcuts</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Vido. All rights reserved.</span>
+      <a href="https://github.com/AnotherFoxGuy/vido/blob/main/LICENSE">License</a>
+    </div>
+  </footer>
+
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

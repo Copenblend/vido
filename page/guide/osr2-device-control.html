@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OSR2+ Device Control — Vido</title>
+  <meta name="description" content="Connect and control your OSR2+ haptic device with Vido. Four axes, nine fill modes, fill profiles, beat bar, and timing offset.">
+  <link rel="icon" type="image/png" href="../assets/images/vido-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="../index.html" class="header-brand">
+        <img src="../assets/images/vido-logo.png" alt="Vido" width="32" height="32">
+        <span>Vido</span>
+      </a>
+      <nav class="header-nav" role="navigation" aria-label="Main navigation">
+        <a href="../index.html">Home</a>
+        <a href="../install.html">Install</a>
+        <a href="getting-started.html" class="active">Docs</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest" class="header-cta">Download</a>
+      </nav>
+      <button class="mobile-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="guide-layout">
+    <aside class="guide-sidebar">
+      <div class="guide-sidebar-title">Documentation</div>
+      <nav>
+        <a href="getting-started.html">Getting Started</a>
+        <a href="user-interface.html">User Interface</a>
+        <a href="video-playback.html">Video Playback</a>
+        <a href="file-explorer.html">File Explorer</a>
+        <a href="playlists.html">Playlists</a>
+        <a href="osr2-device-control.html" class="active">OSR2+ Device Control</a>
+        <a href="funscript-playback.html">Funscript Playback</a>
+        <a href="fill-profiles.html">Fill Profiles</a>
+        <a href="pulse-beat-detection.html">Pulse Beat Detection</a>
+        <a href="screenshots.html">Screenshots</a>
+        <a href="keyboard-shortcuts.html">Keyboard Shortcuts</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+    </aside>
+
+    <main class="guide-content">
+      <div class="breadcrumbs">
+        <a href="../index.html">Home</a>
+        <span class="sep">/</span>
+        <a href="getting-started.html">Docs</a>
+        <span class="sep">/</span>
+        <span>OSR2+ Device Control</span>
+      </div>
+
+      <h1>OSR2+ Device Control</h1>
+      <p class="guide-intro">Vido has built-in support for the OSR2+ haptic device. Connect over USB (Serial) or network (UDP), control four axes, assign funscripts, and use fill modes to generate continuous movement.</p>
+
+      <h2>Connecting Your Device</h2>
+      <ol>
+        <li>Click the <strong>device icon</strong> in the activity bar (second icon from top) to open the OSR2+ sidebar</li>
+        <li>Choose your <strong>connection mode</strong>:</li>
+      </ol>
+      <table>
+        <thead><tr><th>Mode</th><th>When to Use</th></tr></thead>
+        <tbody>
+          <tr><td><strong>UDP</strong></td><td>Network connection (default port: 7777)</td></tr>
+          <tr><td><strong>Serial</strong></td><td>Direct USB/COM port connection</td></tr>
+        </tbody>
+      </table>
+      <ol start="3">
+        <li>Configure the connection:
+          <ul>
+            <li><strong>UDP</strong> — set the port number (default: 7777)</li>
+            <li><strong>Serial</strong> — select your COM port from the dropdown and choose a baud rate</li>
+          </ul>
+        </li>
+        <li>Click <strong>Connect</strong></li>
+      </ol>
+      <p>The status bar shows your connection state (e.g., <code>UDP:7777:Connected</code>).</p>
+      <div class="callout">
+        <div class="callout-label">Tip</div>
+        <p>For Serial connections, click the refresh button next to the COM port dropdown to rescan for available ports. When you connect, all axes gradually move to their midpoint for a safe start.</p>
+      </div>
+
+      <h3>Quick Connect from Title Bar</h3>
+      <p>Click the <strong>device icon</strong> in the title bar toolbar to quickly connect or disconnect without opening the sidebar.</p>
+
+      <h2>Axes</h2>
+      <p>Vido controls four axes on the OSR2+, each shown as a collapsible card in the sidebar:</p>
+      <table>
+        <thead><tr><th>Axis</th><th>Name</th><th>What It Controls</th></tr></thead>
+        <tbody>
+          <tr><td><strong>L0</strong></td><td>Stroke</td><td>Primary up/down movement</td></tr>
+          <tr><td><strong>R0</strong></td><td>Twist</td><td>Rotational twist</td></tr>
+          <tr><td><strong>R1</strong></td><td>Roll</td><td>Side-to-side tilt</td></tr>
+          <tr><td><strong>R2</strong></td><td>Pitch</td><td>Front-to-back tilt</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Per-Axis Controls</h3>
+      <p>Each axis card offers these controls:</p>
+      <table>
+        <thead><tr><th>Control</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Enable/Disable</strong></td><td>Toggle whether this axis is active</td></tr>
+          <tr><td><strong>Min / Max</strong></td><td>Set the range of motion (0–100)</td></tr>
+          <tr><td><strong>Position Offset</strong></td><td>Fine-tune the position in real time</td></tr>
+          <tr><td><strong>Load Funscript</strong></td><td>Manually assign a <code>.funscript</code> file</td></tr>
+          <tr><td><strong>Fill Mode</strong></td><td>Choose a movement pattern for when no script is loaded</td></tr>
+          <tr><td><strong>Sync with Stroke</strong></td><td>Lock this axis's fill timing to the Stroke (L0) axis</td></tr>
+          <tr><td><strong>Fill Speed</strong></td><td>How fast the fill pattern runs (0.1–3.0 Hz)</td></tr>
+        </tbody>
+      </table>
+
+      <h2>Fill Modes</h2>
+      <p>When an axis has no funscript loaded, fill modes generate continuous movement within the Min/Max range:</p>
+      <table>
+        <thead><tr><th>Mode</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><strong>None</strong></td><td>No movement — holds still</td></tr>
+          <tr><td><strong>Random</strong></td><td>Smooth random movement</td></tr>
+          <tr><td><strong>Triangle</strong></td><td>Linear up-and-down wave</td></tr>
+          <tr><td><strong>Sine</strong></td><td>Smooth sinusoidal wave</td></tr>
+          <tr><td><strong>Saw</strong></td><td>Linear ramp up, instant drop</td></tr>
+          <tr><td><strong>Reverse Saw</strong></td><td>Instant snap up, linear ramp down</td></tr>
+          <tr><td><strong>Square</strong></td><td>Instant alternation between min and max</td></tr>
+          <tr><td><strong>Pulse</strong></td><td>Holds at extremes with quick transitions</td></tr>
+          <tr><td><strong>Ease In/Out</strong></td><td>Sine-like with sharper acceleration</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Fill Speed</h3>
+      <p>Set the speed of the fill pattern from <strong>0.1 Hz</strong> (very slow) to <strong>3.0 Hz</strong> (fast). If <strong>Sync with Stroke</strong> is enabled, the fill pattern follows the Stroke axis timing instead.</p>
+
+      <h2>Fill Profiles</h2>
+      <p>Profiles let you save and restore complete axis configurations (enable state, min/max, fill mode, sync, and speed for all axes) with a single click. See the full <a href="fill-profiles.html">Fill Profiles</a> guide.</p>
+
+      <h2>Test Mode</h2>
+      <p>Test your device without playing a video:</p>
+      <ol>
+        <li>Make sure the device is connected and no video is playing</li>
+        <li>Click the <strong>Test</strong> button in the axis control panel</li>
+        <li>The device cycles through enabled axes with test movements</li>
+        <li>Click <strong>Stop</strong> to end the test — all axes return to midpoint</li>
+      </ol>
+
+      <h2>Beat Bar</h2>
+      <p>The beat bar is a visual overlay on the video that marks rhythmic points in the funscript:</p>
+      <table>
+        <thead><tr><th>Mode</th><th>What It Shows</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Off</strong></td><td>No beat bar</td></tr>
+          <tr><td><strong>On Peak</strong></td><td>Marks at upstroke peaks</td></tr>
+          <tr><td><strong>On Valley</strong></td><td>Marks at downstroke valleys</td></tr>
+          <tr><td><strong>On Peak &amp; Valley</strong></td><td>Marks at all direction changes</td></tr>
+          <tr><td><strong>Mid Stroke</strong></td><td>Marks at the midpoint of descending strokes</td></tr>
+        </tbody>
+      </table>
+      <p>When <a href="pulse-beat-detection.html">Pulse</a> is active, it can add its own beat bar mode showing red heart markers synchronized to detected beats.</p>
+
+      <h2>Timing Offset</h2>
+      <p>If the device movements feel slightly early or late compared to the video, adjust the <strong>Global Funscript Offset</strong> in <strong>Settings</strong> &rarr; <strong>OSR2+</strong>:</p>
+      <ul>
+        <li><strong>Negative values</strong> (e.g., -50 ms) make movements happen earlier</li>
+        <li><strong>Positive values</strong> (e.g., +50 ms) make movements happen later</li>
+        <li>Range: -500 ms to +500 ms</li>
+      </ul>
+
+      <h2>Output Rate</h2>
+      <p>The <strong>TCode Output Rate</strong> controls how many position updates per second are sent to the device. Higher rates give smoother motion but use more bandwidth:</p>
+      <table>
+        <thead><tr><th>Rate</th><th>Best For</th></tr></thead>
+        <tbody>
+          <tr><td>30–60 Hz</td><td>Basic movement, lower bandwidth</td></tr>
+          <tr><td>100 Hz</td><td>Recommended default — good balance</td></tr>
+          <tr><td>150–200 Hz</td><td>Maximum smoothness for fast movements</td></tr>
+        </tbody>
+      </table>
+      <p>Adjust in <strong>Settings</strong> &rarr; <strong>OSR2+</strong> &rarr; <strong>TCode Output Rate</strong>.</p>
+
+      <h2>Connection Notifications</h2>
+      <p>Vido shows toast notifications for connection events:</p>
+      <ul>
+        <li><strong>Connected</strong> — shows the connection mode and port</li>
+        <li><strong>Disconnected</strong> — confirms the device is disconnected</li>
+        <li><strong>Connection failed</strong> — shows an error message with details</li>
+      </ul>
+
+      <h2>Related</h2>
+      <ul>
+        <li><a href="funscript-playback.html">Funscript Playback</a> — loading and managing funscripts</li>
+        <li><a href="fill-profiles.html">Fill Profiles</a> — saving and switching axis configurations</li>
+        <li><a href="pulse-beat-detection.html">Pulse Beat Detection</a> — automatic beat-driven haptics</li>
+        <li><a href="settings.html">Settings</a> — all OSR2+ settings</li>
+      </ul>
+    </main>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">
+          <img src="../assets/images/vido-logo.png" alt="" width="28" height="28">
+          <span>Vido</span>
+        </div>
+        <p class="footer-desc">Ultra-performant video player for Windows with built-in haptic device control and audio beat detection.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="../index.html">Home</a>
+        <a href="../install.html">Install</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest">Download</a>
+      </div>
+      <div class="footer-col">
+        <h4>Documentation</h4>
+        <a href="getting-started.html">Getting Started</a>
+        <a href="video-playback.html">Video Playback</a>
+        <a href="osr2-device-control.html">Device Control</a>
+      </div>
+      <div class="footer-col">
+        <h4>More</h4>
+        <a href="playlists.html">Playlists</a>
+        <a href="settings.html">Settings</a>
+        <a href="keyboard-shortcuts.html">Shortcuts</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Vido. All rights reserved.</span>
+      <a href="https://github.com/AnotherFoxGuy/vido/blob/main/LICENSE">License</a>
+    </div>
+  </footer>
+
+  <script src="../assets/js/main.js"></script>
+</body>
+</html>

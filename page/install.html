@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Install — Vido</title>
+  <meta name="description" content="Download and install Vido on Windows 10/11. MSI installer or portable ZIP.">
+  <link rel="icon" type="image/png" href="assets/images/vido-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="index.html" class="header-brand">
+        <img src="assets/images/vido-logo.png" alt="Vido" width="32" height="32">
+        <span>Vido</span>
+      </a>
+      <nav class="header-nav" role="navigation" aria-label="Main navigation">
+        <a href="index.html">Home</a>
+        <a href="install.html" class="active">Install</a>
+        <a href="guide/getting-started.html">Docs</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest" class="header-cta">
+          <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 2a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 10.586V3a1 1 0 011-1z"/><path d="M3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+          Download
+        </a>
+      </nav>
+      <button class="mobile-toggle" aria-label="Toggle navigation" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Content -->
+  <section style="padding-top: calc(var(--header-height) + var(--space-3xl));">
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="section-label">Installation</span>
+        <h2>Get Vido on your machine</h2>
+        <p>Choose the installation method that works best for you. Both options give you the same application.</p>
+      </div>
+
+      <!-- Download -->
+      <div style="text-align: center; margin-bottom: var(--space-3xl);">
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest" class="btn btn-primary" style="height: 52px; font-size: var(--font-size-lg); padding: 0 var(--space-2xl);">
+          <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 2a1 1 0 011 1v7.586l2.293-2.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 10.586V3a1 1 0 011-1z"/><path d="M3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+          Download Latest Release
+        </a>
+      </div>
+
+      <!-- Install Methods -->
+      <div class="install-grid">
+        <div class="install-card recommended">
+          <h3>MSI Installer</h3>
+          <p style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-lg);">
+            Standard Windows installation with Start Menu shortcut and file associations.
+          </p>
+          <ol class="install-steps">
+            <li>
+              <span class="step-num">1</span>
+              <span>Download the <code>.msi</code> file from the latest release</span>
+            </li>
+            <li>
+              <span class="step-num">2</span>
+              <span>Double-click the file and follow the installation prompts</span>
+            </li>
+            <li>
+              <span class="step-num">3</span>
+              <span>Launch Vido from the Start Menu or by double-clicking a video file</span>
+            </li>
+          </ol>
+          <div class="callout" style="margin-top: var(--space-lg);">
+            <div class="callout-label">Tip</div>
+            <p>The MSI installer automatically associates common video formats with Vido, so you can open videos directly from Windows Explorer.</p>
+          </div>
+        </div>
+
+        <div class="install-card">
+          <h3>Portable ZIP</h3>
+          <p style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-lg);">
+            No installation needed. Extract and run from any folder, including USB drives.
+          </p>
+          <ol class="install-steps">
+            <li>
+              <span class="step-num">1</span>
+              <span>Download the <code>.zip</code> file from the latest release</span>
+            </li>
+            <li>
+              <span class="step-num">2</span>
+              <span>Extract to any folder (e.g., <code>C:\Tools\Vido\</code>)</span>
+            </li>
+            <li>
+              <span class="step-num">3</span>
+              <span>Run <code>Vido.exe</code> from the extracted folder</span>
+            </li>
+          </ol>
+          <div class="callout" style="margin-top: var(--space-lg);">
+            <div class="callout-label">Tip</div>
+            <p>Settings are stored in <code>%APPDATA%\Vido\</code>, separate from the application files.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Requirements -->
+      <div style="margin-top: var(--space-4xl);">
+        <h3 style="text-align: center; margin-bottom: var(--space-xl);">System Requirements</h3>
+        <div style="max-width: 600px; margin: 0 auto;">
+          <table>
+            <tbody>
+              <tr>
+                <td style="width: 40%;"><strong>Operating System</strong></td>
+                <td>Windows 10 or Windows 11 (64-bit)</td>
+              </tr>
+              <tr>
+                <td><strong>Runtime</strong></td>
+                <td><a href="https://dotnet.microsoft.com/download/dotnet/8.0">.NET 8 Desktop Runtime</a></td>
+              </tr>
+              <tr>
+                <td><strong>Disk Space</strong></td>
+                <td>~100 MB</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- First Launch -->
+      <div style="margin-top: var(--space-4xl);">
+        <h3 style="text-align: center; margin-bottom: var(--space-xl);">First Launch</h3>
+        <div style="max-width: 700px; margin: 0 auto;">
+          <p>When you open Vido for the first time, you'll see a dark-themed window with:</p>
+          <ul>
+            <li>A <strong>title bar</strong> at the top with menus and toolbar buttons</li>
+            <li>An <strong>activity bar</strong> on the far left with five panel icons</li>
+            <li>A <strong>video area</strong> in the center (empty until you open a video)</li>
+            <li>A <strong>transport bar</strong> at the bottom with play, pause, seek, and volume controls</li>
+          </ul>
+          <p style="margin-top: var(--space-lg);">
+            Open a video by dragging a file onto the window, pressing <kbd>Ctrl</kbd>+<kbd>O</kbd>, or using <strong>File</strong> &rarr; <strong>Open File</strong>.
+          </p>
+        </div>
+      </div>
+
+      <!-- Uninstall -->
+      <div style="margin-top: var(--space-4xl);">
+        <h3 style="text-align: center; margin-bottom: var(--space-xl);">Uninstallation</h3>
+        <div style="max-width: 700px; margin: 0 auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>How to Uninstall</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>MSI Installer</strong></td>
+                <td>Open Windows Settings &rarr; Apps &rarr; find Vido &rarr; Uninstall</td>
+              </tr>
+              <tr>
+                <td><strong>Portable ZIP</strong></td>
+                <td>Delete the extracted folder. Optionally remove <code>%APPDATA%\Vido\</code> to clear settings.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Next -->
+      <div style="margin-top: var(--space-4xl); text-align: center; padding-bottom: var(--space-xl);">
+        <p style="color: var(--text-secondary);">Ready to explore everything Vido can do?</p>
+        <a href="guide/getting-started.html" class="btn btn-secondary" style="margin-top: var(--space-md);">Read the Getting Started Guide</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">
+          <img src="assets/images/vido-logo.png" alt="" width="28" height="28">
+          <span>Vido</span>
+        </div>
+        <p class="footer-desc">Ultra-performant video player for Windows with built-in haptic device control and audio beat detection.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Product</h4>
+        <a href="index.html">Home</a>
+        <a href="install.html">Install</a>
+        <a href="https://github.com/AnotherFoxGuy/vido/releases/latest">Download</a>
+        <a href="https://github.com/AnotherFoxGuy/vido">GitHub</a>
+      </div>
+      <div class="footer-col">
+        <h4>Documentation</h4>
+        <a href="guide/getting-started.html">Getting Started</a>
+        <a href="guide/video-playback.html">Video Playback</a>
+        <a href="guide/osr2-device-control.html">Device Control</a>
+        <a href="guide/pulse-beat-detection.html">Pulse</a>
+      </div>
+      <div class="footer-col">
+        <h4>More</h4>
+        <a href="guide/playlists.html">Playlists</a>
+        <a href="guide/settings.html">Settings</a>
+        <a href="guide/keyboard-shortcuts.html">Shortcuts</a>
+        <a href="guide/fill-profiles.html">Fill Profiles</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>Vido. All rights reserved.</span>
+      <a href="https://github.com/AnotherFoxGuy/vido/blob/main/LICENSE">License</a>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
