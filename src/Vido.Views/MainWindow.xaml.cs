@@ -1950,12 +1950,13 @@ public partial class MainWindow : Window
                 if (e.PropertyName == nameof(PulseSidebarViewModel.UsePulse))
                     UpdatePulseToolbarIcon(_pulseSidebarVm.UsePulse);
             };
-
-            // Set initial icon state
-            UpdatePulseToolbarIcon(_pulseSidebarVm.UsePulse);
         }
 
         TitleBar.AddPluginToolbarButton(_pulseToolbarButton);
+
+        // Set initial icon state after the button is in the panel
+        if (_pulseSidebarVm is not null)
+            UpdatePulseToolbarIcon(_pulseSidebarVm.UsePulse);
     }
 
     /// <summary>
