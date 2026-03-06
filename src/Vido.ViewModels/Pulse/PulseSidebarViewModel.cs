@@ -268,7 +268,7 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         OnPropertyChanged(nameof(CanGenerateFunscript));
         try
         {
-            var actions = FunscriptWriter.CreateActionsFromBeats(beatMap.Beats);
+            var actions = FunscriptWriter.CreateActionsFromBeatMap(beatMap);
             await FunscriptWriter.WriteAsync(actions, targetPath);
             _toastService?.Show("Funscript generated:", fileName);
             _eventBus.Publish(new FunscriptGeneratedEvent
