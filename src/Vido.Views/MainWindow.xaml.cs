@@ -129,6 +129,7 @@ public partial class MainWindow : Window
 
     // Auto-update check timer (one-shot)
     private DispatcherTimer? _autoUpdateTimer;
+    private UpdateCheckResult? _lastUpdateResult;
 
     // Fullscreen auto-hide timer
     private DispatcherTimer? _fullscreenHideTimer;
@@ -2963,13 +2964,36 @@ public partial class MainWindow : Window
 
             if (result.IsUpdateAvailable)
             {
-                _toastService?.Show($"Vido {result.LatestVersion} is available.",
-                    " Check for Updates to download.");
+                _lastUpdateResult = result;
+                _toastService?.ShowActionable(
+                    $"Vido {result.LatestVersion} is available.",
+                    " Click to view update details.",
+                    OnUpdateToastClicked,
+                    durationSeconds: 10.0);
             }
         }
         catch
         {
             // Silent — never show errors for background checks.
+        }
+    }
+
+    private void OnUpdateToastClicked()
+    {
+        if (_lastUpdateResult is not null)
+            ShowUpdateDialogWithResult(_lastUpdateResult);
+    }
+
+    private void ShowUpdateDialogWithResult(UpdateCheckResult result)
+    {
+        var dialog = new UpdateDialog(_updateService) { Owner = this };
+        dialog.ShowUpdateAvailable(result);
+        dialog.ShowDialog();
+
+        if (dialog.UserChoseRestart)
+        {
+            _logService.Info("User chose restart after update download.", "Updates");
+            Application.Current.Shutdown();
         }
     }
 
