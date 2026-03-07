@@ -1,6 +1,6 @@
 # Release Notes
 
-## [0.21.0]
+## [0.22.0]
 
 ### What's New
 - Installer and update dialog buttons now highlight with accent blue on hover
