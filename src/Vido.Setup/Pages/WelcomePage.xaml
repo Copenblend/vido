@@ -1,0 +1,117 @@
+<UserControl x:Class="Vido.Setup.Pages.WelcomePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Grid Margin="40,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Vido Icon -->
+        <Border Grid.Row="0"
+                Width="72" Height="72"
+                HorizontalAlignment="Center"
+                Margin="0,20,0,16"
+                CornerRadius="12"
+                Background="{StaticResource SidebarBackgroundBrush}">
+            <TextBlock Text="▶"
+                       FontSize="36"
+                       Foreground="{StaticResource AccentBrush}"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center" />
+        </Border>
+
+        <!-- Title -->
+        <TextBlock Grid.Row="1"
+                   Text="Vido"
+                   FontSize="28"
+                   FontWeight="SemiBold"
+                   Foreground="{StaticResource PrimaryForegroundBrush}"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,4" />
+
+        <!-- Version / upgrade info -->
+        <StackPanel Grid.Row="2" HorizontalAlignment="Center" Margin="0,0,0,8">
+            <TextBlock FontSize="13"
+                       Foreground="{StaticResource SecondaryForegroundBrush}"
+                       HorizontalAlignment="Center">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Text" Value="{Binding AppVersion, StringFormat='Version {0}'}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsUpgrade}" Value="True">
+                                <Setter Property="Text">
+                                    <Setter.Value>
+                                        <MultiBinding StringFormat="Update from v{0} to v{1}">
+                                            <Binding Path="ExistingVersion" />
+                                            <Binding Path="AppVersion" />
+                                        </MultiBinding>
+                                    </Setter.Value>
+                                </Setter>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+        </StackPanel>
+
+        <!-- Install / Update button -->
+        <Button Grid.Row="4"
+                Command="{Binding GoToOptionsCommand}"
+                Width="200" Height="40"
+                HorizontalAlignment="Center"
+                Margin="0,0,0,12"
+                Cursor="Hand">
+            <Button.Style>
+                <Style TargetType="Button">
+                    <Setter Property="Template">
+                        <Setter.Value>
+                            <ControlTemplate TargetType="Button">
+                                <Border x:Name="ButtonBorder"
+                                        Background="{StaticResource ButtonBackgroundBrush}"
+                                        CornerRadius="4"
+                                        Padding="0">
+                                    <TextBlock x:Name="ButtonText"
+                                               FontSize="14"
+                                               FontWeight="SemiBold"
+                                               Foreground="White"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+                                </Border>
+                                <ControlTemplate.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter TargetName="ButtonBorder"
+                                                Property="Background"
+                                                Value="{StaticResource ButtonHoverBackgroundBrush}" />
+                                    </Trigger>
+                                    <DataTrigger Binding="{Binding IsUpgrade}" Value="False">
+                                        <Setter TargetName="ButtonText" Property="Text" Value="Install Vido" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsUpgrade}" Value="True">
+                                        <Setter TargetName="ButtonText" Property="Text" Value="Update Vido" />
+                                    </DataTrigger>
+                                </ControlTemplate.Triggers>
+                            </ControlTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </Style>
+            </Button.Style>
+        </Button>
+
+        <!-- Cancel link -->
+        <TextBlock Grid.Row="5"
+                   HorizontalAlignment="Center"
+                   Margin="0,0,0,20">
+            <Hyperlink Command="{Binding CancelCommand}"
+                       Foreground="{StaticResource SecondaryForegroundBrush}"
+                       TextDecorations="None">
+                Cancel
+            </Hyperlink>
+        </TextBlock>
+    </Grid>
+</UserControl>

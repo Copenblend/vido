@@ -1,5 +1,8 @@
 using System.Windows;
 
+using Vido.Setup.Services;
+using Vido.Setup.ViewModels;
+
 namespace Vido.Setup;
 
 /// <summary>
@@ -11,6 +14,11 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        // InstallerWindow will be wired up in vido-164 (Installer UI pages)
+        var engine = new InstallEngine();
+        var window = new InstallerWindow();
+        var viewModel = new InstallerViewModel(engine, () => window.Close());
+
+        window.DataContext = viewModel;
+        window.Show();
     }
 }
