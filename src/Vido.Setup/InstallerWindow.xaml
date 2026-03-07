@@ -1,0 +1,103 @@
+<Window x:Class="Vido.Setup.InstallerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:Vido.Setup.ViewModels"
+        xmlns:pages="clr-namespace:Vido.Setup.Pages"
+        Title="Vido Setup"
+        Width="500" Height="380"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        ResizeMode="NoResize"
+        Background="{StaticResource EditorBackgroundBrush}"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
+
+    <Window.Resources>
+        <!-- Page templates keyed by InstallerPage enum -->
+        <DataTemplate x:Key="WelcomePageTemplate">
+            <pages:WelcomePage />
+        </DataTemplate>
+        <DataTemplate x:Key="OptionsPageTemplate">
+            <pages:OptionsPage />
+        </DataTemplate>
+        <DataTemplate x:Key="ProgressPageTemplate">
+            <pages:ProgressPage />
+        </DataTemplate>
+        <DataTemplate x:Key="FinishPageTemplate">
+            <pages:FinishPage />
+        </DataTemplate>
+    </Window.Resources>
+
+    <Border BorderBrush="{StaticResource PrimaryBorderBrush}" BorderThickness="1" CornerRadius="1">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="32" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Custom title bar -->
+            <Grid Grid.Row="0" Background="{StaticResource SidebarBackgroundBrush}">
+                <TextBlock Text="Vido Setup"
+                           Foreground="{StaticResource SecondaryForegroundBrush}"
+                           VerticalAlignment="Center"
+                           Margin="12,0,0,0"
+                           FontSize="12" />
+                <Button x:Name="CloseButton"
+                        Content="&#xE8BB;"
+                        FontFamily="Segoe MDL2 Assets"
+                        FontSize="10"
+                        HorizontalAlignment="Right"
+                        Width="46" Height="32"
+                        BorderThickness="0"
+                        Foreground="{StaticResource PrimaryForegroundBrush}"
+                        Background="Transparent"
+                        Click="CloseButton_Click">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="ButtonBorder"
+                                                Background="{TemplateBinding Background}">
+                                            <ContentPresenter HorizontalAlignment="Center"
+                                                              VerticalAlignment="Center" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="ButtonBorder"
+                                                        Property="Background"
+                                                        Value="{StaticResource WindowCloseHoverBackgroundBrush}" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </Grid>
+
+            <!-- Page content area -->
+            <ContentControl Grid.Row="1" Content="{Binding}">
+                <ContentControl.Style>
+                    <Style TargetType="ContentControl">
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentPage}" Value="{x:Static vm:InstallerViewModel+InstallerPage.Welcome}">
+                                <Setter Property="ContentTemplate" Value="{StaticResource WelcomePageTemplate}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding CurrentPage}" Value="{x:Static vm:InstallerViewModel+InstallerPage.Options}">
+                                <Setter Property="ContentTemplate" Value="{StaticResource OptionsPageTemplate}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding CurrentPage}" Value="{x:Static vm:InstallerViewModel+InstallerPage.Progress}">
+                                <Setter Property="ContentTemplate" Value="{StaticResource ProgressPageTemplate}" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding CurrentPage}" Value="{x:Static vm:InstallerViewModel+InstallerPage.Finish}">
+                                <Setter Property="ContentTemplate" Value="{StaticResource FinishPageTemplate}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ContentControl.Style>
+            </ContentControl>
+        </Grid>
+    </Border>
+</Window>
