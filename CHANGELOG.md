@@ -5,6 +5,9 @@ All notable changes to the Vido project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **vido-163**: Created `Vido.Setup` WPF installer project with `InstallEngine` class providing per-user install/uninstall operations: payload zip extraction with progress reporting, Add/Remove Programs registry entry management, file association registration for 7 video formats (.mp4/.avi/.mkv/.mov/.wmv/.flv/.webm), desktop and Start Menu shortcut creation via COM, and install path registry tracking. All operations target HKCU (no elevation required). Includes `InstallOptions` model, dark theme resources matching Vido's VS Code Dark Modern palette, and 25 unit tests with 100% coverage.
+
+### Added
 - **VI-0029**: Replaced CPU-burning `SpinWait` in `TCodeService.SleepPrecise` with `Thread.Sleep(1)` for the final <5 ms window. Eliminates ~20% single-core CPU usage from the TCode output thread with negligible timing impact (±1 ms jitter, well within servo motor mechanical response times).
 - **VI-0028**: Throttled waveform `RepaintRequested` from ~60 Hz to ~30 Hz by skipping every other `UpdateTime()` call. `CurrentTimeSeconds` and `CurrentAmplitude` still update at full 60 Hz rate. Halves `OnPaintSurface` invocations without visible quality loss.
 - **VI-0027**: Integrated `WaveformStripRenderer` into `WaveformPanelView` for GPU-accelerated bitmap-blit waveform scrolling. `OnPaintSurface` now attempts strip-based rendering first (pre-rendered bitmap + cursor overlay), falling back to the existing per-frame SKPath rendering when the strip is not yet available. Strip renderer data is updated on `FullWaveform`, `AllBeats`, and `WindowDurationSeconds` property changes. Strip renderer is disposed on Unloaded and re-created on Loaded.
