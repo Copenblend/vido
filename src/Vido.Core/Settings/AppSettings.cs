@@ -249,6 +249,13 @@ public sealed class AppSettings
     /// </summary>
     public string PlaylistLastPlaylistPath { get; set; } = "";
 
+    // --- Updates ---
+
+    /// <summary>
+    /// Whether to automatically check for updates on startup.
+    /// </summary>
+    public bool AutoCheckUpdates { get; set; } = true;
+
     /// <summary>
     /// Resets every property to its default value.
     /// Call after tests that mutate settings to prevent pollution.
@@ -307,5 +314,8 @@ public sealed class AppSettings
         PlaylistAutoSave = false;
         PlaylistRecentPlaylists = [];
         PlaylistLastPlaylistPath = "";
+
+        // Update settings
+        AutoCheckUpdates = true;
     }
 }

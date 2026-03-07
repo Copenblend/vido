@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Diagnostics;
+using System.Text.Json;
 using Vido.Core.Updates;
 
 namespace Vido.Services.Updates;
@@ -54,15 +55,15 @@ public sealed class GitHubUpdateService : IUpdateService, IDisposable
                 ? bodyProp.GetString()
                 : null;
 
-            // Find the installer asset (.msi or *Setup* file)
+            // Find the portable zip asset
             string? installerUrl = null;
             if (root.TryGetProperty("assets", out var assets))
             {
                 foreach (var asset in assets.EnumerateArray())
                 {
                     var name = asset.GetProperty("name").GetString() ?? "";
-                    if (name.EndsWith(".msi", StringComparison.OrdinalIgnoreCase) ||
-                        name.Contains("Setup", StringComparison.OrdinalIgnoreCase))
+                    if (name.Contains("portable", StringComparison.OrdinalIgnoreCase)
+                        && name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
                     {
                         installerUrl = asset.GetProperty("browser_download_url").GetString();
                         break;
@@ -107,6 +108,61 @@ public sealed class GitHubUpdateService : IUpdateService, IDisposable
 
         // Unparseable â€” different strings treated as "newer" only if they differ
         return !string.Equals(latest, current, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <inheritdoc />
+    public async Task<string> DownloadUpdateAsync(
+        string downloadUrl, string fileName,
+        IProgress<double>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        var downloader = new UpdateDownloader(_httpClient);
+        return await downloader.DownloadInstallerAsync(
+            downloadUrl, fileName,
+            p => progress?.Report(p),
+            cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public bool ApplyUpdate(string updateZipPath)
+    {
+        var installDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd(
+            Path.DirectorySeparatorChar);
+        var pid = Environment.ProcessId;
+
+        var scriptDir = Path.Combine(Path.GetTempPath(), "Vido", "Updates");
+        Directory.CreateDirectory(scriptDir);
+        var scriptPath = Path.Combine(scriptDir, "apply-update.ps1");
+
+        var script = GenerateApplyUpdateScript(updateZipPath, installDir, pid);
+        File.WriteAllText(scriptPath, script);
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = "powershell.exe",
+            Arguments = $"-ExecutionPolicy Bypass -WindowStyle Hidden -File \"{scriptPath}\"",
+            UseShellExecute = false,
+            CreateNoWindow = true
+        });
+
+        return true; // Caller should exit
+    }
+
+    /// <summary>
+    /// Generates the PowerShell script content for applying an update.
+    /// Separated for testability.
+    /// </summary>
+    internal static string GenerateApplyUpdateScript(
+        string updateZipPath, string installDir, int pid)
+    {
+        return $$"""
+            param()
+            try { Wait-Process -Id {{pid}} -Timeout 30 -ErrorAction SilentlyContinue } catch {}
+            Start-Sleep -Seconds 1
+            Expand-Archive -Path '{{updateZipPath}}' -DestinationPath '{{installDir}}' -Force
+            Remove-Item '{{updateZipPath}}' -Force -ErrorAction SilentlyContinue
+            Start-Process (Join-Path '{{installDir}}' 'Vido.exe')
+            """;
     }
 
     /// <summary>
