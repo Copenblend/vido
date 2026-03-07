@@ -1,3 +1,4 @@
+using Vido.Core.Settings;
 using Vido.Services.Updates;
 using Xunit;
 
@@ -65,7 +66,7 @@ public class GitHubUpdateServiceTests
     [Fact]
     public async Task CheckForUpdateAsync_ParsesGitHubResponse()
     {
-        // Arrange: mock a GitHub /releases/latest JSON response
+        // Arrange: mock a GitHub /releases/latest JSON response with portable zip
         const string json = """
         {
           "tag_name": "v1.0.0",
@@ -73,8 +74,8 @@ public class GitHubUpdateServiceTests
           "body": "Release notes here",
           "assets": [
             {
-              "name": "Vido-Setup-1.0.0.msi",
-              "browser_download_url": "https://github.com/Copenblend/vido/releases/download/v1.0.0/Vido-Setup-1.0.0.msi"
+              "name": "Vido-1.0.0-win-x64-portable.zip",
+              "browser_download_url": "https://github.com/Copenblend/vido/releases/download/v1.0.0/Vido-1.0.0-win-x64-portable.zip"
             }
           ]
         }
@@ -95,7 +96,7 @@ public class GitHubUpdateServiceTests
         Assert.Equal("https://github.com/Copenblend/vido/releases/tag/v1.0.0", result.ReleaseUrl);
         Assert.Equal("Release notes here", result.ReleaseNotes);
         Assert.Equal(
-            "https://github.com/Copenblend/vido/releases/download/v1.0.0/Vido-Setup-1.0.0.msi",
+            "https://github.com/Copenblend/vido/releases/download/v1.0.0/Vido-1.0.0-win-x64-portable.zip",
             result.InstallerDownloadUrl);
         Assert.Null(result.ErrorMessage);
     }
@@ -279,6 +280,229 @@ public class GitHubUpdateServiceTests
             {
                 Content = new StringContent(_responseContent!, System.Text.Encoding.UTF8, "application/json")
             };
+            return Task.FromResult(response);
+        }
+    }
+
+    // ── Asset search ──
+
+    /// <summary>
+    /// Verifies that CheckForUpdateAsync finds a portable zip asset and ignores MSI installers.
+    /// </summary>
+    [Fact]
+    public async Task CheckForUpdateAsync_FindsPortableZip_IgnoresMsi()
+    {
+        const string json = """
+        {
+          "tag_name": "v2.0.0",
+          "html_url": "https://example.com",
+          "assets": [
+            {
+              "name": "Vido-Setup-2.0.0.msi",
+              "browser_download_url": "https://example.com/setup.msi"
+            },
+            {
+              "name": "Vido-2.0.0-win-x64-portable.zip",
+              "browser_download_url": "https://example.com/portable.zip"
+            }
+          ]
+        }
+        """;
+
+        var handler = new FakeHttpMessageHandler(json);
+        using var httpClient = new HttpClient(handler);
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Test/1.0");
+        using var sut = new GitHubUpdateService("1.0.0", httpClient);
+
+        var result = await sut.CheckForUpdateAsync();
+
+        Assert.Equal("https://example.com/portable.zip", result.InstallerDownloadUrl);
+    }
+
+    /// <summary>
+    /// Verifies that CheckForUpdateAsync returns null when only MSI assets are present.
+    /// </summary>
+    [Fact]
+    public async Task CheckForUpdateAsync_OnlyMsiAsset_ReturnsNullUrl()
+    {
+        const string json = """
+        {
+          "tag_name": "v2.0.0",
+          "html_url": "https://example.com",
+          "assets": [
+            {
+              "name": "Vido-Setup-2.0.0.msi",
+              "browser_download_url": "https://example.com/setup.msi"
+            }
+          ]
+        }
+        """;
+
+        var handler = new FakeHttpMessageHandler(json);
+        using var httpClient = new HttpClient(handler);
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Test/1.0");
+        using var sut = new GitHubUpdateService("1.0.0", httpClient);
+
+        var result = await sut.CheckForUpdateAsync();
+
+        Assert.Null(result.InstallerDownloadUrl);
+    }
+
+    // ── GenerateApplyUpdateScript ──
+
+    /// <summary>
+    /// Verifies that the generated update script contains the correct PID.
+    /// </summary>
+    [Fact]
+    public void GenerateApplyUpdateScript_ContainsCorrectPid()
+    {
+        var script = GitHubUpdateService.GenerateApplyUpdateScript(
+            @"C:\temp\update.zip", @"C:\Vido", 12345);
+
+        Assert.Contains("12345", script);
+        Assert.Contains("Wait-Process -Id 12345", script);
+    }
+
+    /// <summary>
+    /// Verifies that the generated update script contains the correct paths.
+    /// </summary>
+    [Fact]
+    public void GenerateApplyUpdateScript_ContainsCorrectPaths()
+    {
+        var zipPath = @"C:\temp\Vido\Updates\Vido-1.0.0-portable.zip";
+        var installDir = @"C:\Users\Test\AppData\Local\Vido";
+        var script = GitHubUpdateService.GenerateApplyUpdateScript(
+            zipPath, installDir, 99999);
+
+        Assert.Contains($"Expand-Archive -Path '{zipPath}'", script);
+        Assert.Contains($"-DestinationPath '{installDir}'", script);
+        Assert.Contains($"Remove-Item '{zipPath}'", script);
+        Assert.Contains($"Join-Path '{installDir}' 'Vido.exe'", script);
+    }
+
+    /// <summary>
+    /// Verifies that the generated update script has valid PowerShell structure.
+    /// </summary>
+    [Fact]
+    public void GenerateApplyUpdateScript_HasValidPowerShellStructure()
+    {
+        var script = GitHubUpdateService.GenerateApplyUpdateScript(
+            @"C:\update.zip", @"C:\Vido", 1);
+
+        Assert.Contains("param()", script);
+        Assert.Contains("Wait-Process", script);
+        Assert.Contains("Start-Sleep", script);
+        Assert.Contains("Expand-Archive", script);
+        Assert.Contains("Start-Process", script);
+        Assert.Contains("-Force", script);
+    }
+
+    // ── DownloadUpdateAsync ──
+
+    /// <summary>
+    /// Verifies that DownloadUpdateAsync reports progress during download.
+    /// </summary>
+    [Fact]
+    public async Task DownloadUpdateAsync_ReportsProgress()
+    {
+        var content = new byte[1024];
+        Array.Fill(content, (byte)'A');
+        var handler = new FakeDownloadHandler(content);
+        using var httpClient = new HttpClient(handler);
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Test/1.0");
+        using var sut = new GitHubUpdateService("0.6.0", httpClient);
+
+        var progressValues = new List<double>();
+        var progress = new Progress<double>(p => progressValues.Add(p));
+
+        var fileName = $"test-download-{Guid.NewGuid():N}.zip";
+        try
+        {
+            var path = await sut.DownloadUpdateAsync(
+                "https://example.com/update.zip", fileName, progress);
+
+            // Allow progress callbacks to fire
+            await Task.Delay(100);
+
+            Assert.NotEmpty(progressValues);
+            Assert.True(File.Exists(path));
+        }
+        finally
+        {
+            // Cleanup
+            var tempPath = Path.Combine(Path.GetTempPath(), "Vido", "Updates", fileName);
+            if (File.Exists(tempPath))
+                File.Delete(tempPath);
+        }
+    }
+
+    /// <summary>
+    /// Verifies that DownloadUpdateAsync supports cancellation.
+    /// </summary>
+    [Fact]
+    public async Task DownloadUpdateAsync_SupportsCancellation()
+    {
+        var content = new byte[1024 * 1024]; // Large enough to not complete instantly
+        var handler = new FakeDownloadHandler(content);
+        using var httpClient = new HttpClient(handler);
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Test/1.0");
+        using var sut = new GitHubUpdateService("0.6.0", httpClient);
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var fileName = $"test-cancel-{Guid.NewGuid():N}.zip";
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => sut.DownloadUpdateAsync(
+                "https://example.com/update.zip", fileName, cancellationToken: cts.Token));
+    }
+
+    // ── AppSettings.AutoCheckUpdates ──
+
+    /// <summary>
+    /// Verifies that AutoCheckUpdates defaults to true.
+    /// </summary>
+    [Fact]
+    public void AppSettings_AutoCheckUpdates_DefaultsToTrue()
+    {
+        var settings = new AppSettings();
+        Assert.True(settings.AutoCheckUpdates);
+    }
+
+    /// <summary>
+    /// Verifies that ResetToDefaults restores AutoCheckUpdates to true.
+    /// </summary>
+    [Fact]
+    public void AppSettings_ResetToDefaults_RestoresAutoCheckUpdates()
+    {
+        var settings = new AppSettings { AutoCheckUpdates = false };
+        settings.ResetToDefaults();
+        Assert.True(settings.AutoCheckUpdates);
+    }
+
+    // ── Fake download handler ──
+
+    /// <summary>
+    /// A fake <see cref="HttpMessageHandler"/> that returns binary content with a Content-Length
+    /// header — used for testing download with progress reporting.
+    /// </summary>
+    private sealed class FakeDownloadHandler : HttpMessageHandler
+    {
+        private readonly byte[] _content;
+
+        public FakeDownloadHandler(byte[] content)
+        {
+            _content = content;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(_content)
+            };
+            response.Content.Headers.ContentLength = _content.Length;
             return Task.FromResult(response);
         }
     }
