@@ -73,7 +73,7 @@
                         <Setter.Value>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="ButtonBorder"
-                                        Background="{StaticResource ButtonBackgroundBrush}"
+                                        Background="{StaticResource ButtonDefaultBackgroundBrush}"
                                         CornerRadius="4"
                                         Padding="0">
                                     <TextBlock x:Name="ButtonText"
@@ -87,7 +87,7 @@
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter TargetName="ButtonBorder"
                                                 Property="Background"
-                                                Value="{StaticResource ButtonHoverBackgroundBrush}" />
+                                                Value="{StaticResource ButtonBackgroundBrush}" />
                                     </Trigger>
                                     <DataTrigger Binding="{Binding IsUpgrade}" Value="False">
                                         <Setter TargetName="ButtonText" Property="Text" Value="Install Vido" />
