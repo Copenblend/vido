@@ -16,6 +16,9 @@ public partial class UpdateDialog : Window
     /// <summary>Dialog visual states.</summary>
     public enum DialogState { Info, Downloading, Downloaded, Error, UpToDate }
 
+    private readonly IUpdateService? _updateService;
+    private CancellationTokenSource? _cts;
+
     /// <summary>The currently running version string.</summary>
     public string CurrentVersion { get; set; } = string.Empty;
 
@@ -49,12 +52,20 @@ public partial class UpdateDialog : Window
     /// <summary>Local path to the downloaded update file.</summary>
     public string? DownloadedFilePath { get; set; }
 
-    /// <summary>Cancellation token source for download cancellation.</summary>
-    internal CancellationTokenSource? CancellationTokenSource { get; set; }
-
+    /// <summary>
+    /// Creates an UpdateDialog without an update service (for non-download states).
+    /// </summary>
     public UpdateDialog()
     {
         InitializeComponent();
+    }
+
+    /// <summary>
+    /// Creates an UpdateDialog with an update service for download and apply operations.
+    /// </summary>
+    public UpdateDialog(IUpdateService updateService) : this()
+    {
+        _updateService = updateService;
     }
 
     /// <summary>
@@ -166,8 +177,48 @@ public partial class UpdateDialog : Window
 
     private void UpdateNowButton_Click(object sender, RoutedEventArgs e)
     {
-        UserChoseUpdate = true;
-        DialogResult = true;
+        if (_updateService is null || string.IsNullOrEmpty(DownloadUrl))
+        {
+            UserChoseUpdate = true;
+            DialogResult = true;
+            return;
+        }
+
+        _ = DownloadUpdateAsync();
+    }
+
+    /// <summary>
+    /// Downloads the update package, showing progress in the Downloading state.
+    /// Transitions to Downloaded on success, Error on failure, or Info on cancellation.
+    /// </summary>
+    internal async Task DownloadUpdateAsync()
+    {
+        SetState(DialogState.Downloading);
+        _cts = new CancellationTokenSource();
+
+        try
+        {
+            var fileName = $"Vido-{LatestVersion}-win-x64-portable.zip";
+            var progress = new Progress<double>(p => UpdateProgress(p * 100));
+
+            DownloadedFilePath = await _updateService!.DownloadUpdateAsync(
+                DownloadUrl!, fileName, progress, _cts.Token);
+
+            SetState(DialogState.Downloaded);
+        }
+        catch (OperationCanceledException)
+        {
+            SetState(DialogState.Info);
+        }
+        catch (Exception ex)
+        {
+            ShowError(ex.Message, ReleaseUrl);
+        }
+        finally
+        {
+            _cts.Dispose();
+            _cts = null;
+        }
     }
 
     private void LaterButton_Click(object sender, RoutedEventArgs e)
@@ -177,12 +228,14 @@ public partial class UpdateDialog : Window
 
     private void CancelDownloadButton_Click(object sender, RoutedEventArgs e)
     {
-        CancellationTokenSource?.Cancel();
-        Close();
+        _cts?.Cancel();
     }
 
     private void RestartNowButton_Click(object sender, RoutedEventArgs e)
     {
+        if (_updateService is not null && DownloadedFilePath is not null)
+            _updateService.ApplyUpdate(DownloadedFilePath);
+
         UserChoseRestart = true;
         DialogResult = true;
     }

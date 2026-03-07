@@ -48,7 +48,6 @@ public sealed class UpdateDialogTests
             Assert.Null(dialog.ReleaseUrl);
             Assert.Null(dialog.DownloadUrl);
             Assert.Null(dialog.DownloadedFilePath);
-            Assert.Null(dialog.CancellationTokenSource);
         });
     }
 
@@ -221,26 +220,6 @@ public sealed class UpdateDialogTests
             dialog.SetState(UpdateDialog.DialogState.UpToDate);
             Assert.Equal(UpdateDialog.DialogState.UpToDate, dialog.State);
         });
-    }
-
-    // ── CancellationTokenSource ─────────────────────────────────────────
-
-    [Fact]
-    public void CancellationTokenSource_CanBeSetAndCancelled()
-    {
-        var cts = new CancellationTokenSource();
-
-        RunOnStaThread(() =>
-        {
-            var dialog = CreateDialog();
-            dialog.CancellationTokenSource = cts;
-
-            Assert.Same(cts, dialog.CancellationTokenSource);
-        });
-
-        cts.Cancel();
-        Assert.True(cts.IsCancellationRequested);
-        cts.Dispose();
     }
 
     // ── DownloadedFilePath ──────────────────────────────────────────────
