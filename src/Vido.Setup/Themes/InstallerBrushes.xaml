@@ -12,6 +12,7 @@
     <SolidColorBrush x:Key="HoverBackgroundBrush" Color="{StaticResource HoverBackgroundColor}" />
     <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="{StaticResource ButtonBackgroundColor}" />
     <SolidColorBrush x:Key="ButtonHoverBackgroundBrush" Color="{StaticResource ButtonHoverBackgroundColor}" />
+    <SolidColorBrush x:Key="ButtonDefaultBackgroundBrush" Color="{StaticResource ButtonDefaultBackgroundColor}" />
 
     <!-- Window Control Brushes -->
     <SolidColorBrush x:Key="WindowControlHoverBackgroundBrush" Color="{StaticResource WindowControlHoverBackgroundColor}" />

@@ -72,7 +72,7 @@
                         <Setter.Value>
                             <ControlTemplate TargetType="Button">
                                 <Border x:Name="ButtonBorder"
-                                        Background="{StaticResource ButtonBackgroundBrush}"
+                                        Background="{StaticResource ButtonDefaultBackgroundBrush}"
                                         CornerRadius="4">
                                     <TextBlock Text="Install"
                                                FontSize="14"
@@ -85,7 +85,7 @@
                                     <Trigger Property="IsMouseOver" Value="True">
                                         <Setter TargetName="ButtonBorder"
                                                 Property="Background"
-                                                Value="{StaticResource ButtonHoverBackgroundBrush}" />
+                                                Value="{StaticResource ButtonBackgroundBrush}" />
                                     </Trigger>
                                 </ControlTemplate.Triggers>
                             </ControlTemplate>
