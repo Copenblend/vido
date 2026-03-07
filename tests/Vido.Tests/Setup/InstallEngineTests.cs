@@ -18,39 +18,43 @@ namespace Vido.Tests.Setup;
 [Collection("Registry")]
 public sealed class InstallEngineTests : IDisposable
 {
-    private readonly InstallEngine _engine = new();
+    private readonly string _registryPrefix;
+    private readonly InstallEngine _engine;
     private readonly string _tempDir;
     private readonly List<string> _registryKeysToCleanup = [];
     private readonly List<string> _filesToCleanup = [];
     private readonly List<string> _dirsToCleanup = [];
 
-    /// <summary>
-    /// Test registry root path used to avoid polluting real registry keys during tests.
-    /// We use the real uninstall/install paths with the real GUID since the engine
-    /// writes to fixed paths. Tests clean up after themselves.
-    /// </summary>
-    private static string UninstallRegistryPath =>
-        $@"Software\Microsoft\Windows\CurrentVersion\Uninstall\{{{InstallEngine.UninstallGuid}}}";
+    private string UninstallRegistryPath =>
+        $@"{_registryPrefix}\Uninstall\{{{InstallEngine.UninstallGuid}}}";
 
-    private static string InstallPathRegistryPath => @"Software\Vido\Install";
+    private string InstallPathRegistryPath => $@"{_registryPrefix}\Install";
 
-    private static string ProgIdRegistryPath => $@"Software\Classes\{InstallEngine.ProgId}";
+    private string ProgIdRegistryPath => $@"{_registryPrefix}\Classes\{InstallEngine.ProgId}";
 
     public InstallEngineTests()
     {
+        _registryPrefix = $@"Software\VidoTests\{Guid.NewGuid():N}";
+        _engine = new InstallEngine(_registryPrefix);
         _tempDir = Path.Combine(Path.GetTempPath(), "VidoTests_" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(_tempDir);
     }
 
     public void Dispose()
     {
-        // Clean up registry keys created during tests.
-        // Use try/catch per key — Windows may still be finalising a
-        // delete-on-close and the key handle can briefly remain invalid.
+        // Each test uses unique registry paths under _registryPrefix,
+        // so we just delete the whole prefix tree — no cross-test races.
+        try { Registry.CurrentUser.DeleteSubKeyTree(_registryPrefix, throwOnMissingSubKey: false); }
+        catch (IOException) { /* key still being released */ }
+
+        // Also clean any individual keys registered for cleanup outside the prefix.
         foreach (var keyPath in _registryKeysToCleanup)
         {
+            if (keyPath.StartsWith(_registryPrefix, StringComparison.OrdinalIgnoreCase))
+                continue; // already handled above
+
             try { Registry.CurrentUser.DeleteSubKeyTree(keyPath, throwOnMissingSubKey: false); }
-            catch (IOException) { /* key still being released by previous test */ }
+            catch (IOException) { /* key still being released */ }
         }
 
         // Clean up files
@@ -280,18 +284,14 @@ public sealed class InstallEngineTests : IDisposable
     {
         _registryKeysToCleanup.Add(UninstallRegistryPath);
 
-        // Pre-clean and verify key is truly gone before writing
-        PreCleanRegistryKey(UninstallRegistryPath);
-
         var installDir = Path.Combine(_tempDir, "install_reg");
         Directory.CreateDirectory(installDir);
         File.WriteAllText(Path.Combine(installDir, "Vido.exe"), "dummy");
 
-        RetryOnRegistryConflict(() => _engine.RegisterUninstallEntry(installDir, "1.2.3"));
+        _engine.RegisterUninstallEntry(installDir, "1.2.3");
 
-        // The registry write may not be immediately visible; retry the read.
-        var version = RetryUntilNotNull(() => _engine.DetectExistingInstall());
-        Assert.Equal("1.2.3", version);
+        // Verify DetectExistingInstall returns the version we just wrote
+        Assert.Equal("1.2.3", _engine.DetectExistingInstall());
 
         // Verify other registry values
         using var key = Registry.CurrentUser.OpenSubKey(UninstallRegistryPath);
@@ -315,15 +315,14 @@ public sealed class InstallEngineTests : IDisposable
     {
         _registryKeysToCleanup.Add(UninstallRegistryPath);
 
-        // Pre-clean and verify key is truly gone before writing
         PreCleanRegistryKey(UninstallRegistryPath);
 
         var installDir = Path.Combine(_tempDir, "install_remove");
         Directory.CreateDirectory(installDir);
         File.WriteAllText(Path.Combine(installDir, "Vido.exe"), "dummy");
 
-        RetryOnRegistryConflict(() => _engine.RegisterUninstallEntry(installDir, "1.0.0"));
-        Assert.NotNull(RetryUntilNotNull(() => _engine.DetectExistingInstall()));
+        _engine.RegisterUninstallEntry(installDir, "1.0.0");
+        Assert.NotNull(_engine.DetectExistingInstall());
 
         _engine.RemoveUninstallEntry();
         Assert.Null(_engine.DetectExistingInstall());
@@ -339,8 +338,6 @@ public sealed class InstallEngineTests : IDisposable
     public void RegisterInstallPath_WritesPathToRegistry()
     {
         _registryKeysToCleanup.Add(InstallPathRegistryPath);
-        // Also clean up the parent key
-        _registryKeysToCleanup.Add(@"Software\Vido");
 
         var installDir = @"C:\TestInstall\Vido";
 
@@ -358,7 +355,6 @@ public sealed class InstallEngineTests : IDisposable
     public void RemoveInstallPath_RemovesRegistryKey()
     {
         _registryKeysToCleanup.Add(InstallPathRegistryPath);
-        _registryKeysToCleanup.Add(@"Software\Vido");
 
         _engine.RegisterInstallPath(@"C:\Test\Vido");
         _engine.RemoveInstallPath();
@@ -647,23 +643,15 @@ public sealed class InstallEngineTests : IDisposable
     }
 
     /// <summary>
-    /// Deletes a registry key with retry AND verifies it is truly gone at the
-    /// Windows kernel level before returning. This prevents zombie-key races
-    /// where CreateSubKey succeeds but SetValue silently targets a doomed handle.
+    /// Deletes a registry key with retry. Since each test uses a unique
+    /// registry prefix, zombie-key races from prior tests cannot occur.
+    /// This method only guards against transient IOException from concurrent
+    /// kernel operations within the same test.
     /// </summary>
     private static void PreCleanRegistryKey(string path)
     {
         RetryOnRegistryConflict(() =>
             Registry.CurrentUser.DeleteSubKeyTree(path, throwOnMissingSubKey: false));
-
-        // Wait until the key is truly gone
-        for (int i = 0; i < 10; i++)
-        {
-            using var k = Registry.CurrentUser.OpenSubKey(path);
-            if (k is null)
-                return;
-            Thread.Sleep(100 * (i + 1));
-        }
     }
 
     /// <summary>

@@ -1032,9 +1032,8 @@ public class PulseRealtimeServiceTests
         bus.Publish(MakeVideoLoaded());
         engine.SetEnabled(true);
 
-        var receivedMap = await Task.WhenAny(tcs.Task, Task.Delay(5000)) == tcs.Task
-            ? tcs.Task.Result
-            : null;
+        var completed = await Task.WhenAny(tcs.Task, Task.Delay(5000));
+        var receivedMap = completed == tcs.Task ? await tcs.Task : null;
         Assert.NotNull(receivedMap);
     }
 

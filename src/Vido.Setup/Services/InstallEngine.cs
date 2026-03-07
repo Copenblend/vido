@@ -47,6 +47,42 @@ public sealed class InstallEngine
 
     private static string ProgIdRegistryPath => $@"Software\Classes\{ProgId}";
 
+    private readonly string _uninstallRegistryPath;
+    private readonly string _installPathRegistryPath;
+    private readonly string _progIdRegistryPath;
+
+    /// <summary>
+    /// Creates a new <see cref="InstallEngine"/> using production registry paths.
+    /// </summary>
+    public InstallEngine() : this(null) { }
+
+    /// <summary>
+    /// Creates a new <see cref="InstallEngine"/> with an optional registry key
+    /// prefix for test isolation.  When <paramref name="registryKeyPrefix"/> is
+    /// provided, all registry operations target paths under that prefix instead
+    /// of the shared production paths, eliminating Windows kernel zombie-key
+    /// races between tests and the real installation.
+    /// </summary>
+    /// <param name="registryKeyPrefix">
+    /// Registry path prefix (e.g. <c>"Software\VidoTests\{guid}"</c>).
+    /// When <c>null</c>, standard production paths are used.
+    /// </param>
+    public InstallEngine(string? registryKeyPrefix)
+    {
+        if (registryKeyPrefix is null)
+        {
+            _uninstallRegistryPath = UninstallRegistryPath;
+            _installPathRegistryPath = InstallPathRegistryPath;
+            _progIdRegistryPath = ProgIdRegistryPath;
+        }
+        else
+        {
+            _uninstallRegistryPath = $@"{registryKeyPrefix}\Uninstall\{{{UninstallGuid}}}";
+            _installPathRegistryPath = $@"{registryKeyPrefix}\Install";
+            _progIdRegistryPath = $@"{registryKeyPrefix}\Classes\{ProgId}";
+        }
+    }
+
     /// <summary>
     /// Extracts the contents of a zip stream to the specified install directory.
     /// Reports progress via <paramref name="progress"/> as a value from 0.0 to 1.0
@@ -177,10 +213,10 @@ public sealed class InstallEngine
 
         // Create ProgID: HKCU\Software\Classes\Vido.VideoFile
         WriteAndVerifyRegistryValue(
-            ProgIdRegistryPath,
+            _progIdRegistryPath,
             () =>
             {
-                using var progIdKey = Registry.CurrentUser.CreateSubKey(ProgIdRegistryPath);
+                using var progIdKey = Registry.CurrentUser.CreateSubKey(_progIdRegistryPath);
                 progIdKey.SetValue(null, "Vido Video File");
 
                 using var iconKey = progIdKey.CreateSubKey("DefaultIcon");
@@ -232,7 +268,7 @@ public sealed class InstallEngine
 
         // Remove ProgID
         RetryOnRegistryConflict(() =>
-            Registry.CurrentUser.DeleteSubKeyTree(ProgIdRegistryPath, throwOnMissingSubKey: false));
+            Registry.CurrentUser.DeleteSubKeyTree(_progIdRegistryPath, throwOnMissingSubKey: false));
 
         SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, IntPtr.Zero, IntPtr.Zero);
     }
@@ -259,7 +295,7 @@ public sealed class InstallEngine
         {
             try
             {
-                using (var key = Registry.CurrentUser.CreateSubKey(UninstallRegistryPath))
+                using (var key = Registry.CurrentUser.CreateSubKey(_uninstallRegistryPath))
                 {
                     key.SetValue("DisplayName", "Vido");
                     key.SetValue("DisplayVersion", version);
@@ -284,7 +320,7 @@ public sealed class InstallEngine
 
                 // Verify the write actually persisted using the unique marker,
                 // not a data value that could match stale zombie data.
-                using (var verify = Registry.CurrentUser.OpenSubKey(UninstallRegistryPath, writable: true))
+                using (var verify = Registry.CurrentUser.OpenSubKey(_uninstallRegistryPath, writable: true))
                 {
                     if (verify?.GetValue("_WriteMarker") as string == writeMarker)
                     {
@@ -308,7 +344,7 @@ public sealed class InstallEngine
     public void RemoveUninstallEntry()
     {
         RetryOnRegistryConflict(() =>
-            Registry.CurrentUser.DeleteSubKeyTree(UninstallRegistryPath, throwOnMissingSubKey: false));
+            Registry.CurrentUser.DeleteSubKeyTree(_uninstallRegistryPath, throwOnMissingSubKey: false));
     }
 
     /// <summary>
@@ -318,10 +354,10 @@ public sealed class InstallEngine
     public void RegisterInstallPath(string installDir)
     {
         WriteAndVerifyRegistryValue(
-            InstallPathRegistryPath,
+            _installPathRegistryPath,
             () =>
             {
-                using var key = Registry.CurrentUser.CreateSubKey(InstallPathRegistryPath);
+                using var key = Registry.CurrentUser.CreateSubKey(_installPathRegistryPath);
                 key.SetValue("Path", installDir);
             });
     }
@@ -332,7 +368,7 @@ public sealed class InstallEngine
     public void RemoveInstallPath()
     {
         RetryOnRegistryConflict(() =>
-            Registry.CurrentUser.DeleteSubKeyTree(InstallPathRegistryPath, throwOnMissingSubKey: false));
+            Registry.CurrentUser.DeleteSubKeyTree(_installPathRegistryPath, throwOnMissingSubKey: false));
     }
 
     /// <summary>
@@ -341,7 +377,7 @@ public sealed class InstallEngine
     /// <returns>The installed version string, or <c>null</c> if not installed.</returns>
     public string? DetectExistingInstall()
     {
-        using var key = Registry.CurrentUser.OpenSubKey(UninstallRegistryPath);
+        using var key = Registry.CurrentUser.OpenSubKey(_uninstallRegistryPath);
         return key?.GetValue("DisplayVersion") as string;
     }
 

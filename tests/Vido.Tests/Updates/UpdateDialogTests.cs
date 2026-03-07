@@ -247,7 +247,9 @@ public sealed class UpdateDialogTests
 
     private static void EnsureApplication()
     {
-        if (Application.Current is null)
+        if (Application.Current is not null) return;
+
+        try
         {
             var app = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
             app.Resources.MergedDictionaries.Add(new ResourceDictionary
@@ -258,6 +260,10 @@ public sealed class UpdateDialogTests
             {
                 Source = new Uri("pack://application:,,,/Vido.Views;component/Themes/Brushes.xaml")
             });
+        }
+        catch (InvalidOperationException)
+        {
+            // Application already exists in this AppDomain from another test/thread.
         }
     }
 

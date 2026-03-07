@@ -20,30 +20,43 @@ namespace Vido.Tests.Setup;
 [Collection("Registry")]
 public sealed class InstallerViewModelTests : IDisposable
 {
-    private readonly InstallEngine _engine = new();
+    private readonly string _registryPrefix;
+    private readonly InstallEngine _engine;
     private readonly string _tempDir;
     private readonly List<string> _registryKeysToCleanup = [];
     private readonly List<string> _filesToCleanup = [];
     private readonly List<string> _dirsToCleanup = [];
     private bool _windowClosed;
 
-    private static string UninstallRegistryPath =>
-        $@"Software\Microsoft\Windows\CurrentVersion\Uninstall\{{{InstallEngine.UninstallGuid}}}";
+    private string UninstallRegistryPath =>
+        $@"{_registryPrefix}\Uninstall\{{{InstallEngine.UninstallGuid}}}";
 
-    private static string InstallPathRegistryPath => @"Software\Vido\Install";
+    private string InstallPathRegistryPath => $@"{_registryPrefix}\Install";
 
-    private static string ProgIdRegistryPath => $@"Software\Classes\{InstallEngine.ProgId}";
+    private string ProgIdRegistryPath => $@"{_registryPrefix}\Classes\{InstallEngine.ProgId}";
 
     public InstallerViewModelTests()
     {
+        _registryPrefix = $@"Software\VidoTests\{Guid.NewGuid():N}";
+        _engine = new InstallEngine(_registryPrefix);
         _tempDir = Path.Combine(Path.GetTempPath(), "VidoTests_" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(_tempDir);
     }
 
     public void Dispose()
     {
+        // Each test uses unique registry paths under _registryPrefix,
+        // so we just delete the whole prefix tree — no cross-test races.
+        try { Registry.CurrentUser.DeleteSubKeyTree(_registryPrefix, throwOnMissingSubKey: false); }
+        catch (IOException) { /* key still being released */ }
+
+        // Also clean any individual keys registered outside the prefix
+        // (e.g. per-extension keys under Software\Classes).
         foreach (var keyPath in _registryKeysToCleanup)
         {
+            if (keyPath.StartsWith(_registryPrefix, StringComparison.OrdinalIgnoreCase))
+                continue;
+
             try { Registry.CurrentUser.DeleteSubKeyTree(keyPath, throwOnMissingSubKey: false); }
             catch (IOException) { /* key still being released */ }
         }
@@ -75,24 +88,15 @@ public sealed class InstallerViewModelTests : IDisposable
     }
 
     /// <summary>
-    /// Pre-cleans shared registry paths with retry, so that a prior test's
-    /// Dispose <c>DeleteSubKeyTree</c> (which is async at the Windows kernel level)
-    /// does not race with this test's writes.
+    /// Pre-cleans registry paths with retry. Since each test uses a unique
+    /// registry prefix, zombie-key races from prior tests cannot occur.
     /// </summary>
-    private void PreCleanRegistry(params string[] paths)
+    private static void PreCleanRegistry(params string[] paths)
     {
         foreach (var path in paths)
         {
             RetryOnRegistryConflict(() =>
                 Registry.CurrentUser.DeleteSubKeyTree(path, throwOnMissingSubKey: false));
-
-            // Wait until the key is truly gone at the kernel level.
-            var p = path; // capture for lambda
-            RetryUntil(() =>
-            {
-                using var k = Registry.CurrentUser.OpenSubKey(p);
-                return k is null;
-            });
         }
     }
 
@@ -113,20 +117,6 @@ public sealed class InstallerViewModelTests : IDisposable
     }
 
     /// <summary>
-    /// Retries a predicate until it returns true, to handle registry writes
-    /// that are not immediately visible to subsequent reads.
-    /// </summary>
-    private static void RetryUntil(Func<bool> predicate, int maxAttempts = 10)
-    {
-        for (int i = 0; i < maxAttempts; i++)
-        {
-            if (predicate())
-                return;
-            if (i < maxAttempts - 1)
-                Thread.Sleep(100 * (i + 1));
-        }
-    }
-
     // ── Constructor ──
 
     /// <summary>
@@ -181,9 +171,7 @@ public sealed class InstallerViewModelTests : IDisposable
     [Fact]
     public void Constructor_NoExistingInstall_ExistingVersionIsNull()
     {
-        // Pre-clean with retry — prior test Dispose may still be finalising.
-        PreCleanRegistry(UninstallRegistryPath);
-
+        // Each test uses a unique registry prefix, so no cleanup needed
         var vm = CreateViewModel();
 
         Assert.Null(vm.ExistingVersion);
@@ -196,15 +184,11 @@ public sealed class InstallerViewModelTests : IDisposable
     [Fact]
     public void Constructor_ExistingInstall_DetectsVersion()
     {
-        // Pre-clean with retry — prior test Dispose may still be finalising.
-        PreCleanRegistry(UninstallRegistryPath);
-
-        // Create a fake uninstall registry entry
-        RetryOnRegistryConflict(() =>
+        // Create a fake uninstall registry entry in the test-specific prefix
+        using (var key = Registry.CurrentUser.CreateSubKey(UninstallRegistryPath))
         {
-            using var key = Registry.CurrentUser.CreateSubKey(UninstallRegistryPath);
             key.SetValue("DisplayVersion", "1.2.3");
-        });
+        }
         _registryKeysToCleanup.Add(UninstallRegistryPath);
 
         var vm = CreateViewModel();
@@ -285,22 +269,17 @@ public sealed class InstallerViewModelTests : IDisposable
 
         await vm.InstallCommand.ExecuteAsync(null);
 
-        // Registry writes may not be immediately visible — retry reads.
-        RegistryKey? key = null;
-        RetryUntil(() => (key = Registry.CurrentUser.OpenSubKey(UninstallRegistryPath)) is not null);
-        Assert.NotNull(key);
-        using (key)
+        // With unique registry paths per test, values should be immediately visible
+        using (var k = Registry.CurrentUser.OpenSubKey(UninstallRegistryPath))
         {
-            Assert.Equal("Vido", key!.GetValue("DisplayName"));
+            Assert.NotNull(k);
+            Assert.Equal("Vido", k.GetValue("DisplayName"));
         }
 
-        // Verify install path exists
-        RegistryKey? installKey = null;
-        RetryUntil(() => (installKey = Registry.CurrentUser.OpenSubKey(InstallPathRegistryPath)) is not null);
-        Assert.NotNull(installKey);
-        using (installKey)
+        using (var k = Registry.CurrentUser.OpenSubKey(InstallPathRegistryPath))
         {
-            Assert.NotNull(installKey!.GetValue("Path"));
+            Assert.NotNull(k);
+            Assert.NotNull(k.GetValue("Path"));
         }
     }
 
@@ -361,11 +340,9 @@ public sealed class InstallerViewModelTests : IDisposable
 
         await vm.InstallCommand.ExecuteAsync(null);
 
-        // Verify ProgID was created — retry read as write may not be immediately visible.
-        RegistryKey? progIdKey = null;
-        RetryUntil(() => (progIdKey = Registry.CurrentUser.OpenSubKey(ProgIdRegistryPath)) is not null);
+        // Verify ProgID was created under the test-specific prefix
+        using var progIdKey = Registry.CurrentUser.OpenSubKey(ProgIdRegistryPath);
         Assert.NotNull(progIdKey);
-        progIdKey!.Dispose();
     }
 
     /// <summary>

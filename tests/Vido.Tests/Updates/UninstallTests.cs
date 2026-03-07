@@ -37,6 +37,14 @@ public sealed class UninstallTests : IDisposable
         {
             try { Registry.CurrentUser.DeleteSubKeyTree(keyPath, throwOnMissingSubKey: false); }
             catch (IOException) { /* key still being released */ }
+
+            // Wait for the kernel-level deletion to truly complete.
+            for (int i = 0; i < 20; i++)
+            {
+                using var k = Registry.CurrentUser.OpenSubKey(keyPath);
+                if (k is null) break;
+                Thread.Sleep(50 * (i + 1));
+            }
         }
 
         foreach (var file in _filesToCleanup)
