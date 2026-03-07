@@ -5,16 +5,16 @@
 .DESCRIPTION
     Publishes Vido as a self-contained win-x64 application and creates:
       - A portable zip archive
-      - An MSI installer (requires WiX 5 CLI)
+      - A custom setup EXE installer (Vido.Setup)
 
-    If a code signing certificate is provided, the EXE and MSI are signed.
+    If a code signing certificate is provided, the EXE and setup are signed.
     Signing eliminates the Windows SmartScreen "Unknown Publisher" warning.
 
 .PARAMETER Configuration
     Build configuration. Default: Release.
 
 .PARAMETER SkipInstaller
-    Skip MSI installer creation.
+    Skip setup EXE installer creation.
 
 .PARAMETER OutputDir
     Directory for final artifacts. Default: ./publish.
@@ -53,7 +53,7 @@ $ErrorActionPreference = "Continue"
 
 $Root = $PSScriptRoot
 $AppProject = Join-Path $Root "src\Vido.App\Vido.App.csproj"
-$InstallerProject = Join-Path $Root "installer\Vido.Installer.wixproj"
+$SetupProject = Join-Path $Root "src\Vido.Setup\VidoSetup.csproj"
 $PublishDir = Join-Path $Root $OutputDir
 $PortableDir = Join-Path $PublishDir "portable"
 
@@ -157,41 +157,42 @@ Compress-Archive -Path "$PortableDir\*" -DestinationPath $ZipPath -CompressionLe
 $zipSizeMB = [math]::Round((Get-Item $ZipPath).Length / 1MB, 1)
 Write-Host "  Created: $ZipName - $zipSizeMB MB" -ForegroundColor Green
 
-# Step 5: Build MSI Installer
+# Step 5: Build Custom Installer
 if (-not $SkipInstaller) {
-    Write-Host "[5/5] Building MSI installer..." -ForegroundColor Yellow
+    Write-Host "[5/5] Building custom installer..." -ForegroundColor Yellow
 
-    $wixCmd = Get-Command wix -ErrorAction SilentlyContinue
-    if (-not $wixCmd) {
-        Write-Host "  WiX CLI not found. Install with: dotnet tool install --global wix" -ForegroundColor Red
-        Write-Host "  Skipping installer build." -ForegroundColor Red
+    # Create payload zip from portable output
+    $PayloadZip = Join-Path $PublishDir "payload.zip"
+    if (Test-Path $PayloadZip) { Remove-Item $PayloadZip }
+    Compress-Archive -Path "$PortableDir\*" -DestinationPath $PayloadZip -CompressionLevel Optimal
+
+    # Build and publish Vido.Setup as single-file EXE
+    $SetupOutput = Join-Path $PublishDir "setup"
+    dotnet publish $SetupProject `
+        -c $Configuration `
+        -r win-x64 `
+        --self-contained `
+        -o $SetupOutput `
+        "-p:PublishSingleFile=true" `
+        "-p:PayloadZip=$PayloadZip"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  Installer build failed." -ForegroundColor Red
     }
     else {
-        dotnet build $InstallerProject `
-            -c $Configuration `
-            "-p:PublishDir=$PortableDir" `
-            "-p:ProductVersion=$Version"
-        if ($LASTEXITCODE -ne 0) {
-            Write-Host "  MSI build failed. You may need to install WiX extensions:" -ForegroundColor Red
-            Write-Host "    wix extension add WixToolset.UI.wixext/5.0.2 -g" -ForegroundColor Red
-            Write-Host "    wix extension add WixToolset.Util.wixext/5.0.2 -g" -ForegroundColor Red
-        }
-        else {
-            $MsiName = "Vido-$Version-win-x64.msi"
-            $installerBin = Join-Path (Split-Path $InstallerProject) "bin"
-            $msiSource = Get-ChildItem $installerBin -Filter "*.msi" -Recurse | Select-Object -First 1
-            if ($msiSource) {
-                $MsiPath = Join-Path $PublishDir $MsiName
-                Copy-Item $msiSource.FullName $MsiPath -Force
-                Invoke-CodeSign $MsiPath "Vido Installer"
-                $msiSizeMB = [math]::Round((Get-Item $MsiPath).Length / 1MB, 1)
-                Write-Host "  Created: $MsiName - $msiSizeMB MB" -ForegroundColor Green
-            }
-            else {
-                Write-Host "  MSI file not found in build output." -ForegroundColor Red
-            }
-        }
+        $SetupName = "VidoSetup-$Version.exe"
+        $setupSource = Join-Path $SetupOutput "VidoSetup.exe"
+        $SetupPath = Join-Path $PublishDir $SetupName
+        Copy-Item $setupSource $SetupPath -Force
+
+        Invoke-CodeSign $SetupPath "Vido Installer"
+
+        $setupSizeMB = [math]::Round((Get-Item $SetupPath).Length / 1MB, 1)
+        Write-Host "  Created: $SetupName - $setupSizeMB MB" -ForegroundColor Green
     }
+
+    # Clean up intermediate files
+    Remove-Item $PayloadZip -Force -ErrorAction SilentlyContinue
+    Remove-Item $SetupOutput -Recurse -Force -ErrorAction SilentlyContinue
 }
 else {
     Write-Host "[5/5] Skipping installer build." -ForegroundColor Gray

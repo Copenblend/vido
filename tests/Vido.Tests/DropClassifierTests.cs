@@ -25,8 +25,12 @@ public sealed class DropClassifierTests : IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (Directory.Exists(_tempDir))
-            Directory.Delete(_tempDir, recursive: true);
+        try
+        {
+            if (Directory.Exists(_tempDir))
+                Directory.Delete(_tempDir, recursive: true);
+        }
+        catch (IOException) { /* temp dir locked momentarily */ }
     }
 
     // ── Classify ──

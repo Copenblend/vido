@@ -34,22 +34,29 @@ public sealed class UninstallTests : IDisposable
     public void Dispose()
     {
         foreach (var keyPath in _registryKeysToCleanup)
-            Registry.CurrentUser.DeleteSubKeyTree(keyPath, throwOnMissingSubKey: false);
+        {
+            try { Registry.CurrentUser.DeleteSubKeyTree(keyPath, throwOnMissingSubKey: false); }
+            catch (IOException) { /* key still being released */ }
+        }
 
         foreach (var file in _filesToCleanup)
         {
-            if (File.Exists(file))
-                File.Delete(file);
+            try { if (File.Exists(file)) File.Delete(file); }
+            catch (IOException) { /* file locked momentarily */ }
         }
 
         foreach (var dir in _dirsToCleanup)
         {
-            if (Directory.Exists(dir))
-                Directory.Delete(dir, recursive: true);
+            try { if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true); }
+            catch (IOException) { /* directory locked momentarily */ }
         }
 
-        if (Directory.Exists(_tempDir))
-            Directory.Delete(_tempDir, recursive: true);
+        try
+        {
+            if (Directory.Exists(_tempDir))
+                Directory.Delete(_tempDir, recursive: true);
+        }
+        catch (IOException) { /* temp dir locked momentarily */ }
     }
 
     // ── Constants ──────────────────────────────────────────────────────

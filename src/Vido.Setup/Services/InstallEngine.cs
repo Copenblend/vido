@@ -116,7 +116,21 @@ public sealed class InstallEngine
         var shortcutPath = Path.Combine(desktopPath, "Vido.lnk");
         var targetPath = Path.Combine(installDir, "Vido.exe");
 
-        CreateShortcut(shortcutPath, targetPath, installDir);
+        // Retry on transient IO/COM errors from shell indexing or antivirus.
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            try
+            {
+                CreateShortcut(shortcutPath, targetPath, installDir);
+                return;
+            }
+            catch (Exception ex) when (
+                attempt < 4 &&
+                (ex is IOException || ex.HResult == unchecked((int)0x80020009)))
+            {
+                Thread.Sleep(100 * (attempt + 1));
+            }
+        }
     }
 
     /// <summary>
@@ -127,12 +141,27 @@ public sealed class InstallEngine
     {
         var programsPath = Environment.GetFolderPath(Environment.SpecialFolder.Programs);
         var vidoFolder = Path.Combine(programsPath, "Vido");
-        Directory.CreateDirectory(vidoFolder);
-
         var shortcutPath = Path.Combine(vidoFolder, "Vido.lnk");
         var targetPath = Path.Combine(installDir, "Vido.exe");
 
-        CreateShortcut(shortcutPath, targetPath, installDir);
+        // Directory creation + COM shortcut save can race with Windows Explorer
+        // or antivirus indexing; retry on transient IO errors.
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            try
+            {
+                Directory.CreateDirectory(vidoFolder);
+                CreateShortcut(shortcutPath, targetPath, installDir);
+                return;
+            }
+            catch (Exception ex) when (
+                attempt < 4 &&
+                (ex is IOException || ex is DirectoryNotFoundException ||
+                 ex.HResult == unchecked((int)0x80020009))) // DISP_E_EXCEPTION from COM
+            {
+                Thread.Sleep(100 * (attempt + 1));
+            }
+        }
     }
 
     /// <summary>
@@ -147,23 +176,31 @@ public sealed class InstallEngine
         var exePath = Path.Combine(installDir, "Vido.exe");
 
         // Create ProgID: HKCU\Software\Classes\Vido.VideoFile
-        using (var progIdKey = Registry.CurrentUser.CreateSubKey(ProgIdRegistryPath))
-        {
-            progIdKey.SetValue(null, "Vido Video File");
+        WriteAndVerifyRegistryValue(
+            ProgIdRegistryPath,
+            () =>
+            {
+                using var progIdKey = Registry.CurrentUser.CreateSubKey(ProgIdRegistryPath);
+                progIdKey.SetValue(null, "Vido Video File");
 
-            using var iconKey = progIdKey.CreateSubKey("DefaultIcon");
-            iconKey.SetValue(null, $"\"{exePath}\",0");
+                using var iconKey = progIdKey.CreateSubKey("DefaultIcon");
+                iconKey.SetValue(null, $"\"{exePath}\",0");
 
-            using var commandKey = progIdKey.CreateSubKey(@"shell\open\command");
-            commandKey.SetValue(null, $"\"{exePath}\" \"%1\"");
-        }
+                using var commandKey = progIdKey.CreateSubKey(@"shell\open\command");
+                commandKey.SetValue(null, $"\"{exePath}\" \"%1\"");
+            });
 
         // Register each extension
         foreach (var ext in extensions)
         {
             var extKeyPath = $@"Software\Classes\{ext}";
-            using var extKey = Registry.CurrentUser.CreateSubKey(extKeyPath);
-            extKey.SetValue(null, ProgId);
+            WriteAndVerifyRegistryValue(
+                extKeyPath,
+                () =>
+                {
+                    using var extKey = Registry.CurrentUser.CreateSubKey(extKeyPath);
+                    extKey.SetValue(null, ProgId);
+                });
         }
 
         // Notify the shell of the association changes
@@ -188,12 +225,14 @@ public sealed class InstallEngine
             var value = extKey.GetValue(null) as string;
             if (string.Equals(value, ProgId, StringComparison.OrdinalIgnoreCase))
             {
-                Registry.CurrentUser.DeleteSubKeyTree(extKeyPath, throwOnMissingSubKey: false);
+                RetryOnRegistryConflict(() =>
+                    Registry.CurrentUser.DeleteSubKeyTree(extKeyPath, throwOnMissingSubKey: false));
             }
         }
 
         // Remove ProgID
-        Registry.CurrentUser.DeleteSubKeyTree(ProgIdRegistryPath, throwOnMissingSubKey: false);
+        RetryOnRegistryConflict(() =>
+            Registry.CurrentUser.DeleteSubKeyTree(ProgIdRegistryPath, throwOnMissingSubKey: false));
 
         SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, IntPtr.Zero, IntPtr.Zero);
     }
@@ -209,25 +248,57 @@ public sealed class InstallEngine
     {
         var exePath = Path.Combine(installDir, "Vido.exe");
 
-        using var key = Registry.CurrentUser.CreateSubKey(UninstallRegistryPath);
-        key.SetValue("DisplayName", "Vido");
-        key.SetValue("DisplayVersion", version);
-        key.SetValue("Publisher", "Vido");
-        key.SetValue("InstallLocation", installDir);
-        key.SetValue("UninstallString", $"\"{exePath}\" --uninstall");
-        key.SetValue("DisplayIcon", $"{exePath},0");
-        key.SetValue("NoModify", 1, RegistryValueKind.DWord);
-        key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
-        key.SetValue("InstallDate", DateTime.Now.ToString("yyyyMMdd"));
+        // Windows may still be finalising a prior DeleteSubKeyTree at the kernel
+        // level.  CreateSubKey can succeed on a key that is still marked for
+        // deletion, causing the data to silently vanish once the kernel completes
+        // the delete.  We use a unique write-marker to detect zombie handles and
+        // retry the entire write‐then‐verify cycle to tolerate this race.
+        var writeMarker = Guid.NewGuid().ToString("N");
 
-        // Calculate estimated size in KB
-        var installDirInfo = new DirectoryInfo(installDir);
-        if (installDirInfo.Exists)
+        for (int attempt = 0; attempt < 10; attempt++)
         {
-            var sizeKb = (int)(installDirInfo
-                .EnumerateFiles("*", SearchOption.AllDirectories)
-                .Sum(f => f.Length) / 1024);
-            key.SetValue("EstimatedSize", sizeKb, RegistryValueKind.DWord);
+            try
+            {
+                using (var key = Registry.CurrentUser.CreateSubKey(UninstallRegistryPath))
+                {
+                    key.SetValue("DisplayName", "Vido");
+                    key.SetValue("DisplayVersion", version);
+                    key.SetValue("Publisher", "Vido");
+                    key.SetValue("InstallLocation", installDir);
+                    key.SetValue("UninstallString", $"\"{exePath}\" --uninstall");
+                    key.SetValue("DisplayIcon", $"{exePath},0");
+                    key.SetValue("NoModify", 1, RegistryValueKind.DWord);
+                    key.SetValue("NoRepair", 1, RegistryValueKind.DWord);
+                    key.SetValue("InstallDate", DateTime.Now.ToString("yyyyMMdd"));
+                    key.SetValue("_WriteMarker", writeMarker);
+
+                    var installDirInfo = new DirectoryInfo(installDir);
+                    if (installDirInfo.Exists)
+                    {
+                        var sizeKb = (int)(installDirInfo
+                            .EnumerateFiles("*", SearchOption.AllDirectories)
+                            .Sum(f => f.Length) / 1024);
+                        key.SetValue("EstimatedSize", sizeKb, RegistryValueKind.DWord);
+                    }
+                }
+
+                // Verify the write actually persisted using the unique marker,
+                // not a data value that could match stale zombie data.
+                using (var verify = Registry.CurrentUser.OpenSubKey(UninstallRegistryPath, writable: true))
+                {
+                    if (verify?.GetValue("_WriteMarker") as string == writeMarker)
+                    {
+                        verify.DeleteValue("_WriteMarker", throwOnMissingValue: false);
+                        return;
+                    }
+                }
+            }
+            catch (IOException) when (attempt < 9)
+            {
+                // Key still marked for deletion — retry
+            }
+
+            Thread.Sleep(100 * (attempt + 1));
         }
     }
 
@@ -236,7 +307,8 @@ public sealed class InstallEngine
     /// </summary>
     public void RemoveUninstallEntry()
     {
-        Registry.CurrentUser.DeleteSubKeyTree(UninstallRegistryPath, throwOnMissingSubKey: false);
+        RetryOnRegistryConflict(() =>
+            Registry.CurrentUser.DeleteSubKeyTree(UninstallRegistryPath, throwOnMissingSubKey: false));
     }
 
     /// <summary>
@@ -245,8 +317,13 @@ public sealed class InstallEngine
     /// <param name="installDir">The Vido installation directory.</param>
     public void RegisterInstallPath(string installDir)
     {
-        using var key = Registry.CurrentUser.CreateSubKey(InstallPathRegistryPath);
-        key.SetValue("Path", installDir);
+        WriteAndVerifyRegistryValue(
+            InstallPathRegistryPath,
+            () =>
+            {
+                using var key = Registry.CurrentUser.CreateSubKey(InstallPathRegistryPath);
+                key.SetValue("Path", installDir);
+            });
     }
 
     /// <summary>
@@ -254,7 +331,8 @@ public sealed class InstallEngine
     /// </summary>
     public void RemoveInstallPath()
     {
-        Registry.CurrentUser.DeleteSubKeyTree(InstallPathRegistryPath, throwOnMissingSubKey: false);
+        RetryOnRegistryConflict(() =>
+            Registry.CurrentUser.DeleteSubKeyTree(InstallPathRegistryPath, throwOnMissingSubKey: false));
     }
 
     /// <summary>
@@ -322,4 +400,65 @@ public sealed class InstallEngine
     [DllImport("shell32.dll", CharSet = CharSet.Auto)]
     private static extern void SHChangeNotify(
         uint wEventId, uint uFlags, IntPtr dwItem1, IntPtr dwItem2);
+
+    /// <summary>
+    /// Retries an action that may fail because Windows is still finalising
+    /// a registry key deletion (async at the kernel level).
+    /// </summary>
+    private static void RetryOnRegistryConflict(Action action, int maxAttempts = 10)
+    {
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            try
+            {
+                action();
+                return;
+            }
+            catch (IOException) when (i < maxAttempts - 1)
+            {
+                Thread.Sleep(100 * (i + 1));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Writes registry values via <paramref name="writeAction"/>, adding a unique
+    /// write-marker to verify the data persisted (guards against zombie handles
+    /// from prior deletions still being finalised by the Windows kernel).
+    /// </summary>
+    private static void WriteAndVerifyRegistryValue(
+        string keyPath, Action writeAction)
+    {
+        var marker = Guid.NewGuid().ToString("N");
+
+        for (int attempt = 0; attempt < 10; attempt++)
+        {
+            try
+            {
+                writeAction();
+
+                // Write a unique marker to detect zombie handles
+                using (var markerKey = Registry.CurrentUser.OpenSubKey(keyPath, writable: true))
+                {
+                    markerKey?.SetValue("_WriteMarker", marker);
+                }
+
+                // Verify the marker survived (proves the handle isn't a zombie)
+                using (var verify = Registry.CurrentUser.OpenSubKey(keyPath, writable: true))
+                {
+                    if (verify?.GetValue("_WriteMarker") as string == marker)
+                    {
+                        verify.DeleteValue("_WriteMarker", throwOnMissingValue: false);
+                        return;
+                    }
+                }
+            }
+            catch (IOException) when (attempt < 9)
+            {
+                // Key still marked for deletion — retry
+            }
+
+            Thread.Sleep(100 * (attempt + 1));
+        }
+    }
 }

@@ -15,6 +15,7 @@ namespace Vido.Tests.Setup;
 /// shortcut creation, and file association management.
 /// </summary>
 [SupportedOSPlatform("windows")]
+[Collection("Registry")]
 public sealed class InstallEngineTests : IDisposable
 {
     private readonly InstallEngine _engine = new();
@@ -43,28 +44,35 @@ public sealed class InstallEngineTests : IDisposable
 
     public void Dispose()
     {
-        // Clean up registry keys created during tests
+        // Clean up registry keys created during tests.
+        // Use try/catch per key — Windows may still be finalising a
+        // delete-on-close and the key handle can briefly remain invalid.
         foreach (var keyPath in _registryKeysToCleanup)
         {
-            Registry.CurrentUser.DeleteSubKeyTree(keyPath, throwOnMissingSubKey: false);
+            try { Registry.CurrentUser.DeleteSubKeyTree(keyPath, throwOnMissingSubKey: false); }
+            catch (IOException) { /* key still being released by previous test */ }
         }
 
         // Clean up files
         foreach (var file in _filesToCleanup)
         {
-            if (File.Exists(file))
-                File.Delete(file);
+            try { if (File.Exists(file)) File.Delete(file); }
+            catch (IOException) { /* file locked momentarily */ }
         }
 
         // Clean up directories
         foreach (var dir in _dirsToCleanup)
         {
-            if (Directory.Exists(dir))
-                Directory.Delete(dir, recursive: true);
+            try { if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true); }
+            catch (IOException) { /* directory locked momentarily */ }
         }
 
-        if (Directory.Exists(_tempDir))
-            Directory.Delete(_tempDir, recursive: true);
+        try
+        {
+            if (Directory.Exists(_tempDir))
+                Directory.Delete(_tempDir, recursive: true);
+        }
+        catch (IOException) { /* temp dir locked momentarily */ }
     }
 
     // ── DefaultInstallDir ──────────────────────────────────────────────
@@ -254,8 +262,9 @@ public sealed class InstallEngineTests : IDisposable
     [Fact]
     public void DetectExistingInstall_ReturnsNull_WhenNoRegistryKey()
     {
-        // Ensure the key doesn't exist
-        Registry.CurrentUser.DeleteSubKeyTree(UninstallRegistryPath, throwOnMissingSubKey: false);
+        // Ensure the key doesn't exist — wrap in retry because Windows may still
+        // be finalising a prior test's registry key deletion.
+        PreCleanRegistryKey(UninstallRegistryPath);
 
         var result = _engine.DetectExistingInstall();
 
@@ -271,13 +280,17 @@ public sealed class InstallEngineTests : IDisposable
     {
         _registryKeysToCleanup.Add(UninstallRegistryPath);
 
+        // Pre-clean and verify key is truly gone before writing
+        PreCleanRegistryKey(UninstallRegistryPath);
+
         var installDir = Path.Combine(_tempDir, "install_reg");
         Directory.CreateDirectory(installDir);
         File.WriteAllText(Path.Combine(installDir, "Vido.exe"), "dummy");
 
-        _engine.RegisterUninstallEntry(installDir, "1.2.3");
+        RetryOnRegistryConflict(() => _engine.RegisterUninstallEntry(installDir, "1.2.3"));
 
-        var version = _engine.DetectExistingInstall();
+        // The registry write may not be immediately visible; retry the read.
+        var version = RetryUntilNotNull(() => _engine.DetectExistingInstall());
         Assert.Equal("1.2.3", version);
 
         // Verify other registry values
@@ -302,12 +315,15 @@ public sealed class InstallEngineTests : IDisposable
     {
         _registryKeysToCleanup.Add(UninstallRegistryPath);
 
+        // Pre-clean and verify key is truly gone before writing
+        PreCleanRegistryKey(UninstallRegistryPath);
+
         var installDir = Path.Combine(_tempDir, "install_remove");
         Directory.CreateDirectory(installDir);
         File.WriteAllText(Path.Combine(installDir, "Vido.exe"), "dummy");
 
-        _engine.RegisterUninstallEntry(installDir, "1.0.0");
-        Assert.NotNull(_engine.DetectExistingInstall());
+        RetryOnRegistryConflict(() => _engine.RegisterUninstallEntry(installDir, "1.0.0"));
+        Assert.NotNull(RetryUntilNotNull(() => _engine.DetectExistingInstall()));
 
         _engine.RemoveUninstallEntry();
         Assert.Null(_engine.DetectExistingInstall());
@@ -516,8 +532,9 @@ public sealed class InstallEngineTests : IDisposable
             Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
             "Vido.lnk");
 
-        // Create a dummy shortcut file
-        File.WriteAllText(shortcutPath, "dummy");
+        // Create a dummy shortcut file — retry because Windows Explorer
+        // may briefly lock the path after a previous test's cleanup.
+        RetryOnIOConflict(() => File.WriteAllText(shortcutPath, "dummy"));
         _filesToCleanup.Add(shortcutPath);
 
         _engine.RemoveDesktopShortcut();
@@ -534,8 +551,13 @@ public sealed class InstallEngineTests : IDisposable
         var vidoFolder = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.Programs),
             "Vido");
-        Directory.CreateDirectory(vidoFolder);
-        File.WriteAllText(Path.Combine(vidoFolder, "Vido.lnk"), "dummy");
+        // Retry directory creation — another test's Dispose may be deleting
+        // the same folder concurrently.
+        RetryOnIOConflict(() =>
+        {
+            Directory.CreateDirectory(vidoFolder);
+            File.WriteAllText(Path.Combine(vidoFolder, "Vido.lnk"), "dummy");
+        });
         _dirsToCleanup.Add(vidoFolder);
 
         _engine.RemoveStartMenuShortcut();
@@ -602,5 +624,85 @@ public sealed class InstallEngineTests : IDisposable
 
         ms.Position = 0;
         return ms;
+    }
+
+    /// <summary>
+    /// Retries an action that may fail because Windows is still finalising
+    /// a registry key deletion from a prior test.
+    /// </summary>
+    private static void RetryOnRegistryConflict(Action action, int maxAttempts = 10)
+    {
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            try
+            {
+                action();
+                return;
+            }
+            catch (IOException) when (i < maxAttempts - 1)
+            {
+                Thread.Sleep(100 * (i + 1));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Deletes a registry key with retry AND verifies it is truly gone at the
+    /// Windows kernel level before returning. This prevents zombie-key races
+    /// where CreateSubKey succeeds but SetValue silently targets a doomed handle.
+    /// </summary>
+    private static void PreCleanRegistryKey(string path)
+    {
+        RetryOnRegistryConflict(() =>
+            Registry.CurrentUser.DeleteSubKeyTree(path, throwOnMissingSubKey: false));
+
+        // Wait until the key is truly gone
+        for (int i = 0; i < 10; i++)
+        {
+            using var k = Registry.CurrentUser.OpenSubKey(path);
+            if (k is null)
+                return;
+            Thread.Sleep(100 * (i + 1));
+        }
+    }
+
+    /// <summary>
+    /// Retries a function until it returns a non-null value, to handle
+    /// registry writes that are not immediately visible to subsequent reads.
+    /// </summary>
+    private static T? RetryUntilNotNull<T>(Func<T?> func, int maxAttempts = 10) where T : class
+    {
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            var result = func();
+            if (result is not null)
+                return result;
+            if (i < maxAttempts - 1)
+                Thread.Sleep(100 * (i + 1));
+        }
+        return func();
+    }
+
+    /// <summary>
+    /// Retries an action that may fail because of a transient file/directory lock.
+    /// </summary>
+    private static void RetryOnIOConflict(Action action, int maxAttempts = 10)
+    {
+        for (int i = 0; i < maxAttempts; i++)
+        {
+            try
+            {
+                action();
+                return;
+            }
+            catch (IOException) when (i < maxAttempts - 1)
+            {
+                Thread.Sleep(100 * (i + 1));
+            }
+            catch (UnauthorizedAccessException) when (i < maxAttempts - 1)
+            {
+                Thread.Sleep(100 * (i + 1));
+            }
+        }
     }
 }
