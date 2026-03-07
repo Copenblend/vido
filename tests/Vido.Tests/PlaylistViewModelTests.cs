@@ -803,8 +803,8 @@ public sealed class PlaylistViewModelTests : IDisposable
 
         _vm.HandleFileDrop([videoFile]);
 
-        // HandleFileDrop is async void — wait for async work to complete
-        await Task.Delay(500);
+        // HandleFileDrop is async void — poll for completion instead of fixed delay
+        await WaitUntil(() => _vm.Items.Count > 0);
 
         Assert.Single(_vm.Items);
     }
@@ -822,10 +822,9 @@ public sealed class PlaylistViewModelTests : IDisposable
 
         _vm.HandleFileDrop([vidplPath]);
 
-        // Give async load a moment
-        await Task.Delay(200);
+        // HandleFileDrop is async void — poll for playlist name change
+        await WaitUntil(() => _vm.PlaylistName == "test");
 
-        // The playlist should have been loaded (name changes from Untitled)
         Assert.Equal("test", _vm.PlaylistName);
     }
 
@@ -1163,5 +1162,12 @@ public sealed class PlaylistViewModelTests : IDisposable
         var path = Path.Combine(_tempDir, name);
         File.WriteAllText(path, "test");
         return path;
+    }
+
+    private static async Task WaitUntil(Func<bool> condition, int timeoutMs = 5000)
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (!condition() && sw.ElapsedMilliseconds < timeoutMs)
+            await Task.Delay(25);
     }
 }

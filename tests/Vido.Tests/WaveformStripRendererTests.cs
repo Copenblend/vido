@@ -419,11 +419,10 @@ public sealed class WaveformStripRendererTests : IDisposable
         var sw = System.Diagnostics.Stopwatch.StartNew();
         while (renderer.IsRendering && sw.ElapsedMilliseconds < timeoutMs)
         {
-            await Task.Delay(10);
+            await Task.Delay(20);
         }
 
-        // Give a small additional delay for the async void to complete and set IsRendering=false
-        if (renderer.IsRendering)
-            await Task.Delay(50);
+        // Give additional time for the async void to fully complete and set IsRendering=false
+        await Task.Delay(100);
     }
 }

@@ -69,8 +69,8 @@ public class SingleInstanceServiceTests
             service1.FileReceived += path => receivedPath.TrySetResult(path);
             service1.StartListening();
 
-            // Give the listener a moment to start
-            await Task.Delay(100);
+            // Give the pipe server time to start accepting connections
+            await Task.Delay(500);
 
             // Create second instance (will not be first)
             using var service2 = new SingleInstanceService(mutex + "_second", pipe);
@@ -105,7 +105,7 @@ public class SingleInstanceServiceTests
         service1.FileReceived += _ => received = true;
         service1.StartListening();
 
-        await Task.Delay(100);
+        await Task.Delay(500);
 
         // Send a relative path — should be rejected by the listener
         using var service2 = new SingleInstanceService(mutex + "_second", pipe);
@@ -119,7 +119,7 @@ public class SingleInstanceServiceTests
         }
 
         // Give time for processing
-        await Task.Delay(500);
+        await Task.Delay(1000);
 
         Assert.False(received, "FileReceived should not fire for a relative path");
     }
@@ -175,14 +175,14 @@ public class SingleInstanceServiceTests
         service1.FileReceived += _ => received = true;
         service1.StartListening();
 
-        await Task.Delay(100);
+        await Task.Delay(500);
 
         // Send a fully-qualified path that does not exist
         using var service2 = new SingleInstanceService(mutex + "_second", pipe);
         service2.SendFileToExistingInstance(@"C:\nonexistent\path\video.mp4");
 
         // Give time for processing
-        await Task.Delay(500);
+        await Task.Delay(1000);
 
         Assert.False(received, "FileReceived should not fire for a non-existent file");
     }
