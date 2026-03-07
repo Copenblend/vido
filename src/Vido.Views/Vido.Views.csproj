@@ -10,6 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Vido.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Resource Include="Assets\Vido.png" />
     <Resource Include="Assets\video-file-icon.png" />
     <Resource Include="Assets\Osr2Plus\connect-dot-green.png" />

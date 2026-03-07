@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\src\Vido.Services\Vido.Services.csproj" />
     <ProjectReference Include="..\..\src\Vido.ViewModels\Vido.ViewModels.csproj" />
     <ProjectReference Include="..\..\src\Vido.Setup\VidoSetup.csproj" />
+    <ProjectReference Include="..\..\src\Vido.Views\Vido.Views.csproj" />
   </ItemGroup>
 
 </Project>

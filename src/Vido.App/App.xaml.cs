@@ -22,6 +22,7 @@ using Vido.Services.SingleInstance;
 using Vido.Services.Video;
 using Vido.ViewModels;
 using Vido.Views;
+using Vido.Views.Updates;
 
 namespace Vido.App;
 
@@ -41,6 +42,15 @@ public partial class App : Application
     {
         var startupTimer = Stopwatch.StartNew();
         base.OnStartup(e);
+
+        // ── Uninstall mode ──
+        if (e.Args.Any(a => a.Equals("--uninstall", StringComparison.OrdinalIgnoreCase)))
+        {
+            var dialog = new UninstallDialog();
+            dialog.ShowDialog();
+            Shutdown();
+            return;
+        }
 
         // ── Single-instance check ──
         _singleInstanceService = new SingleInstanceService();
