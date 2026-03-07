@@ -127,6 +127,9 @@ public partial class MainWindow : Window
     private bool _preFullscreenStatusBarVisible;
     private string? _preFullscreenActiveTabId;
 
+    // Auto-update check timer (one-shot)
+    private DispatcherTimer? _autoUpdateTimer;
+
     // Fullscreen auto-hide timer
     private DispatcherTimer? _fullscreenHideTimer;
     private bool _controlsVisible = true;
@@ -210,6 +213,13 @@ public partial class MainWindow : Window
         RestoreLayoutState();
 
         _logService.Info("Vido started", "App");
+
+        if (_settingsService.Current.AutoCheckUpdates)
+        {
+            _autoUpdateTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+            _autoUpdateTimer.Tick += OnAutoUpdateTimerTick;
+            _autoUpdateTimer.Start();
+        }
     }
 
     /// <summary>
@@ -2941,6 +2951,26 @@ public partial class MainWindow : Window
             Owner = this
         };
         dialog.ShowDialog();
+    }
+
+    private async void OnAutoUpdateTimerTick(object? sender, EventArgs e)
+    {
+        _autoUpdateTimer?.Stop();
+
+        try
+        {
+            var result = await _updateService.CheckForUpdateAsync();
+
+            if (result.IsUpdateAvailable)
+            {
+                _toastService?.Show($"Vido {result.LatestVersion} is available.",
+                    " Check for Updates to download.");
+            }
+        }
+        catch
+        {
+            // Silent — never show errors for background checks.
+        }
     }
 
     private async void ShowCheckForUpdatesMessage()

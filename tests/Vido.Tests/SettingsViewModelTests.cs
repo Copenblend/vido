@@ -36,7 +36,7 @@ public sealed class SettingsViewModelTests
     {
         var vm = CreateViewModel();
 
-        Assert.Equal(7, vm.AllCategories.Count);
+        Assert.Equal(8, vm.AllCategories.Count);
         Assert.Contains(vm.AllCategories, c => c.Name == "General");
         Assert.Contains(vm.AllCategories, c => c.Name == "Playback");
         Assert.Contains(vm.AllCategories, c => c.Name == "File Explorer");
@@ -44,6 +44,7 @@ public sealed class SettingsViewModelTests
         Assert.Contains(vm.AllCategories, c => c.Name == "OSR2+");
         Assert.Contains(vm.AllCategories, c => c.Name == "Pulse");
         Assert.Contains(vm.AllCategories, c => c.Name == "Playlists");
+        Assert.Contains(vm.AllCategories, c => c.Name == "Updates");
     }
 
     /// <summary>
