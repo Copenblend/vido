@@ -1026,13 +1026,15 @@ public class PulseRealtimeServiceTests
         var preAnalysis = CreatePreAnalysisWithClickTrack();
         using var engine = CreateEngine(bus, preAnalysis: preAnalysis);
 
-        BeatMap? receivedMap = null;
-        engine.BeatMapReady += map => receivedMap = map;
+        var tcs = new TaskCompletionSource<BeatMap>();
+        engine.BeatMapReady += map => tcs.TrySetResult(map);
 
         bus.Publish(MakeVideoLoaded());
         engine.SetEnabled(true);
 
-        await WaitForState(engine, PulseState.Ready);
+        var receivedMap = await Task.WhenAny(tcs.Task, Task.Delay(5000)) == tcs.Task
+            ? tcs.Task.Result
+            : null;
         Assert.NotNull(receivedMap);
     }
 
