@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
@@ -23,6 +23,7 @@
     <ProjectReference Include="..\..\src\Vido.Core\Vido.Core.csproj" />
     <ProjectReference Include="..\..\src\Vido.Services\Vido.Services.csproj" />
     <ProjectReference Include="..\..\src\Vido.ViewModels\Vido.ViewModels.csproj" />
+    <ProjectReference Include="..\..\src\Vido.Setup\VidoSetup.csproj" />
   </ItemGroup>
 
 </Project>

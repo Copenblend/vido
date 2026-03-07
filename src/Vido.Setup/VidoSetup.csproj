@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Vido.Setup</RootNamespace>
+    <AssemblyName>VidoSetup</AssemblyName>
+    <Version>$(VidoVersion)</Version>
+    <ApplicationIcon>Vido.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <!-- Publish-time settings (not set during normal build to avoid RID conflicts) -->
+  <PropertyGroup Condition="'$(PublishSingleFile)' == 'true'">
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="$(CommunityToolkitMvvmVersion)" />
+  </ItemGroup>
+
+  <!-- Embedded payload: passed via -p:PayloadZip=path at build time -->
+  <ItemGroup Condition="'$(PayloadZip)' != '' AND Exists('$(PayloadZip)')">
+    <EmbeddedResource Include="$(PayloadZip)" LogicalName="Vido.Payload.zip" />
+  </ItemGroup>
+
+</Project>
