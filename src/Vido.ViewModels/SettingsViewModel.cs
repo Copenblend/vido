@@ -232,6 +232,9 @@ public partial class SettingsViewModel : ObservableObject
 
         // ── Playlists ──
         BuildPlaylistSettings();
+
+        // ── Updates ──
+        BuildUpdatesSettings();
     }
 
     /// <summary>
@@ -382,6 +385,29 @@ public partial class SettingsViewModel : ObservableObject
             .Select(d => new SettingDisplayItem(d, _settingsService, _settingsStore))
             .ToList();
         AllCategories.Add(new SettingsCategoryViewModel("Playlists", items));
+    }
+
+    /// <summary>
+    /// Builds the Updates settings category with auto-check setting.
+    /// </summary>
+    private void BuildUpdatesSettings()
+    {
+        var definitions = new List<SettingDefinition>
+        {
+            new(
+                Key: "updates.autocheck",
+                Type: "boolean",
+                DefaultValue: true,
+                Title: "Auto-Check for Updates",
+                Description: "Automatically check for updates a few seconds after startup.",
+                Getter: s => s.AutoCheckUpdates,
+                Setter: (s, v) => s.AutoCheckUpdates = v is true),
+        };
+
+        var items = definitions
+            .Select(d => new SettingDisplayItem(d, _settingsService, _settingsStore))
+            .ToList();
+        AllCategories.Add(new SettingsCategoryViewModel("Updates", items));
     }
 
     /// <summary>

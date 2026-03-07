@@ -39,6 +39,7 @@ public sealed class AppSettingsStore : ISettingsStore
             ["osr2.outputRate"] = () => (double)Settings.Osr2OutputRate,
             ["osr2.globalOffset"] = () => (double)Settings.Osr2GlobalOffset,
             ["osr2.visualizerWindowDuration"] = () => Settings.Osr2VisualizerWindowDuration.ToString(),
+            ["updates.autocheck"] = () => Settings.AutoCheckUpdates,
         };
 
         _setters = new(StringComparer.OrdinalIgnoreCase)
@@ -103,6 +104,11 @@ public sealed class AppSettingsStore : ISettingsStore
             {
                 if (int.TryParse(v?.ToString(), out var dur))
                     Settings.Osr2VisualizerWindowDuration = dur;
+                _settingsService.QueueSave();
+            },
+            ["updates.autocheck"] = v =>
+            {
+                Settings.AutoCheckUpdates = Convert.ToBoolean(v);
                 _settingsService.QueueSave();
             },
         };
