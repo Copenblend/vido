@@ -20,12 +20,13 @@ public sealed class UpdateDialogTests
     public void DialogState_HasExpectedValues()
     {
         var values = Enum.GetValues<UpdateDialog.DialogState>();
-        Assert.Equal(5, values.Length);
+        Assert.Equal(6, values.Length);
         Assert.Contains(UpdateDialog.DialogState.Info, values);
         Assert.Contains(UpdateDialog.DialogState.Downloading, values);
         Assert.Contains(UpdateDialog.DialogState.Downloaded, values);
         Assert.Contains(UpdateDialog.DialogState.Error, values);
         Assert.Contains(UpdateDialog.DialogState.UpToDate, values);
+        Assert.Contains(UpdateDialog.DialogState.Applying, values);
     }
 
     // ── Property defaults ───────────────────────────────────────────────
@@ -219,6 +220,58 @@ public sealed class UpdateDialogTests
 
             dialog.SetState(UpdateDialog.DialogState.UpToDate);
             Assert.Equal(UpdateDialog.DialogState.UpToDate, dialog.State);
+
+            dialog.SetState(UpdateDialog.DialogState.Applying);
+            Assert.Equal(UpdateDialog.DialogState.Applying, dialog.State);
+        });
+    }
+
+    // ── Applying state ──────────────────────────────────────────────────
+
+    [Fact]
+    public void SetState_Applying_MakesApplyingPanelVisible()
+    {
+        RunOnStaThread(() =>
+        {
+            var dialog = CreateDialog();
+
+            dialog.SetState(UpdateDialog.DialogState.Applying);
+
+            Assert.Equal(Visibility.Visible, dialog.ApplyingPanel.Visibility);
+            Assert.Equal(Visibility.Collapsed, dialog.InfoPanel.Visibility);
+            Assert.Equal(Visibility.Collapsed, dialog.DownloadingPanel.Visibility);
+            Assert.Equal(Visibility.Collapsed, dialog.DownloadedPanel.Visibility);
+            Assert.Equal(Visibility.Collapsed, dialog.ErrorPanel.Visibility);
+            Assert.Equal(Visibility.Collapsed, dialog.UpToDatePanel.Visibility);
+        });
+    }
+
+    [Fact]
+    public void SetState_Applying_HidesCloseButton()
+    {
+        RunOnStaThread(() =>
+        {
+            var dialog = CreateDialog();
+
+            dialog.SetState(UpdateDialog.DialogState.Applying);
+
+            Assert.Equal(Visibility.Collapsed, dialog.CloseButton.Visibility);
+        });
+    }
+
+    [Fact]
+    public void SetState_Applying_ThenOtherState_LeavesApplyingCollapsed()
+    {
+        RunOnStaThread(() =>
+        {
+            var dialog = CreateDialog();
+
+            dialog.SetState(UpdateDialog.DialogState.Applying);
+            Assert.Equal(Visibility.Visible, dialog.ApplyingPanel.Visibility);
+
+            dialog.SetState(UpdateDialog.DialogState.Error);
+            Assert.Equal(Visibility.Collapsed, dialog.ApplyingPanel.Visibility);
+            Assert.Equal(Visibility.Visible, dialog.ErrorPanel.Visibility);
         });
     }
 

@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 using Vido.Core.Updates;
 using Vido.Views.Services;
@@ -15,10 +16,11 @@ namespace Vido.Views.Updates;
 public partial class UpdateDialog : Window
 {
     /// <summary>Dialog visual states.</summary>
-    public enum DialogState { Info, Downloading, Downloaded, Error, UpToDate }
+    public enum DialogState { Info, Downloading, Downloaded, Error, UpToDate, Applying }
 
     private readonly IUpdateService? _updateService;
     private CancellationTokenSource? _cts;
+    private DispatcherTimer? _spinnerTimer;
 
     /// <summary>The currently running version string.</summary>
     public string CurrentVersion { get; set; } = string.Empty;
@@ -140,6 +142,7 @@ public partial class UpdateDialog : Window
         DownloadedPanel.Visibility = state == DialogState.Downloaded ? Visibility.Visible : Visibility.Collapsed;
         ErrorPanel.Visibility = state == DialogState.Error ? Visibility.Visible : Visibility.Collapsed;
         UpToDatePanel.Visibility = state == DialogState.UpToDate ? Visibility.Visible : Visibility.Collapsed;
+        ApplyingPanel.Visibility = state == DialogState.Applying ? Visibility.Visible : Visibility.Collapsed;
 
         switch (state)
         {
@@ -173,7 +176,28 @@ public partial class UpdateDialog : Window
             case DialogState.UpToDate:
                 UpToDateVersionText.Text = $"v{CurrentVersion}";
                 break;
+
+            case DialogState.Applying:
+                CloseButton.Visibility = Visibility.Collapsed;
+                StartSpinner();
+                break;
         }
+    }
+
+    private void StartSpinner()
+    {
+        _spinnerTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+        _spinnerTimer.Tick += (_, _) =>
+        {
+            SpinnerRotation.Angle = (SpinnerRotation.Angle + 6) % 360;
+        };
+        _spinnerTimer.Start();
+    }
+
+    private void StopSpinner()
+    {
+        _spinnerTimer?.Stop();
+        _spinnerTimer = null;
     }
 
     private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -242,13 +266,18 @@ public partial class UpdateDialog : Window
         _cts?.Cancel();
     }
 
-    private void RestartNowButton_Click(object sender, RoutedEventArgs e)
+    private async void RestartNowButton_Click(object sender, RoutedEventArgs e)
     {
+        SetState(DialogState.Applying);
+
         if (_updateService is not null && DownloadedFilePath is not null)
             _updateService.ApplyUpdate(DownloadedFilePath);
 
+        await Task.Delay(2000);
+
+        StopSpinner();
         UserChoseRestart = true;
-        DialogResult = true;
+        Application.Current.Shutdown();
     }
 
     private void OpenReleasePageButton_Click(object sender, RoutedEventArgs e)

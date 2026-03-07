@@ -495,6 +495,34 @@
                     </Button>
                 </StackPanel>
 
+                <!-- Applying state -->
+                <StackPanel x:Name="ApplyingPanel" VerticalAlignment="Center" Visibility="Collapsed">
+                    <TextBlock x:Name="SpinnerIcon"
+                               Text="&#xE895;"
+                               FontFamily="Segoe MDL2 Assets"
+                               FontSize="36"
+                               Foreground="{StaticResource AccentBrush}"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,20"
+                               RenderTransformOrigin="0.5,0.5">
+                        <TextBlock.RenderTransform>
+                            <RotateTransform x:Name="SpinnerRotation" />
+                        </TextBlock.RenderTransform>
+                    </TextBlock>
+
+                    <TextBlock Text="Applying update, please wait..."
+                               FontSize="16"
+                               FontWeight="SemiBold"
+                               Foreground="{StaticResource PrimaryForegroundBrush}"
+                               HorizontalAlignment="Center"
+                               Margin="0,0,0,8" />
+
+                    <TextBlock Text="Vido will restart automatically."
+                               FontSize="13"
+                               Foreground="{StaticResource SecondaryForegroundBrush}"
+                               HorizontalAlignment="Center" />
+                </StackPanel>
+
             </Grid>
         </Grid>
     </Border>
