@@ -2946,7 +2946,7 @@ public partial class MainWindow : Window
     private async void ShowCheckForUpdatesMessage()
     {
         var result = await _updateService.CheckForUpdateAsync();
-        var dialog = new UpdateDialog { Owner = this };
+        var dialog = new UpdateDialog(_updateService) { Owner = this };
 
         if (result.ErrorMessage is not null)
         {
@@ -2965,55 +2965,10 @@ public partial class MainWindow : Window
         dialog.ShowUpdateAvailable(result);
         dialog.ShowDialog();
 
-        if (!dialog.UserChoseUpdate || result.InstallerDownloadUrl is null)
-            return;
-
-        // User chose to update — show download progress
-        var downloadDialog = new UpdateDialog { Owner = this };
-        downloadDialog.ShowDownloading();
-        downloadDialog.CancellationTokenSource = new CancellationTokenSource();
-
-        var progress = new Progress<double>(p =>
-            downloadDialog.UpdateProgress(p * 100));
-
-        // Start download in background, show dialog modally
-        string? downloadedPath = null;
-        var downloadTask = Task.Run(async () =>
+        if (dialog.UserChoseRestart)
         {
-            var fileName = $"Vido-{result.LatestVersion}-win-x64-portable.zip";
-            return await _updateService.DownloadUpdateAsync(
-                result.InstallerDownloadUrl!, fileName, progress,
-                downloadDialog.CancellationTokenSource.Token);
-        });
-
-        // Show download dialog non-blocking while download runs
-        downloadDialog.Loaded += async (_, _) =>
-        {
-            try
-            {
-                downloadedPath = await downloadTask;
-                downloadDialog.DownloadedFilePath = downloadedPath;
-                _logService.Info($"Update downloaded to {downloadedPath}", "Updates");
-                downloadDialog.ShowDownloaded();
-            }
-            catch (OperationCanceledException)
-            {
-                _logService.Info("Update download cancelled by user.", "Updates");
-                downloadDialog.Close();
-            }
-            catch (Exception ex)
-            {
-                _logService.Error($"Failed to download update: {ex.Message}", "Updates");
-                downloadDialog.ShowError(ex.Message, result.ReleaseUrl);
-            }
-        };
-
-        downloadDialog.ShowDialog();
-
-        if (downloadDialog.UserChoseRestart && downloadedPath is not null)
-        {
-            if (_updateService.ApplyUpdate(downloadedPath))
-                Application.Current.Shutdown();
+            _logService.Info("User chose restart after update download.", "Updates");
+            Application.Current.Shutdown();
         }
     }
 
