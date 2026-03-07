@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Input;
 
 using Vido.Core.Updates;
+using Vido.Views.Services;
 
 namespace Vido.Views.Updates;
 
@@ -94,9 +95,13 @@ public partial class UpdateDialog : Window
     {
         CurrentVersion = result.CurrentVersion;
         LatestVersion = result.LatestVersion;
-        ReleaseNotes = result.ReleaseNotes;
         ReleaseUrl = result.ReleaseUrl;
         DownloadUrl = result.InstallerDownloadUrl;
+
+        // Try embedded release notes first, fall back to GitHub body
+        ReleaseNotes = ReleaseNotesProvider.GetNotesForVersion(result.LatestVersion)
+            ?? result.ReleaseNotes;
+
         SetState(DialogState.Info);
     }
 
@@ -141,10 +146,16 @@ public partial class UpdateDialog : Window
             case DialogState.Info:
                 InfoHeading.Text = $"Vido v{LatestVersion} is available!";
                 InfoSubtext.Text = $"Current: v{CurrentVersion}";
-                ReleaseNotesText.Text = ReleaseNotes ?? string.Empty;
-                ReleaseNotesScroller.Visibility = string.IsNullOrWhiteSpace(ReleaseNotes)
-                    ? Visibility.Collapsed
-                    : Visibility.Visible;
+                if (!string.IsNullOrWhiteSpace(ReleaseNotes))
+                {
+                    ReleaseNotesContent.Content = MarkdownRenderer.Render(ReleaseNotes);
+                    ReleaseNotesScroller.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    ReleaseNotesContent.Content = null;
+                    ReleaseNotesScroller.Visibility = Visibility.Collapsed;
+                }
                 break;
 
             case DialogState.Downloading:

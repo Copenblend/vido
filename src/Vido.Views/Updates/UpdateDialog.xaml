@@ -87,10 +87,7 @@
                                   MaxHeight="200"
                                   VerticalScrollBarVisibility="Auto"
                                   Margin="0,0,0,16">
-                        <TextBlock x:Name="ReleaseNotesText"
-                                   FontSize="12"
-                                   Foreground="{StaticResource SecondaryForegroundBrush}"
-                                   TextWrapping="Wrap" />
+                        <ContentControl x:Name="ReleaseNotesContent" />
                     </ScrollViewer>
 
                     <!-- Buttons -->

@@ -29,4 +29,10 @@
     <ProjectReference Include="..\Vido.Views\Vido.Views.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\..\RELEASENOTES.md" Link="RELEASENOTES.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
