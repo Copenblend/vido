@@ -68,6 +68,9 @@ internal sealed class PulseEngine : IDisposable
     /// <summary>Current BPM from the pre-analyzed beat map.</summary>
     public double CurrentBpm { get { lock (_lock) return _currentBeatMap?.Bpm ?? 0; } }
 
+    /// <summary>Current stroke settings.</summary>
+    public PulseStrokeSettings StrokeSettings { get; private set; } = PulseStrokeSettings.Default;
+
     /// <summary>
     /// Beat divisor — 1 = every beat, 2 = every other beat, 3 = every 3rd, 4 = every 4th.
     /// Controls which beats are used for both TCode output and BeatBar display.
@@ -255,6 +258,21 @@ internal sealed class PulseEngine : IDisposable
             _eventBus.Publish(new SuppressFunscriptEvent { SuppressFunscripts = false });
             _eventBus.Publish(new ExternalBeatSourceRegistration { Source = _beatSource, IsRegistering = false });
             _logger.Info("Pulse disabled", LogSource);
+        }
+    }
+
+    /// <summary>
+    /// Updates stroke settings and propagates to the TCode mapper.
+    /// Resets the mapper to avoid jarring transitions.
+    /// </summary>
+    /// <param name="settings">New stroke settings, or null to reset to default.</param>
+    public void SetStrokeSettings(PulseStrokeSettings? settings)
+    {
+        lock (_lock)
+        {
+            StrokeSettings = settings ?? PulseStrokeSettings.Default;
+            _tCodeMapper.SetStrokeSettings(StrokeSettings);
+            _tCodeMapper.Reset();
         }
     }
 
