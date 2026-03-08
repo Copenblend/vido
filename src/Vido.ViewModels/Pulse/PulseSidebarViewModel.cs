@@ -34,6 +34,10 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
     private string? _errorMessage;
     private int _selectedBeatRateIndex;
     private int _selectedFunscriptBeatRateIndex;
+    private double _amplitudeOffset;
+    private double _easingBlend;
+    private StrokePattern _strokePattern;
+    private double _randomness;
     private bool _disposed;
     private string? _currentVideoPath;
     private bool _isGenerating;
@@ -68,6 +72,10 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         _usePulse = _settingsService.Current.PulseUsePulse;
         _selectedBeatRateIndex = _settingsService.Current.PulseBeatRateIndex;
         _selectedFunscriptBeatRateIndex = _settingsService.Current.PulseFunscriptBeatRateIndex;
+        _amplitudeOffset = _settingsService.Current.PulseAmplitudeOffset;
+        _easingBlend = _settingsService.Current.PulseEasingBlend;
+        _strokePattern = Enum.TryParse<StrokePattern>(_settingsService.Current.PulseStrokePattern, out var pat) ? pat : StrokePattern.Classic;
+        _randomness = _settingsService.Current.PulseRandomness;
         _state = _engine.State;
 
         _engine.StateChanged += OnEngineStateChanged;
@@ -92,6 +100,7 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         if (_usePulse)
             _engine.SetEnabled(true);
 
+        PropagateStrokeSettings();
         UpdateStatusMessage();
     }
 
@@ -237,6 +246,113 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         }
     }
 
+    // ── Stroke Controls ──
+
+    /// <summary>
+    /// Amplitude offset slider value (-1.0 to +1.0).
+    /// Negative = less movement, positive = more movement.
+    /// </summary>
+    public double AmplitudeOffset
+    {
+        get => _amplitudeOffset;
+        set
+        {
+            value = Math.Clamp(value, -1.0, 1.0);
+            if (Math.Abs(_amplitudeOffset - value) < 1e-9) return;
+            _amplitudeOffset = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(AmplitudeOffsetLabel));
+            PropagateStrokeSettings();
+            _settingsService.Current.PulseAmplitudeOffset = value;
+            _settingsService.QueueSave();
+        }
+    }
+
+    /// <summary>Display label for the current amplitude offset value.</summary>
+    public string AmplitudeOffsetLabel => _amplitudeOffset.ToString("+0.0;-0.0;0.0");
+
+    /// <summary>
+    /// Easing blend slider value (-1.0 to +1.0).
+    /// Negative = gentle (sinusoidal), positive = aggressive (linear).
+    /// </summary>
+    public double EasingBlend
+    {
+        get => _easingBlend;
+        set
+        {
+            value = Math.Clamp(value, -1.0, 1.0);
+            if (Math.Abs(_easingBlend - value) < 1e-9) return;
+            _easingBlend = value;
+            OnPropertyChanged();
+            PropagateStrokeSettings();
+            _settingsService.Current.PulseEasingBlend = value;
+            _settingsService.QueueSave();
+        }
+    }
+
+    /// <summary>The currently selected stroke pattern.</summary>
+    public StrokePattern SelectedStrokePattern
+    {
+        get => _strokePattern;
+        set
+        {
+            if (_strokePattern == value) return;
+            _strokePattern = value;
+            OnPropertyChanged();
+            PropagateStrokeSettings();
+            _settingsService.Current.PulseStrokePattern = value.ToString();
+            _settingsService.QueueSave();
+        }
+    }
+
+    /// <summary>Display names for the stroke pattern ComboBox.</summary>
+    public static IReadOnlyList<string> StrokePatternOptions { get; } = new[]
+    {
+        "Classic", "Double Tap", "Triple Tap", "Hold Top", "Hold Bottom"
+    };
+
+    /// <summary>
+    /// Selected stroke pattern index (0–4), maps to/from <see cref="StrokePattern"/> enum ordinal.
+    /// </summary>
+    public int SelectedStrokePatternIndex
+    {
+        get => (int)_strokePattern;
+        set
+        {
+            var pattern = (StrokePattern)Math.Clamp(value, 0, 4);
+            if (_strokePattern == pattern) return;
+            _strokePattern = pattern;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(SelectedStrokePattern));
+            PropagateStrokeSettings();
+            _settingsService.Current.PulseStrokePattern = pattern.ToString();
+            _settingsService.QueueSave();
+        }
+    }
+
+    /// <summary>
+    /// Randomness slider value (0.0 to 1.0).
+    /// Adds organic per-beat amplitude variation.
+    /// </summary>
+    public double Randomness
+    {
+        get => _randomness;
+        set
+        {
+            value = Math.Clamp(value, 0.0, 1.0);
+            if (Math.Abs(_randomness - value) < 1e-9) return;
+            _randomness = value;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(RandomnessLabel));
+            PropagateStrokeSettings();
+            _settingsService.Current.PulseRandomness = value;
+            _settingsService.QueueSave();
+        }
+    }
+
+    /// <summary>Display label for the current randomness value as a percentage.</summary>
+    public string RandomnessLabel => $"{_randomness:P0}";
+
     /// <summary>Description text explaining Pulse behaviour.</summary>
     public string Description =>
         "When Use Pulse is enabled:\n" +
@@ -246,10 +362,15 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         "\u2022 L0 axis is driven by beat-synchronized strokes\n" +
         "\u2022 Other axes (R0/R1/R2) continue with fill modes\n" +
         "\u2022 OSR2+ axis Min/Max/Enabled settings still apply\n\n" +
+        "Stroke Controls:\n" +
+        "\u2022 Beat Rate \u2014 select which beats drive the strokes\n" +
+        "\u2022 Amplitude \u2014 adjust stroke intensity (left = less, right = more)\n" +
+        "\u2022 Speed \u2014 adjust stroke feel (Gentle \u2190 \u2192 Aggressive)\n" +
+        "\u2022 Pattern \u2014 choose stroke waveform (Classic, Double Tap, etc.)\n" +
+        "\u2022 Randomness \u2014 add organic variation to stroke amplitude\n\n" +
         "Generate Funscript:\n" +
-        "Use the beat rate selector to choose which beats are included (Every Beat, Every 2nd/3rd/4th Beat), " +
-        "then click Generate Funscript to create a .funscript file. " +
-        "The generated script mirrors the Pulse waveform amplitude, producing strokes that match the audio intensity.\n\n" +
+        "Creates a .funscript file with all current stroke settings baked in. " +
+        "The generated script includes amplitude, speed, pattern, and randomness adjustments.\n\n" +
         "Toggle off to restore normal funscript behavior.";
 
     // ── Generate Funscript ──
@@ -293,7 +414,7 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         {
             int divisor = _selectedFunscriptBeatRateIndex + 1;
             var filteredBeatMap = FunscriptWriter.FilterBeatsByDivisor(beatMap, divisor);
-            var actions = FunscriptWriter.CreateActionsFromBeatMap(filteredBeatMap);
+            var actions = FunscriptWriter.CreateActionsFromBeatMap(filteredBeatMap, BuildStrokeSettings());
             await FunscriptWriter.WriteAsync(actions, targetPath);
             _toastService?.Show("Funscript generated:", fileName);
             _eventBus.Publish(new FunscriptGeneratedEvent
@@ -344,6 +465,19 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
     }
 
     // ── Helpers ──
+
+    private PulseStrokeSettings BuildStrokeSettings() => new()
+    {
+        AmplitudeOffset = _amplitudeOffset,
+        EasingBlend = _easingBlend,
+        Pattern = _strokePattern,
+        Randomness = _randomness,
+    };
+
+    private void PropagateStrokeSettings()
+    {
+        _engine.SetStrokeSettings(BuildStrokeSettings());
+    }
 
     private void UpdateStatusMessage()
     {
