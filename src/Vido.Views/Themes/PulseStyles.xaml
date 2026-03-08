@@ -278,4 +278,79 @@
         </Setter>
     </Style>
 
+    <!-- ══ Slider (Dark Modern with Pulse accent) ══ -->
+    <Style x:Key="PulseSliderStyle" TargetType="Slider">
+        <Setter Property="OverridesDefaultStyle" Value="True" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Grid>
+                        <!-- Track background -->
+                        <Border x:Name="TrackBackground"
+                                Height="3"
+                                CornerRadius="1.5"
+                                Background="{StaticResource ProgressTrackBrush}"
+                                VerticalAlignment="Center" />
+                        <Track x:Name="PART_Track">
+                            <Track.Thumb>
+                                <Thumb>
+                                    <Thumb.Style>
+                                        <Style TargetType="Thumb">
+                                            <Setter Property="OverridesDefaultStyle" Value="True" />
+                                            <Setter Property="Width" Value="14" />
+                                            <Setter Property="Height" Value="14" />
+                                            <Setter Property="Template">
+                                                <Setter.Value>
+                                                    <ControlTemplate TargetType="Thumb">
+                                                        <Ellipse x:Name="ThumbEllipse"
+                                                                 Fill="{StaticResource AccentBrush}"
+                                                                 Width="14" Height="14"
+                                                                 Stroke="Transparent" StrokeThickness="1" />
+                                                        <ControlTemplate.Triggers>
+                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                <Setter TargetName="ThumbEllipse" Property="Stroke" Value="White" />
+                                                            </Trigger>
+                                                        </ControlTemplate.Triggers>
+                                                    </ControlTemplate>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Style>
+                                    </Thumb.Style>
+                                </Thumb>
+                            </Track.Thumb>
+                        </Track>
+                        <!-- Tick marks -->
+                        <TickBar x:Name="TopTick"
+                                 Placement="Top"
+                                 Fill="{StaticResource TextSecondaryBrush}"
+                                 Height="2"
+                                 Visibility="Collapsed" />
+                        <TickBar x:Name="BottomTick"
+                                 Placement="Bottom"
+                                 Fill="{StaticResource TextSecondaryBrush}"
+                                 Height="2"
+                                 Visibility="Collapsed" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="TickPlacement" Value="TopLeft">
+                            <Setter TargetName="TopTick" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="TickPlacement" Value="BottomRight">
+                            <Setter TargetName="BottomTick" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="TickPlacement" Value="Both">
+                            <Setter TargetName="TopTick" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="BottomTick" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>
