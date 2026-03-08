@@ -38,6 +38,18 @@ internal sealed class PulseTCodeMapper
     private double _lastPosition = RestPosition;
     private double _lastTimeMs = -1;
 
+    // ── Stroke settings ──
+    private PulseStrokeSettings _settings = PulseStrokeSettings.Default;
+
+    /// <summary>
+    /// Updates the stroke control settings applied during position calculation.
+    /// </summary>
+    /// <param name="settings">New stroke settings, or null to reset to defaults.</param>
+    public void SetStrokeSettings(PulseStrokeSettings? settings)
+    {
+        _settings = settings ?? PulseStrokeSettings.Default;
+    }
+
     /// <summary>
     /// Given the current playback position, pre-analyzed BeatMap, and live amplitude,
     /// return the desired L0 axis position on a 0–100 scale.
@@ -150,7 +162,31 @@ internal sealed class PulseTCodeMapper
         double intensityScale = amplitudeScale * (0.5 + 0.5 * beatStrength);
 
         // Full stroke range scaled by intensity.
-        double halfRange = (MaxPosition - MinPosition) / 2.0 * intensityScale;
+        double maxHalfRange = (MaxPosition - MinPosition) / 2.0;
+        double halfRange = maxHalfRange * intensityScale;
+
+        // Apply amplitude offset: -1.0 = zero movement, 0.0 = unchanged, +1.0 = full-range strokes.
+        if (_settings.AmplitudeOffset >= 0)
+        {
+            // Blend toward maxHalfRange as offset increases above 0.
+            halfRange = halfRange + (maxHalfRange - halfRange) * _settings.AmplitudeOffset;
+        }
+        else
+        {
+            // Scale down toward zero as offset decreases below 0.
+            halfRange = Math.Clamp(halfRange * (1.0 + _settings.AmplitudeOffset), 0.0, maxHalfRange);
+        }
+
+        // Apply randomness: deterministic per-beat variation.
+        if (_settings.Randomness > 0.0 && beatIndex >= 0)
+        {
+            double randomFactor = PseudoRandom(beatIndex * 73856093);
+            // Map to 0.2–1.0 range, blend with Randomness slider.
+            double variation = 0.2 + 0.8 * randomFactor;
+            double blended = 1.0 + _settings.Randomness * (variation - 1.0);
+            halfRange *= blended;
+        }
+
         double top = RestPosition + halfRange;
         double bottom = RestPosition - halfRange;
 
@@ -158,22 +194,8 @@ internal sealed class PulseTCodeMapper
         top = Math.Min(top, MaxPosition);
         bottom = Math.Max(bottom, MinPosition);
 
-        // Stroke waveform: up during first fraction, down during remainder.
-        double position;
-        if (phase < UpstrokeFraction)
-        {
-            // Upstroke: bottom → top using smooth ease-out.
-            double t = phase / UpstrokeFraction;
-            double eased = EaseOutQuad(t);
-            position = bottom + (top - bottom) * eased;
-        }
-        else
-        {
-            // Downstroke: top → bottom using smooth ease-in.
-            double t = (phase - UpstrokeFraction) / (1.0 - UpstrokeFraction);
-            double eased = EaseInQuad(t);
-            position = top + (bottom - top) * eased;
-        }
+        // Compute position from stroke pattern.
+        double position = ComputePatternPosition(phase, top, bottom, _settings.EasingBlend);
 
         return Math.Clamp(position, MinPosition, MaxPosition);
     }
@@ -217,9 +239,147 @@ internal sealed class PulseTCodeMapper
         return result;
     }
 
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║ Stroke Pattern Methods                                           ║
+    // ╚══════════════════════════════════════════════════════════════════════╝
+
+    /// <summary>
+    /// Dispatches to the appropriate stroke pattern method.
+    /// </summary>
+    private double ComputePatternPosition(double phase, double top, double bottom, double blend)
+    {
+        return _settings.Pattern switch
+        {
+            StrokePattern.Classic => ComputeClassicPosition(phase, top, bottom, blend),
+            StrokePattern.DoubleTap => ComputeMultiTapPosition(phase, top, bottom, blend, 2),
+            StrokePattern.TripleTap => ComputeMultiTapPosition(phase, top, bottom, blend, 3),
+            StrokePattern.HoldTop => ComputeHoldPosition(phase, top, bottom, blend, holdAtTop: true),
+            StrokePattern.HoldBottom => ComputeHoldPosition(phase, top, bottom, blend, holdAtTop: false),
+            _ => ComputeClassicPosition(phase, top, bottom, blend),
+        };
+    }
+
+    /// <summary>
+    /// Classic stroke: upstroke during first fraction, downstroke during remainder.
+    /// </summary>
+    private static double ComputeClassicPosition(double phase, double top, double bottom, double blend)
+    {
+        if (phase < UpstrokeFraction)
+        {
+            double t = phase / UpstrokeFraction;
+            double eased = BlendedEaseOut(t, blend);
+            return bottom + (top - bottom) * eased;
+        }
+        else
+        {
+            double t = (phase - UpstrokeFraction) / (1.0 - UpstrokeFraction);
+            double eased = BlendedEaseIn(t, blend);
+            return top + (bottom - top) * eased;
+        }
+    }
+
+    /// <summary>
+    /// Multi-tap pattern: divides the beat into N equal sub-intervals, each a full Classic stroke.
+    /// </summary>
+    private static double ComputeMultiTapPosition(double phase, double top, double bottom, double blend, int taps)
+    {
+        double subPhase = (phase * taps) % 1.0;
+        return ComputeClassicPosition(subPhase, top, bottom, blend);
+    }
+
+    /// <summary>
+    /// Hold pattern: 30% travel to target, 40% hold at target, 30% return.
+    /// </summary>
+    private static double ComputeHoldPosition(double phase, double top, double bottom, double blend, bool holdAtTop)
+    {
+        const double travelFraction = 0.3;
+        const double holdFraction = 0.4;
+
+        double target = holdAtTop ? top : bottom;
+        double start = holdAtTop ? bottom : top;
+
+        if (phase < travelFraction)
+        {
+            double t = phase / travelFraction;
+            double eased = BlendedEaseOut(t, blend);
+            return start + (target - start) * eased;
+        }
+        else if (phase < travelFraction + holdFraction)
+        {
+            return target;
+        }
+        else
+        {
+            double t = (phase - travelFraction - holdFraction) / (1.0 - travelFraction - holdFraction);
+            double eased = BlendedEaseIn(t, blend);
+            return target + (start - target) * eased;
+        }
+    }
+
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║ Easing Functions                                                ║
+    // ╚══════════════════════════════════════════════════════════════════════╝
+
     /// <summary>Quadratic ease-out: fast start, gradual stop.</summary>
     private static double EaseOutQuad(double t) => 1.0 - (1.0 - t) * (1.0 - t);
 
     /// <summary>Quadratic ease-in: gradual start, fast end.</summary>
     private static double EaseInQuad(double t) => t * t;
+
+    /// <summary>
+    /// Blended ease-out: interpolates between sinusoidal (gentle), quadratic (default), and linear (aggressive).
+    /// blend = −1.0 → sin(t × π/2), blend = 0.0 → EaseOutQuad, blend = +1.0 → linear t.
+    /// </summary>
+    internal static double BlendedEaseOut(double t, double blend)
+    {
+        if (blend <= 0)
+        {
+            double sinEase = Math.Sin(t * Math.PI / 2.0);
+            double quadEase = EaseOutQuad(t);
+            double factor = -blend; // 0..1
+            return quadEase + factor * (sinEase - quadEase);
+        }
+        else
+        {
+            double quadEase = EaseOutQuad(t);
+            return quadEase + blend * (t - quadEase);
+        }
+    }
+
+    /// <summary>
+    /// Blended ease-in: interpolates between sinusoidal (gentle), quadratic (default), and linear (aggressive).
+    /// blend = −1.0 → 1 − sin((1−t) × π/2), blend = 0.0 → EaseInQuad, blend = +1.0 → linear t.
+    /// </summary>
+    internal static double BlendedEaseIn(double t, double blend)
+    {
+        if (blend <= 0)
+        {
+            double sinEase = 1.0 - Math.Sin((1.0 - t) * Math.PI / 2.0);
+            double quadEase = EaseInQuad(t);
+            double factor = -blend;
+            return quadEase + factor * (sinEase - quadEase);
+        }
+        else
+        {
+            double quadEase = EaseInQuad(t);
+            return quadEase + blend * (t - quadEase);
+        }
+    }
+
+    // ╔══════════════════════════════════════════════════════════════════╗
+    // ║ Pseudo-Random                                                   ║
+    // ╚══════════════════════════════════════════════════════════════════════╝
+
+    /// <summary>
+    /// Returns a deterministic pseudo-random value in [0, 1] for a given integer seed.
+    /// Uses xorshift32 — allocation-free, reproducible, suitable for real-time audio processing.
+    /// </summary>
+    internal static double PseudoRandom(int seed)
+    {
+        uint x = unchecked((uint)seed);
+        x ^= x << 13;
+        x ^= x >> 17;
+        x ^= x << 5;
+        return (x & 0x7FFFFFFF) / (double)0x7FFFFFFF;
+    }
 }

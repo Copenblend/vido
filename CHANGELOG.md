@@ -5,6 +5,7 @@ All notable changes to the Vido project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **vido-195**: Extended `PulseTCodeMapper` with four stroke controls: amplitude offset (−1.0 to +1.0 scales halfRange from zero to full), easing blend (sinusoidal ↔ quadratic ↔ linear via `BlendedEaseOut`/`BlendedEaseIn`), stroke patterns (Classic, DoubleTap, TripleTap, HoldTop, HoldBottom via `ComputePatternPosition` dispatch), and per-beat randomness (deterministic xorshift32 `PseudoRandom`). Added `SetStrokeSettings(PulseStrokeSettings)` API. Default settings produce bit-identical output to the pre-change implementation. 93.68% coverage with 65 unit tests.
 - **vido-194**: Added `StrokePattern` enum (Classic, DoubleTap, TripleTap, HoldTop, HoldBottom) and `PulseStrokeSettings` sealed record (AmplitudeOffset, EasingBlend, Pattern, Randomness) in `Vido.Core.Models.Pulse`. Extended `AppSettings` with four new stroke control properties (`PulseAmplitudeOffset`, `PulseEasingBlend`, `PulseStrokePattern`, `PulseRandomness`) including `ResetToDefaults()` support. Includes 20 unit tests.
 
 ### Changed
