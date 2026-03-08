@@ -1352,6 +1352,134 @@ public class PulseRealtimeServiceTests
     }
 
     // ══════════════════════════════════════════════
+    //  PulseEngine SetStrokeSettings Tests (vido-197)
+    // ══════════════════════════════════════════════
+
+    [Fact]
+    public void PulseEngine_StrokeSettings_DefaultsToDefault()
+    {
+        var bus = CreateEventBus();
+        using var engine = CreateEngine(bus);
+
+        Assert.Same(PulseStrokeSettings.Default, engine.StrokeSettings);
+    }
+
+    [Fact]
+    public void PulseEngine_SetStrokeSettings_UpdatesProperty()
+    {
+        var bus = CreateEventBus();
+        using var engine = CreateEngine(bus);
+        var custom = new PulseStrokeSettings
+        {
+            AmplitudeOffset = 0.5,
+            EasingBlend = -0.3,
+            Pattern = StrokePattern.DoubleTap,
+            Randomness = 0.7,
+        };
+
+        engine.SetStrokeSettings(custom);
+
+        Assert.Same(custom, engine.StrokeSettings);
+    }
+
+    [Fact]
+    public void PulseEngine_SetStrokeSettings_PropagatesToMapper()
+    {
+        var bus = CreateEventBus();
+        var mapper = new PulseTCodeMapper();
+        using var engine = CreateEngine(bus, mapper: mapper);
+        var custom = new PulseStrokeSettings
+        {
+            AmplitudeOffset = 0.8,
+            Pattern = StrokePattern.HoldTop,
+        };
+
+        engine.SetStrokeSettings(custom);
+
+        // Verify propagation by checking that the mapper produces different output
+        // than with default settings.
+        var beatMap = new BeatMap
+        {
+            Beats = new[]
+            {
+                new BeatEvent { TimestampMs = 0, Strength = 1.0 },
+                new BeatEvent { TimestampMs = 500, Strength = 1.0 },
+            },
+            Bpm = 120.0,
+            DurationMs = 1000,
+            WaveformSamples = new float[] { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },
+            WaveformSampleRate = 100,
+        };
+
+        // With HoldTop pattern, the position at phase 0.5 should be in the hold region.
+        double pos = mapper.MapToPosition(beatMap, 250, 0.8);
+        // HoldTop: phase 0.5 is in the hold region (30%-70%), should stay at top
+        Assert.True(pos > 50, $"HoldTop at phase 0.5 should hold at top, was {pos}");
+    }
+
+    [Fact]
+    public void PulseEngine_SetStrokeSettings_NullFallsBackToDefault()
+    {
+        var bus = CreateEventBus();
+        using var engine = CreateEngine(bus);
+        var custom = new PulseStrokeSettings { AmplitudeOffset = 0.5 };
+
+        engine.SetStrokeSettings(custom);
+        Assert.Same(custom, engine.StrokeSettings);
+
+        engine.SetStrokeSettings(null);
+        Assert.Same(PulseStrokeSettings.Default, engine.StrokeSettings);
+    }
+
+    [Fact]
+    public void PulseEngine_SetStrokeSettings_MultipleCalls_KeepsLatest()
+    {
+        var bus = CreateEventBus();
+        using var engine = CreateEngine(bus);
+
+        var settings1 = new PulseStrokeSettings { AmplitudeOffset = 0.2 };
+        var settings2 = new PulseStrokeSettings { AmplitudeOffset = 0.8, Pattern = StrokePattern.TripleTap };
+
+        engine.SetStrokeSettings(settings1);
+        Assert.Same(settings1, engine.StrokeSettings);
+
+        engine.SetStrokeSettings(settings2);
+        Assert.Same(settings2, engine.StrokeSettings);
+    }
+
+    [Fact]
+    public void PulseEngine_SetStrokeSettings_ResetsMapper()
+    {
+        var bus = CreateEventBus();
+        var mapper = new PulseTCodeMapper();
+        using var engine = CreateEngine(bus, mapper: mapper);
+
+        var beatMap = new BeatMap
+        {
+            Beats = new[]
+            {
+                new BeatEvent { TimestampMs = 0, Strength = 1.0 },
+                new BeatEvent { TimestampMs = 500, Strength = 1.0 },
+            },
+            Bpm = 120.0,
+            DurationMs = 1000,
+            WaveformSamples = new float[] { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f },
+            WaveformSampleRate = 100,
+        };
+
+        // Advance mapper to build up internal state
+        mapper.MapToPosition(beatMap, 100, 0.8);
+        mapper.MapToPosition(beatMap, 200, 0.8);
+
+        // SetStrokeSettings should reset, so next position starts fresh
+        engine.SetStrokeSettings(PulseStrokeSettings.Default);
+
+        // After reset, mapper should function normally (no exception, valid output)
+        double pos = mapper.MapToPosition(beatMap, 0, 0.8);
+        Assert.InRange(pos, 5.0, 95.0);
+    }
+
+    // ══════════════════════════════════════════════
     //  Test Infrastructure
     // ══════════════════════════════════════════════
 
