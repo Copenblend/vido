@@ -122,30 +122,155 @@
                            FontSize="14" FontWeight="SemiBold" FontFamily="Segoe UI" />
             </StackPanel>
 
+            <!-- ════ STROKE CONTROLS ════ -->
+            <StackPanel Visibility="{Binding ShowBpm, Converter={StaticResource BoolToVis}}"
+                        Margin="0,4,0,8">
+
+                <!-- Section Header -->
+                <TextBlock Text="STROKE CONTROLS"
+                           Style="{StaticResource SectionLabelStyle}" />
+
+                <!-- Beat Rate -->
+                <Grid Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="70" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="Beat Rate"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               FontSize="11" FontFamily="Segoe UI"
+                               VerticalAlignment="Center" />
+                    <ComboBox Grid.Column="1"
+                              Style="{StaticResource PulseComboBoxStyle}"
+                              ItemContainerStyle="{StaticResource PulseComboBoxItemStyle}"
+                              ItemsSource="{Binding BeatRateOptions}"
+                              SelectedIndex="{Binding SelectedBeatRateIndex, Mode=TwoWay}"
+                              ToolTip="Beat rate for live Pulse strokes" />
+                </Grid>
+
+                <!-- Amplitude Slider -->
+                <Grid Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="70" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="36" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="Amplitude"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               FontSize="11" FontFamily="Segoe UI"
+                               VerticalAlignment="Center" />
+                    <Slider Grid.Column="1"
+                            Style="{StaticResource PulseSliderStyle}"
+                            Minimum="-1" Maximum="1"
+                            Value="{Binding AmplitudeOffset, Mode=TwoWay}"
+                            TickPlacement="BottomRight" Ticks="0"
+                            SmallChange="0.05" LargeChange="0.1"
+                            VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding AmplitudeOffsetLabel}"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="11" FontFamily="Segoe UI"
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Center" />
+                </Grid>
+
+                <!-- Speed Slider -->
+                <Grid Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="70" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="Speed"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               FontSize="11" FontFamily="Segoe UI"
+                               VerticalAlignment="Center" />
+                    <Grid Grid.Column="1">
+                        <Slider Style="{StaticResource PulseSliderStyle}"
+                                Minimum="-1" Maximum="1"
+                                Value="{Binding EasingBlend, Mode=TwoWay}"
+                                TickPlacement="BottomRight" Ticks="0"
+                                SmallChange="0.05" LargeChange="0.1"
+                                VerticalAlignment="Center"
+                                Margin="0,0,0,10" />
+                        <!-- Endpoint labels -->
+                        <TextBlock Text="Gentle"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="9" FontFamily="Segoe UI"
+                                   HorizontalAlignment="Left"
+                                   VerticalAlignment="Bottom"
+                                   Margin="0,0,0,0" />
+                        <TextBlock Text="Aggressive"
+                                   Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontSize="9" FontFamily="Segoe UI"
+                                   HorizontalAlignment="Right"
+                                   VerticalAlignment="Bottom"
+                                   Margin="0,0,0,0" />
+                    </Grid>
+                </Grid>
+
+                <!-- Pattern ComboBox -->
+                <Grid Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="70" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="Pattern"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               FontSize="11" FontFamily="Segoe UI"
+                               VerticalAlignment="Center" />
+                    <ComboBox Grid.Column="1"
+                              Style="{StaticResource PulseComboBoxStyle}"
+                              ItemContainerStyle="{StaticResource PulseComboBoxItemStyle}"
+                              ItemsSource="{Binding StrokePatternOptions}"
+                              SelectedIndex="{Binding SelectedStrokePatternIndex, Mode=TwoWay}"
+                              ToolTip="Stroke waveform pattern" />
+                </Grid>
+
+                <!-- Randomness Slider -->
+                <Grid Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="70" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="36" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="Randomness"
+                               Foreground="{StaticResource TextPrimaryBrush}"
+                               FontSize="11" FontFamily="Segoe UI"
+                               VerticalAlignment="Center" />
+                    <Slider Grid.Column="1"
+                            Style="{StaticResource PulseSliderStyle}"
+                            Minimum="0" Maximum="1"
+                            Value="{Binding Randomness, Mode=TwoWay}"
+                            SmallChange="0.01" LargeChange="0.1"
+                            VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2"
+                               Text="{Binding RandomnessLabel}"
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               FontSize="11" FontFamily="Segoe UI"
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Center" />
+                </Grid>
+            </StackPanel>
+
+            <!-- ════ Separator ════ -->
+            <Border Height="1"
+                    Background="{StaticResource BorderBrush}"
+                    Visibility="{Binding ShowBpm, Converter={StaticResource BoolToVis}}"
+                    Margin="0,0,0,8" />
+
             <!-- ════ Generate Funscript ════ -->
-            <Grid Visibility="{Binding ShowBpm, Converter={StaticResource BoolToVis}}"
-                  Margin="0,0,0,8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="8" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <ComboBox Grid.Column="0"
-                          Style="{StaticResource PulseComboBoxStyle}"
-                          ItemContainerStyle="{StaticResource PulseComboBoxItemStyle}"
-                          ItemsSource="{Binding BeatRateOptions}"
-                          SelectedIndex="{Binding SelectedFunscriptBeatRateIndex, Mode=TwoWay}"
-                          VerticalAlignment="Stretch"
-                          ToolTip="Beat rate for generated funscript" />
-
-                <Button Grid.Column="2"
-                        Content="Generate Funscript"
-                        Style="{StaticResource GenerateFunscriptButtonStyle}"
-                        Command="{Binding GenerateFunscriptCommand}"
-                        IsEnabled="{Binding CanGenerateFunscript}"
-                        ToolTip="Generate a .funscript file from the detected beats" />
-            </Grid>
+            <Button Visibility="{Binding ShowBpm, Converter={StaticResource BoolToVis}}"
+                    Content="Generate Funscript"
+                    Style="{StaticResource GenerateFunscriptButtonStyle}"
+                    Command="{Binding GenerateFunscriptCommand}"
+                    IsEnabled="{Binding CanGenerateFunscript}"
+                    ToolTip="Generate a .funscript file from the detected beats"
+                    Margin="0,0,0,8" />
 
             <!-- ════ Separator ════ -->
             <Border Height="1"

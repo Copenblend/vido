@@ -404,7 +404,16 @@ public sealed class InstallEngine
             "Vido");
 
         if (Directory.Exists(vidoFolder))
-            Directory.Delete(vidoFolder, recursive: true);
+        {
+            try
+            {
+                Directory.Delete(vidoFolder, recursive: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Best-effort cleanup — folder may be locked by Explorer or indexing
+            }
+        }
     }
 
     private static void CreateShortcut(string shortcutPath, string targetPath, string workingDir)

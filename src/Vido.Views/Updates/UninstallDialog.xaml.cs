@@ -158,7 +158,16 @@ public partial class UninstallDialog : Window
             "Vido");
 
         if (Directory.Exists(vidoFolder))
-            Directory.Delete(vidoFolder, recursive: true);
+        {
+            try
+            {
+                Directory.Delete(vidoFolder, recursive: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Best-effort cleanup — folder may be locked by Explorer or indexing
+            }
+        }
     }
 
     internal static void DeleteAppDataFolder(string? appDataPath = null)

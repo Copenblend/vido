@@ -412,7 +412,7 @@ internal sealed class PulseSidebarViewModel : INotifyPropertyChanged, IDisposabl
         OnPropertyChanged(nameof(CanGenerateFunscript));
         try
         {
-            int divisor = _selectedFunscriptBeatRateIndex + 1;
+            int divisor = _selectedBeatRateIndex + 1;
             var filteredBeatMap = FunscriptWriter.FilterBeatsByDivisor(beatMap, divisor);
             var actions = FunscriptWriter.CreateActionsFromBeatMap(filteredBeatMap, BuildStrokeSettings());
             await FunscriptWriter.WriteAsync(actions, targetPath);

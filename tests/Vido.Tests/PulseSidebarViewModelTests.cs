@@ -711,7 +711,7 @@ public class PulseSidebarViewModelTests : IDisposable
             SetPrivateField(_engine, "_currentBeatMap", beatMap);
             InvokePrivate(vm, "OnBeatMapReady", beatMap);
 
-            vm.SelectedFunscriptBeatRateIndex = 1; // divisor 2
+            vm.SelectedBeatRateIndex = 1; // divisor 2
 
             await InvokePrivateAsync(vm, "GenerateFunscriptAsync");
 
