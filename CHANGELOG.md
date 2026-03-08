@@ -4,6 +4,9 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **vido-194**: Added `StrokePattern` enum (Classic, DoubleTap, TripleTap, HoldTop, HoldBottom) and `PulseStrokeSettings` sealed record (AmplitudeOffset, EasingBlend, Pattern, Randomness) in `Vido.Core.Models.Pulse`. Extended `AppSettings` with four new stroke control properties (`PulseAmplitudeOffset`, `PulseEasingBlend`, `PulseStrokePattern`, `PulseRandomness`) including `ResetToDefaults()` support. Includes 20 unit tests.
+
 ### Changed
 - **vido-183**: Added dark-neutral default button background (`ButtonDefaultBackgroundColor` #313131, `ButtonDefaultBackgroundBrush`) to both installer and main app theme resources. All primary action buttons in the installer (Welcome, Options, Finish pages) and UpdateDialog (Update Now, Restart Now, Open Release Page, OK) now display a dark gray (#313131) background by default and transition to accent blue (#0078d4) on hover. Secondary buttons (Later, Cancel, Close) remain unchanged. No functional changes — visual styling only.
 

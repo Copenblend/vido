@@ -208,6 +208,28 @@ public sealed class AppSettings
     /// </summary>
     public int PulseFunscriptBeatRateIndex { get; set; } = 0;
 
+    // --- Pulse Stroke Controls ---
+
+    /// <summary>
+    /// Additive amplitude offset for Pulse strokes. −1.0 = zero movement, 0.0 = default, +1.0 = full-range.
+    /// </summary>
+    public double PulseAmplitudeOffset { get; set; } = 0.0;
+
+    /// <summary>
+    /// Easing blend for Pulse strokes. −1.0 = gentle (sinusoidal), 0.0 = default (quadratic), +1.0 = aggressive (linear).
+    /// </summary>
+    public double PulseEasingBlend { get; set; } = 0.0;
+
+    /// <summary>
+    /// Stroke waveform pattern name for Pulse. Stored as string for forward compatibility.
+    /// </summary>
+    public string PulseStrokePattern { get; set; } = "Classic";
+
+    /// <summary>
+    /// Random amplitude variation per beat for Pulse. 0.0 = none, 1.0 = full.
+    /// </summary>
+    public double PulseRandomness { get; set; } = 0.0;
+
     // --- General ---
 
     /// <summary>
@@ -301,6 +323,10 @@ public sealed class AppSettings
         PulseUsePulse = false;
         PulseBeatRateIndex = 0;
         PulseFunscriptBeatRateIndex = 0;
+        PulseAmplitudeOffset = 0.0;
+        PulseEasingBlend = 0.0;
+        PulseStrokePattern = "Classic";
+        PulseRandomness = 0.0;
 
         // General settings
         ToastDurationSeconds = 3.0;

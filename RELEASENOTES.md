@@ -1,5 +1,16 @@
 # Release Notes
 
+## [0.23.0]
+
+### What's New
+- Pulse stroke controls: fine-tune haptic motion with amplitude, speed, pattern, and randomness sliders
+- Amplitude slider adjusts stroke intensity from no movement to full-range strokes
+- Speed slider controls stroke feel from gentle and smooth to aggressive and snappy
+- Five stroke patterns: Classic, Double Tap, Triple Tap, Hold Top, and Hold Bottom
+- Randomness slider adds organic variation to stroke amplitude for a more natural feel
+- All stroke controls are baked into generated funscripts
+- Reorganized Pulse sidebar with dedicated "Stroke Controls" section
+
 ## [0.22.0]
 
 ### What's New
