@@ -59,16 +59,6 @@ All settings are organized by category. Use the **search bar** at the top to qui
 
 ---
 
-## Pulse
-
-| Setting | Default | Description |
-|---------|---------|-------------|
-| **Beat Detection Sensitivity** | 1.5 | How sensitive the audio beat detection is (0.5–5.0). Higher values detect more beats, including quieter ones. |
-| **Enable BPM Phase Lock** | On | Locks beat detection to a consistent BPM phase for steadier device motion |
-| **Waveform Window Duration** | 30 seconds | How much time is visible in the Pulse waveform display. Options: 15s, 30s, 60s, 2 min |
-
----
-
 ## Playlists
 
 | Setting | Default | Description |
@@ -93,7 +83,6 @@ This includes your settings file, fill profiles, and other application data. Set
 
 - [User Interface](user-interface.md) — window layout and panels
 - [OSR2+ Device Control](osr2-device-control.md) — device connection details
-- [Pulse Beat Detection](pulse-beat-detection.md) — beat detection details
 - [Playlists](playlists.md) — playlist features
 
 ---
