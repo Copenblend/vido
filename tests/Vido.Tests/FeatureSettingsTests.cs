@@ -395,41 +395,6 @@ public sealed class FeatureSettingsTests
     }
 
     /// <summary>
-    /// Verifies that Pulse detection settings defaults are correct.
-    /// </summary>
-    [Fact]
-    public void AppSettings_PulseDetectionDefaults_AreCorrect()
-    {
-        var settings = new AppSettings();
-
-        Assert.Equal(1.5, settings.PulseBeatSensitivity);
-        Assert.True(settings.PulseEnableBpmPhaseLock);
-    }
-
-    /// <summary>
-    /// Verifies that Pulse visualizer settings defaults are correct.
-    /// </summary>
-    [Fact]
-    public void AppSettings_PulseVisualizerDefaults_AreCorrect()
-    {
-        var settings = new AppSettings();
-
-        Assert.Equal(30, settings.PulseWaveformWindowDuration);
-    }
-
-    /// <summary>
-    /// Verifies that Pulse runtime settings defaults are correct.
-    /// </summary>
-    [Fact]
-    public void AppSettings_PulseRuntimeDefaults_AreCorrect()
-    {
-        var settings = new AppSettings();
-
-        Assert.False(settings.PulseUsePulse);
-        Assert.Equal(0, settings.PulseBeatRateIndex);
-    }
-
-    /// <summary>
     /// Verifies that Playlist settings defaults are correct.
     /// </summary>
     [Fact]
@@ -460,11 +425,6 @@ public sealed class FeatureSettingsTests
             Osr2VisualizerWindowDuration = 120,
             Osr2BeatBarMode = "OnPeak",
             Osr2LastRightPanel = "SomePanel",
-            PulseBeatSensitivity = 3.0,
-            PulseEnableBpmPhaseLock = false,
-            PulseWaveformWindowDuration = 10,
-            PulseUsePulse = true,
-            PulseBeatRateIndex = 5,
             PlaylistAutoSave = true,
             PlaylistRecentPlaylists = ["a.m3u", "b.m3u"],
             PlaylistLastPlaylistPath = "/some/path.m3u"
@@ -483,11 +443,6 @@ public sealed class FeatureSettingsTests
         Assert.Equal("Off", settings.Osr2BeatBarMode);
         Assert.Equal("", settings.Osr2LastRightPanel);
         Assert.Equal(4, settings.Osr2AxisSettings.Count);
-        Assert.Equal(1.5, settings.PulseBeatSensitivity);
-        Assert.True(settings.PulseEnableBpmPhaseLock);
-        Assert.Equal(30, settings.PulseWaveformWindowDuration);
-        Assert.False(settings.PulseUsePulse);
-        Assert.Equal(0, settings.PulseBeatRateIndex);
         Assert.False(settings.PlaylistAutoSave);
         Assert.Empty(settings.PlaylistRecentPlaylists);
         Assert.Equal("", settings.PlaylistLastPlaylistPath);
