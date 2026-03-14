@@ -155,7 +155,7 @@ public sealed class AppSettings
 
     /// <summary>
     /// Persisted built-in beat bar mode to restore when an external source
-    /// (e.g. Pulse) is deactivated. Empty string means no fallback saved.
+    /// is deactivated. Empty string means no fallback saved.
     /// </summary>
     public string Osr2BeatBarFallbackMode { get; set; } = "";
 
@@ -170,65 +170,6 @@ public sealed class AppSettings
     /// Per-axis configuration for the OSR2+ device, keyed by axis ID (L0, R0, R1, R2).
     /// </summary>
     public Dictionary<string, AxisSettingsData> Osr2AxisSettings { get; set; } = AxisSettingsData.CreateDefaults();
-
-    // --- Pulse Detection Settings ---
-
-    /// <summary>
-    /// Beat detection sensitivity multiplier for Pulse audio analysis.
-    /// Higher values detect more beats (including quieter ones).
-    /// </summary>
-    public double PulseBeatSensitivity { get; set; } = 1.5;
-
-    /// <summary>
-    /// Whether BPM-based phase locking is enabled for Pulse beat detection.
-    /// </summary>
-    public bool PulseEnableBpmPhaseLock { get; set; } = true;
-
-    // --- Pulse Visualizer Settings ---
-
-    /// <summary>
-    /// Duration of the waveform display window in seconds.
-    /// </summary>
-    public int PulseWaveformWindowDuration { get; set; } = 30;
-
-    // --- Pulse Runtime Settings ---
-
-    /// <summary>
-    /// Whether the Pulse audio-driven haptic engine is active.
-    /// </summary>
-    public bool PulseUsePulse { get; set; } = false;
-
-    /// <summary>
-    /// Index of the selected beat rate in the Pulse rate selector.
-    /// </summary>
-    public int PulseBeatRateIndex { get; set; } = 0;
-
-    /// <summary>
-    /// Index of the selected beat rate for funscript generation (independent from live beat rate).
-    /// </summary>
-    public int PulseFunscriptBeatRateIndex { get; set; } = 0;
-
-    // --- Pulse Stroke Controls ---
-
-    /// <summary>
-    /// Additive amplitude offset for Pulse strokes. −1.0 = zero movement, 0.0 = default, +1.0 = full-range.
-    /// </summary>
-    public double PulseAmplitudeOffset { get; set; } = 0.0;
-
-    /// <summary>
-    /// Easing blend for Pulse strokes. −1.0 = gentle (sinusoidal), 0.0 = default (quadratic), +1.0 = aggressive (linear).
-    /// </summary>
-    public double PulseEasingBlend { get; set; } = 0.0;
-
-    /// <summary>
-    /// Stroke waveform pattern name for Pulse. Stored as string for forward compatibility.
-    /// </summary>
-    public string PulseStrokePattern { get; set; } = "Classic";
-
-    /// <summary>
-    /// Random amplitude variation per beat for Pulse. 0.0 = none, 1.0 = full.
-    /// </summary>
-    public double PulseRandomness { get; set; } = 0.0;
 
     // --- General ---
 
@@ -315,18 +256,6 @@ public sealed class AppSettings
         Osr2BeatBarFallbackMode = "";
         Osr2LastRightPanel = "";
         Osr2AxisSettings = AxisSettingsData.CreateDefaults();
-
-        // Pulse settings
-        PulseBeatSensitivity = 1.5;
-        PulseEnableBpmPhaseLock = true;
-        PulseWaveformWindowDuration = 30;
-        PulseUsePulse = false;
-        PulseBeatRateIndex = 0;
-        PulseFunscriptBeatRateIndex = 0;
-        PulseAmplitudeOffset = 0.0;
-        PulseEasingBlend = 0.0;
-        PulseStrokePattern = "Classic";
-        PulseRandomness = 0.0;
 
         // General settings
         ToastDurationSeconds = 3.0;
