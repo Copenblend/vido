@@ -29,6 +29,7 @@ working/
 .github/agents/
 .github/skills/
 integration/
+backlog/
 
 # .NET Core
 project.lock.json
