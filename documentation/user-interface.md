@@ -48,7 +48,6 @@ These quick-access buttons appear in the title bar:
 | Button | Icon | Description |
 |--------|------|-------------|
 | **OSR2+ Connect** | Device icon | Connect or disconnect your OSR2+ device |
-| **Pulse Toggle** | Heart icon | Enable or disable Pulse beat detection — filled heart when active |
 | **Screenshot** | Camera icon | Capture the current video frame (only visible when enabled in Settings) |
 
 ---
@@ -61,9 +60,8 @@ The activity bar is the narrow column of icons on the far left edge. It controls
 |----------|------|-------|-------------|
 | 1 | 📁 Folder | [File Explorer](file-explorer.md) | Browse video files in a folder |
 | 2 | 🔌 Device | [OSR2+ Control](osr2-device-control.md) | Connect and control your haptic device |
-| 3 | ❤️ Heart | [Pulse](pulse-beat-detection.md) | Audio beat detection and haptic sync |
-| 4 | 📋 List | [Playlists](playlists.md) | Manage playlists |
-| 5 | ⚙️ Gear | [Settings](settings.md) | Application settings (pinned to bottom) |
+| 3 | 📋 List | [Playlists](playlists.md) | Manage playlists |
+| 4 | ⚙️ Gear | [Settings](settings.md) | Application settings (pinned to bottom) |
 
 - **Click an icon** to open that panel in the sidebar
 - **Click the active icon again** to collapse the sidebar
@@ -91,7 +89,6 @@ A collapsible panel below the video area with tabbed content:
 |-----|-----------------|----------|
 | **Log Output** | Always present | Application log messages |
 | **Funscript Visualizer** | When OSR2+ has scripts loaded | Real-time funscript graph or heatmap |
-| **Pulse Waveform** | When Pulse analyzes a file | Audio waveform with beat markers |
 
 | Shortcut | Action |
 |----------|--------|
@@ -122,7 +119,7 @@ A thin bar at the very bottom of the window showing contextual information:
 | Position | Content |
 |----------|---------|
 | **Left** | Current video filename, playlist status |
-| **Right** | Video duration, resolution, codec, OSR2+ connection, Pulse state/BPM |
+| **Right** | Video duration, resolution, codec, OSR2+ connection |
 
 | Shortcut | Action |
 |----------|--------|
@@ -192,7 +189,6 @@ Controls auto-hide after a few seconds of inactivity. Press **Escape** or **F11*
 Vido shows brief notification popups for important events:
 
 - Device connected/disconnected
-- Pulse enabled/disabled
 - Funscript generated
 - Errors and warnings
 

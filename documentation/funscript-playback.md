@@ -25,8 +25,6 @@ When you open a video, Vido automatically searches the same folder for matching 
 
 If matching files are found, they're loaded automatically — no action needed.
 
-> **Tip:** If [Pulse](pulse-beat-detection.md) is enabled, auto-loading for the Stroke (L0) axis is suppressed because Pulse takes over L0 control.
-
 ---
 
 ## Manual Loading
@@ -83,7 +81,6 @@ If movements feel out of sync with the video, adjust the **Global Funscript Offs
 ## Related
 
 - [OSR2+ Device Control](osr2-device-control.md) — connecting your device and axis configuration
-- [Pulse Beat Detection](pulse-beat-detection.md) — auto-generating movement from audio
 - [Fill Profiles](fill-profiles.md) — saving axis configurations
 
 ---

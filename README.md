@@ -53,12 +53,6 @@ Detailed documentation for every feature in Vido. Click any link to learn more.
 | [Funscript Playback](documentation/funscript-playback.md) | Auto-loading scripts, manual assignment, the visualizer |
 | [Fill Profiles](documentation/fill-profiles.md) | Built-in profiles, creating your own, switching, modification detection |
 
-### Audio & Beat Detection
-
-| Guide | What You'll Learn |
-|-------|-------------------|
-| [Pulse Beat Detection](documentation/pulse-beat-detection.md) | Enabling Pulse, beat analysis, waveform panel, generating funscripts |
-
 ### Organization
 
 | Guide | What You'll Learn |
@@ -69,7 +63,7 @@ Detailed documentation for every feature in Vido. Click any link to learn more.
 
 | Guide | What You'll Learn |
 |-------|-------------------|
-| [Settings](documentation/settings.md) | Every setting explained — General, Playback, Explorer, Screenshot, OSR2+, Pulse, Playlists |
+| [Settings](documentation/settings.md) | Every setting explained — General, Playback, Explorer, Screenshot, OSR2+, Playlists |
 
 ---
 

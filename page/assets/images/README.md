@@ -25,7 +25,6 @@ In the HTML, placeholders appear as `<div class="screenshot-placeholder">` eleme
 | User Interface | `guide-window-layout.png` | Full Vido window with labels or annotations on each region: title bar, activity bar, sidebar, video area, bottom panel, right panel, status bar | 1000 x 625 |
 | File Explorer | `guide-file-explorer.png` | File Explorer sidebar open with a folder tree expanded, showing several video files | 400 x 500 |
 | Funscript Playback | `guide-funscript-visualizer.png` | Bottom panel showing the Funscript Visualizer with multi-axis graph lines and playback cursor | 900 x 250 |
-| Pulse Beat Detection | `guide-pulse-waveform.png` | Bottom panel showing the Pulse Waveform with audio envelope, beat marker lines, and BPM readout | 900 x 250 |
 
 ---
 

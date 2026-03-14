@@ -111,8 +111,6 @@ The beat bar is a visual overlay on the video that marks rhythmic points in the 
 | **On Peak & Valley** | Marks at all direction changes |
 | **Mid Stroke** | Marks at the midpoint of descending strokes |
 
-When [Pulse](pulse-beat-detection.md) is active, it can add its own beat bar mode showing red heart markers synchronized to detected beats.
-
 Select the beat bar mode from the dropdown in the OSR2+ sidebar or axis control panel.
 
 ---
@@ -155,7 +153,6 @@ Vido shows toast notifications for connection events:
 
 - [Funscript Playback](funscript-playback.md) — loading and managing funscripts
 - [Fill Profiles](fill-profiles.md) — saving and switching axis configurations
-- [Pulse Beat Detection](pulse-beat-detection.md) — automatic beat-driven haptics
 - [Settings](settings.md) — all OSR2+ settings
 
 ---
