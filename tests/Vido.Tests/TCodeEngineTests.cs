@@ -409,7 +409,7 @@ public class TCodeEngineTests : IDisposable
 
     /// <summary>
     /// Verifies that re-setting scripts after clearing with an empty-actions L0
-    /// replaces the prior state correctly (simulates Pulse suppress flow, VI-0012).
+    /// replaces the prior state correctly (VI-0012).
     /// </summary>
     [Fact]
     public void SetScripts_ClearThenEmptyL0_ReplacesPriorState()

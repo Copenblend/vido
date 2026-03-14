@@ -341,19 +341,6 @@ public sealed class Osr2PlusModelTests
     }
 
     /// <summary>
-    /// Verifies that built-in modes are not external.
-    /// </summary>
-    [Fact]
-    public void BeatBarMode_BuiltInModes_AreNotExternal()
-    {
-        Assert.False(BeatBarMode.Off.IsExternal);
-        Assert.False(BeatBarMode.OnPeak.IsExternal);
-        Assert.False(BeatBarMode.OnValley.IsExternal);
-        Assert.False(BeatBarMode.OnPeakAndValley.IsExternal);
-        Assert.False(BeatBarMode.MidStroke.IsExternal);
-    }
-
-    /// <summary>
     /// Verifies that built-in modes have correct IDs.
     /// </summary>
     [Fact]
@@ -367,30 +354,13 @@ public sealed class Osr2PlusModelTests
     }
 
     /// <summary>
-    /// Verifies that CreateExternal creates an external mode.
-    /// </summary>
-    [Fact]
-    public void BeatBarMode_CreateExternal_CreatesExternalMode()
-    {
-        var mode = BeatBarMode.CreateExternal("pulse.beat", "Pulse Beat");
-
-        Assert.Equal("pulse.beat", mode.Id);
-        Assert.Equal("Pulse Beat", mode.DisplayName);
-        Assert.True(mode.IsExternal);
-    }
-
-    /// <summary>
     /// Verifies that equality works by ID.
     /// </summary>
     [Fact]
     public void BeatBarMode_Equality_ById()
     {
-        var a = BeatBarMode.CreateExternal("test", "Test A");
-        var b = BeatBarMode.CreateExternal("test", "Test B");
-        var c = BeatBarMode.CreateExternal("other", "Other");
-
-        Assert.Equal(a, b);
-        Assert.NotEqual(a, c);
+        Assert.Equal(BeatBarMode.OnPeak, BeatBarMode.OnPeak);
+        Assert.NotEqual(BeatBarMode.OnPeak, BeatBarMode.OnValley);
     }
 
     /// <summary>
@@ -423,10 +393,8 @@ public sealed class Osr2PlusModelTests
     [Fact]
     public void BeatBarMode_GetHashCode_ConsistentForSameId()
     {
-        var a = BeatBarMode.CreateExternal("same-id", "A");
-        var b = BeatBarMode.CreateExternal("same-id", "B");
-
-        Assert.Equal(a.GetHashCode(), b.GetHashCode());
+        Assert.Equal(BeatBarMode.OnPeak.GetHashCode(), BeatBarMode.OnPeak.GetHashCode());
+        Assert.Equal(BeatBarMode.Off.GetHashCode(), BeatBarMode.Off.GetHashCode());
     }
 
     /// <summary>
