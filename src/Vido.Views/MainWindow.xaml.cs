@@ -27,14 +27,11 @@ using Vido.Core.Playback;
 using Vido.Core.Updates;
 using Vido.Services.Osr2Plus;
 using Vido.Services.Playlists;
-using Vido.Services.Pulse;
 using Vido.ViewModels.Osr2Plus;
 using Vido.ViewModels.Playlists;
-using Vido.ViewModels.Pulse;
 using Vido.Views.Controls;
 using Vido.Views.Osr2Plus;
 using Vido.Views.Playlists;
-using Vido.Views.Pulse;
 using Vido.Views.Updates;
 
 namespace Vido.Views;
@@ -87,16 +84,6 @@ public partial class MainWindow : Window
     private readonly List<IDisposable> _osr2Subscriptions = [];
     private UIElement? _osr2SidebarContent;
     private double _lastSpeedRatio = 1.0;
-
-    // â”€â”€ Pulse integrated feature â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    private PulseEngine? _pulseEngine;
-    private AudioPreAnalysisService? _pulsePreAnalysis;
-    private PulseSidebarViewModel? _pulseSidebarVm;
-    private WaveformViewModel? _waveformVm;
-    private UIElement? _pulseSidebarContent;
-    private UIElement? _pulseBeatRateControl;
-    private Button? _pulseToolbarButton;
-    private readonly List<IDisposable> _pulseSubscriptions = [];
 
     // â”€â”€ Playlists integrated feature â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     private PlaylistViewModel? _playlistVm;
@@ -208,7 +195,6 @@ public partial class MainWindow : Window
         SetupDragDrop();
         _toastService = new ToastService(_settingsService);
         SetupOsr2Plus();
-        SetupPulse();
         SetupPlaylists();
         RestoreWindowState();
         RestoreLayoutState();
@@ -1552,20 +1538,6 @@ public partial class MainWindow : Window
         _osr2Subscriptions.Clear();
         _tcode?.Dispose();
 
-        // Dispose Pulse resources
-        if (_videoEngine is not null)
-        {
-            _videoEngine.AudioSamplesAvailable -= OnPulseAudioSamplesAvailable;
-            _videoEngine.PositionChanged -= OnPulsePositionChanged;
-            _videoEngine.SeekCompleted -= OnPulseSeekCompleted;
-        }
-        foreach (var sub in _pulseSubscriptions) sub.Dispose();
-        _pulseSubscriptions.Clear();
-        _waveformVm?.Dispose();
-        _pulseSidebarVm?.Dispose();
-        _pulseEngine?.Dispose();
-        _pulsePreAnalysis?.Dispose();
-
         SaveWindowState();
         await _stateService.SaveAsync();
         await _settingsService.SaveAsync();
@@ -1687,7 +1659,7 @@ public partial class MainWindow : Window
             if (evt.SuppressFunscripts)
             {
                 // Inject an empty L0 funscript so TCodeService always has a valid
-                // script entry during Pulse+Serial — prevents output-loop freeze.
+                // script entry during external suppression — prevents output-loop freeze.
                 _tcode?.SetScripts(new Dictionary<string, FunscriptData>
                 {
                     ["L0"] = new FunscriptData { AxisId = "L0", FilePath = "", Actions = [] }
@@ -1701,9 +1673,6 @@ public partial class MainWindow : Window
                     BottomPanelContent.Content = content;
             }
         }));
-
-        _osr2Subscriptions.Add(_eventBus.Subscribe<ExternalAxisPositionsEvent>(
-            evt => _tcode.SetExternalPositions(evt.Positions)));
 
         // â”€â”€ Publish Script & Config Changes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _axisControlVm.ScriptsChanged += scripts =>
@@ -1888,219 +1857,6 @@ public partial class MainWindow : Window
             Dispatcher.BeginInvoke(Apply);
     }
 
-
-    // ── Pulse Toolbar Button ──────────────────────────────────
-
-    /// <summary>
-    /// Creates and adds the Pulse toggle toolbar button to the title bar.
-    /// Uses a Path-based heart outline matching the screenshot button style.
-    /// </summary>
-    private void SetupPulseToolbarButton()
-    {
-        // Heart outline path matching the line-art style of other toolbar icons
-        var heartPath = new System.Windows.Shapes.Path
-        {
-            Data = System.Windows.Media.Geometry.Parse(
-                "M 8,14 C 5,11 1,8.5 1,5.5 C 1,3 3,1 5.5,1 C 6.8,1 7.8,1.5 8,2.5 C 8.2,1.5 9.2,1 10.5,1 C 13,1 15,3 15,5.5 C 15,8.5 11,11 8,14 Z"),
-            StrokeThickness = 1.2,
-            Fill = System.Windows.Media.Brushes.Transparent,
-            Stretch = System.Windows.Media.Stretch.Uniform,
-        };
-        heartPath.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "PrimaryForegroundBrush");
-
-        var canvas = new Canvas { Width = 16, Height = 16 };
-        canvas.Children.Add(heartPath);
-        Canvas.SetLeft(heartPath, 1);
-        Canvas.SetTop(heartPath, 1);
-        heartPath.Width = 14;
-        heartPath.Height = 14;
-
-        _pulseToolbarButton = new Button
-        {
-            Content = canvas,
-            ToolTip = "Toggle Pulse",
-            Tag = "pulse-toggle",
-            Height = 22,
-            Background = System.Windows.Media.Brushes.Transparent,
-            BorderThickness = new Thickness(0),
-            Cursor = System.Windows.Input.Cursors.Hand,
-            VerticalAlignment = VerticalAlignment.Center,
-            Padding = new Thickness(4, 2, 4, 2),
-            VerticalContentAlignment = VerticalAlignment.Center,
-            HorizontalContentAlignment = HorizontalAlignment.Center,
-        };
-
-        // Custom template matching the toolbar button style
-        var bdName = "Bd";
-        var template = new ControlTemplate(typeof(Button));
-        var borderFactory = new FrameworkElementFactory(typeof(Border), bdName);
-        borderFactory.SetValue(Border.BackgroundProperty, System.Windows.Media.Brushes.Transparent);
-        borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(3));
-        borderFactory.SetValue(Border.PaddingProperty, new Thickness(6, 2, 6, 2));
-        borderFactory.AppendChild(new FrameworkElementFactory(typeof(ContentPresenter)));
-
-        var hoverTrigger = new Trigger { Property = UIElement.IsMouseOverProperty, Value = true };
-        hoverTrigger.Setters.Add(new Setter(Border.BackgroundProperty,
-            new DynamicResourceExtension("HoverBackgroundBrush"), bdName));
-        template.Triggers.Add(hoverTrigger);
-        template.VisualTree = borderFactory;
-        _pulseToolbarButton.Template = template;
-
-        // Click toggles PulseUsePulse via the sidebar ViewModel
-        _pulseToolbarButton.Click += (_, _) =>
-        {
-            if (_pulseSidebarVm is not null)
-                _pulseSidebarVm.UsePulse = !_pulseSidebarVm.UsePulse;
-        };
-
-        // Sync icon when sidebar ViewModel changes (bidirectional)
-        if (_pulseSidebarVm is not null)
-        {
-            _pulseSidebarVm.PropertyChanged += (_, e) =>
-            {
-                if (e.PropertyName == nameof(PulseSidebarViewModel.UsePulse))
-                    UpdatePulseToolbarIcon(_pulseSidebarVm.UsePulse);
-            };
-        }
-
-        TitleBar.AddPluginToolbarButton(_pulseToolbarButton);
-
-        // Set initial icon state after the button is in the panel
-        if (_pulseSidebarVm is not null)
-            UpdatePulseToolbarIcon(_pulseSidebarVm.UsePulse);
-    }
-
-    /// <summary>
-    /// Updates the Pulse toolbar button highlight based on the active state.
-    /// </summary>
-    /// <param name="isActive">Whether Pulse is currently enabled.</param>
-    private void UpdatePulseToolbarIcon(bool isActive)
-    {
-        void Apply()
-        {
-            TitleBar.SetToolbarButtonHighlight("pulse-toggle", isActive);
-        }
-
-        if (Dispatcher.CheckAccess())
-            Apply();
-        else
-            Dispatcher.BeginInvoke(Apply);
-    }
-    // â”€â”€ Pulse Integrated Feature â”€â”€
-
-    /// <summary>
-    /// Creates and wires all Pulse services, view models, views, event bus subscriptions,
-    /// and UI contribution points. This replaces the plugin-based <c>PulsePlugin.Activate()</c>
-    /// logic with direct integration into the main window.
-    /// </summary>
-    private void SetupPulse()
-    {
-        // â”€â”€ Create Services â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        var decoder = new FfmpegAudioDecoder();
-        _pulsePreAnalysis = new AudioPreAnalysisService(decoder);
-        var liveAmplitude = new LiveAmplitudeService();
-        var mapper = new PulseTCodeMapper();
-
-        _pulseEngine = new PulseEngine(
-            _pulsePreAnalysis, liveAmplitude, mapper, _eventBus, _logService);
-
-        // â”€â”€ Create ViewModels â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        _pulseSidebarVm = new PulseSidebarViewModel(
-            _pulseEngine, _settingsService, _eventBus, _toastService, ConfirmOverwriteAsync);
-        _waveformVm = new WaveformViewModel(_pulseEngine, _settingsService);
-
-        // â”€â”€ Wire Status Bar Updates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        _pulseSidebarVm.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(PulseSidebarViewModel.StatusBarText))
-            {
-                var statusItem = _statusBarViewModel.FindItem("pulse.status");
-                if (statusItem is not null)
-                    statusItem.Text = _pulseSidebarVm.StatusBarText;
-            }
-
-            if (e.PropertyName == nameof(PulseSidebarViewModel.UsePulse))
-            {
-                if (_pulseBeatRateControl is not null)
-                    _pulseBeatRateControl.Visibility = _pulseSidebarVm.UsePulse
-                        ? Visibility.Visible
-                        : Visibility.Collapsed;
-            }
-        };
-
-        // â”€â”€ Wire IVideoEngine Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        if (_videoEngine is not null)
-        {
-            _videoEngine.AudioSamplesAvailable += OnPulseAudioSamplesAvailable;
-            _videoEngine.PositionChanged += OnPulsePositionChanged;
-            _videoEngine.SeekCompleted += OnPulseSeekCompleted;
-        }
-
-        // â”€â”€ Wire SuppressFunscript â†’ Auto-show Pulse Waveform â”€
-        _pulseSubscriptions.Add(_eventBus.Subscribe<SuppressFunscriptEvent>(evt =>
-        {
-            if (evt.SuppressFunscripts)
-            {
-                Dispatcher.BeginInvoke(() =>
-                {
-                    _mainWindowViewModel.ActivateBottomPanelTab("pulse.waveform");
-                    if (_bottomPanelContents.TryGetValue("pulse.waveform", out var content))
-                        BottomPanelContent.Content = content;
-                });
-            }
-        }));
-
-        // Wire FunscriptGenerated -> Reload scripts in AxisControl
-        _pulseSubscriptions.Add(_eventBus.Subscribe<FunscriptGeneratedEvent>(e =>
-        {
-            Dispatcher.BeginInvoke(() =>
-            {
-                _axisControlVm?.LoadScriptsForVideo(e.VideoPath);
-            });
-        }));
-
-        // â”€â”€ Register UI Contributions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        // Sidebar content
-        _pulseSidebarContent = new PulseSidebarView { DataContext = _pulseSidebarVm };
-
-        // Bottom panel tab: Pulse Waveform
-        var waveformView = new WaveformPanelView { DataContext = _waveformVm };
-        _bottomPanelContents["pulse.waveform"] = waveformView;
-        _mainWindowViewModel.OpenBottomPanelTab("pulse.waveform", "PULSE WAVEFORM");
-        TitleBar.AddBottomPanelTabMenuItem("pulse.waveform", "Pulse Waveform");
-
-        // Status bar item
-        var statusItem = _statusBarViewModel.RegisterItem("pulse.status", StatusBarAlignment.Right, 600);
-        statusItem.Text = _pulseSidebarVm.StatusBarText;
-        statusItem.Tooltip = "Pulse Beat Detection Status";
-        statusItem.IsVisible = true;
-        TitleBar.AddStatusBarMenuItem("pulse.status", "Pulse Status");
-
-        // Control bar: BeatRate ComboBox
-        var beatRateComboBox = new BeatRateComboBox { DataContext = _pulseSidebarVm };
-        beatRateComboBox.Visibility = _pulseSidebarVm.UsePulse
-            ? Visibility.Visible
-            : Visibility.Collapsed;
-        _pulseBeatRateControl = beatRateComboBox;
-        VideoPlayer.AddPluginControlBarItem("pulse.beat-rate", beatRateComboBox);
-
-        // â”€â”€ Restore Persisted State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        if (_settingsService.Current.PulseUsePulse)
-            _pulseSidebarVm.UsePulse = true;
-
-        // Toolbar button: Toggle Pulse
-        SetupPulseToolbarButton();
-
-        _logService.Info("Pulse feature initialized", "Pulse");
-    }
-
-    private Task<bool> ConfirmOverwriteAsync(string title, string message)
-    {
-        var result = MessageBox.Show(this, message, title,
-            MessageBoxButton.YesNo, MessageBoxImage.Warning);
-        return Task.FromResult(result == MessageBoxResult.Yes);
-    }
-
     // â”€â”€ Playlists Integrated Feature â”€â”€
 
     /// <summary>
@@ -2167,31 +1923,6 @@ public partial class MainWindow : Window
         _fileExplorerViewModel.AdditionalAcceptedExtensions.Add(".vidpl");
 
         _logService.Info("Playlists feature initialized", "Playlists");
-    }
-
-    /// <summary>
-    /// Forwards decoded audio samples from the video engine to the Pulse engine.
-    /// </summary>
-    private void OnPulseAudioSamplesAvailable(AudioSampleEventArgs args)
-    {
-        _pulseEngine?.OnAudioSamplesAvailable(args);
-    }
-
-    /// <summary>
-    /// Forwards playback position from the video engine to the Pulse engine and waveform view model.
-    /// </summary>
-    private void OnPulsePositionChanged(TimeSpan position)
-    {
-        _pulseEngine?.OnPositionChanged(position.TotalMilliseconds);
-        _waveformVm?.UpdateTime(position.TotalSeconds);
-    }
-
-    /// <summary>
-    /// Forwards seek completed event from the video engine to the Pulse engine.
-    /// </summary>
-    private void OnPulseSeekCompleted()
-    {
-        _pulseEngine?.OnSeekCompleted();
     }
 
     /// <summary>
