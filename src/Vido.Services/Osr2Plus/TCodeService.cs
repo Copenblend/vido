@@ -43,14 +43,6 @@ public class TCodeService : IDisposable
     private bool _hasActiveFillConfigs;
     private int _offsetMs;
 
-    private const int AxisCount = 4;
-
-    // External axis positions (set by plugins via IEventBus).
-    // Values are stored in fixed arrays indexed by axis ordinal to avoid per-update allocations.
-    private readonly double[] _extPosValues = new double[AxisCount];
-    private readonly bool[] _extPosSet = new bool[AxisCount];
-    private volatile bool _hasExternalPositions;
-
     // Dirty value tracking: only send axes whose TCode value changed
     private readonly Dictionary<string, int> _lastSentValues = new();
 
@@ -140,9 +132,6 @@ public class TCodeService : IDisposable
         _cumulativeFillTime.Clear();
         foreach (var gen in _randomGenerators.Values) gen.Reset();
 
-        // Clear stale external positions so the output loop falls back to
-        // funscript interpolation (fixes Pulse → Funscript switching).
-        _hasExternalPositions = false;
     }
 
     /// <summary>
@@ -267,60 +256,6 @@ public class TCodeService : IDisposable
     public void SetOffset(int offsetMs)
     {
         _offsetMs = offsetMs;
-    }
-
-    /// <summary>
-    /// Applies external axis positions from an <see cref="ExternalAxisPositionsEvent"/>.
-    /// When set, the specified axes use these positions instead of funscript interpolation.
-    /// Pass an empty memory slice to clear external positions.
-    /// </summary>
-    /// <param name="positions">External axis positions. Empty to clear.</param>
-    public void SetExternalPositions(ReadOnlyMemory<AxisPosition> positions)
-    {
-        if (positions.IsEmpty)
-        {
-            _hasExternalPositions = false;
-            return;
-        }
-
-        Array.Clear(_extPosSet);
-        foreach (var position in positions.Span)
-        {
-            var index = AxisOrdinal(position.AxisId);
-            if (index >= 0)
-            {
-                _extPosValues[index] = position.Position;
-                _extPosSet[index] = true;
-            }
-        }
-
-        _hasExternalPositions = true;
-    }
-
-    /// <summary>
-    /// Clears any external axis positions so the output loop falls back to
-    /// funscript interpolation.
-    /// </summary>
-    public void ClearExternalPositions()
-    {
-        _hasExternalPositions = false;
-    }
-
-    /// <summary>
-    /// Returns the fixed ordinal index for a supported axis ID.
-    /// </summary>
-    /// <param name="axisId">Axis ID (L0, R0, R1, R2).</param>
-    /// <returns>The axis ordinal index (0..3), or -1 for unknown axis IDs.</returns>
-    internal static int AxisOrdinal(string axisId)
-    {
-        return axisId switch
-        {
-            "L0" => 0,
-            "R0" => 1,
-            "R1" => 2,
-            "R2" => 3,
-            _ => -1,
-        };
     }
 
     // ===== Thread Lifecycle =====
@@ -522,8 +457,7 @@ public class TCodeService : IDisposable
                     lock (_testLock) hasTestAxes = _testingAxes.Count > 0;
 
                     bool hasFillOrReturn = HasActiveFillModes();
-                    bool hasExternalPositions = _hasExternalPositions;
-                    if (_isPlaying || hasFillOrReturn || hasTestAxes || hasExternalPositions)
+                    if (_isPlaying || hasFillOrReturn || hasTestAxes)
                     {
                         OutputTick(elapsedSec, hasTestAxes);
                     }
@@ -579,14 +513,7 @@ public class TCodeService : IDisposable
         double strokePosition = 50.0;
         bool hasStrokeScript = false;
         var strokeConfig = _cachedStrokeConfig;
-        if (strokeConfig != null && _hasExternalPositions && _extPosSet[0])
-        {
-            // When an external source (e.g. Pulse) drives L0, prefer its position
-            // for stroke tracking so SyncWithStroke fill modes work correctly.
-            strokePosition = _extPosValues[0];
-            hasStrokeScript = true;
-        }
-        else if (strokeConfig != null && _scripts.TryGetValue("L0", out var strokeScript))
+        if (strokeConfig != null && _scripts.TryGetValue("L0", out var strokeScript))
         {
             strokePosition = _interpolation.GetPosition(strokeScript, currentTimeMs, "L0");
             hasStrokeScript = true;
@@ -683,22 +610,6 @@ public class TCodeService : IDisposable
                     _lastSentValues[config.Id] = testTcode;
                 }
                 continue; // Skip normal playback for this axis
-            }
-
-            // === External axis positions: bypass funscript for externally driven axes ===
-            if (_hasExternalPositions)
-            {
-                var externalIndex = AxisOrdinal(config.Id);
-                if (externalIndex >= 0 && _extPosSet[externalIndex])
-                {
-                    var extTcode = ApplyPositionOffset(config, PositionToTCode(config, _extPosValues[externalIndex]));
-                    if (IsDirty(config.Id, extTcode))
-                    {
-                        AppendCommand(config, extTcode, intervalMs);
-                        _lastSentValues[config.Id] = extTcode;
-                    }
-                    continue;
-                }
             }
 
             // Scripted axis: interpolate position from funscript
