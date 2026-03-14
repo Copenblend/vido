@@ -5,6 +5,7 @@ All notable changes to the Vido project will be documented in this file.
 ## [Unreleased]
 
 ### Removed
+- **vido-231**: Removed dead `AudioSamplesAvailable` event from `IVideoEngine` and `FFmpegVideoEngine`, the `EmitAudioSamples()` private method and both call sites (time-stretch and direct audio paths), `AudioSampleEventArgs` type, and `AudioSampleEventArgsTests`. Zero subscribers existed after Pulse removal. Audio rendering pipeline unchanged.
 - **vido-208**: Removed the Pulse beat detection feature entirely. Deleted all Pulse source code (30+ source files across Views, ViewModels, Services, Core), 7 Pulse-only haptic/event types, 10 Pulse AppSettings properties, 500+ Pulse-only tests, Pulse theme and assets, Pulse documentation and guide pages. Surgically removed Pulse integration code from MainWindow, TCodeService, AxisControlViewModel, BeatBarViewModel, BeatBarOverlay, SettingsViewModel, and ActivityBarView. Cleaned up all Pulse references from index.html, README.md, settings.md, user-interface.md, and RELEASENOTES.md. Removed dead external beat source infrastructure (`CreateExternal`, `IsExternal`) from `BeatBarMode`. Final verification confirmed zero Pulse references remain in source code (excluding `AxisFillMode.Pulse` fill pattern).
 
 ### Changed
