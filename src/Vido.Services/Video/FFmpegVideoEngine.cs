@@ -246,11 +246,6 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
     /// </summary>
     public event Action? SeekCompleted;
 
-    /// <summary>
-    /// Raised each time a batch of decoded audio samples is available, providing raw PCM data for visualization or haptics.
-    /// </summary>
-    public event Action<AudioSampleEventArgs>? AudioSamplesAvailable;
-
     // ── Commands ──
     /// <summary>
     /// Opens a video file, initializes FFmpeg demuxer/decoders (with optional hardware acceleration),
@@ -975,8 +970,6 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
                                 {
                                     var stretchedFloats = received * _audioOutChannels;
                                     _audioRenderer.SubmitSamples(stretchBuf, 0, stretchedFloats);
-
-                                    EmitAudioSamples(stretchBuf, stretchedFloats, received);
                                 }
                             }
                             finally
@@ -988,8 +981,6 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
                         {
                             // 1x speed — bypass SoundTouch, submit directly.
                             _audioRenderer.SubmitSamples(resampledFloats, 0, convertedFloats);
-
-                            EmitAudioSamples(resampledFloats, convertedFloats, converted);
                         }
                     }
                 }
@@ -1000,33 +991,6 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
             }
 
             ffmpeg.av_frame_unref(frame);
-        }
-    }
-
-    /// <summary>
-    /// Fires the <see cref="AudioSamplesAvailable"/> event with the given float buffer.
-    /// </summary>
-    private void EmitAudioSamples(float[] floats, int floatCount, int sampleFrames)
-    {
-        if (AudioSamplesAvailable is null) return;
-
-        // Convert float[] → byte[] for the event (consumers expect byte buffers).
-        var byteCount = floatCount * sizeof(float);
-        var bytes = ArrayPool<byte>.Shared.Rent(byteCount);
-        try
-        {
-            Buffer.BlockCopy(floats, 0, bytes, 0, byteCount);
-            AudioSamplesAvailable.Invoke(new AudioSampleEventArgs
-            {
-                Buffer = new ReadOnlyMemory<byte>(bytes, 0, byteCount),
-                SampleCount = sampleFrames,
-                SampleRate = _audioOutSampleRate,
-                Channels = _audioOutChannels
-            });
-        }
-        finally
-        {
-            ArrayPool<byte>.Shared.Return(bytes);
         }
     }
 
