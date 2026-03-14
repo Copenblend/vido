@@ -23,7 +23,6 @@ public partial class SidebarViewModel : ObservableObject
             SidebarPanelKind.Explorer => "EXPLORER",
             SidebarPanelKind.Playlists => "PLAYLISTS",
             SidebarPanelKind.Osr2Plus => "OSR2+",
-            SidebarPanelKind.Pulse => "PULSE",
             SidebarPanelKind.Settings => "SETTINGS",
             _ => "EXPLORER"
         };

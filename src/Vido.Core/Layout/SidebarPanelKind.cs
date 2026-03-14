@@ -21,11 +21,6 @@ public enum SidebarPanelKind
     Osr2Plus,
 
     /// <summary>
-    /// Pulse audio-driven haptic engine panel.
-    /// </summary>
-    Pulse,
-
-    /// <summary>
     /// Application settings.
     /// </summary>
     Settings

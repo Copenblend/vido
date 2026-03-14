@@ -29,7 +29,6 @@ public class SidebarViewModelTests
     [InlineData(SidebarPanelKind.Explorer, "EXPLORER")]
     [InlineData(SidebarPanelKind.Playlists, "PLAYLISTS")]
     [InlineData(SidebarPanelKind.Osr2Plus, "OSR2+")]
-    [InlineData(SidebarPanelKind.Pulse, "PULSE")]
     [InlineData(SidebarPanelKind.Settings, "SETTINGS")]
     public void SetPanel_UpdatesHeaderText(SidebarPanelKind panel, string expected)
     {

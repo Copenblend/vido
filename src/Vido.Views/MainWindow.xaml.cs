@@ -1505,9 +1505,6 @@ public partial class MainWindow : Window
                 case SidebarPanelKind.Osr2Plus:
                     Sidebar.SetPanelContent(_osr2SidebarContent);
                     break;
-                case SidebarPanelKind.Pulse:
-                    Sidebar.SetPanelContent(_pulseSidebarContent);
-                    break;
                 case SidebarPanelKind.Playlists:
                     Sidebar.SetPanelContent(_playlistSidebarContent);
                     break;

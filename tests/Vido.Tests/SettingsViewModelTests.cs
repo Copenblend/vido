@@ -36,13 +36,12 @@ public sealed class SettingsViewModelTests
     {
         var vm = CreateViewModel();
 
-        Assert.Equal(8, vm.AllCategories.Count);
+        Assert.Equal(7, vm.AllCategories.Count);
         Assert.Contains(vm.AllCategories, c => c.Name == "General");
         Assert.Contains(vm.AllCategories, c => c.Name == "Playback");
         Assert.Contains(vm.AllCategories, c => c.Name == "File Explorer");
         Assert.Contains(vm.AllCategories, c => c.Name == "Screenshot");
         Assert.Contains(vm.AllCategories, c => c.Name == "OSR2+");
-        Assert.Contains(vm.AllCategories, c => c.Name == "Pulse");
         Assert.Contains(vm.AllCategories, c => c.Name == "Playlists");
         Assert.Contains(vm.AllCategories, c => c.Name == "Updates");
     }
@@ -108,21 +107,6 @@ public sealed class SettingsViewModelTests
         Assert.Contains(category.Settings, s => s.Id == "osr2.outputRate");
         Assert.Contains(category.Settings, s => s.Id == "osr2.globalOffset");
         Assert.Contains(category.Settings, s => s.Id == "osr2.visualizerWindowDuration");
-    }
-
-    /// <summary>
-    /// Verifies that Pulse category has expected settings.
-    /// </summary>
-    [Fact]
-    public void Constructor_PulseCategory_HasExpectedSettings()
-    {
-        var vm = CreateViewModel();
-        var category = vm.AllCategories.First(c => c.Name == "Pulse");
-
-        Assert.Equal(3, category.Settings.Count);
-        Assert.Contains(category.Settings, s => s.Id == "pulse.beatSensitivity");
-        Assert.Contains(category.Settings, s => s.Id == "pulse.enableBpmPhaseLock");
-        Assert.Contains(category.Settings, s => s.Id == "pulse.waveformWindowDuration");
     }
 
     /// <summary>

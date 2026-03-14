@@ -152,7 +152,6 @@ public class ActivityBarViewModelTests
     [InlineData(SidebarPanelKind.Explorer)]
     [InlineData(SidebarPanelKind.Playlists)]
     [InlineData(SidebarPanelKind.Osr2Plus)]
-    [InlineData(SidebarPanelKind.Pulse)]
     [InlineData(SidebarPanelKind.Settings)]
     public void SelectPanel_AllPanels_Work(SidebarPanelKind panel)
     {
@@ -219,7 +218,6 @@ public class ActivityBarViewModelTests
         Assert.False(vm.IsPanelActive(SidebarPanelKind.Explorer));
         Assert.False(vm.IsPanelActive(SidebarPanelKind.Playlists));
         Assert.False(vm.IsPanelActive(SidebarPanelKind.Osr2Plus));
-        Assert.False(vm.IsPanelActive(SidebarPanelKind.Pulse));
         Assert.False(vm.IsPanelActive(SidebarPanelKind.Settings));
     }
 
