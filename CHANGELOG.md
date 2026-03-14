@@ -4,6 +4,9 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### Removed
+- **vido-212**: Removed Pulse panel from sidebar, activity bar, and settings UI. Deleted `Pulse` member from `SidebarPanelKind` enum, removed Pulse button from `ActivityBarView`, removed `BuildPulseSettings()` from `SettingsViewModel`, and removed Pulse case from `MainWindow.OnPanelChanged`. Updated all related tests.
+
 ### Added
 - **vido-200**: Added comprehensive ViewModel stroke control integration tests in `PulseSidebarViewModelStrokeControlTests.cs` (48 tests). Covers initialization from AppSettings (all controls, defaults, invalid/empty pattern fallback), persistence to AppSettings with QueueSave verification, engine propagation (constructor and per-property), value clamping (AmplitudeOffset ±1, EasingBlend ±1, Randomness 0–1, PatternIndex 0–4), PropertyChanged notifications and same-value guards, display label formatting, StrokePatternOptions mapping, and end-to-end funscript generation with DoubleTap/HoldTop/min-max amplitude/beat rate+TripleTap combinations. Combined with existing per-ticket tests: PulseTCodeMapper 93.68% (65 tests), FunscriptWriter 99.32% (71 tests), PulseSidebarViewModel 98.69% (166 tests). Total: 2159 tests, all passing.
 - **vido-199**: Added "STROKE CONTROLS" UI section to `PulseSidebarView.xaml` with custom `PulseSliderStyle` in `PulseStyles.xaml`. Section contains Beat Rate ComboBox (relocated from Generate Funscript area), Amplitude slider (−1 to +1 with value label), Speed slider (−1 to +1 with "Gentle"/"Aggressive" endpoint labels), Pattern ComboBox (bound to `StrokePatternOptions`/`SelectedStrokePatternIndex`), and Randomness slider (0 to 1 with percentage label). All controls are two-way bound to `PulseSidebarViewModel` properties and gated on `ShowBpm` visibility. `PulseSliderStyle` features a 3px track, 14px accent-colored thumb (grows to 16px on hover), and optional tick marks.

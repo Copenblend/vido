@@ -77,7 +77,7 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Creates all settings categories: Playback, File Explorer, Screenshot, OSR2+, Pulse, Playlists.
+    /// Creates all settings categories: Playback, File Explorer, Screenshot, OSR2+, Playlists.
     /// Each setting is defined as a <see cref="SettingDefinition"/> with compile-time-safe
     /// getter/setter delegates for direct <see cref="AppSettings"/> property access.
     /// </summary>
@@ -227,9 +227,6 @@ public partial class SettingsViewModel : ObservableObject
         // ── OSR2+ ──
         BuildOsr2PlusSettings();
 
-        // ── Pulse ──
-        BuildPulseSettings();
-
         // ── Playlists ──
         BuildPlaylistSettings();
 
@@ -315,53 +312,6 @@ public partial class SettingsViewModel : ObservableObject
             .Select(d => new SettingDisplayItem(d, _settingsService, _settingsStore))
             .ToList();
         AllCategories.Add(new SettingsCategoryViewModel("OSR2+", items));
-    }
-
-    /// <summary>
-    /// Builds the Pulse settings category with beat detection and waveform settings.
-    /// </summary>
-    private void BuildPulseSettings()
-    {
-        var definitions = new List<SettingDefinition>
-        {
-            new(
-                Key: "pulse.beatSensitivity",
-                Type: "number",
-                DefaultValue: 1.5,
-                Title: "Beat Detection Sensitivity",
-                Description: "Sensitivity multiplier for audio beat detection (0.5–5.0). Higher = more sensitive.",
-                Section: "Beat Detection",
-                Getter: s => s.PulseBeatSensitivity,
-                Setter: (s, v) => s.PulseBeatSensitivity = Convert.ToDouble(v ?? 1.5)),
-            new(
-                Key: "pulse.enableBpmPhaseLock",
-                Type: "boolean",
-                DefaultValue: true,
-                Title: "Enable BPM Phase Lock",
-                Description: "Lock beat detection to a consistent BPM phase for more stable beat timing.",
-                Section: "Beat Detection",
-                Getter: s => s.PulseEnableBpmPhaseLock,
-                Setter: (s, v) => s.PulseEnableBpmPhaseLock = v is true),
-            new(
-                Key: "pulse.waveformWindowDuration",
-                Type: "enum",
-                DefaultValue: "30",
-                Title: "Waveform Window Duration",
-                Description: "Duration of the waveform visualization window in seconds.",
-                Section: "Visualizer",
-                EnumValues: ["15", "30", "60", "120"],
-                Getter: s => s.PulseWaveformWindowDuration.ToString(),
-                Setter: (s, v) =>
-                {
-                    if (int.TryParse(v?.ToString(), out var dur))
-                        s.PulseWaveformWindowDuration = dur;
-                }),
-        };
-
-        var items = definitions
-            .Select(d => new SettingDisplayItem(d, _settingsService, _settingsStore))
-            .ToList();
-        AllCategories.Add(new SettingsCategoryViewModel("Pulse", items));
     }
 
     /// <summary>

@@ -300,7 +300,7 @@ public sealed class FeatureSettingsTests
     {
         var values = Enum.GetValues<SidebarPanelKind>();
 
-        Assert.Equal(5, values.Length);
+        Assert.Equal(4, values.Length);
     }
 
     /// <summary>
@@ -310,7 +310,6 @@ public sealed class FeatureSettingsTests
     [InlineData(SidebarPanelKind.Explorer)]
     [InlineData(SidebarPanelKind.Playlists)]
     [InlineData(SidebarPanelKind.Osr2Plus)]
-    [InlineData(SidebarPanelKind.Pulse)]
     [InlineData(SidebarPanelKind.Settings)]
     public void SidebarPanelKind_ContainsExpectedMembers(SidebarPanelKind kind)
     {

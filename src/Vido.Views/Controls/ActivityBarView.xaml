@@ -57,18 +57,6 @@
                        Opacity="0.6" />
             </Button>
 
-            <!-- Pulse sidebar button — uses embedded Pulse icon -->
-            <Button x:Name="PulseButton"
-                    Style="{StaticResource ActivityBarButtonStyle}"
-                    ToolTip="Pulse"
-                    Click="OnPulseClick">
-                <Image Source="pack://application:,,,/Vido.Views;component/Assets/Pulse/sidebar-icon.png"
-                       Width="24" Height="24"
-                       Stretch="Uniform"
-                       SnapsToDevicePixels="True"
-                       Opacity="0.6" />
-            </Button>
-
             <!-- Playlists sidebar button — uses embedded Playlists icon -->
             <Button x:Name="PlaylistsButton"
                     Style="{StaticResource ActivityBarButtonStyle}"
