@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -1645,34 +1645,6 @@ public partial class MainWindow : Window
             SetOsr2BeatBarOverlayVisible(mode != BeatBarMode.Off);
         };
 
-        // â”€â”€ Haptic Event Bus Subscriptions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        _osr2Subscriptions.Add(_eventBus.Subscribe<ExternalBeatSourceRegistration>(
-            reg => _beatBarVm.OnBeatSourceRegistration(reg)));
-
-        _osr2Subscriptions.Add(_eventBus.Subscribe<ExternalBeatEvent>(
-            evt => _beatBarVm.OnExternalBeatEvent(evt)));
-
-        _osr2Subscriptions.Add(_eventBus.Subscribe<SuppressFunscriptEvent>(evt =>
-        {
-            _axisControlVm.OnSuppressFunscript(evt);
-
-            if (evt.SuppressFunscripts)
-            {
-                // Inject an empty L0 funscript so TCodeService always has a valid
-                // script entry during external suppression — prevents output-loop freeze.
-                _tcode?.SetScripts(new Dictionary<string, FunscriptData>
-                {
-                    ["L0"] = new FunscriptData { AxisId = "L0", FilePath = "", Actions = [] }
-                });
-            }
-            else
-            {
-                // When switching back to funscript, show the Funscript Visualizer
-                _mainWindowViewModel.ActivateBottomPanelTab("osr2.visualizer");
-                if (_bottomPanelContents.TryGetValue("osr2.visualizer", out var content))
-                    BottomPanelContent.Content = content;
-            }
-        }));
 
         // â”€â”€ Publish Script & Config Changes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _axisControlVm.ScriptsChanged += scripts =>

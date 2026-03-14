@@ -13,7 +13,6 @@ namespace Vido.ViewModels.Osr2Plus;
 /// <summary>
 /// ViewModel for the axis control panel. Manages all four axis cards,
 /// persists axis settings, and orchestrates funscript auto-loading.
-/// Supports funscript suppression via <see cref="SuppressFunscriptEvent"/>.
 /// </summary>
 public class AxisControlViewModel : INotifyPropertyChanged
 {
@@ -26,7 +25,6 @@ public class AxisControlViewModel : INotifyPropertyChanged
     private bool _isVideoPlaying;
     private bool _isDeviceConnected;
     private bool _isTesting;
-    private bool _funscriptsSuppressed;
     private string? _currentVideoPath;
     private IFillProfileService? _profileService;
     private FillProfile? _selectedProfile;
@@ -197,7 +195,6 @@ public class AxisControlViewModel : INotifyPropertyChanged
     /// 1. Tries multi-axis format on the base funscript.
     /// 2. Falls back to individual axis-tagged files via FunscriptMatcher.
     /// 3. Updates each card's script and pushes to TCodeService.
-    /// Skipped when funscripts are suppressed via <see cref="SuppressFunscriptEvent"/>.
     /// </summary>
     /// <param name="videoPath">Path to the video file to match scripts for.</param>
     public void LoadScriptsForVideo(string videoPath)
@@ -206,10 +203,6 @@ public class AxisControlViewModel : INotifyPropertyChanged
             return;
 
         _currentVideoPath = videoPath;
-
-        // When funscripts are suppressed, skip auto-loading entirely
-        if (_funscriptsSuppressed)
-            return;
 
         // Find matching individual scripts
         var matchedScripts = FindMatchingScriptsFunc!(videoPath);
@@ -313,33 +306,6 @@ public class AxisControlViewModel : INotifyPropertyChanged
         _tcode.SetScripts(_loadedScripts);
         ScriptsChanged?.Invoke(_loadedScripts);
     }
-
-    /// <summary>
-    /// Handles <see cref="SuppressFunscriptEvent"/> from the event bus.
-    /// When suppressed, clears all loaded scripts and prevents auto-loading.
-    /// When unsuppressed, allows auto-loading to resume.
-    /// </summary>
-    /// <param name="e">The suppress funscript event.</param>
-    public void OnSuppressFunscript(SuppressFunscriptEvent e)
-    {
-        _funscriptsSuppressed = e.SuppressFunscripts;
-
-        if (_funscriptsSuppressed)
-        {
-            // Clear all loaded scripts when suppression is activated
-            ClearAllScripts();
-        }
-        else
-        {
-            // Suppression lifted — re-load funscripts for the current video
-            // so the BeatBar and haptics resume without requiring a new video load.
-            if (!string.IsNullOrEmpty(_currentVideoPath))
-                LoadScriptsForVideo(_currentVideoPath);
-        }
-    }
-
-    /// <summary>Whether funscript auto-loading is currently suppressed.</summary>
-    public bool IsFunscriptsSuppressed => _funscriptsSuppressed;
 
     // ═══════════════════════════════════════════════════════
     //  State Updates (called by coordinator logic)
