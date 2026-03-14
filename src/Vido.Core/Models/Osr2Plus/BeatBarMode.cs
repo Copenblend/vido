@@ -2,7 +2,7 @@ namespace Vido.Core.Models.Osr2Plus;
 
 /// <summary>
 /// Controls the beat bar overlay behavior. Supports built-in modes (Off, OnPeak, OnValley)
-/// and dynamically registered external modes from features via <c>IExternalBeatSource</c>.
+/// and dynamically registered external modes from features.
 /// </summary>
 public sealed class BeatBarMode : IEquatable<BeatBarMode>
 {
