@@ -121,6 +121,39 @@ public sealed class LogServiceTests
     }
 
     /// <summary>
+    /// Verifies that Entries returns a consistent snapshot containing all entries
+    /// after multiple Log() calls without intermediate reads.
+    /// </summary>
+    [Fact]
+    public void Entries_ReturnsAllEntries_AfterMultipleLogsWithoutRead()
+    {
+        _log.Debug("one");
+        _log.Info("two");
+        _log.Warning("three");
+
+        var entries = _log.Entries;
+        Assert.Equal(3, entries.Count);
+        Assert.Equal("one", entries[0].Message);
+        Assert.Equal("two", entries[1].Message);
+        Assert.Equal("three", entries[2].Message);
+    }
+
+    /// <summary>
+    /// Verifies that Clear followed by new Log entries produces correct snapshot.
+    /// </summary>
+    [Fact]
+    public void Entries_AfterClearAndNewLog_ReturnsOnlyNewEntries()
+    {
+        _log.Info("before clear");
+        _log.Clear();
+        _log.Info("after clear");
+
+        var entries = _log.Entries;
+        Assert.Single(entries);
+        Assert.Equal("after clear", entries[0].Message);
+    }
+
+    /// <summary>
     /// Verifies that Entries snapshot is reset to shared empty after clear.
     /// </summary>
     [Fact]

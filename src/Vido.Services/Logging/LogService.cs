@@ -13,6 +13,7 @@ public sealed class LogService : ILogService
     private readonly List<LogEntry> _entries = [];
     private readonly object _lock = new();
     private IReadOnlyList<LogEntry> _snapshot = Array.Empty<LogEntry>();
+    private volatile bool _snapshotDirty = true;
 
     /// <summary>
     /// Returns whether the specified log level is currently enabled.
@@ -23,10 +24,25 @@ public sealed class LogService : ILogService
 
     /// <summary>
     /// Returns a snapshot of all log entries recorded so far, safe to enumerate from any thread.
+    /// Rebuilds the snapshot only when new entries have been added since the last read.
     /// </summary>
     public IReadOnlyList<LogEntry> Entries
     {
-        get => Volatile.Read(ref _snapshot);
+        get
+        {
+            if (_snapshotDirty)
+            {
+                lock (_lock)
+                {
+                    if (_snapshotDirty)
+                    {
+                        Volatile.Write(ref _snapshot, _entries.ToArray());
+                        _snapshotDirty = false;
+                    }
+                }
+            }
+            return Volatile.Read(ref _snapshot);
+        }
     }
 
     /// <summary>
@@ -71,6 +87,7 @@ public sealed class LogService : ILogService
         {
             _entries.Clear();
             Volatile.Write(ref _snapshot, Array.Empty<LogEntry>());
+            _snapshotDirty = false;
         }
     }
 
@@ -81,7 +98,7 @@ public sealed class LogService : ILogService
         lock (_lock)
         {
             _entries.Add(entry);
-            Volatile.Write(ref _snapshot, _entries.ToList().AsReadOnly());
+            _snapshotDirty = true;
         }
 
         EntryAdded?.Invoke(entry);
