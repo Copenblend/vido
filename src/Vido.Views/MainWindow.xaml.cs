@@ -193,6 +193,7 @@ public partial class MainWindow : Window
         SetupFileExplorer();
         SetupDragDrop();
         _toastService = new ToastService(_settingsService);
+        _videoPlayerViewModel.ToastService = _toastService;
         SetupOsr2Plus();
         SetupPlaylists();
         RestoreWindowState();

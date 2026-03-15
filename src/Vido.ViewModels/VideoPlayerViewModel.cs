@@ -9,6 +9,7 @@ using Vido.Core.Playback;
 using Vido.Core.Playlists;
 using Vido.Core.Settings;
 using Vido.Core.State;
+using Vido.Services.Playlists;
 
 namespace Vido.ViewModels;
 
@@ -197,7 +198,13 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// The view subscribes to this to write pixels into a WriteableBitmap.
     /// </summary>
     public event Action<FrameData>? FrameReady;
-    
+
+    /// <summary>
+    /// Optional toast notification service for displaying user-facing error messages.
+    /// Set after construction by the host since the ViewModel is DI-resolved.
+    /// </summary>
+    public IToastService? ToastService { get; set; }
+
     /// <summary>
     /// Creates the video player view model, wiring up engine events, restoring
     /// persisted playback settings, and subscribing to play-file requests.
@@ -364,6 +371,14 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
                 }
             });
         }
+        catch (Exception ex)
+        {
+            var fileName = Path.GetFileName(filePath);
+            _logService.Error($"Failed to load \"{fileName}\": {ex.Message}", "Player");
+            ToastService?.ShowError($"\"{fileName}\" is corrupted and could not be played.");
+            HasMedia = false;
+            return;
+        }
         finally
         {
             Interlocked.Increment(ref _loadingIndicatorVersion);
@@ -424,6 +439,9 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         ShowResumeBar = false;
         _logService.Info($"Loading video: {Path.GetFileName(filePath)}", "Player");
         await LoadMediaCoreAsync(filePath);
+
+        if (!HasMedia) return;
+
         Position = TimeSpan.Zero;
         PositionText = "00:00";
         _lastFormattedSecond = -1;
@@ -459,6 +477,8 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
 
         _logService.Info($"Restoring last video: {Path.GetFileName(lastPath)}", "Player");
         await LoadMediaCoreAsync(lastPath);
+
+        if (!HasMedia) return;
 
         // Start playback so the decode thread renders a frame, then seek and pause.
         // Without Play(), the decode thread never starts and Seek is a no-op,
