@@ -5,6 +5,7 @@ All notable changes to the Vido project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **vido-258**: Replaced the read-only hardcoded install path display in `OptionsPage.xaml` with an editable `TextBox` bound to `Options.InstallPath` and a "Browse..." button using `OpenFolderDialog`. Added `BrowseButton_Click` handler in `OptionsPage.xaml.cs`. Browse button styled with `ButtonDefaultBackgroundBrush`/`ButtonBackgroundBrush` hover matching the Install button pattern.
 - **vido-257**: Added `InstallPath` property to `InstallOptions` (defaults to `InstallEngine.DefaultInstallDir`). Updated `InstallerViewModel.InstallAsync()` and `Finish()` to use `Options.InstallPath` instead of the hardcoded default, wiring the custom path through extraction, shortcuts, file associations, registry entries, and post-install launch. Added 3 new tests.
 
 - **vido-247**: Updated `SeekSliderThumb` style in `PlayerStyles.xaml` — replaced invisible 0px-width transparent grid with a 12px white `Ellipse` matching the `Osr2SliderThumbStyle`. Added `IsMouseOver` trigger that sets the stroke to `AccentBrush`. XAML-only change, no code-behind modifications.
