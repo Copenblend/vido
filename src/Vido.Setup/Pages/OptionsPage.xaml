@@ -44,19 +44,62 @@
                       Content="Register file associations (.mp4, .avi, .mkv, .mov, .wmv, .flv, .webm)" />
         </StackPanel>
 
-        <!-- Install location (read-only) -->
+        <!-- Install location -->
         <StackPanel Grid.Row="2" VerticalAlignment="Top" Margin="0,20,0,0">
             <TextBlock Text="Install location:"
                        FontSize="12"
                        Foreground="{StaticResource SecondaryForegroundBrush}"
                        Margin="0,0,0,4" />
-            <Border Background="{StaticResource InputBackgroundBrush}"
-                    CornerRadius="3"
-                    Padding="8,6">
-                <TextBlock Text="%LOCALAPPDATA%\Vido"
-                           FontSize="12"
-                           Foreground="{StaticResource DisabledForegroundBrush}" />
-            </Border>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0"
+                        Background="{StaticResource InputBackgroundBrush}"
+                        CornerRadius="3">
+                    <TextBox x:Name="InstallPathTextBox"
+                             Text="{Binding Options.InstallPath, UpdateSourceTrigger=PropertyChanged}"
+                             Background="Transparent"
+                             BorderThickness="0"
+                             Foreground="{StaticResource PrimaryForegroundBrush}"
+                             FontSize="12"
+                             Padding="8,6"
+                             VerticalContentAlignment="Center" />
+                </Border>
+                <Button Grid.Column="1"
+                        Content="Browse..."
+                        Click="BrowseButton_Click"
+                        Margin="8,0,0,0"
+                        Cursor="Hand">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="BrowseBorder"
+                                                Background="{StaticResource ButtonDefaultBackgroundBrush}"
+                                                CornerRadius="3"
+                                                Padding="12,6">
+                                            <TextBlock Text="Browse..."
+                                                       FontSize="12"
+                                                       Foreground="White"
+                                                       VerticalAlignment="Center" />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="BrowseBorder"
+                                                        Property="Background"
+                                                        Value="{StaticResource ButtonBackgroundBrush}" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </Grid>
         </StackPanel>
 
         <!-- Install button -->
