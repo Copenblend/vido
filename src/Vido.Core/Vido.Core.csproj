@@ -8,8 +8,4 @@
     <Version>$(VidoVersion)</Version>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="SkiaSharp" Version="$(SkiaSharpVersion)" />
-  </ItemGroup>
-
 </Project>
