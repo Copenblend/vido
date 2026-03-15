@@ -399,4 +399,24 @@ public partial class SettingsViewModel : ObservableObject
             }
         }
     }
+
+    /// <summary>
+    /// Reloads a single setting's displayed value from the backing store.
+    /// Used for bidirectional sync when a setting changes outside the Settings panel.
+    /// </summary>
+    /// <param name="key">The setting key (e.g. "osr2.outputRate").</param>
+    public void RefreshSetting(string key)
+    {
+        foreach (var category in AllCategories)
+        {
+            foreach (var item in category.Settings)
+            {
+                if (string.Equals(item.Id, key, StringComparison.OrdinalIgnoreCase))
+                {
+                    item.Reload();
+                    return;
+                }
+            }
+        }
+    }
 }

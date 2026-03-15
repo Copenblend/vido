@@ -368,4 +368,68 @@ public class AxisControlViewModelProfileTests : IDisposable
         Assert.NotNull(_profileService.FindByName("Default"));
         Assert.Null(_profileService.FindByName("Renamed"));
     }
+
+    // ── SetProfileService preserves persisted settings ────────────────
+
+    [Fact]
+    public void SetProfileService_PreservesPersistedAxisSettings()
+    {
+        // Arrange: persisted settings differ from Default profile
+        _settings.Osr2AxisSettings["R0"] = new AxisSettingsData
+        {
+            Min = 20, Max = 80, FillMode = "Sine", SyncWithStroke = true, FillSpeedHz = 1.5
+        };
+
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+
+        // Act: attach profile service (auto-selects Default)
+        var logService = NSubstitute.Substitute.For<Core.Logging.ILogService>();
+        var profileService = new FillProfileService(logService);
+        vm.SetProfileService(profileService);
+
+        // Assert: persisted values survive, not overwritten by Default profile
+        var r0 = vm.AxisCards[1]; // R0
+        Assert.Equal(20, r0.Min);
+        Assert.Equal(80, r0.Max);
+        Assert.Equal(AxisFillMode.Sine, r0.FillMode);
+        Assert.True(r0.SyncWithStroke);
+        Assert.Equal(1.5, r0.FillSpeedHz, 3);
+    }
+
+    [Fact]
+    public void SetProfileService_SetsIsProfileModified_WhenSettingsDiffer()
+    {
+        _settings.Osr2AxisSettings["R0"] = new AxisSettingsData
+        {
+            Min = 20, Max = 80, FillMode = "Sine", SyncWithStroke = true
+        };
+
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        var logService = NSubstitute.Substitute.For<Core.Logging.ILogService>();
+        vm.SetProfileService(new FillProfileService(logService));
+
+        Assert.True(vm.IsProfileModified);
+    }
+
+    [Fact]
+    public void SetProfileService_NoModified_WhenSettingsMatchDefault()
+    {
+        // Default profile: Min=0, Max=100, FillMode=None, SyncWithStroke=false
+        // AxisSettingsData defaults: Min=0, Max=100, Enabled=true, FillMode=None, SyncWithStroke=true
+        // Need to set SyncWithStroke=false to match the Default profile
+        foreach (var key in new[] { "L0", "R0", "R1", "R2" })
+        {
+            _settings.Osr2AxisSettings[key] = new AxisSettingsData
+            {
+                Min = 0, Max = 100, Enabled = true,
+                FillMode = "None", SyncWithStroke = false, FillSpeedHz = 1.0
+            };
+        }
+
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        var logService = NSubstitute.Substitute.For<Core.Logging.ILogService>();
+        vm.SetProfileService(new FillProfileService(logService));
+
+        Assert.False(vm.IsProfileModified);
+    }
 }

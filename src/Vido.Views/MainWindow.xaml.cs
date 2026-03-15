@@ -1623,6 +1623,16 @@ public partial class MainWindow : Window
                 if (statusItem is not null)
                     statusItem.Text = _osr2SidebarVm.StatusText;
             }
+
+            if (e.PropertyName == nameof(Osr2PlusSidebarViewModel.OutputRateHz))
+            {
+                _settingsPage?.RefreshSetting("osr2.outputRate");
+            }
+
+            if (e.PropertyName == nameof(Osr2PlusSidebarViewModel.GlobalOffsetMs))
+            {
+                _settingsPage?.RefreshSetting("osr2.globalOffset");
+            }
         };
 
         // â”€â”€ Wire Script Changes to Visualizer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -2441,6 +2451,16 @@ public partial class MainWindow : Window
                     "Screenshots");
                 _appSettingsStore.Set("screenshot.directory", defaultDir);
             }
+        }
+        else if (key.Equals("osr2.outputRate", StringComparison.OrdinalIgnoreCase))
+        {
+            if (_osr2SidebarVm is not null)
+                _osr2SidebarVm.OutputRateHz = _settingsService.Current.Osr2OutputRate;
+        }
+        else if (key.Equals("osr2.globalOffset", StringComparison.OrdinalIgnoreCase))
+        {
+            if (_osr2SidebarVm is not null)
+                _osr2SidebarVm.GlobalOffsetMs = _settingsService.Current.Osr2GlobalOffset;
         }
     }
 
