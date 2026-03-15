@@ -121,15 +121,24 @@
         </Setter>
     </Style>
 
-    <!-- Seek thumb: invisible — interaction is handled via mouse capture on the track -->
+    <!-- Seek thumb: 12px white circle, accent stroke on hover -->
     <Style x:Key="SeekSliderThumb" TargetType="Thumb">
         <Setter Property="OverridesDefaultStyle" Value="True" />
-        <Setter Property="Width" Value="0" />
-        <Setter Property="Height" Value="18" />
+        <Setter Property="Width" Value="12" />
+        <Setter Property="Height" Value="12" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Thumb">
-                    <Grid Background="Transparent" Margin="-6,0,-6,0" />
+                    <Ellipse x:Name="ThumbEllipse"
+                             Width="12" Height="12"
+                             Fill="White"
+                             Stroke="Transparent" StrokeThickness="1" />
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="ThumbEllipse" Property="Stroke"
+                                    Value="{StaticResource AccentBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
