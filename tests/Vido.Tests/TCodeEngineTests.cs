@@ -132,23 +132,26 @@ public class TCodeEngineTests : IDisposable
     [Fact]
     public void IsDirty_FirstValue_ReturnsTrue()
     {
-        Assert.True(_service.IsDirty("L0", 500));
+        _service.SetAxisConfigs(new List<AxisConfig> { MakeL0() });
+        Assert.True(_service.IsDirty(0, 500));
     }
 
     [Fact]
     public void IsDirty_SameValue_ReturnsFalse()
     {
         // Simulate having sent a value by using reflection or internal access
-        // Since IsDirty depends on _lastSentValues which is private,
+        // Since IsDirty depends on _lastSentByAxis which is private,
         // we test it through the public API flow
-        Assert.True(_service.IsDirty("L0", 500));
+        _service.SetAxisConfigs(new List<AxisConfig> { MakeL0() });
+        Assert.True(_service.IsDirty(0, 500));
     }
 
     [Fact]
     public void IsDirty_DifferentAxis_ReturnsTrue()
     {
-        Assert.True(_service.IsDirty("L0", 500));
-        Assert.True(_service.IsDirty("R0", 500));
+        _service.SetAxisConfigs(new List<AxisConfig> { MakeL0(), MakeR0() });
+        Assert.True(_service.IsDirty(0, 500));
+        Assert.True(_service.IsDirty(1, 500));
     }
 
     // ═══════════════════════════════════════════════
@@ -347,6 +350,7 @@ public class TCodeEngineTests : IDisposable
     {
         Assert.False(_service.HasScriptsLoaded);
 
+        _service.SetAxisConfigs(new List<AxisConfig> { MakeL0() });
         _service.SetScripts(new Dictionary<string, FunscriptData>
         {
             ["L0"] = MakeScript((0, 0), (1000, 100))
@@ -358,6 +362,7 @@ public class TCodeEngineTests : IDisposable
     [Fact]
     public void SetScripts_EmptyDictionary_ClearsScripts()
     {
+        _service.SetAxisConfigs(new List<AxisConfig> { MakeL0() });
         _service.SetScripts(new Dictionary<string, FunscriptData>
         {
             ["L0"] = MakeScript((0, 0), (1000, 100))
@@ -377,6 +382,7 @@ public class TCodeEngineTests : IDisposable
     {
         var emptyScript = new FunscriptData { AxisId = "L0", FilePath = "", Actions = [] };
 
+        _service.SetAxisConfigs(new List<AxisConfig> { MakeL0() });
         _service.SetScripts(new Dictionary<string, FunscriptData>
         {
             ["L0"] = emptyScript
@@ -393,11 +399,11 @@ public class TCodeEngineTests : IDisposable
     public void SetScripts_EmptyActionsL0_InterpolatesWithoutError()
     {
         var emptyScript = new FunscriptData { AxisId = "L0", FilePath = "", Actions = [] };
+        _service.SetAxisConfigs([MakeL0()]);
         _service.SetScripts(new Dictionary<string, FunscriptData>
         {
             ["L0"] = emptyScript
         });
-        _service.SetAxisConfigs([MakeL0()]);
         _service.SetPlaying(true);
         _service.SetTime(1000);
 
@@ -413,6 +419,8 @@ public class TCodeEngineTests : IDisposable
     [Fact]
     public void SetScripts_ClearThenEmptyL0_ReplacesPriorState()
     {
+        _service.SetAxisConfigs(new List<AxisConfig> { MakeL0() });
+
         // Load a real script
         _service.SetScripts(new Dictionary<string, FunscriptData>
         {
@@ -471,6 +479,7 @@ public class TCodeEngineTests : IDisposable
     [Fact]
     public void IsFunscriptPlaying_WithScripts_ReturnsTrue()
     {
+        _service.SetAxisConfigs(new List<AxisConfig> { MakeL0() });
         _service.SetScripts(new Dictionary<string, FunscriptData>
         {
             ["L0"] = MakeScript((0, 0), (1000, 100))
@@ -486,6 +495,7 @@ public class TCodeEngineTests : IDisposable
     [Fact]
     public void StartTestAxis_MarksAsTesting()
     {
+        _service.SetAxisConfigs(new List<AxisConfig> { MakeL0() });
         _service.StartTestAxis("L0", 1.0);
         Assert.True(_service.IsAxisTesting("L0"));
     }
@@ -496,6 +506,7 @@ public class TCodeEngineTests : IDisposable
         string? stoppedId = null;
         _service.TestAxisStopped += id => stoppedId = id;
 
+        _service.SetAxisConfigs(new List<AxisConfig> { MakeL0() });
         _service.StartTestAxis("L0", 1.0);
         _service.StopTestAxis("L0");
 
@@ -509,6 +520,7 @@ public class TCodeEngineTests : IDisposable
         bool allStopped = false;
         _service.AllTestsStopped += () => allStopped = true;
 
+        _service.SetAxisConfigs(new List<AxisConfig> { MakeL0(), MakeR0() });
         _service.StartTestAxis("L0", 1.0);
         _service.StartTestAxis("R0", 1.0);
         _service.StopAllTestAxes();
@@ -537,6 +549,7 @@ public class TCodeEngineTests : IDisposable
     [Fact]
     public void UpdateTestSpeed_DoesNotThrow()
     {
+        _service.SetAxisConfigs(new List<AxisConfig> { MakeL0() });
         _service.StartTestAxis("L0", 1.0);
         _service.UpdateTestSpeed("L0", 2.5);
         Assert.True(_service.IsAxisTesting("L0"));
@@ -545,6 +558,7 @@ public class TCodeEngineTests : IDisposable
     [Fact]
     public void StartTestAxis_ClampsSpeed()
     {
+        _service.SetAxisConfigs(new List<AxisConfig> { MakeL0() });
         // Speed should be clamped to 0.1-5.0
         _service.StartTestAxis("L0", 0.01);
         Assert.True(_service.IsAxisTesting("L0"));
@@ -560,6 +574,7 @@ public class TCodeEngineTests : IDisposable
         bool allStopped = false;
         _service.AllTestsStopped += () => allStopped = true;
 
+        _service.SetAxisConfigs(new List<AxisConfig> { MakeL0() });
         _service.SetScripts(new Dictionary<string, FunscriptData>
         {
             ["L0"] = MakeScript((0, 0), (1000, 100))

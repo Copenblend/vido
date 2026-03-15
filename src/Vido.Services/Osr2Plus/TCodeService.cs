@@ -36,14 +36,15 @@ public class TCodeService : IDisposable
     private bool _syncPlaying;            // whether media was playing at sync point
 
     // Axis data
-    private Dictionary<string, FunscriptData> _scripts = new();
+    private FunscriptData?[] _scriptsByAxis = Array.Empty<FunscriptData?>();
     private List<AxisConfig> _axisConfigs = new();
     private AxisConfig? _cachedStrokeConfig;
     private bool _hasActiveFillConfigs;
     private int _offsetMs;
+    private int _axisCount;
 
     // Dirty value tracking: only send axes whose TCode value changed
-    private readonly Dictionary<string, int> _lastSentValues = new();
+    private int[] _lastSentByAxis = Array.Empty<int>();
 
     // Reused output command buffer for allocation-free hot-path formatting.
     // 4 axes × (~12 bytes per command) + separators/newline fits comfortably.
@@ -56,27 +57,28 @@ public class TCodeService : IDisposable
     internal const double PitchFillMaxPosition = 100.0;
 
     // Random pattern generators — one per axis
-    private readonly Dictionary<string, RandomPatternGenerator> _randomGenerators = new();
+    private RandomPatternGenerator?[] _randomGenByAxis = Array.Empty<RandomPatternGenerator?>();
 
     // Stroke tracking for random synchronization
     private double _lastStrokePosition = 50.0;
     private double _cumulativeStrokeDistance;
 
     // Per-axis cumulative fill time (for independent pattern fill)
-    private readonly Dictionary<string, double> _cumulativeFillTime = new();
+    private double[] _cumulativeFillByAxis = Array.Empty<double>();
 
-    // Return-to-center: axis ID → current interpolated TCode position
-    private readonly Dictionary<string, double> _returningAxes = new();
+    // Return-to-center: axis ordinal → current interpolated TCode position (NaN = not returning)
+    private double[] _returningByAxis = Array.Empty<double>();
 
-    // Ramp-up: axis ID → blend factor (0.0 = midpoint, 1.0 = fully active)
-    private readonly Dictionary<string, double> _rampingAxes = new();
+    // Ramp-up: axis ordinal → blend factor (NaN = not ramping, 0.0 = midpoint, 1.0 = fully active)
+    private double[] _rampingByAxis = Array.Empty<double>();
 
     // Previous axis state snapshot for detecting transitions
-    private readonly Dictionary<string, (bool Enabled, AxisFillMode FillMode)> _prevAxisState = new();
+    private (bool Enabled, AxisFillMode FillMode, bool HasValue)[] _prevStateByAxis =
+        Array.Empty<(bool, AxisFillMode, bool)>();
 
     // ===== Test Mode State =====
     private readonly object _testLock = new();
-    private readonly Dictionary<string, TestAxisState> _testingAxes = new();
+    private TestAxisState?[] _testingByAxis = Array.Empty<TestAxisState?>();
     private readonly List<string> _stoppedTestIds = new(4);
 
     /// <summary>Raised when a test axis finishes ramping down.</summary>
@@ -89,10 +91,18 @@ public class TCodeService : IDisposable
     public int OutputRateHz => _outputRateHz;
 
     /// <summary>Gets a value indicating whether any axis has funscript data loaded.</summary>
-    public bool HasScriptsLoaded => _scripts.Count > 0;
+    public bool HasScriptsLoaded
+    {
+        get
+        {
+            for (int i = 0; i < _axisCount; i++)
+                if (_scriptsByAxis[i] != null) return true;
+            return false;
+        }
+    }
 
     /// <summary>Gets a value indicating whether funscript is actively playing (blocks test mode).</summary>
-    public bool IsFunscriptPlaying => _isPlaying && _scripts.Count > 0;
+    public bool IsFunscriptPlaying => _isPlaying && HasScriptsLoaded;
 
     /// <summary>
     /// Gets or sets the active transport (Serial or UDP). Set by the connection logic on connect.
@@ -122,36 +132,95 @@ public class TCodeService : IDisposable
     /// <param name="scripts">Dictionary of axisId → funscript data.</param>
     public void SetScripts(Dictionary<string, FunscriptData> scripts)
     {
-        _scripts = scripts;
-        _lastSentValues.Clear();
+        // Clear existing scripts
+        Array.Clear(_scriptsByAxis);
+
+        // Map incoming scripts to axis ordinals
+        foreach (var (axisId, data) in scripts)
+        {
+            var idx = GetOrdinalForId(axisId);
+            if (idx >= 0) _scriptsByAxis[idx] = data;
+        }
+
+        Array.Fill(_lastSentByAxis, -1);
         _interpolation.ResetIndices();
         // Reset stroke tracking and random generators on script change
         _cumulativeStrokeDistance = 0;
         _lastStrokePosition = 50.0;
-        _cumulativeFillTime.Clear();
-        foreach (var gen in _randomGenerators.Values) gen.Reset();
-
+        Array.Clear(_cumulativeFillByAxis);
+        for (int i = 0; i < _axisCount; i++)
+            _randomGenByAxis[i]?.Reset();
     }
 
     /// <summary>
     /// Sets the axis configurations (min/max/enabled/fill mode).
-    /// Detects transitions to trigger ramp-up and return-to-center animations.
+    /// Assigns ordinals, allocates per-axis state arrays, and detects
+    /// transitions to trigger ramp-up and return-to-center animations.
     /// </summary>
     /// <param name="configs">List of axis configurations.</param>
     public void SetAxisConfigs(List<AxisConfig> configs)
     {
+        var count = configs.Count;
+        for (int i = 0; i < count; i++)
+            configs[i].Ordinal = i;
+
+        // Snapshot old state before reallocating
+        var oldPrevState = _prevStateByAxis;
+        var oldAxisConfigs = _axisConfigs;
+        var oldLastSent = _lastSentByAxis;
+        var oldTestingByAxis = _testingByAxis;
+
+        // Allocate state arrays (only on config change, not hot path)
+        _scriptsByAxis = new FunscriptData?[count];
+        _lastSentByAxis = new int[count];
+        Array.Fill(_lastSentByAxis, -1);
+        _randomGenByAxis = new RandomPatternGenerator?[count];
+        _cumulativeFillByAxis = new double[count];
+        _returningByAxis = new double[count];
+        Array.Fill(_returningByAxis, double.NaN);
+        _rampingByAxis = new double[count];
+        Array.Fill(_rampingByAxis, double.NaN);
+        _prevStateByAxis = new (bool, AxisFillMode, bool)[count];
+        _testingByAxis = new TestAxisState?[count];
+        _axisCount = count;
+        _interpolation.SetAxisCount(count);
+
         AxisConfig? cachedStrokeConfig = null;
         bool hasActiveFillConfigs = false;
 
         foreach (var cfg in configs)
         {
+            var idx = cfg.Ordinal;
+
             if (cachedStrokeConfig == null && cfg.Id == "L0" && cfg.Enabled)
                 cachedStrokeConfig = cfg;
 
             if (!hasActiveFillConfigs && cfg.Enabled && cfg.FillMode != AxisFillMode.None)
                 hasActiveFillConfigs = true;
 
-            bool hasPrev = _prevAxisState.TryGetValue(cfg.Id, out var prev);
+            // Find previous state by matching axis ID in old configs
+            bool hasPrev = false;
+            (bool Enabled, AxisFillMode FillMode, bool HasValue) prev = default;
+            int oldIdx = -1;
+            for (int j = 0; j < oldAxisConfigs.Count; j++)
+            {
+                if (oldAxisConfigs[j].Id == cfg.Id)
+                {
+                    oldIdx = j;
+                    if (j < oldPrevState.Length && oldPrevState[j].HasValue)
+                    {
+                        prev = oldPrevState[j];
+                        hasPrev = true;
+                    }
+
+                    // Carry forward test state
+                    if (j < oldTestingByAxis.Length)
+                        _testingByAxis[idx] = oldTestingByAxis[j];
+
+                    break;
+                }
+            }
+
             if (hasPrev)
             {
                 bool wasEnabled = prev.Enabled;
@@ -164,23 +233,27 @@ public class TCodeService : IDisposable
                 bool fillJustCleared = wasActiveFill && nowEnabled && cfg.FillMode == AxisFillMode.None;
                 if (justDisabled || fillJustCleared)
                 {
-                    if (_lastSentValues.TryGetValue(cfg.Id, out var lastVal) && Math.Abs(lastVal - 500) >= 1)
+                    if (oldIdx >= 0 && oldIdx < oldLastSent.Length)
                     {
-                        _returningAxes[cfg.Id] = lastVal;
+                        var lastVal = oldLastSent[oldIdx];
+                        if (lastVal != -1 && Math.Abs(lastVal - 500) >= 1)
+                        {
+                            _returningByAxis[idx] = lastVal;
+                        }
                     }
-                    _rampingAxes.Remove(cfg.Id);
+                    _rampingByAxis[idx] = double.NaN;
                 }
 
                 // Ramp-up when: axis activated with active fill from inactive state
                 bool justActivated = nowActiveFill && (!wasActiveFill || !wasEnabled);
                 if (justActivated)
                 {
-                    _returningAxes.Remove(cfg.Id);
-                    _rampingAxes[cfg.Id] = 0.0;
+                    _returningByAxis[idx] = double.NaN;
+                    _rampingByAxis[idx] = 0.0;
                 }
             }
 
-            _prevAxisState[cfg.Id] = (cfg.Enabled, cfg.FillMode);
+            _prevStateByAxis[idx] = (cfg.Enabled, cfg.FillMode, true);
         }
 
         _axisConfigs = configs;
@@ -228,7 +301,7 @@ public class TCodeService : IDisposable
         _isPlaying = playing;
 
         // Auto-stop all test axes when funscript playback starts
-        if (playing && _scripts.Count > 0)
+        if (playing && HasScriptsLoaded)
         {
             StopAllTestAxes();
         }
@@ -294,8 +367,8 @@ public class TCodeService : IDisposable
             }
             _outputThread = null;
         }
-        _lastSentValues.Clear();
-        lock (_testLock) _testingAxes.Clear();
+        Array.Fill(_lastSentByAxis, -1);
+        lock (_testLock) Array.Clear(_testingByAxis);
     }
 
     // ===== Test Mode API =====
@@ -308,9 +381,11 @@ public class TCodeService : IDisposable
     public void StartTestAxis(string axisId, double speedHz)
     {
         speedHz = Math.Clamp(speedHz, 0.1, 5.0);
+        var idx = GetOrdinalForId(axisId);
+        if (idx < 0) return;
         lock (_testLock)
         {
-            _testingAxes[axisId] = new TestAxisState
+            _testingByAxis[idx] = new TestAxisState
             {
                 Phase = 0,
                 CurrentSpeedHz = speedHz,
@@ -322,8 +397,7 @@ public class TCodeService : IDisposable
         }
 
         // Reset cached random generator so it doesn't have stale _transitionStart
-        if (_randomGenerators.TryGetValue(axisId, out var gen))
-            gen.Reset();
+        _randomGenByAxis[idx]?.Reset();
     }
 
     /// <summary>
@@ -332,10 +406,15 @@ public class TCodeService : IDisposable
     /// <param name="axisId">The axis to stop testing.</param>
     public void StopTestAxis(string axisId)
     {
-        bool wasRemoved;
-        lock (_testLock)
+        var idx = GetOrdinalForId(axisId);
+        bool wasRemoved = false;
+        if (idx >= 0)
         {
-            wasRemoved = _testingAxes.Remove(axisId);
+            lock (_testLock)
+            {
+                wasRemoved = _testingByAxis[idx] != null;
+                _testingByAxis[idx] = null;
+            }
         }
 
         if (wasRemoved)
@@ -354,9 +433,12 @@ public class TCodeService : IDisposable
     public void UpdateTestSpeed(string axisId, double speedHz)
     {
         speedHz = Math.Clamp(speedHz, 0.1, 5.0);
+        var idx = GetOrdinalForId(axisId);
+        if (idx < 0) return;
         lock (_testLock)
         {
-            if (_testingAxes.TryGetValue(axisId, out var state))
+            var state = _testingByAxis[idx];
+            if (state != null)
             {
                 state.TargetSpeedHz = speedHz;
             }
@@ -370,7 +452,9 @@ public class TCodeService : IDisposable
     /// <returns><c>true</c> if the axis is currently being tested.</returns>
     public bool IsAxisTesting(string axisId)
     {
-        lock (_testLock) return _testingAxes.ContainsKey(axisId);
+        var idx = GetOrdinalForId(axisId);
+        if (idx < 0) return false;
+        lock (_testLock) return _testingByAxis[idx] != null;
     }
 
     /// <summary>
@@ -382,9 +466,14 @@ public class TCodeService : IDisposable
         _stoppedTestIds.Clear();
         lock (_testLock)
         {
-            foreach (var key in _testingAxes.Keys)
-                _stoppedTestIds.Add(key);
-            _testingAxes.Clear();
+            for (int i = 0; i < _axisCount; i++)
+            {
+                if (_testingByAxis[i] != null)
+                {
+                    _stoppedTestIds.Add(_axisConfigs[i].Id);
+                    _testingByAxis[i] = null;
+                }
+            }
         }
 
         // Send midpoints outside the lock
@@ -452,8 +541,12 @@ public class TCodeService : IDisposable
 
                 if (_transport?.IsConnected == true)
                 {
-                    bool hasTestAxes;
-                    lock (_testLock) hasTestAxes = _testingAxes.Count > 0;
+                    bool hasTestAxes = false;
+                    lock (_testLock)
+                    {
+                        for (int i = 0; i < _axisCount; i++)
+                            if (_testingByAxis[i] != null) { hasTestAxes = true; break; }
+                    }
 
                     bool hasFillOrReturn = HasActiveFillModes();
                     if (_isPlaying || hasFillOrReturn || hasTestAxes)
@@ -512,10 +605,14 @@ public class TCodeService : IDisposable
         double strokePosition = 50.0;
         bool hasStrokeScript = false;
         var strokeConfig = _cachedStrokeConfig;
-        if (strokeConfig != null && _scripts.TryGetValue("L0", out var strokeScript))
+        if (strokeConfig != null)
         {
-            strokePosition = _interpolation.GetPosition(strokeScript, currentTimeMs, "L0");
-            hasStrokeScript = true;
+            var strokeScript = _scriptsByAxis[strokeConfig.Ordinal];
+            if (strokeScript != null)
+            {
+                strokePosition = _interpolation.GetPosition(strokeScript, currentTimeMs, strokeConfig.Ordinal);
+                hasStrokeScript = true;
+            }
         }
         // Accumulate stroke travel distance for random/sync fill speed
         var strokeDelta = strokePosition - _lastStrokePosition;
@@ -536,7 +633,7 @@ public class TCodeService : IDisposable
             TestAxisState? testState = null;
             if (hasTestAxes)
             {
-                lock (_testLock) _testingAxes.TryGetValue(config.Id, out testState);
+                lock (_testLock) testState = _testingByAxis[config.Ordinal];
             }
 
             if (testState != null)
@@ -575,10 +672,12 @@ public class TCodeService : IDisposable
                 if (effectiveFillMode == AxisFillMode.Random)
                 {
                     // Random uses its own cosine-interpolated generator
-                    if (!_randomGenerators.TryGetValue(config.Id, out var generator))
+                    var idx = config.Ordinal;
+                    var generator = _randomGenByAxis[idx];
+                    if (generator == null)
                     {
                         generator = new RandomPatternGenerator(config.Min, config.Max);
-                        _randomGenerators[config.Id] = generator;
+                        _randomGenByAxis[idx] = generator;
                     }
                     generator.SetRange(config.Min, config.Max);
 
@@ -603,24 +702,25 @@ public class TCodeService : IDisposable
 
                 // Scale through axis min/max and apply offset
                 var testTcode = ApplyPositionOffset(config, PositionToTCode(config, testPosition));
-                if (IsDirty(config.Id, testTcode))
+                if (IsDirty(config.Ordinal, testTcode))
                 {
                     AppendCommand(config, testTcode, intervalMs);
-                    _lastSentValues[config.Id] = testTcode;
+                    _lastSentByAxis[config.Ordinal] = testTcode;
                 }
                 continue; // Skip normal playback for this axis
             }
 
             // Scripted axis: interpolate position from funscript
-            if (_isPlaying && _scripts.TryGetValue(config.Id, out var script))
+            var axisScript = _scriptsByAxis[config.Ordinal];
+            if (_isPlaying && axisScript != null)
             {
-                var position = _interpolation.GetPosition(script, currentTimeMs, config.Id);
+                var position = _interpolation.GetPosition(axisScript, currentTimeMs, config.Ordinal);
                 var tcodeValue = ApplyPositionOffset(config, PositionToTCode(config, position));
 
-                if (IsDirty(config.Id, tcodeValue))
+                if (IsDirty(config.Ordinal, tcodeValue))
                 {
                     AppendCommand(config, tcodeValue, intervalMs);
-                    _lastSentValues[config.Id] = tcodeValue;
+                    _lastSentByAxis[config.Ordinal] = tcodeValue;
                 }
                 continue;
             }
@@ -636,10 +736,12 @@ public class TCodeService : IDisposable
             // --- Random fill ---
             if (config.FillMode == AxisFillMode.Random)
             {
-                if (!_randomGenerators.TryGetValue(config.Id, out var generator))
+                var idx = config.Ordinal;
+                var generator = _randomGenByAxis[idx];
+                if (generator == null)
                 {
                     generator = new RandomPatternGenerator(config.Min, config.Max);
-                    _randomGenerators[config.Id] = generator;
+                    _randomGenByAxis[idx] = generator;
                 }
                 generator.SetRange(config.Min, config.Max);
 
@@ -658,10 +760,9 @@ public class TCodeService : IDisposable
                 {
                     // Normalize time to same scale as stroke distance (~200 units per cycle)
                     // At 1 Hz fill speed, one second = 200 progress units
-                    if (!_cumulativeFillTime.TryGetValue(config.Id, out var cumTime))
-                        cumTime = 0;
+                    var cumTime = _cumulativeFillByAxis[idx];
                     cumTime += config.FillSpeedHz * elapsedSec * 200.0;
-                    _cumulativeFillTime[config.Id] = cumTime;
+                    _cumulativeFillByAxis[idx] = cumTime;
                     progress = cumTime;
                 }
 
@@ -672,17 +773,19 @@ public class TCodeService : IDisposable
                 targetVal = Math.Clamp(targetVal, 0, 999);
                 targetVal = ApplyPositionOffset(config, targetVal);
 
-                var randomVal = ApplyRampUp(config.Id, targetVal);
-                if (IsDirty(config.Id, randomVal))
+                var randomVal = ApplyRampUp(idx, targetVal);
+                if (IsDirty(idx, randomVal))
                 {
                     AppendCommand(config, randomVal, intervalMs);
-                    _lastSentValues[config.Id] = randomVal;
+                    _lastSentByAxis[idx] = randomVal;
                 }
                 continue;
             }
 
             // --- Waveform fill (Triangle, Sine, Saw, etc.) ---
             {
+                var idx = config.Ordinal;
+
                 // When synced to stroke, only move if stroke script is loaded
                 if (config.SyncWithStroke && config.Id != "L0" && !hasStrokeScript)
                 {
@@ -701,10 +804,9 @@ public class TCodeService : IDisposable
                 else
                 {
                     // Independent: accumulate time based on fill speed
-                    if (!_cumulativeFillTime.TryGetValue(config.Id, out var cumTime))
-                        cumTime = 0;
+                    var cumTime = _cumulativeFillByAxis[idx];
                     cumTime += config.FillSpeedHz * elapsedSec;
-                    _cumulativeFillTime[config.Id] = cumTime;
+                    _cumulativeFillByAxis[idx] = cumTime;
                     fillTime = cumTime;
                 }
 
@@ -715,11 +817,11 @@ public class TCodeService : IDisposable
                 position = ClampPitchFillPosition(config, position);
                 var targetVal = ApplyPositionOffset(config, PositionToTCode(config, position));
 
-                var finalVal = ApplyRampUp(config.Id, targetVal);
-                if (IsDirty(config.Id, finalVal))
+                var finalVal = ApplyRampUp(idx, targetVal);
+                if (IsDirty(idx, finalVal))
                 {
                     AppendCommand(config, finalVal, intervalMs);
-                    _lastSentValues[config.Id] = finalVal;
+                    _lastSentByAxis[idx] = finalVal;
                 }
             }
         }
@@ -736,20 +838,21 @@ public class TCodeService : IDisposable
     /// <summary>
     /// Applies exponential ramp-up blend from midpoint (500) to target.
     /// </summary>
-    private int ApplyRampUp(string axisId, int targetVal)
+    private int ApplyRampUp(int ordinal, int targetVal)
     {
-        if (!_rampingAxes.TryGetValue(axisId, out var blend))
+        var blend = _rampingByAxis[ordinal];
+        if (double.IsNaN(blend))
             return targetVal;
 
         blend += (1.0 - blend) * 0.04;
 
         if (blend >= 0.99)
         {
-            _rampingAxes.Remove(axisId);
+            _rampingByAxis[ordinal] = double.NaN;
             return targetVal;
         }
 
-        _rampingAxes[axisId] = blend;
+        _rampingByAxis[ordinal] = blend;
         var blendedVal = (int)Math.Round(500.0 + (targetVal - 500.0) * blend);
         return Math.Clamp(blendedVal, 0, 999);
     }
@@ -760,7 +863,9 @@ public class TCodeService : IDisposable
     /// </summary>
     private void ProcessReturnToCenter(AxisConfig config, int intervalMs)
     {
-        if (!_returningAxes.TryGetValue(config.Id, out var currentPos))
+        var idx = config.Ordinal;
+        var currentPos = _returningByAxis[idx];
+        if (double.IsNaN(currentPos))
             return;
 
         var newPos = currentPos + (500.0 - currentPos) * 0.04;
@@ -769,18 +874,18 @@ public class TCodeService : IDisposable
 
         if (Math.Abs(newPos - 500.0) < 1.0)
         {
-            _returningAxes.Remove(config.Id);
+            _returningByAxis[idx] = double.NaN;
             newVal = 500;
         }
         else
         {
-            _returningAxes[config.Id] = newPos;
+            _returningByAxis[idx] = newPos;
         }
 
-        if (IsDirty(config.Id, newVal))
+        if (IsDirty(idx, newVal))
         {
             AppendCommand(config, newVal, intervalMs);
-            _lastSentValues[config.Id] = newVal;
+            _lastSentByAxis[idx] = newVal;
         }
     }
 
@@ -852,8 +957,12 @@ public class TCodeService : IDisposable
     /// </summary>
     private bool HasActiveFillModes()
     {
-        return _returningAxes.Count > 0
-            || _hasActiveFillConfigs;
+        for (var i = 0; i < _axisCount; i++)
+        {
+            if (!double.IsNaN(_returningByAxis[i]))
+                return true;
+        }
+        return _hasActiveFillConfigs;
     }
 
     /// <summary>
@@ -869,6 +978,21 @@ public class TCodeService : IDisposable
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Returns the ordinal index for a given axis ID string.
+    /// Used by non-hot-path methods that receive axis IDs from external callers.
+    /// Returns -1 if the axis is not found.
+    /// </summary>
+    private int GetOrdinalForId(string axisId)
+    {
+        for (var i = 0; i < _axisConfigs.Count; i++)
+        {
+            if (_axisConfigs[i].Id == axisId)
+                return _axisConfigs[i].Ordinal;
+        }
+        return -1;
     }
 
     // ===== Helpers =====
@@ -937,12 +1061,13 @@ public class TCodeService : IDisposable
     /// <summary>
     /// Returns <c>true</c> if the axis value changed by ≥1 since last transmission.
     /// </summary>
-    /// <param name="axisId">The axis to check.</param>
+    /// <param name="ordinal">The axis ordinal to check.</param>
     /// <param name="tcodeValue">The proposed TCode value.</param>
     /// <returns><c>true</c> if the value differs from the last sent value.</returns>
-    internal bool IsDirty(string axisId, int tcodeValue)
+    internal bool IsDirty(int ordinal, int tcodeValue)
     {
-        if (!_lastSentValues.TryGetValue(axisId, out var last))
+        var last = _lastSentByAxis[ordinal];
+        if (last < 0)
             return true;
         return Math.Abs(last - tcodeValue) >= 1;
     }
@@ -970,7 +1095,7 @@ public class TCodeService : IDisposable
         var config = FindAxisConfig(axisId);
         if (config == null || _transport?.IsConnected != true) return;
         var command = FormatTCodeCommand(config, 500, 500) + "\n";
-        _lastSentValues.Remove(axisId);
+        _lastSentByAxis[config.Ordinal] = -1;
         Volatile.Write(ref _pendingDirectCommand, command);
     }
 
@@ -990,7 +1115,7 @@ public class TCodeService : IDisposable
         var offsetTcode = ApplyPositionOffset(config, baseTcode);
 
         var command = FormatTCodeCommand(config, offsetTcode, 200) + "\n";
-        _lastSentValues[axisId] = offsetTcode;
+        _lastSentByAxis[config.Ordinal] = offsetTcode;
         Volatile.Write(ref _pendingDirectCommand, command);
     }
 
@@ -1017,7 +1142,7 @@ public class TCodeService : IDisposable
             // Start from the 50% midpoint, then apply the user's position offset
             var homeTcode = ApplyPositionOffset(config, PositionToTCode(config, 50.0));
             parts.Add(FormatTCodeCommand(config, homeTcode, HomingDurationMs));
-            _lastSentValues[config.Id] = homeTcode;
+            _lastSentByAxis[config.Ordinal] = homeTcode;
         }
 
         Volatile.Write(ref _pendingDirectCommand, string.Join(" ", parts) + "\n");

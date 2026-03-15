@@ -83,6 +83,14 @@ public class AxisConfig : INotifyPropertyChanged
     [JsonIgnore]
     public bool HasPositionOffset => Id is "L0" or "R0" or "R1" or "R2";
 
+    /// <summary>
+    /// Zero-based index into per-axis state arrays in <see cref="TCodeService"/> and <see cref="InterpolationService"/>.
+    /// Assigned dynamically by list index in <c>TCodeService.SetAxisConfigs</c>.
+    /// Not persisted — ephemeral runtime value.
+    /// </summary>
+    [JsonIgnore]
+    public int Ordinal { get; internal set; }
+
     /// <summary>Whether this is the primary stroke axis (L0).</summary>
     [JsonIgnore]
     public bool IsStroke => Id == "L0";
