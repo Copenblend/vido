@@ -1,5 +1,4 @@
 using NSubstitute;
-using Vido.Core.Haptics;
 using Vido.Core.Models.Osr2Plus;
 using Vido.Core.Settings;
 using Vido.Services.Osr2Plus;

@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Vido.Core.Haptics;
 using Vido.Core.Models.Osr2Plus;
 using Vido.Core.Settings;
 using Vido.Services.Osr2Plus;

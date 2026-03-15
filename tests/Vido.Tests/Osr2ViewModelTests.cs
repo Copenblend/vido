@@ -1,6 +1,5 @@
 using NSubstitute;
 using Vido.Core.Events;
-using Vido.Core.Haptics;
 using Vido.Core.Models.Osr2Plus;
 using Vido.Core.Settings;
 using Vido.Services.Osr2Plus;
@@ -1006,40 +1005,6 @@ public class Osr2ViewModelTests : IDisposable
 
         vm.ConnectCommand.Execute(null); // Disconnect
         Assert.False(vm.IsConnected);
-    }
-
-    /// <summary>
-    /// Verifies that Connect publishes HapticTransportStateEvent.
-    /// </summary>
-    [Fact]
-    public void Sidebar_Connect_PublishesTransportStateEvent()
-    {
-        var eventBus = Substitute.For<IEventBus>();
-        var vm = CreateSidebarViewModel(eventBus);
-        var transport = Substitute.For<ITransportService>();
-        vm.TransportFactory = (_, _, _, _) => (transport, true);
-
-        vm.Connect();
-
-        eventBus.Received().Publish(Arg.Is<HapticTransportStateEvent>(e => e.IsConnected));
-    }
-
-    /// <summary>
-    /// Verifies that Disconnect publishes HapticTransportStateEvent.
-    /// </summary>
-    [Fact]
-    public void Sidebar_Disconnect_PublishesTransportStateEvent()
-    {
-        var eventBus = Substitute.For<IEventBus>();
-        var vm = CreateSidebarViewModel(eventBus);
-        var transport = Substitute.For<ITransportService>();
-        vm.TransportFactory = (_, _, _, _) => (transport, true);
-        vm.Connect();
-        eventBus.ClearReceivedCalls();
-
-        vm.Disconnect();
-
-        eventBus.Received().Publish(Arg.Is<HapticTransportStateEvent>(e => !e.IsConnected));
     }
 
     /// <summary>

@@ -4,7 +4,6 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using Vido.Core.Events;
-using Vido.Core.Haptics;
 using Vido.Core.Models.Osr2Plus;
 using Vido.Core.Settings;
 using Vido.Services.Osr2Plus;
@@ -15,8 +14,7 @@ namespace Vido.ViewModels.Osr2Plus;
 /// <summary>
 /// ViewModel for the OSR2+ sidebar panel. Manages connection settings (mode, port, baud),
 /// output rate, global offset, and panel visibility commands. Persists settings
-/// via <see cref="ISettingsService"/>. Publishes <see cref="HapticTransportStateEvent"/>
-/// on connect/disconnect.
+/// via <see cref="ISettingsService"/>.
 /// </summary>
 public class Osr2PlusSidebarViewModel : INotifyPropertyChanged
 {
@@ -339,7 +337,6 @@ public class Osr2PlusSidebarViewModel : INotifyPropertyChanged
         _tcode.Start();
 
         IsConnected = true;
-        PublishTransportState(true);
 
         // Show connection toast
         if (_selectedMode == ConnectionMode.UDP)
@@ -367,7 +364,6 @@ public class Osr2PlusSidebarViewModel : INotifyPropertyChanged
         }
 
         IsConnected = false;
-        PublishTransportState(false);
 
         // Show disconnection toast
         if (_settingsService.Current.Osr2ConnectionMode == "UDP")
@@ -385,7 +381,6 @@ public class Osr2PlusSidebarViewModel : INotifyPropertyChanged
             _tcode.Transport = null;
             _transport = null;
             IsConnected = false;
-            PublishTransportState(false);
             _toastService?.ShowError("Device disconnected unexpectedly");
         }
     }
@@ -414,28 +409,6 @@ public class Osr2PlusSidebarViewModel : INotifyPropertyChanged
         {
             SelectedComPort = AvailableComPorts[0];
         }
-    }
-
-    // ── Haptic Transport State Publishing ────────────────────
-
-    /// <summary>
-    /// Publishes a <see cref="HapticTransportStateEvent"/> on the event bus
-    /// so other features can observe connect/disconnect.
-    /// </summary>
-    private void PublishTransportState(bool isConnected)
-    {
-        _eventBus?.Publish(new HapticTransportStateEvent
-        {
-            IsConnected = isConnected,
-            ConnectionLabel = isConnected ? BuildConnectionLabel() : null,
-        });
-    }
-
-    private string BuildConnectionLabel()
-    {
-        return _selectedMode == ConnectionMode.UDP
-            ? $"UDP:{_udpPort}"
-            : $"COM:{_selectedComPort}";
     }
 
     // ── Settings Persistence ─────────────────────────────────

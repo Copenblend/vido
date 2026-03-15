@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,7 +20,6 @@ using Vido.ViewModels;
 using Vido.Views.Panels;
 using Vido.Views.Services;
 using Vido.Core.Events;
-using Vido.Core.Haptics;
 using Vido.Core.Logging;
 using Vido.Core.Models.Osr2Plus;
 using Vido.Core.Playback;
@@ -1646,19 +1645,9 @@ public partial class MainWindow : Window
         };
 
 
-        // â”€â”€ Publish Script & Config Changes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // â”€â”€ Auto-Show Visualizer on Script Load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _axisControlVm.ScriptsChanged += scripts =>
         {
-            var scriptLoadedMap = new Dictionary<string, bool>(scripts.Count, StringComparer.Ordinal);
-            foreach (var key in scripts.Keys)
-                scriptLoadedMap[key] = true;
-
-            _eventBus.Publish(new HapticScriptsChangedEvent
-            {
-                HasAnyScripts = scripts.Count > 0,
-                AxisScriptLoaded = scriptLoadedMap,
-            });
-
             // Auto-show funscript visualizer when scripts load
             if (scripts.Count > 0)
             {
@@ -1668,8 +1657,7 @@ public partial class MainWindow : Window
             }
         };
 
-        PublishOsr2AxisConfig();
-        _axisControlVm.AxisConfigChanged += PublishOsr2AxisConfig;
+
 
         // â”€â”€ Wire File Dialog Factory â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         foreach (var card in _axisControlVm.AxisCards)
@@ -1909,29 +1897,6 @@ public partial class MainWindow : Window
         bitmap.EndInit();
         bitmap.Freeze();
         return bitmap;
-    }
-
-    /// <summary>
-    /// Publishes the current axis configurations as a <see cref="HapticAxisConfigEvent"/>
-    /// so other features can read axis constraints.
-    /// </summary>
-    private void PublishOsr2AxisConfig()
-    {
-        if (_axisControlVm is null) return;
-
-        var axisSnapshots = new List<HapticAxisSnapshot>(_axisControlVm.AxisCards.Count);
-        foreach (var card in _axisControlVm.AxisCards)
-        {
-            axisSnapshots.Add(new HapticAxisSnapshot
-            {
-                Id = card.AxisId,
-                Min = card.Min,
-                Max = card.Max,
-                Enabled = card.Enabled,
-            });
-        }
-
-        _eventBus.Publish(new HapticAxisConfigEvent { Axes = axisSnapshots });
     }
 
     // â”€â”€ OSR2+ Event Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
