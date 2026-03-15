@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using Vido.Core.Models.Osr2Plus;
 
 namespace Vido.Services.Osr2Plus;
@@ -11,9 +10,16 @@ namespace Vido.Services.Osr2Plus;
 public class InterpolationService
 {
     /// <summary>
-    /// Per-axis cached index for fast sequential lookups.
+    /// Per-axis cached index for fast sequential lookups. Indexed by axis ordinal.
     /// </summary>
-    private readonly ConcurrentDictionary<string, int> _cachedIndices = new();
+    private int[] _cachedIndices = Array.Empty<int>();
+
+    /// <summary>
+    /// Sets the number of axes, allocating the index cache array.
+    /// Called from <see cref="TCodeService.SetAxisConfigs"/>.
+    /// </summary>
+    /// <param name="count">Number of axis configurations.</param>
+    public void SetAxisCount(int count) => _cachedIndices = new int[count];
 
     /// <summary>
     /// Gets the interpolated position (0–100) at the given time in milliseconds.
@@ -21,9 +27,9 @@ public class InterpolationService
     /// </summary>
     /// <param name="script">The funscript data containing sorted actions.</param>
     /// <param name="timeMs">Current playback time in milliseconds.</param>
-    /// <param name="axisId">Axis identifier used for index caching.</param>
+    /// <param name="axisOrdinal">Axis ordinal index for index caching.</param>
     /// <returns>Interpolated position value between 0 and 100.</returns>
-    public double GetPosition(FunscriptData script, double timeMs, string axisId)
+    public double GetPosition(FunscriptData script, double timeMs, int axisOrdinal)
     {
         var actions = script.Actions;
 
@@ -42,9 +48,9 @@ public class InterpolationService
             return actions[^1].Pos;
 
         // Try to use cached index for fast sequential advancement
-        var lastIndex = _cachedIndices.GetOrAdd(axisId, 0);
+        var lastIndex = _cachedIndices[axisOrdinal];
         var lo = FindIndex(actions, timeMs, lastIndex);
-        _cachedIndices[axisId] = lo;
+        _cachedIndices[axisOrdinal] = lo;
 
         var hi = lo + 1;
         var a = actions[lo];
@@ -100,6 +106,6 @@ public class InterpolationService
     /// </summary>
     public void ResetIndices()
     {
-        _cachedIndices.Clear();
+        Array.Clear(_cachedIndices);
     }
 }

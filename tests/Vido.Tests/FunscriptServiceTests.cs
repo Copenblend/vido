@@ -448,86 +448,93 @@ public class FunscriptServiceTests : IDisposable
     public void Interpolation_EmptyActions_Returns50()
     {
         var service = new InterpolationService();
+        service.SetAxisCount(1);
         var script = new FunscriptData { AxisId = "L0" };
 
-        Assert.Equal(50.0, service.GetPosition(script, 500, "L0"));
+        Assert.Equal(50.0, service.GetPosition(script, 500, 0));
     }
 
     [Fact]
     public void Interpolation_SingleAction_ReturnsItsPos()
     {
         var service = new InterpolationService();
+        service.SetAxisCount(1);
         var script = new FunscriptData
         {
             AxisId = "L0",
             Actions = [new FunscriptAction(1000, 75)]
         };
 
-        Assert.Equal(75.0, service.GetPosition(script, 500, "L0"));
-        Assert.Equal(75.0, service.GetPosition(script, 1500, "L0"));
+        Assert.Equal(75.0, service.GetPosition(script, 500, 0));
+        Assert.Equal(75.0, service.GetPosition(script, 1500, 0));
     }
 
     [Fact]
     public void Interpolation_BeforeFirstAction_ReturnsFirstPos()
     {
         var service = new InterpolationService();
+        service.SetAxisCount(1);
         var script = new FunscriptData
         {
             AxisId = "L0",
             Actions = [new FunscriptAction(1000, 25), new FunscriptAction(2000, 75)]
         };
 
-        Assert.Equal(25.0, service.GetPosition(script, 0, "L0"));
-        Assert.Equal(25.0, service.GetPosition(script, 999, "L0"));
+        Assert.Equal(25.0, service.GetPosition(script, 0, 0));
+        Assert.Equal(25.0, service.GetPosition(script, 999, 0));
     }
 
     [Fact]
     public void Interpolation_AfterLastAction_ReturnsLastPos()
     {
         var service = new InterpolationService();
+        service.SetAxisCount(1);
         var script = new FunscriptData
         {
             AxisId = "L0",
             Actions = [new FunscriptAction(1000, 25), new FunscriptAction(2000, 75)]
         };
 
-        Assert.Equal(75.0, service.GetPosition(script, 2000, "L0"));
-        Assert.Equal(75.0, service.GetPosition(script, 5000, "L0"));
+        Assert.Equal(75.0, service.GetPosition(script, 2000, 0));
+        Assert.Equal(75.0, service.GetPosition(script, 5000, 0));
     }
 
     [Fact]
     public void Interpolation_ExactMatch_ReturnsExactPos()
     {
         var service = new InterpolationService();
+        service.SetAxisCount(1);
         var script = new FunscriptData
         {
             AxisId = "L0",
             Actions = [new FunscriptAction(0, 0), new FunscriptAction(1000, 100), new FunscriptAction(2000, 0)]
         };
 
-        Assert.Equal(0.0, service.GetPosition(script, 0, "L0"));
-        Assert.Equal(100.0, service.GetPosition(script, 1000, "L0"));
+        Assert.Equal(0.0, service.GetPosition(script, 0, 0));
+        Assert.Equal(100.0, service.GetPosition(script, 1000, 0));
     }
 
     [Fact]
     public void Interpolation_Midpoint_LinearlyInterpolated()
     {
         var service = new InterpolationService();
+        service.SetAxisCount(1);
         var script = new FunscriptData
         {
             AxisId = "L0",
             Actions = [new FunscriptAction(0, 0), new FunscriptAction(1000, 100)]
         };
 
-        Assert.Equal(50.0, service.GetPosition(script, 500, "L0"));
-        Assert.Equal(25.0, service.GetPosition(script, 250, "L0"));
-        Assert.Equal(75.0, service.GetPosition(script, 750, "L0"));
+        Assert.Equal(50.0, service.GetPosition(script, 500, 0));
+        Assert.Equal(25.0, service.GetPosition(script, 250, 0));
+        Assert.Equal(75.0, service.GetPosition(script, 750, 0));
     }
 
     [Fact]
     public void Interpolation_SequentialCalls_UseCachedIndex()
     {
         var service = new InterpolationService();
+        service.SetAxisCount(1);
         var script = new FunscriptData
         {
             AxisId = "L0",
@@ -541,15 +548,16 @@ public class FunscriptServiceTests : IDisposable
         };
 
         // Sequential forward calls should use cached index
-        Assert.Equal(50.0, service.GetPosition(script, 500, "L0"));
-        Assert.Equal(50.0, service.GetPosition(script, 1500, "L0"));
-        Assert.Equal(50.0, service.GetPosition(script, 2500, "L0"));
+        Assert.Equal(50.0, service.GetPosition(script, 500, 0));
+        Assert.Equal(50.0, service.GetPosition(script, 1500, 0));
+        Assert.Equal(50.0, service.GetPosition(script, 2500, 0));
     }
 
     [Fact]
     public void Interpolation_SeekBackward_FallsBackToBinarySearch()
     {
         var service = new InterpolationService();
+        service.SetAxisCount(1);
         var script = new FunscriptData
         {
             AxisId = "L0",
@@ -563,8 +571,8 @@ public class FunscriptServiceTests : IDisposable
         };
 
         // Go to end, then seek back
-        service.GetPosition(script, 2500, "L0");
-        var result = service.GetPosition(script, 500, "L0");
+        service.GetPosition(script, 2500, 0);
+        var result = service.GetPosition(script, 500, 0);
 
         Assert.Equal(50.0, result);
     }
@@ -573,6 +581,7 @@ public class FunscriptServiceTests : IDisposable
     public void Interpolation_ResetIndices_ClearsCache()
     {
         var service = new InterpolationService();
+        service.SetAxisCount(1);
         var script = new FunscriptData
         {
             AxisId = "L0",
@@ -584,11 +593,11 @@ public class FunscriptServiceTests : IDisposable
             ]
         };
 
-        service.GetPosition(script, 1500, "L0");
+        service.GetPosition(script, 1500, 0);
         service.ResetIndices();
 
         // After reset, should still work correctly
-        var result = service.GetPosition(script, 500, "L0");
+        var result = service.GetPosition(script, 500, 0);
         Assert.Equal(50.0, result);
     }
 
@@ -596,6 +605,7 @@ public class FunscriptServiceTests : IDisposable
     public void Interpolation_DifferentAxes_IndependentCaches()
     {
         var service = new InterpolationService();
+        service.SetAxisCount(2);
         var l0 = new FunscriptData
         {
             AxisId = "L0",
@@ -607,8 +617,8 @@ public class FunscriptServiceTests : IDisposable
             Actions = [new FunscriptAction(0, 100), new FunscriptAction(1000, 0)]
         };
 
-        var posL0 = service.GetPosition(l0, 500, "L0");
-        var posR0 = service.GetPosition(r0, 500, "R0");
+        var posL0 = service.GetPosition(l0, 500, 0);
+        var posR0 = service.GetPosition(r0, 500, 1);
 
         Assert.Equal(50.0, posL0);
         Assert.Equal(50.0, posR0);
@@ -618,6 +628,7 @@ public class FunscriptServiceTests : IDisposable
     public void Interpolation_ZeroRange_ReturnsFirstPos()
     {
         var service = new InterpolationService();
+        service.SetAxisCount(1);
         var script = new FunscriptData
         {
             AxisId = "L0",
@@ -625,7 +636,7 @@ public class FunscriptServiceTests : IDisposable
         };
 
         // Same timestamp — zero range, should return first pos
-        var result = service.GetPosition(script, 1000, "L0");
+        var result = service.GetPosition(script, 1000, 0);
         Assert.Equal(25.0, result);
     }
 

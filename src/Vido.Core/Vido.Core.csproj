@@ -8,4 +8,9 @@
     <Version>$(VidoVersion)</Version>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Vido.Services" />
+    <InternalsVisibleTo Include="Vido.Tests" />
+  </ItemGroup>
+
 </Project>

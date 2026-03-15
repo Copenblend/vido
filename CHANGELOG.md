@@ -4,6 +4,9 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **vido-234**: Optimized `TCodeService` and `InterpolationService` by replacing 8 `Dictionary<string, ...>` fields with fixed-size arrays indexed by `AxisConfig.Ordinal`. Added `Ordinal` property to `AxisConfig` (assigned in `SetAxisConfigs`). Changed `InterpolationService.GetPosition` signature from `string axisId` to `int axisOrdinal` and replaced `ConcurrentDictionary<string, int>` index cache with `int[]`. Added `InterpolationService.SetAxisCount()`. Converted `IsDirty` from `string`-based to `int ordinal`-based lookup. Added `GetOrdinalForId()` helper for non-hot-path string-to-ordinal resolution. Sentinel values: `-1` (unsent TCode), `double.NaN` (inactive ramp/return), `null` (absent objects). Added `InternalsVisibleTo("Vido.Services")` and `InternalsVisibleTo("Vido.Tests")` to `Vido.Core.csproj`. Updated all tests to call `SetAxisConfigs` before `SetScripts`/`StartTestAxis` and use integer ordinals for `IsDirty`/`GetPosition`.
+
 ### Removed
 - **vido-233**: Removed unused `SkiaSharp` NuGet package reference from `Vido.Core.csproj`. Zero SkiaSharp imports existed in Core — SkiaSharp is correctly consumed only in `Vido.Views` via `SkiaSharp.Views.WPF`. `SkiaSharpVersion` property retained in `Directory.Build.props`.
 - **vido-232**: Removed orphaned haptic event types (`HapticAxisConfigEvent`, `HapticScriptsChangedEvent`, `HapticTransportStateEvent`, `HapticAxisSnapshot`) and all publish call sites. Deleted 4 type files and the empty `Haptics` directory. Removed `PublishTransportState()` and `BuildConnectionLabel()` from `Osr2PlusSidebarViewModel`, `PublishOsr2AxisConfig()` from `MainWindow`, and dead code in the ScriptsChanged handler (preserved auto-show visualizer logic). Cleaned up `using Vido.Core.Haptics` from 6 files. Removed 10 tests (8 from `HapticTypesTests`, 2 transport-state tests from `Osr2ViewModelTests`).
