@@ -169,6 +169,7 @@ public class TCodeService : IDisposable
         var oldAxisConfigs = _axisConfigs;
         var oldLastSent = _lastSentByAxis;
         var oldTestingByAxis = _testingByAxis;
+        var oldScriptsByAxis = _scriptsByAxis;
 
         // Allocate state arrays (only on config change, not hot path)
         _scriptsByAxis = new FunscriptData?[count];
@@ -213,7 +214,9 @@ public class TCodeService : IDisposable
                         hasPrev = true;
                     }
 
-                    // Carry forward test state
+                    // Carry forward loaded scripts and test state
+                    if (j < oldScriptsByAxis.Length)
+                        _scriptsByAxis[idx] = oldScriptsByAxis[j];
                     if (j < oldTestingByAxis.Length)
                         _testingByAxis[idx] = oldTestingByAxis[j];
 

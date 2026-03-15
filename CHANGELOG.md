@@ -5,6 +5,7 @@ All notable changes to the Vido project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **vido-235**: Optimized `LogService` snapshot allocation by replacing eager per-call `ToList().AsReadOnly()` in `Log()` with a lazy-rebuild pattern. Added `_snapshotDirty` volatile flag set on write; `Entries` getter rebuilds snapshot via double-checked locking only when dirty. `Clear()` resets the dirty flag after writing the empty snapshot. Zero allocations per `Log()` call; snapshot created only when `Entries` is actually read. Added 2 tests.
 - **vido-234**: Optimized `TCodeService` and `InterpolationService` by replacing 8 `Dictionary<string, ...>` fields with fixed-size arrays indexed by `AxisConfig.Ordinal`. Added `Ordinal` property to `AxisConfig` (assigned in `SetAxisConfigs`). Changed `InterpolationService.GetPosition` signature from `string axisId` to `int axisOrdinal` and replaced `ConcurrentDictionary<string, int>` index cache with `int[]`. Added `InterpolationService.SetAxisCount()`. Converted `IsDirty` from `string`-based to `int ordinal`-based lookup. Added `GetOrdinalForId()` helper for non-hot-path string-to-ordinal resolution. Sentinel values: `-1` (unsent TCode), `double.NaN` (inactive ramp/return), `null` (absent objects). Added `InternalsVisibleTo("Vido.Services")` and `InternalsVisibleTo("Vido.Tests")` to `Vido.Core.csproj`. Updated all tests to call `SetAxisConfigs` before `SetScripts`/`StartTestAxis` and use integer ordinals for `IsDirty`/`GetPosition`.
 
 ### Removed
