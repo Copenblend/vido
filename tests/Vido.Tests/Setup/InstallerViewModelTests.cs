@@ -538,4 +538,60 @@ public sealed class InstallerViewModelTests : IDisposable
     {
         Assert.True(Enum.IsDefined(page));
     }
+
+    // ── InstallPath ──
+
+    /// <summary>
+    /// Verifies that InstallOptions.InstallPath defaults to InstallEngine.DefaultInstallDir.
+    /// </summary>
+    [Fact]
+    public void InstallOptions_InstallPath_DefaultsToDefaultInstallDir()
+    {
+        var options = new InstallOptions();
+
+        Assert.Equal(InstallEngine.DefaultInstallDir, options.InstallPath);
+    }
+
+    /// <summary>
+    /// Verifies that the ViewModel's Options.InstallPath has the default value.
+    /// </summary>
+    [Fact]
+    public void Constructor_Options_InstallPath_HasDefault()
+    {
+        var vm = CreateViewModel();
+
+        Assert.Equal(InstallEngine.DefaultInstallDir, vm.Options.InstallPath);
+    }
+
+    /// <summary>
+    /// Verifies that InstallCommand uses a custom install path for registry entries.
+    /// </summary>
+    [Fact]
+    public async Task InstallCommand_WithCustomInstallPath_RegistersCustomPath()
+    {
+        var vm = CreateViewModel();
+        _registryKeysToCleanup.Add(UninstallRegistryPath);
+        _registryKeysToCleanup.Add(InstallPathRegistryPath);
+        PreCleanRegistry(UninstallRegistryPath, InstallPathRegistryPath);
+
+        var customPath = @"C:\CustomPath\Vido";
+        vm.Options.InstallPath = customPath;
+        vm.Options.CreateDesktopShortcut = false;
+        vm.Options.CreateStartMenuShortcut = false;
+        vm.Options.RegisterFileAssociations = false;
+
+        await vm.InstallCommand.ExecuteAsync(null);
+
+        using (var k = Registry.CurrentUser.OpenSubKey(UninstallRegistryPath))
+        {
+            Assert.NotNull(k);
+            Assert.Equal(customPath, k.GetValue("InstallLocation"));
+        }
+
+        using (var k = Registry.CurrentUser.OpenSubKey(InstallPathRegistryPath))
+        {
+            Assert.NotNull(k);
+            Assert.Equal(customPath, k.GetValue("Path"));
+        }
+    }
 }

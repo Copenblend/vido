@@ -1,3 +1,5 @@
+using Vido.Setup.Services;
+
 namespace Vido.Setup.Models;
 
 /// <summary>
@@ -5,6 +7,12 @@ namespace Vido.Setup.Models;
 /// </summary>
 public sealed class InstallOptions
 {
+    /// <summary>
+    /// The directory where Vido will be installed.
+    /// Defaults to <see cref="InstallEngine.DefaultInstallDir"/> (<c>%LOCALAPPDATA%\Vido</c>).
+    /// </summary>
+    public string InstallPath { get; set; } = InstallEngine.DefaultInstallDir;
+
     /// <summary>
     /// Whether to create a desktop shortcut for Vido.
     /// </summary>
