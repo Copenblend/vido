@@ -1,10 +1,12 @@
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Vido.Core.Events;
 using Vido.Core.Logging;
 using Vido.Core.Playback;
 using Vido.Core.Playlists;
 using Vido.Core.Settings;
 using Vido.Core.State;
+using Vido.Services.Playlists;
 using Vido.ViewModels;
 using Xunit;
 
@@ -395,6 +397,7 @@ public class VideoPlayerViewModelTests : IDisposable
 
     /// <summary>
     /// Verifies that Load And Play Async resets is loading media on failure.
+    /// The exception is caught internally — no exception propagates to the caller.
     /// </summary>
     [Fact]
     public async Task LoadAndPlayAsync_ResetsIsLoadingMedia_OnFailure()
@@ -402,10 +405,10 @@ public class VideoPlayerViewModelTests : IDisposable
         _engine.LoadAsync(Arg.Any<string>())
             .Returns(Task.FromException(new InvalidOperationException("test error")));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _sut.LoadAndPlayAsync(Path.Combine(Path.GetTempPath(), "nonexistent.mp4")));
+        await _sut.LoadAndPlayAsync(Path.Combine(Path.GetTempPath(), "nonexistent.mp4"));
 
         Assert.False(_sut.IsLoadingMedia);
+        Assert.False(_sut.HasMedia);
     }
 
     /// <summary>
@@ -1307,5 +1310,104 @@ public class VideoPlayerViewModelTests : IDisposable
     public void Dispose()
     {
         _sut.Dispose();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Corrupt Video Error Handling Tests
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Verifies that when the engine throws on load, an error toast is shown
+    /// with the correct filename-only message.
+    /// </summary>
+    [Fact]
+    public async Task LoadAndPlay_EngineThrows_ShowsErrorToast()
+    {
+        var toast = Substitute.For<IToastService>();
+        _sut.ToastService = toast;
+        _engine.LoadAsync(Arg.Any<string>()).ThrowsAsync(new InvalidOperationException("corrupt"));
+
+        await _sut.LoadAndPlayAsync(@"C:\videos\bad.mp4");
+
+        toast.Received(1).ShowError("\"bad.mp4\" is corrupted and could not be played.", Arg.Any<string?>());
+    }
+
+    /// <summary>
+    /// Verifies that when the engine throws on load, the error is logged
+    /// with the filename and exception message.
+    /// </summary>
+    [Fact]
+    public async Task LoadAndPlay_EngineThrows_LogsError()
+    {
+        _engine.LoadAsync(Arg.Any<string>()).ThrowsAsync(new InvalidOperationException("bad format"));
+
+        await _sut.LoadAndPlayAsync(@"C:\videos\bad.mp4");
+
+        _logService.Received(1).Error(
+            Arg.Is<string>(s => s.Contains("bad.mp4") && s.Contains("bad format")),
+            "Player");
+    }
+
+    /// <summary>
+    /// Verifies that HasMedia remains false after a failed load.
+    /// </summary>
+    [Fact]
+    public async Task LoadAndPlay_EngineThrows_HasMediaRemainsFalse()
+    {
+        _engine.LoadAsync(Arg.Any<string>()).ThrowsAsync(new InvalidOperationException("corrupt"));
+
+        await _sut.LoadAndPlayAsync(@"C:\videos\bad.mp4");
+
+        Assert.False(_sut.HasMedia);
+    }
+
+    /// <summary>
+    /// Verifies that IsLoadingMedia is reset to false after a failed load,
+    /// so the loading spinner does not remain visible.
+    /// </summary>
+    [Fact]
+    public async Task LoadAndPlay_EngineThrows_IsLoadingMediaResetToFalse()
+    {
+        _engine.LoadAsync(Arg.Any<string>()).ThrowsAsync(new InvalidOperationException("corrupt"));
+
+        await _sut.LoadAndPlayAsync(@"C:\videos\bad.mp4");
+
+        Assert.False(_sut.IsLoadingMedia);
+    }
+
+    /// <summary>
+    /// Verifies that after a failed load, the player can successfully load
+    /// another video — the VM is not left in a broken state.
+    /// </summary>
+    [Fact]
+    public async Task LoadAndPlay_EngineThrows_CanLoadAnotherVideo()
+    {
+        // First call throws
+        _engine.LoadAsync(@"C:\videos\bad.mp4").ThrowsAsync(new InvalidOperationException("corrupt"));
+        await _sut.LoadAndPlayAsync(@"C:\videos\bad.mp4");
+        Assert.False(_sut.HasMedia);
+
+        // Second call succeeds
+        _engine.LoadAsync(@"C:\videos\good.mp4").Returns(Task.CompletedTask);
+        _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+        await _sut.LoadAndPlayAsync(@"C:\videos\good.mp4");
+
+        Assert.True(_sut.HasMedia);
+    }
+
+    /// <summary>
+    /// Verifies that when ToastService is null (not wired), a failed load
+    /// does not throw — the error is logged but no toast is shown.
+    /// </summary>
+    [Fact]
+    public async Task LoadAndPlay_EngineThrows_NoToastService_DoesNotThrow()
+    {
+        _engine.LoadAsync(Arg.Any<string>()).ThrowsAsync(new InvalidOperationException("corrupt"));
+        // ToastService is null by default
+
+        var ex = await Record.ExceptionAsync(() => _sut.LoadAndPlayAsync(@"C:\videos\bad.mp4"));
+
+        Assert.Null(ex);
+        Assert.False(_sut.HasMedia);
     }
 }
