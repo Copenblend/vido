@@ -34,6 +34,12 @@ public class AxisCardViewModel : INotifyPropertyChanged
     /// </summary>
     public event Action? ConfigChanged;
 
+    /// <summary>
+    /// Raised when a script is cleared via the clear command.
+    /// Carries the axis ID so the parent can deload the script data.
+    /// </summary>
+    public event Action<string>? ScriptCleared;
+
     // ═══════════════════════════════════════════════════════
     //  Identity (read-only from AxisConfig)
     // ═══════════════════════════════════════════════════════
@@ -265,6 +271,7 @@ public class AxisCardViewModel : INotifyPropertyChanged
             OnPropertyChanged();
             OnPropertyChanged(nameof(HasScript));
             OnPropertyChanged(nameof(ScriptDisplayName));
+            ((RelayCommand)ClearScriptCommand).NotifyCanExecuteChanged();
         }
     }
 
@@ -293,6 +300,9 @@ public class AxisCardViewModel : INotifyPropertyChanged
     /// <summary>Opens a file dialog to manually load a funscript.</summary>
     public ICommand OpenScriptCommand { get; }
 
+    /// <summary>Clears the manually loaded funscript from this axis.</summary>
+    public ICommand ClearScriptCommand { get; }
+
     // ═══════════════════════════════════════════════════════
     //  Constructor
     // ═══════════════════════════════════════════════════════
@@ -309,6 +319,7 @@ public class AxisCardViewModel : INotifyPropertyChanged
 
         ToggleExpandCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
         OpenScriptCommand = new RelayCommand(ExecuteOpenScript);
+        ClearScriptCommand = new RelayCommand(ExecuteClearScript, () => HasScript);
     }
 
     // ═══════════════════════════════════════════════════════
@@ -357,6 +368,16 @@ public class AxisCardViewModel : INotifyPropertyChanged
 
         // Notify parent to update TCodeService scripts
         ConfigChanged?.Invoke();
+    }
+
+    private void ExecuteClearScript()
+    {
+        _config.IsScriptManual = false;
+        ScriptFileName = null;
+        ((RelayCommand)ClearScriptCommand).NotifyCanExecuteChanged();
+
+        // Notify parent to deload the script data and recenter the axis
+        ScriptCleared?.Invoke(AxisId);
     }
 
     // ═══════════════════════════════════════════════════════

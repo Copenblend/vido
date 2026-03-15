@@ -1890,7 +1890,7 @@ public partial class MainWindow : Window
         });
 
         // â”€â”€ Register accepted file extensions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        _fileExplorerViewModel.AdditionalAcceptedExtensions.Add(".vidpl");
+        _fileExplorerViewModel.DropOnlyExtensions.Add(".vidpl");
 
         _logService.Info("Playlists feature initialized", "Playlists");
     }

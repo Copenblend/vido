@@ -181,6 +181,7 @@ public class AxisControlViewModel : INotifyPropertyChanged
             var card = new AxisCardViewModel(config, _tcode);
             card.ParseFileFunc = ParseFileFunc;
             card.ConfigChanged += OnCardConfigChanged;
+            card.ScriptCleared += OnCardScriptCleared;
             AxisCards.Add(card);
         }
     }
@@ -420,6 +421,13 @@ public class AxisControlViewModel : INotifyPropertyChanged
             var currentAxes = CaptureCurrentAxes();
             IsProfileModified = !_selectedProfile.MatchesAxes(currentAxes);
         }
+    }
+
+    private void OnCardScriptCleared(string axisId)
+    {
+        _loadedScripts.Remove(axisId);
+        _tcode.ClearAxisScript(axisId);
+        ScriptsChanged?.Invoke(_loadedScripts);
     }
 
     // ═══════════════════════════════════════════════════════

@@ -57,11 +57,16 @@ public partial class FileExplorerViewModel : ObservableObject
     private FileNode? _selectedNode;
 
     /// <summary>
-    /// File extensions accepted by plugins (e.g. ".sample"). Files with these
-    /// extensions will be accepted during drag-and-drop and menu-based addition
-    /// in addition to the built-in video extensions.
+    /// File extensions shown in the explorer tree and accepted during drag-and-drop
+    /// in addition to the built-in video extensions (e.g. ".funscript").
     /// </summary>
     public HashSet<string> AdditionalAcceptedExtensions { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// File extensions accepted only during drag-and-drop or menu-based addition
+    /// but not shown in the explorer tree (e.g. ".vidpl").
+    /// </summary>
+    public HashSet<string> DropOnlyExtensions { get; } = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// When true, hidden files/folders appear in the tree (dimmed).
@@ -127,6 +132,22 @@ public partial class FileExplorerViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Retains only directory nodes and files whose extension matches
+    /// <see cref="FileNode.VideoExtensions"/> or <see cref="AdditionalAcceptedExtensions"/>.
+    /// </summary>
+    private List<FileNode> FilterVideoFiles(List<FileNode> nodes)
+    {
+        var result = new List<FileNode>(nodes.Count);
+        foreach (var node in nodes)
+        {
+            if (node.IsDirectory || node.IsVideoFile ||
+                AdditionalAcceptedExtensions.Contains(Path.GetExtension(node.FullPath)))
+                result.Add(node);
+        }
+        return result;
+    }
+
+    /// <summary>
     /// Opens a folder and populates the tree with its contents.
     /// Persists the folder path in application state.
     /// </summary>
@@ -142,7 +163,7 @@ public partial class FileExplorerViewModel : ObservableObject
 
             // Enumerate children entirely on thread pool
             var allNodes = await _fileSystemService.GetChildrenAsync(path);
-            var filtered = ApplyHiddenFilter(allNodes);
+            var filtered = ApplyHiddenFilter(FilterVideoFiles(allNodes));
 
             CloseFolder();
 
@@ -191,7 +212,7 @@ public partial class FileExplorerViewModel : ObservableObject
             else if (File.Exists(path))
             {
                 var ext = Path.GetExtension(path);
-                if (FileNode.VideoExtensions.Contains(ext) || AdditionalAcceptedExtensions.Contains(ext))
+                if (FileNode.VideoExtensions.Contains(ext) || AdditionalAcceptedExtensions.Contains(ext) || DropOnlyExtensions.Contains(ext))
                 {
                     if (!ContainsRootPath(path))
                     {
@@ -252,7 +273,7 @@ public partial class FileExplorerViewModel : ObservableObject
 
         node.Children.Clear(); // remove dummy
         var allChildren = await _fileSystemService.GetChildrenAsync(node.FullPath);
-        foreach (var child in ApplyHiddenFilter(allChildren))
+        foreach (var child in ApplyHiddenFilter(FilterVideoFiles(allChildren)))
             node.Children.Add(child);
     }
 
@@ -274,7 +295,7 @@ public partial class FileExplorerViewModel : ObservableObject
             CollectExpandedPaths(RootNodes, expandedPaths);
 
             var allNodes = await _fileSystemService.GetChildrenAsync(FolderPath);
-            var filtered = ApplyHiddenFilter(allNodes);
+            var filtered = ApplyHiddenFilter(FilterVideoFiles(allNodes));
 
             RootNodes = new ObservableCollection<FileNode>(filtered);
 
@@ -430,7 +451,7 @@ public partial class FileExplorerViewModel : ObservableObject
         {
             node.Children.Clear();
             var allChildren = await _fileSystemService.GetChildrenAsync(node.FullPath);
-            foreach (var child in ApplyHiddenFilter(allChildren))
+            foreach (var child in ApplyHiddenFilter(FilterVideoFiles(allChildren)))
                 node.Children.Add(child);
         }
 

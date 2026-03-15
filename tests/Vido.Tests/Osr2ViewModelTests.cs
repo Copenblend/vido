@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.Input;
 using NSubstitute;
 using Vido.Core.Events;
 using Vido.Core.Models.Osr2Plus;
@@ -416,6 +417,57 @@ public class Osr2ViewModelTests : IDisposable
         Assert.False(vm.HasScript);
     }
 
+    /// <summary>
+    /// Verifies that ClearScriptCommand clears the loaded script and resets manual flag.
+    /// </summary>
+    [Fact]
+    public void AxisCard_ClearScriptCommand_ClearsScript()
+    {
+        var vm = new AxisCardViewModel(MakeL0(), _tcode);
+        var script = MakeScript((0, 0), (1000, 100));
+        vm.FileDialogFactory = () => @"C:\videos\custom.funscript";
+        vm.ParseFileFunc = (path, id) => script;
+        vm.OpenScriptCommand.Execute(null);
+        Assert.True(vm.HasScript);
+
+        vm.ClearScriptCommand.Execute(null);
+
+        Assert.Null(vm.ScriptFileName);
+        Assert.False(vm.HasScript);
+        Assert.False(vm.IsScriptManual);
+    }
+
+    /// <summary>
+    /// Verifies that ClearScriptCommand fires ScriptCleared with the axis ID.
+    /// </summary>
+    [Fact]
+    public void AxisCard_ClearScriptCommand_FiresScriptCleared()
+    {
+        var vm = new AxisCardViewModel(MakeL0(), _tcode);
+        var script = MakeScript((0, 0), (1000, 100));
+        vm.FileDialogFactory = () => @"C:\videos\custom.funscript";
+        vm.ParseFileFunc = (path, id) => script;
+        vm.OpenScriptCommand.Execute(null);
+
+        string? clearedAxisId = null;
+        vm.ScriptCleared += id => clearedAxisId = id;
+
+        vm.ClearScriptCommand.Execute(null);
+
+        Assert.Equal("L0", clearedAxisId);
+    }
+
+    /// <summary>
+    /// Verifies that ClearScriptCommand cannot execute when no script is loaded.
+    /// </summary>
+    [Fact]
+    public void AxisCard_ClearScriptCommand_DisabledWhenNoScript()
+    {
+        var vm = new AxisCardViewModel(MakeL0(), _tcode);
+
+        Assert.False(((RelayCommand)vm.ClearScriptCommand).CanExecute(null));
+    }
+
     // ═══════════════════════════════════════════════════════════
     //  AxisControlViewModel Tests
     // ═══════════════════════════════════════════════════════════
@@ -592,6 +644,101 @@ public class Osr2ViewModelTests : IDisposable
         vm.ClearAllScripts();
 
         Assert.False(vm.AxisCards[0].IsScriptManual);
+    }
+
+    /// <summary>
+    /// Verifies that clearing a script on an axis card removes it from loaded scripts
+    /// and fires ScriptsChanged.
+    /// </summary>
+    [Fact]
+    public void AxisControl_ClearScript_RemovesFromLoadedScripts()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        var script = MakeScript((0, 0), (1000, 100));
+        vm.FindMatchingScriptsFunc = _ => new Dictionary<string, string>
+        {
+            { "L0", @"C:\videos\test.funscript" },
+            { "R0", @"C:\videos\test.twist.funscript" }
+        };
+        vm.TryParseMultiAxisFunc = _ => null;
+        vm.ParseFileFunc = (path, id) => script;
+
+        vm.LoadScriptsForVideo(@"C:\videos\test.mp4");
+
+        Dictionary<string, FunscriptData>? received = null;
+        vm.ScriptsChanged += scripts => received = scripts;
+
+        // Clear R0 script via the card's clear command
+        vm.AxisCards[1].ClearScriptCommand.Execute(null);
+
+        Assert.NotNull(received);
+        Assert.True(received.ContainsKey("L0"));
+        Assert.False(received.ContainsKey("R0"));
+    }
+
+    /// <summary>
+    /// Verifies that clearing one axis from a multi-axis funscript file
+    /// only removes that axis — other axes from the same file remain loaded.
+    /// </summary>
+    [Fact]
+    public void AxisControl_ClearScript_MultiAxisFile_OnlyRemovesClearedAxis()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        var l0Script = MakeScript((0, 0), (1000, 100));
+        var r0Script = MakeScript((0, 50), (1000, 50));
+        var r1Script = MakeScript((0, 25), (1000, 75));
+
+        vm.FindMatchingScriptsFunc = _ => new Dictionary<string, string>
+        {
+            { "L0", @"C:\videos\test.funscript" }
+        };
+        vm.TryParseMultiAxisFunc = _ => new Dictionary<string, FunscriptData>
+        {
+            { "L0", l0Script },
+            { "R0", r0Script },
+            { "R1", r1Script }
+        };
+        vm.ParseFileFunc = (path, id) => l0Script;
+
+        vm.LoadScriptsForVideo(@"C:\videos\test.mp4");
+
+        Assert.True(vm.AxisCards[1].HasScript); // R0 loaded from multi-axis
+
+        Dictionary<string, FunscriptData>? received = null;
+        vm.ScriptsChanged += scripts => received = scripts;
+
+        // Clear only R0
+        vm.AxisCards[1].ClearScriptCommand.Execute(null);
+
+        Assert.NotNull(received);
+        Assert.True(received.ContainsKey("L0"));
+        Assert.False(received.ContainsKey("R0"));
+        Assert.True(received.ContainsKey("R1"));
+    }
+
+    /// <summary>
+    /// Verifies that clearing a script does not fire AxisConfigChanged
+    /// (script clear is not a config change).
+    /// </summary>
+    [Fact]
+    public void AxisControl_ClearScript_DoesNotFireAxisConfigChanged()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        var script = MakeScript((0, 0), (1000, 100));
+        vm.FindMatchingScriptsFunc = _ => new Dictionary<string, string>
+        {
+            { "L0", @"C:\videos\test.funscript" }
+        };
+        vm.TryParseMultiAxisFunc = _ => null;
+        vm.ParseFileFunc = (path, id) => script;
+        vm.LoadScriptsForVideo(@"C:\videos\test.mp4");
+
+        var fired = false;
+        vm.AxisConfigChanged += () => fired = true;
+
+        vm.AxisCards[0].ClearScriptCommand.Execute(null);
+
+        Assert.False(fired);
     }
 
     // ═══════════════════════════════════════════════════════════

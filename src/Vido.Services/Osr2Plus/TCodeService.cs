@@ -153,6 +153,28 @@ public class TCodeService : IDisposable
     }
 
     /// <summary>
+    /// Removes the script for a single axis and triggers a smooth return to center.
+    /// Used when the user manually clears a script from an axis card.
+    /// </summary>
+    /// <param name="axisId">The axis identifier (e.g. "R0").</param>
+    public void ClearAxisScript(string axisId)
+    {
+        var ordinal = GetOrdinalForId(axisId);
+        if (ordinal < 0 || ordinal >= _scriptsByAxis.Length) return;
+
+        if (_scriptsByAxis[ordinal] != null)
+        {
+            var lastVal = _lastSentByAxis[ordinal];
+            _scriptsByAxis[ordinal] = null;
+            _lastSentByAxis[ordinal] = -1;
+
+            // Trigger smooth return to center from the last known position
+            if (lastVal != -1 && Math.Abs(lastVal - 500) >= 1)
+                _returningByAxis[ordinal] = lastVal;
+        }
+    }
+
+    /// <summary>
     /// Sets the axis configurations (min/max/enabled/fill mode).
     /// Assigns ordinals, allocates per-axis state arrays, and detects
     /// transitions to trigger ramp-up and return-to-center animations.
