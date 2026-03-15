@@ -39,6 +39,11 @@ public sealed class AppSettingsStore : ISettingsStore
             ["osr2.outputRate"] = () => (double)Settings.Osr2OutputRate,
             ["osr2.globalOffset"] = () => (double)Settings.Osr2GlobalOffset,
             ["osr2.visualizerWindowDuration"] = () => Settings.Osr2VisualizerWindowDuration.ToString(),
+            ["general.toastDuration"] = () => Settings.ToastDurationSeconds,
+            ["playback.fullscreenAutoHide"] = () => Settings.FullscreenAutoHideSeconds,
+            ["playback.fullscreenShowVideoName"] = () => Settings.FullscreenShowVideoName,
+            ["playback.resumePlaybackPrompt"] = () => Settings.ResumePlaybackPrompt,
+            ["playlist.autoSave"] = () => Settings.PlaylistAutoSave,
             ["updates.autocheck"] = () => Settings.AutoCheckUpdates,
         };
 
@@ -104,6 +109,31 @@ public sealed class AppSettingsStore : ISettingsStore
             {
                 if (int.TryParse(v?.ToString(), out var dur))
                     Settings.Osr2VisualizerWindowDuration = dur;
+                _settingsService.QueueSave();
+            },
+            ["general.toastDuration"] = v =>
+            {
+                Settings.ToastDurationSeconds = Math.Clamp(Convert.ToDouble(v), 1.0, 10.0);
+                _settingsService.QueueSave();
+            },
+            ["playback.fullscreenAutoHide"] = v =>
+            {
+                Settings.FullscreenAutoHideSeconds = Math.Clamp(Convert.ToDouble(v), 1.0, 30.0);
+                _settingsService.QueueSave();
+            },
+            ["playback.fullscreenShowVideoName"] = v =>
+            {
+                Settings.FullscreenShowVideoName = Convert.ToBoolean(v);
+                _settingsService.QueueSave();
+            },
+            ["playback.resumePlaybackPrompt"] = v =>
+            {
+                Settings.ResumePlaybackPrompt = Convert.ToBoolean(v);
+                _settingsService.QueueSave();
+            },
+            ["playlist.autoSave"] = v =>
+            {
+                Settings.PlaylistAutoSave = Convert.ToBoolean(v);
                 _settingsService.QueueSave();
             },
             ["updates.autocheck"] = v =>

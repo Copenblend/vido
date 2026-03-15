@@ -474,10 +474,21 @@ public class AxisControlViewModel : INotifyPropertyChanged
         };
         OnPropertyChanged(nameof(AvailableProfiles));
 
-        // Auto-select Default profile on startup
+        // Auto-select Default profile on startup — show it in dropdown
+        // but don't apply its values (let persisted settings take precedence)
         if (_selectedProfile is null)
         {
-            SelectedProfile = _profileService.FindByName("Default");
+            var defaultProfile = _profileService.FindByName("Default");
+            if (defaultProfile is not null)
+            {
+                _selectedProfile = defaultProfile;
+                OnPropertyChanged(nameof(SelectedProfile));
+                OnPropertyChanged(nameof(CanDeleteSelectedProfile));
+                OnPropertyChanged(nameof(CanRenameSelectedProfile));
+
+                var currentAxes = CaptureCurrentAxes();
+                IsProfileModified = !defaultProfile.MatchesAxes(currentAxes);
+            }
         }
     }
 

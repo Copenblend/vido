@@ -238,4 +238,89 @@ public sealed class AppSettingsStoreTests
     {
         Assert.Throws<ArgumentNullException>(() => new AppSettingsStore(null!));
     }
+
+    // ── Toast Duration ──
+
+    [Fact]
+    public void Get_ToastDuration_ReturnsValue()
+    {
+        _settings.ToastDurationSeconds = 5.0;
+        Assert.Equal(5.0, _store.Get("general.toastDuration", 0.0));
+    }
+
+    [Fact]
+    public void Set_ToastDuration_ClampsAndSaves()
+    {
+        _store.Set("general.toastDuration", 15.0);
+        Assert.Equal(10.0, _settings.ToastDurationSeconds);
+        _settingsService.Received().QueueSave();
+    }
+
+    // ── Fullscreen Auto-Hide ──
+
+    [Fact]
+    public void Get_FullscreenAutoHide_ReturnsValue()
+    {
+        _settings.FullscreenAutoHideSeconds = 7.0;
+        Assert.Equal(7.0, _store.Get("playback.fullscreenAutoHide", 0.0));
+    }
+
+    [Fact]
+    public void Set_FullscreenAutoHide_ClampsAndSaves()
+    {
+        _store.Set("playback.fullscreenAutoHide", 50.0);
+        Assert.Equal(30.0, _settings.FullscreenAutoHideSeconds);
+        _settingsService.Received().QueueSave();
+    }
+
+    // ── Fullscreen Show Video Name ──
+
+    [Fact]
+    public void Get_FullscreenShowVideoName_ReturnsValue()
+    {
+        _settings.FullscreenShowVideoName = false;
+        Assert.False(_store.Get("playback.fullscreenShowVideoName", true));
+    }
+
+    [Fact]
+    public void Set_FullscreenShowVideoName_UpdatesAndSaves()
+    {
+        _store.Set("playback.fullscreenShowVideoName", false);
+        Assert.False(_settings.FullscreenShowVideoName);
+        _settingsService.Received().QueueSave();
+    }
+
+    // ── Resume Playback Prompt ──
+
+    [Fact]
+    public void Get_ResumePlaybackPrompt_ReturnsValue()
+    {
+        _settings.ResumePlaybackPrompt = false;
+        Assert.False(_store.Get("playback.resumePlaybackPrompt", true));
+    }
+
+    [Fact]
+    public void Set_ResumePlaybackPrompt_UpdatesAndSaves()
+    {
+        _store.Set("playback.resumePlaybackPrompt", false);
+        Assert.False(_settings.ResumePlaybackPrompt);
+        _settingsService.Received().QueueSave();
+    }
+
+    // ── Playlist Auto-Save ──
+
+    [Fact]
+    public void Get_PlaylistAutoSave_ReturnsValue()
+    {
+        _settings.PlaylistAutoSave = true;
+        Assert.True(_store.Get("playlist.autoSave", false));
+    }
+
+    [Fact]
+    public void Set_PlaylistAutoSave_UpdatesAndSaves()
+    {
+        _store.Set("playlist.autoSave", true);
+        Assert.True(_settings.PlaylistAutoSave);
+        _settingsService.Received().QueueSave();
+    }
 }

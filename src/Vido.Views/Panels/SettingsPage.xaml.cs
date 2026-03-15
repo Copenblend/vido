@@ -31,6 +31,12 @@ public partial class SettingsPage : UserControl
         UpdateNoResultsVisibility();
     }
 
+    /// <summary>
+    /// Reloads a single setting's displayed value from the backing store.
+    /// </summary>
+    /// <param name="key">The setting key (e.g. "osr2.outputRate").</param>
+    public void RefreshSetting(string key) => _viewModel.RefreshSetting(key);
+
     private void OnSearchTextChanged(object sender, TextChangedEventArgs e)
     {
         _viewModel.SearchText = SearchBox.Text;

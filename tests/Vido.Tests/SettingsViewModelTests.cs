@@ -279,4 +279,34 @@ public sealed class SettingsViewModelTests
 
         Assert.True(dirItem.IsSettingVisible);
     }
+
+    // — RefreshSetting —
+
+    [Fact]
+    public void RefreshSetting_UpdatesDisplayedValue()
+    {
+        var settings = new AppSettings { Osr2OutputRate = 100 };
+        var svc = Substitute.For<ISettingsService>();
+        svc.Current.Returns(settings);
+        var store = new AppSettingsStore(svc);
+        var vm = new SettingsViewModel(svc, store);
+
+        var osr2 = vm.AllCategories.First(c => c.Name == "OSR2+");
+        var rateItem = osr2.Settings.First(s => s.Id == "osr2.outputRate");
+        Assert.Equal("100", rateItem.StringValue);
+
+        // Mutate AppSettings directly (simulating sidebar change)
+        settings.Osr2OutputRate = 150;
+        vm.RefreshSetting("osr2.outputRate");
+
+        Assert.Equal("150", rateItem.StringValue);
+    }
+
+    [Fact]
+    public void RefreshSetting_UnknownKey_DoesNotThrow()
+    {
+        var vm = CreateViewModel();
+        var ex = Record.Exception(() => vm.RefreshSetting("nonexistent.key"));
+        Assert.Null(ex);
+    }
 }
