@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Vido.Core.Haptics;
 using Vido.Core.Models.Osr2Plus;
 using Vido.Services.Osr2Plus;
 using Xunit;
