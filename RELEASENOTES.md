@@ -1,5 +1,10 @@
 # Release Notes
 
+## [0.24.0]
+
+### What's New
+- You can now choose where Vido is installed — pick any folder using the new Browse button or type a custom path directly
+
 ## [0.23.0]
 
 ### Improvements

@@ -116,7 +116,7 @@ public sealed partial class InstallerViewModel : ObservableObject
         Progress = 0;
         StatusText = "Extracting files...";
 
-        var installDir = InstallEngine.DefaultInstallDir;
+        var installDir = Options.InstallPath;
 
         // Extract payload
         var assembly = Assembly.GetExecutingAssembly();
@@ -179,7 +179,7 @@ public sealed partial class InstallerViewModel : ObservableObject
     {
         if (RunAfterInstall)
         {
-            var vidoExe = Path.Combine(InstallEngine.DefaultInstallDir, "Vido.exe");
+            var vidoExe = Path.Combine(Options.InstallPath, "Vido.exe");
             if (File.Exists(vidoExe))
             {
                 Process.Start(new ProcessStartInfo
