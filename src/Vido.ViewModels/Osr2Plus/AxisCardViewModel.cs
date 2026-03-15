@@ -25,11 +25,6 @@ public class AxisCardViewModel : INotifyPropertyChanged
     internal Func<string?>? FileDialogFactory { get; set; }
 
     /// <summary>
-    /// Delegate for parsing a funscript file. Injectable for testing.
-    /// </summary>
-    internal Func<string, string, FunscriptData>? ParseFileFunc { get; set; }
-
-    /// <summary>
     /// Raised when axis config changes and the caller should propagate configs to TCodeService.
     /// </summary>
     public event Action? ConfigChanged;
@@ -39,6 +34,12 @@ public class AxisCardViewModel : INotifyPropertyChanged
     /// Carries the axis ID so the parent can deload the script data.
     /// </summary>
     public event Action<string>? ScriptCleared;
+
+    /// <summary>
+    /// Raised when the user selects a funscript file to open.
+    /// Carries (axisId, filePath) for the parent to validate and load.
+    /// </summary>
+    public event Action<string, string>? ScriptOpenRequested;
 
     // ═══════════════════════════════════════════════════════
     //  Identity (read-only from AxisConfig)
@@ -351,6 +352,16 @@ public class AxisCardViewModel : INotifyPropertyChanged
         ScriptFileName = null;
     }
 
+    /// <summary>
+    /// Sets the script as manually opened. Called by the parent after successful validation.
+    /// </summary>
+    /// <param name="filePath">The path of the manually opened funscript file.</param>
+    internal void SetManualScript(string filePath)
+    {
+        IsScriptManual = true;
+        ScriptFileName = filePath;
+    }
+
     // ═══════════════════════════════════════════════════════
     //  Command Implementations
     // ═══════════════════════════════════════════════════════
@@ -360,14 +371,7 @@ public class AxisCardViewModel : INotifyPropertyChanged
         var filePath = FileDialogFactory?.Invoke();
         if (string.IsNullOrEmpty(filePath)) return;
 
-        var data = ParseFileFunc?.Invoke(filePath, AxisId);
-        if (data == null) return;
-
-        ScriptFileName = filePath;
-        IsScriptManual = true;
-
-        // Notify parent to update TCodeService scripts
-        ConfigChanged?.Invoke();
+        ScriptOpenRequested?.Invoke(AxisId, filePath);
     }
 
     private void ExecuteClearScript()

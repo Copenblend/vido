@@ -385,21 +385,22 @@ public class Osr2ViewModelTests : IDisposable
     }
 
     /// <summary>
-    /// Verifies that OpenScriptCommand uses FileDialogFactory and ParseFileFunc.
+    /// Verifies that OpenScriptCommand fires ScriptOpenRequested with axisId and filePath.
     /// </summary>
     [Fact]
-    public void AxisCard_OpenScriptCommand_UsesFactories()
+    public void AxisCard_OpenScriptCommand_FiresScriptOpenRequested()
     {
         var vm = new AxisCardViewModel(MakeL0(), _tcode);
-        var script = MakeScript((0, 0), (1000, 100));
         vm.FileDialogFactory = () => @"C:\videos\custom.funscript";
-        vm.ParseFileFunc = (path, id) => script;
+
+        string? receivedAxisId = null;
+        string? receivedFilePath = null;
+        vm.ScriptOpenRequested += (axisId, filePath) => { receivedAxisId = axisId; receivedFilePath = filePath; };
 
         vm.OpenScriptCommand.Execute(null);
 
-        Assert.Equal(@"C:\videos\custom.funscript", vm.ScriptFileName);
-        Assert.True(vm.IsScriptManual);
-        Assert.True(vm.HasScript);
+        Assert.Equal("L0", receivedAxisId);
+        Assert.Equal(@"C:\videos\custom.funscript", receivedFilePath);
     }
 
     /// <summary>
@@ -411,8 +412,12 @@ public class Osr2ViewModelTests : IDisposable
         var vm = new AxisCardViewModel(MakeL0(), _tcode);
         vm.FileDialogFactory = () => null;
 
+        var fired = false;
+        vm.ScriptOpenRequested += (_, _) => fired = true;
+
         vm.OpenScriptCommand.Execute(null);
 
+        Assert.False(fired);
         Assert.Null(vm.ScriptFileName);
         Assert.False(vm.HasScript);
     }
@@ -424,10 +429,7 @@ public class Osr2ViewModelTests : IDisposable
     public void AxisCard_ClearScriptCommand_ClearsScript()
     {
         var vm = new AxisCardViewModel(MakeL0(), _tcode);
-        var script = MakeScript((0, 0), (1000, 100));
-        vm.FileDialogFactory = () => @"C:\videos\custom.funscript";
-        vm.ParseFileFunc = (path, id) => script;
-        vm.OpenScriptCommand.Execute(null);
+        vm.SetManualScript(@"C:\videos\custom.funscript");
         Assert.True(vm.HasScript);
 
         vm.ClearScriptCommand.Execute(null);
@@ -444,10 +446,7 @@ public class Osr2ViewModelTests : IDisposable
     public void AxisCard_ClearScriptCommand_FiresScriptCleared()
     {
         var vm = new AxisCardViewModel(MakeL0(), _tcode);
-        var script = MakeScript((0, 0), (1000, 100));
-        vm.FileDialogFactory = () => @"C:\videos\custom.funscript";
-        vm.ParseFileFunc = (path, id) => script;
-        vm.OpenScriptCommand.Execute(null);
+        vm.SetManualScript(@"C:\videos\custom.funscript");
 
         string? clearedAxisId = null;
         vm.ScriptCleared += id => clearedAxisId = id;
@@ -739,6 +738,201 @@ public class Osr2ViewModelTests : IDisposable
         vm.AxisCards[0].ClearScriptCommand.Execute(null);
 
         Assert.False(fired);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  FunscriptMatcher.GetAxisIdForFile Tests
+    // ═══════════════════════════════════════════════════════════
+
+    [Theory]
+    [InlineData(@"C:\videos\test.funscript", "L0")]
+    [InlineData(@"C:\videos\test.twist.funscript", "R0")]
+    [InlineData(@"C:\videos\test.roll.funscript", "R1")]
+    [InlineData(@"C:\videos\test.pitch.funscript", "R2")]
+    [InlineData(@"C:\videos\test.TWIST.funscript", "R0")]
+    [InlineData(@"C:\videos\test.Pitch.FUNSCRIPT", "R2")]
+    [InlineData(@"test.funscript", "L0")]
+    [InlineData(@"", "L0")]
+    public void FunscriptMatcher_GetAxisIdForFile_MapsCorrectly(string filePath, string expectedAxisId)
+    {
+        Assert.Equal(expectedAxisId, FunscriptMatcher.GetAxisIdForFile(filePath));
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  AxisControlViewModel — Script Open Tests
+    // ═══════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Opening a .pitch.funscript on R2 with matching suffix loads and pushes to TCode.
+    /// </summary>
+    [Fact]
+    public void AxisControl_OpenScript_SuffixMatch_LoadsAndPushes()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        var r2Script = MakeScript((0, 0), (1000, 100));
+        vm.ParseFileFunc = (path, id) => r2Script;
+        vm.TryParseMultiAxisFunc = _ => null;
+
+        Dictionary<string, FunscriptData>? received = null;
+        vm.ScriptsChanged += scripts => received = scripts;
+
+        // Simulate opening .pitch.funscript on R2 card (index 3)
+        vm.AxisCards[3].FileDialogFactory = () => @"C:\videos\custom.pitch.funscript";
+        vm.AxisCards[3].OpenScriptCommand.Execute(null);
+
+        Assert.NotNull(received);
+        Assert.True(received.ContainsKey("R2"));
+        Assert.True(vm.AxisCards[3].HasScript);
+        Assert.True(vm.AxisCards[3].IsScriptManual);
+        Assert.Equal(@"C:\videos\custom.pitch.funscript", vm.AxisCards[3].ScriptFileName);
+    }
+
+    /// <summary>
+    /// Opening a base .funscript on R2 extracts R2 data from multi-axis format.
+    /// </summary>
+    [Fact]
+    public void AxisControl_OpenScript_MultiAxis_ExtractsTargetAxis()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        var r2Script = MakeScript((0, 25), (1000, 75));
+        vm.ParseFileFunc = (path, id) => throw new Exception("Should not parse directly");
+        vm.TryParseMultiAxisFunc = _ => new Dictionary<string, FunscriptData>
+        {
+            { "L0", MakeScript((0, 0), (1000, 100)) },
+            { "R2", r2Script }
+        };
+
+        Dictionary<string, FunscriptData>? received = null;
+        vm.ScriptsChanged += scripts => received = scripts;
+
+        vm.AxisCards[3].FileDialogFactory = () => @"C:\videos\custom.funscript";
+        vm.AxisCards[3].OpenScriptCommand.Execute(null);
+
+        Assert.NotNull(received);
+        Assert.True(received.ContainsKey("R2"));
+        Assert.Same(r2Script, received["R2"]);
+    }
+
+    /// <summary>
+    /// Opening a base .funscript on R2 when multi-axis has no R2 data shows toast.
+    /// </summary>
+    [Fact]
+    public void AxisControl_OpenScript_MultiAxis_NoTargetAxis_ShowsToast()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        var toastService = Substitute.For<IToastService>();
+        vm.ToastService = toastService;
+        vm.ParseFileFunc = (path, id) => throw new Exception("Should not parse directly");
+        vm.TryParseMultiAxisFunc = _ => new Dictionary<string, FunscriptData>
+        {
+            { "L0", MakeScript((0, 0), (1000, 100)) }
+        };
+
+        vm.AxisCards[3].FileDialogFactory = () => @"C:\videos\custom.funscript";
+        vm.AxisCards[3].OpenScriptCommand.Execute(null);
+
+        toastService.Received(1).ShowError(
+            Arg.Is<string>(s => s.Contains("Pitch") && s.Contains("custom.funscript")),
+            Arg.Any<string?>());
+        Assert.False(vm.AxisCards[3].HasScript);
+    }
+
+    /// <summary>
+    /// Opening a .twist.funscript on R2 (wrong suffix) shows toast.
+    /// </summary>
+    [Fact]
+    public void AxisControl_OpenScript_WrongSuffix_ShowsToast()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        var toastService = Substitute.For<IToastService>();
+        vm.ToastService = toastService;
+        vm.ParseFileFunc = (path, id) => MakeScript((0, 0), (1000, 100));
+        vm.TryParseMultiAxisFunc = _ => null;
+
+        vm.AxisCards[3].FileDialogFactory = () => @"C:\videos\custom.twist.funscript";
+        vm.AxisCards[3].OpenScriptCommand.Execute(null);
+
+        toastService.Received(1).ShowError(
+            Arg.Is<string>(s => s.Contains("Pitch")),
+            Arg.Any<string?>());
+        Assert.False(vm.AxisCards[3].HasScript);
+    }
+
+    /// <summary>
+    /// Opening a base .funscript on L0 loads root actions directly (suffix match on L0).
+    /// </summary>
+    [Fact]
+    public void AxisControl_OpenScript_BaseFunscript_OnL0_LoadsDirectly()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        var l0Script = MakeScript((0, 0), (1000, 100));
+        vm.ParseFileFunc = (path, id) => l0Script;
+        vm.TryParseMultiAxisFunc = _ => null;
+
+        Dictionary<string, FunscriptData>? received = null;
+        vm.ScriptsChanged += scripts => received = scripts;
+
+        vm.AxisCards[0].FileDialogFactory = () => @"C:\videos\custom.funscript";
+        vm.AxisCards[0].OpenScriptCommand.Execute(null);
+
+        Assert.NotNull(received);
+        Assert.True(received.ContainsKey("L0"));
+        Assert.Same(l0Script, received["L0"]);
+        Assert.True(vm.AxisCards[0].IsScriptManual);
+    }
+
+    /// <summary>
+    /// After successful open, card has IsScriptManual = true and correct ScriptFileName.
+    /// </summary>
+    [Fact]
+    public void AxisControl_OpenScript_SetsManualFlag()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        vm.ParseFileFunc = (path, id) => MakeScript((0, 0), (1000, 100));
+        vm.TryParseMultiAxisFunc = _ => null;
+
+        vm.AxisCards[0].FileDialogFactory = () => @"C:\videos\manual.funscript";
+        vm.AxisCards[0].OpenScriptCommand.Execute(null);
+
+        Assert.True(vm.AxisCards[0].IsScriptManual);
+        Assert.Equal(@"C:\videos\manual.funscript", vm.AxisCards[0].ScriptFileName);
+    }
+
+    /// <summary>
+    /// ScriptsChanged event fires after successful open.
+    /// </summary>
+    [Fact]
+    public void AxisControl_OpenScript_FiresScriptsChanged()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        vm.ParseFileFunc = (path, id) => MakeScript((0, 0), (1000, 100));
+        vm.TryParseMultiAxisFunc = _ => null;
+
+        var fireCount = 0;
+        vm.ScriptsChanged += _ => fireCount++;
+
+        vm.AxisCards[0].FileDialogFactory = () => @"C:\videos\custom.funscript";
+        vm.AxisCards[0].OpenScriptCommand.Execute(null);
+
+        Assert.Equal(1, fireCount);
+    }
+
+    /// <summary>
+    /// When ToastService is null, opening an incompatible file does not throw.
+    /// </summary>
+    [Fact]
+    public void AxisControl_OpenScript_NoToastService_DoesNotThrow()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        vm.ToastService = null;
+        vm.ParseFileFunc = (path, id) => MakeScript((0, 0), (1000, 100));
+        vm.TryParseMultiAxisFunc = _ => null;
+
+        vm.AxisCards[3].FileDialogFactory = () => @"C:\videos\custom.twist.funscript";
+
+        var exception = Record.Exception(() => vm.AxisCards[3].OpenScriptCommand.Execute(null));
+
+        Assert.Null(exception);
     }
 
     // ═══════════════════════════════════════════════════════════

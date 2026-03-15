@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using Vido.Core.Models.Osr2Plus;
 using Vido.Core.Settings;
 using Vido.Services.Osr2Plus;
+using Vido.Services.Playlists;
 
 namespace Vido.ViewModels.Osr2Plus;
 
@@ -43,6 +44,12 @@ public class AxisControlViewModel : INotifyPropertyChanged
     /// Raised when any axis configuration changes (min/max/enabled/fill settings).
     /// </summary>
     public event Action? AxisConfigChanged;
+
+    /// <summary>
+    /// Optional toast notification service for displaying user-facing error messages.
+    /// Set after construction by the host since the ViewModel is DI-resolved.
+    /// </summary>
+    public IToastService? ToastService { get; set; }
 
     /// <summary>Raised to request a profile name from the view (save operation).</summary>
     public event EventHandler? RequestProfileName;
@@ -179,9 +186,9 @@ public class AxisControlViewModel : INotifyPropertyChanged
         foreach (var config in _configs)
         {
             var card = new AxisCardViewModel(config, _tcode);
-            card.ParseFileFunc = ParseFileFunc;
             card.ConfigChanged += OnCardConfigChanged;
             card.ScriptCleared += OnCardScriptCleared;
+            card.ScriptOpenRequested += OnCardScriptOpenRequested;
             AxisCards.Add(card);
         }
     }
@@ -427,6 +434,45 @@ public class AxisControlViewModel : INotifyPropertyChanged
     {
         _loadedScripts.Remove(axisId);
         _tcode.ClearAxisScript(axisId);
+        ScriptsChanged?.Invoke(_loadedScripts);
+    }
+
+    private void OnCardScriptOpenRequested(string axisId, string filePath)
+    {
+        var card = AxisCards.FirstOrDefault(c => c.AxisId == axisId);
+        if (card == null) return;
+
+        var fileAxisId = FunscriptMatcher.GetAxisIdForFile(filePath);
+        var fileName = Path.GetFileName(filePath);
+
+        FunscriptData? scriptData = null;
+
+        if (string.Equals(fileAxisId, axisId, StringComparison.OrdinalIgnoreCase))
+        {
+            // Direct suffix match: .pitch.funscript on R2, or .funscript on L0
+            try { scriptData = ParseFileFunc!(filePath, axisId); }
+            catch { /* parse error */ }
+        }
+
+        // If no direct match (or base file on non-L0), try multi-axis
+        if (scriptData == null &&
+            string.Equals(fileAxisId, "L0", StringComparison.OrdinalIgnoreCase))
+        {
+            var multiAxis = TryParseMultiAxisFunc!(filePath);
+            if (multiAxis != null)
+                multiAxis.TryGetValue(axisId, out scriptData);
+        }
+
+        if (scriptData == null || scriptData.Actions.Count == 0)
+        {
+            ToastService?.ShowError($"No {card.AxisName} axis available in \"{fileName}\"");
+            return;
+        }
+
+        // Success — update card, loaded scripts, and push to TCode
+        card.SetManualScript(filePath);
+        _loadedScripts[axisId] = scriptData;
+        _tcode.SetScripts(_loadedScripts);
         ScriptsChanged?.Invoke(_loadedScripts);
     }
 

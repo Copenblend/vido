@@ -1587,6 +1587,7 @@ public partial class MainWindow : Window
         // â”€â”€ Create ViewModels â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _osr2SidebarVm = new Osr2PlusSidebarViewModel(_tcode, _settingsService, _eventBus, toastService: _toastService);
         _axisControlVm = new AxisControlViewModel(_tcode, _settingsService, parser, matcher);
+        _axisControlVm.ToastService = _toastService;
         var fillProfileService = new FillProfileService(_logService);
         fillProfileService.Load();
         _axisControlVm.SetProfileService(fillProfileService);
