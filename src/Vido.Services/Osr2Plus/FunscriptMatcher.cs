@@ -23,6 +23,38 @@ public class FunscriptMatcher
     };
 
     /// <summary>
+    /// Determines the axis ID from a funscript filename using suffix conventions.
+    /// Returns "L0" for base ".funscript" files, "R0" for ".twist.funscript", etc.
+    /// </summary>
+    /// <param name="filePath">Path to the funscript file.</param>
+    /// <returns>The axis ID ("L0", "R0", "R1", "R2").</returns>
+    public static string GetAxisIdForFile(string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+        if (string.IsNullOrEmpty(fileName))
+            return "L0";
+
+        // Strip .funscript extension
+        if (fileName.EndsWith(".funscript", StringComparison.OrdinalIgnoreCase))
+            fileName = fileName[..^".funscript".Length];
+
+        // Check for axis suffix: "something.twist" → "twist"
+        var dotIndex = fileName.LastIndexOf('.');
+        if (dotIndex >= 0)
+        {
+            var suffix = fileName[(dotIndex + 1)..];
+            foreach (var (s, axisId) in SuffixToAxis)
+            {
+                if (!string.IsNullOrEmpty(s) &&
+                    string.Equals(suffix, s, StringComparison.OrdinalIgnoreCase))
+                    return axisId;
+            }
+        }
+
+        return "L0";
+    }
+
+    /// <summary>
     /// Finds matching funscript files for the given video file.
     /// Searches the same directory as the video using case-insensitive matching.
     /// </summary>

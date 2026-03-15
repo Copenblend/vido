@@ -5,6 +5,7 @@ All notable changes to the Vido project will be documented in this file.
 ## [Unreleased]
 
 ### Changed
+- **vido-250**: Implemented validated script opening with TCode push. Replaced `AxisCardViewModel.ExecuteOpenScript` local parsing with `ScriptOpenRequested` event — the parent `AxisControlViewModel` now validates axis compatibility, parses the file (suffix-match or multi-axis fallback), and pushes to TCodeService. Added `FunscriptMatcher.GetAxisIdForFile()` static method for suffix-based axis detection. Added `IToastService` property on `AxisControlViewModel` for error feedback. Removed `ParseFileFunc` from `AxisCardViewModel`. Added `SetManualScript()` internal method. Updated 3 existing tests, added 8 new script-open tests and 8 `GetAxisIdForFile` theory cases (16 net new tests).
 - **vido-245**: File explorer now filters out non-video files. Added `FilterVideoFiles()` method to `FileExplorerViewModel` that retains only directories, recognized video files (`FileNode.IsVideoFile`), and files matching `AdditionalAcceptedExtensions`. Applied in all 4 tree-building code paths: `OpenFolderAsync`, `ExpandNodeAsync`, `RescanFolderAsync`, and `RestoreExpandedStateAsync`. Added 5 new unit tests covering filtering in open/expand/rescan paths, `AdditionalAcceptedExtensions` retention, and empty directory preservation. Updated 15 existing tests from `.txt` to `.mp4` extensions.
 
 ### Changed
