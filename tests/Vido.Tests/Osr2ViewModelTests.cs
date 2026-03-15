@@ -740,6 +740,157 @@ public class Osr2ViewModelTests : IDisposable
         Assert.False(fired);
     }
 
+    /// <summary>
+    /// Verifies that clearing a script actually removes it from TCodeService
+    /// so the 100Hz output thread no longer sends commands for that axis.
+    /// Loads L0 + R0, clears R0, then verifies TCodeService still has L0 loaded
+    /// but HasScriptsLoaded becomes false after clearing L0 too.
+    /// </summary>
+    [Fact]
+    public void AxisControl_ClearScript_RemovesFromTCodeScripts()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        var script = MakeScript((0, 0), (1000, 100));
+        vm.FindMatchingScriptsFunc = _ => new Dictionary<string, string>
+        {
+            { "L0", @"C:\videos\test.funscript" },
+            { "R0", @"C:\videos\test.twist.funscript" }
+        };
+        vm.TryParseMultiAxisFunc = _ => null;
+        vm.ParseFileFunc = (path, id) => script;
+
+        vm.LoadScriptsForVideo(@"C:\videos\test.mp4");
+        Assert.True(_tcode.HasScriptsLoaded);
+
+        // Clear R0 — TCodeService should still have L0
+        vm.AxisCards[1].ClearScriptCommand.Execute(null);
+        Assert.True(_tcode.HasScriptsLoaded);
+
+        // Clear L0 — TCodeService should now have no scripts
+        vm.AxisCards[0].ClearScriptCommand.Execute(null);
+        Assert.False(_tcode.HasScriptsLoaded);
+    }
+
+    /// <summary>
+    /// Verifies that after clearing an axis, auto-load on the next video
+    /// correctly re-loads scripts for that axis (IsScriptManual is reset,
+    /// so LoadScriptsForVideo does not skip it).
+    /// </summary>
+    [Fact]
+    public void AxisControl_ClearScript_AutoLoadRecovery()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        var script = MakeScript((0, 0), (1000, 100));
+        vm.FindMatchingScriptsFunc = _ => new Dictionary<string, string>
+        {
+            { "L0", @"C:\videos\test.funscript" },
+            { "R0", @"C:\videos\test.twist.funscript" }
+        };
+        vm.TryParseMultiAxisFunc = _ => null;
+        vm.ParseFileFunc = (path, id) => script;
+
+        // Load, then clear R0
+        vm.LoadScriptsForVideo(@"C:\videos\test.mp4");
+        vm.AxisCards[1].ClearScriptCommand.Execute(null);
+
+        // Verify R0 is cleared
+        Assert.False(vm.AxisCards[1].HasScript);
+        Assert.False(vm.AxisCards[1].IsScriptManual);
+
+        // Simulate loading a new video — R0 should be re-loaded
+        Dictionary<string, FunscriptData>? received = null;
+        vm.ScriptsChanged += scripts => received = scripts;
+        vm.LoadScriptsForVideo(@"C:\videos\next.mp4");
+
+        Assert.NotNull(received);
+        Assert.True(received.ContainsKey("L0"));
+        Assert.True(received.ContainsKey("R0"));
+        Assert.True(vm.AxisCards[1].HasScript);
+        Assert.True(_tcode.HasScriptsLoaded);
+    }
+
+    /// <summary>
+    /// Verifies that clearing one axis does not affect other axes —
+    /// the card state, loaded scripts dictionary, and TCodeService
+    /// all retain the uncleared axis data.
+    /// </summary>
+    [Fact]
+    public void AxisControl_ClearScript_OtherAxesUnaffected()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        var l0Script = MakeScript((0, 0), (1000, 100));
+        var r0Script = MakeScript((0, 50), (1000, 50));
+        vm.FindMatchingScriptsFunc = _ => new Dictionary<string, string>
+        {
+            { "L0", @"C:\videos\test.funscript" },
+            { "R0", @"C:\videos\test.twist.funscript" }
+        };
+        vm.TryParseMultiAxisFunc = _ => null;
+        vm.ParseFileFunc = (path, id) => id == "L0" ? l0Script : r0Script;
+
+        vm.LoadScriptsForVideo(@"C:\videos\test.mp4");
+
+        // Clear R0
+        vm.AxisCards[1].ClearScriptCommand.Execute(null);
+
+        // L0 card should be completely unaffected
+        Assert.True(vm.AxisCards[0].HasScript);
+        Assert.Equal(@"C:\videos\test.funscript", vm.AxisCards[0].ScriptFileName);
+
+        // R0 card should be cleared
+        Assert.False(vm.AxisCards[1].HasScript);
+        Assert.Null(vm.AxisCards[1].ScriptFileName);
+
+        // TCodeService should still have scripts (L0)
+        Assert.True(_tcode.HasScriptsLoaded);
+    }
+
+    /// <summary>
+    /// Verifies that clearing multiple axes sequentially works correctly —
+    /// each clear removes only that axis while leaving others intact.
+    /// </summary>
+    [Fact]
+    public void AxisControl_ClearScript_MultipleClearsWork()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+        var script = MakeScript((0, 0), (1000, 100));
+        vm.FindMatchingScriptsFunc = _ => new Dictionary<string, string>
+        {
+            { "L0", @"C:\videos\test.funscript" },
+            { "R0", @"C:\videos\test.twist.funscript" },
+            { "R1", @"C:\videos\test.roll.funscript" }
+        };
+        vm.TryParseMultiAxisFunc = _ => null;
+        vm.ParseFileFunc = (path, id) => script;
+
+        vm.LoadScriptsForVideo(@"C:\videos\test.mp4");
+
+        Dictionary<string, FunscriptData>? received = null;
+        vm.ScriptsChanged += scripts => received = scripts;
+
+        // Clear R0 — L0 + R1 should remain
+        vm.AxisCards[1].ClearScriptCommand.Execute(null);
+        Assert.NotNull(received);
+        Assert.True(received.ContainsKey("L0"));
+        Assert.False(received.ContainsKey("R0"));
+        Assert.True(received.ContainsKey("R1"));
+
+        // Clear R1 — only L0 should remain
+        vm.AxisCards[2].ClearScriptCommand.Execute(null);
+        Assert.True(received.ContainsKey("L0"));
+        Assert.False(received.ContainsKey("R0"));
+        Assert.False(received.ContainsKey("R1"));
+
+        // L0 remains loaded
+        Assert.True(vm.AxisCards[0].HasScript);
+        Assert.True(_tcode.HasScriptsLoaded);
+
+        // Clear L0 — nothing should remain
+        vm.AxisCards[0].ClearScriptCommand.Execute(null);
+        Assert.False(received.ContainsKey("L0"));
+        Assert.False(_tcode.HasScriptsLoaded);
+    }
+
     // ═══════════════════════════════════════════════════════════
     //  FunscriptMatcher.GetAxisIdForFile Tests
     // ═══════════════════════════════════════════════════════════
