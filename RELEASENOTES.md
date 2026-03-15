@@ -1,5 +1,14 @@
 # Release Notes
 
+## [0.23.0]
+
+### Improvements
+- The file explorer now shows only video files and folders, hiding non-video files for a cleaner browsing experience
+- The video player seek bar now displays a visible thumb indicator showing your current playback position
+
+### Bug Fixes
+- Fixed a crash that occurred when trying to play a corrupt or incomplete video file — the app now shows an error message and continues working normally
+
 ## [0.22.0]
 
 ### What's New

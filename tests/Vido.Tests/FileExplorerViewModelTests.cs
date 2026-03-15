@@ -52,7 +52,7 @@ public sealed class FileExplorerViewModelTests
         var testDir = CreateTempDir();
         var nodes = new List<FileNode>
         {
-            new(Path.Combine(testDir, "a.txt"), false),
+            new(Path.Combine(testDir, "a.mp4"), false),
             new(Path.Combine(testDir, "sub"), true)
         };
         _fileSystemService.GetChildrenAsync(testDir).Returns(nodes);
@@ -117,7 +117,7 @@ public sealed class FileExplorerViewModelTests
         var testDir = CreateTempDir();
         _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>
         {
-            new(Path.Combine(testDir, "file.txt"), false)
+            new(Path.Combine(testDir, "file.mp4"), false)
         });
 
         await _sut.OpenFolderAsync(testDir);
@@ -144,12 +144,12 @@ public sealed class FileExplorerViewModelTests
 
         _fileSystemService.GetChildrenAsync(dir1).Returns(new List<FileNode>
         {
-            new(Path.Combine(dir1, "a.txt"), false)
+            new(Path.Combine(dir1, "a.mp4"), false)
         });
         _fileSystemService.GetChildrenAsync(dir2).Returns(new List<FileNode>
         {
-            new(Path.Combine(dir2, "b.txt"), false),
-            new(Path.Combine(dir2, "c.txt"), false)
+            new(Path.Combine(dir2, "b.mp4"), false),
+            new(Path.Combine(dir2, "c.mp4"), false)
         });
 
         await _sut.OpenFolderAsync(dir1);
@@ -263,11 +263,11 @@ public sealed class FileExplorerViewModelTests
     public async Task RescanFolder_ReloadsFromDisk()
     {
         var testDir = CreateTempDir();
-        var initialNodes = new List<FileNode> { new(Path.Combine(testDir, "a.txt"), false) };
+        var initialNodes = new List<FileNode> { new(Path.Combine(testDir, "a.mp4"), false) };
         var updatedNodes = new List<FileNode>
         {
-            new(Path.Combine(testDir, "a.txt"), false),
-            new(Path.Combine(testDir, "b.txt"), false)
+            new(Path.Combine(testDir, "a.mp4"), false),
+            new(Path.Combine(testDir, "b.mp4"), false)
         };
 
         _fileSystemService.GetChildrenAsync(testDir)
@@ -298,8 +298,8 @@ public sealed class FileExplorerViewModelTests
     public async Task RescanFolder_PreservesHiddenFiles()
     {
         var testDir = CreateTempDir();
-        var hiddenPath = Path.Combine(testDir, "hidden.txt");
-        var visiblePath = Path.Combine(testDir, "visible.txt");
+        var hiddenPath = Path.Combine(testDir, "hidden.mp4");
+        var visiblePath = Path.Combine(testDir, "visible.mp4");
 
         _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>
         {
@@ -317,7 +317,7 @@ public sealed class FileExplorerViewModelTests
 
         // Still excluded after rescan  hidden files persist
         Assert.Single(_sut.RootNodes);
-        Assert.Equal("visible.txt", _sut.RootNodes[0].Name);
+        Assert.Equal("visible.mp4", _sut.RootNodes[0].Name);
         CleanupDir(testDir);
     }
 
@@ -330,8 +330,8 @@ public sealed class FileExplorerViewModelTests
     public async Task HideFile_RemovesNodeFromTree_WhenShowHiddenFalse()
     {
         var testDir = CreateTempDir();
-        var fileNode = new FileNode(Path.Combine(testDir, "hide-me.txt"), false);
-        var keepNode = new FileNode(Path.Combine(testDir, "keep.txt"), false);
+        var fileNode = new FileNode(Path.Combine(testDir, "hide-me.mp4"), false);
+        var keepNode = new FileNode(Path.Combine(testDir, "keep.mp4"), false);
 
         _fileSystemService.GetChildrenAsync(testDir)
             .Returns(new List<FileNode> { fileNode, keepNode });
@@ -342,7 +342,7 @@ public sealed class FileExplorerViewModelTests
         _sut.HideFile(fileNode);
 
         Assert.Single(_sut.RootNodes);
-        Assert.Equal("keep.txt", _sut.RootNodes[0].Name);
+        Assert.Equal("keep.mp4", _sut.RootNodes[0].Name);
         CleanupDir(testDir);
     }
 
@@ -353,7 +353,7 @@ public sealed class FileExplorerViewModelTests
     public async Task HideFile_MarksNodeHidden_WhenShowHiddenTrue()
     {
         var testDir = CreateTempDir();
-        var fileNode = new FileNode(Path.Combine(testDir, "dim-me.txt"), false);
+        var fileNode = new FileNode(Path.Combine(testDir, "dim-me.mp4"), false);
 
         _fileSystemService.GetChildrenAsync(testDir)
             .Returns(new List<FileNode> { fileNode });
@@ -376,7 +376,7 @@ public sealed class FileExplorerViewModelTests
     public async Task HideFile_AddsToHiddenFilesState()
     {
         var testDir = CreateTempDir();
-        var fileNode = new FileNode(Path.Combine(testDir, "hide.txt"), false);
+        var fileNode = new FileNode(Path.Combine(testDir, "hide.mp4"), false);
         _fileSystemService.GetChildrenAsync(testDir)
             .Returns(new List<FileNode> { fileNode });
 
@@ -394,7 +394,7 @@ public sealed class FileExplorerViewModelTests
     public async Task HideFile_NoDuplicatesInHiddenFiles()
     {
         var testDir = CreateTempDir();
-        var fileNode = new FileNode(Path.Combine(testDir, "dup.txt"), false);
+        var fileNode = new FileNode(Path.Combine(testDir, "dup.mp4"), false);
         _fileSystemService.GetChildrenAsync(testDir)
             .Returns(new List<FileNode> { fileNode });
 
@@ -444,7 +444,7 @@ public sealed class FileExplorerViewModelTests
     [Fact]
     public void UnhideFile_RemovesFromHiddenState()
     {
-        var path = @"C:\test\hidden.txt";
+        var path = @"C:\test\hidden.mp4";
         _appState.HiddenFiles.Add(path);
         var node = new FileNode(path, false) { IsHidden = true };
 
@@ -485,8 +485,8 @@ public sealed class FileExplorerViewModelTests
     public async Task ShowHiddenFiles_True_IncludesHiddenNodesAsMarked()
     {
         var testDir = CreateTempDir();
-        var hiddenPath = Path.Combine(testDir, "hidden.txt");
-        var visiblePath = Path.Combine(testDir, "visible.txt");
+        var hiddenPath = Path.Combine(testDir, "hidden.mp4");
+        var visiblePath = Path.Combine(testDir, "visible.mp4");
 
         _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>
         {
@@ -513,8 +513,8 @@ public sealed class FileExplorerViewModelTests
     public async Task ShowHiddenFiles_False_ExcludesHiddenNodes()
     {
         var testDir = CreateTempDir();
-        var hiddenPath = Path.Combine(testDir, "hidden.txt");
-        var visiblePath = Path.Combine(testDir, "visible.txt");
+        var hiddenPath = Path.Combine(testDir, "hidden.mp4");
+        var visiblePath = Path.Combine(testDir, "visible.mp4");
 
         _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>
         {
@@ -527,7 +527,7 @@ public sealed class FileExplorerViewModelTests
         await _sut.OpenFolderAsync(testDir);
 
         Assert.Single(_sut.RootNodes);
-        Assert.Equal("visible.txt", _sut.RootNodes[0].Name);
+        Assert.Equal("visible.mp4", _sut.RootNodes[0].Name);
         CleanupDir(testDir);
     }
 
@@ -538,8 +538,8 @@ public sealed class FileExplorerViewModelTests
     public async Task ToggleShowHiddenFiles_RefreshesTreeWithHiddenNodes()
     {
         var testDir = CreateTempDir();
-        var hiddenPath = Path.Combine(testDir, "hidden.txt");
-        var visiblePath = Path.Combine(testDir, "visible.txt");
+        var hiddenPath = Path.Combine(testDir, "hidden.mp4");
+        var visiblePath = Path.Combine(testDir, "visible.mp4");
 
         _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>
         {
@@ -562,7 +562,7 @@ public sealed class FileExplorerViewModelTests
         // Toggle off — hidden node disappears again
         await _sut.ToggleShowHiddenFilesAsync();
         Assert.Single(_sut.RootNodes);
-        Assert.Equal("visible.txt", _sut.RootNodes[0].Name);
+        Assert.Equal("visible.mp4", _sut.RootNodes[0].Name);
         CleanupDir(testDir);
     }
 
@@ -574,8 +574,8 @@ public sealed class FileExplorerViewModelTests
     {
         var testDir = CreateTempDir();
         var parentPath = Path.Combine(testDir, "parent");
-        var hiddenChildPath = Path.Combine(parentPath, "hidden-child.txt");
-        var visibleChildPath = Path.Combine(parentPath, "visible-child.txt");
+        var hiddenChildPath = Path.Combine(parentPath, "hidden-child.mp4");
+        var visibleChildPath = Path.Combine(parentPath, "visible-child.mp4");
 
         _fileSystemService.GetChildrenAsync(parentPath).Returns(new List<FileNode>
         {
@@ -589,7 +589,7 @@ public sealed class FileExplorerViewModelTests
         await _sut.ExpandNodeAsync(parentNode);
 
         Assert.Single(parentNode.Children);
-        Assert.Equal("visible-child.txt", parentNode.Children[0].Name);
+        Assert.Equal("visible-child.mp4", parentNode.Children[0].Name);
         CleanupDir(testDir);
     }
 
@@ -602,7 +602,7 @@ public sealed class FileExplorerViewModelTests
     public async Task CloseFolder_ClearsSelectedNode()
     {
         var testDir = CreateTempDir();
-        var node = new FileNode(Path.Combine(testDir, "file.txt"), false);
+        var node = new FileNode(Path.Combine(testDir, "file.mp4"), false);
         _fileSystemService.GetChildrenAsync(testDir)
             .Returns(new List<FileNode> { node });
 
@@ -652,6 +652,133 @@ public sealed class FileExplorerViewModelTests
         await task;
 
         Assert.False(_sut.IsLoading);
+        CleanupDir(testDir);
+    }
+
+    // ── Video file filtering tests ──────────────────────────────────────
+
+    /// <summary>
+    /// Verifies that OpenFolderAsync filters out non-video files.
+    /// </summary>
+    [Fact]
+    public async Task OpenFolder_FiltersOutNonVideoFiles()
+    {
+        var testDir = CreateTempDir();
+        _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>
+        {
+            new(Path.Combine(testDir, "video.mp4"), false),
+            new(Path.Combine(testDir, "notes.txt"), false),
+            new(Path.Combine(testDir, "photo.jpg"), false),
+            new(Path.Combine(testDir, "subfolder"), true)
+        });
+
+        await _sut.OpenFolderAsync(testDir);
+
+        Assert.Equal(2, _sut.RootNodes.Count);
+        Assert.Contains(_sut.RootNodes, n => n.Name == "video.mp4");
+        Assert.Contains(_sut.RootNodes, n => n.Name == "subfolder");
+        CleanupDir(testDir);
+    }
+
+    /// <summary>
+    /// Verifies that ExpandNodeAsync filters out non-video files from children.
+    /// </summary>
+    [Fact]
+    public async Task ExpandNode_FiltersOutNonVideoFiles()
+    {
+        var testDir = CreateTempDir();
+        var parentPath = Path.Combine(testDir, "parent");
+
+        _fileSystemService.GetChildrenAsync(parentPath).Returns(new List<FileNode>
+        {
+            new(Path.Combine(parentPath, "clip.mkv"), false),
+            new(Path.Combine(parentPath, "readme.txt"), false),
+            new(Path.Combine(parentPath, "child"), true)
+        });
+
+        var parentNode = new FileNode(parentPath, isDirectory: true);
+        await _sut.ExpandNodeAsync(parentNode);
+
+        Assert.Equal(2, parentNode.Children.Count);
+        Assert.Contains(parentNode.Children, n => n.Name == "clip.mkv");
+        Assert.Contains(parentNode.Children, n => n.Name == "child");
+        CleanupDir(testDir);
+    }
+
+    /// <summary>
+    /// Verifies that RescanFolderAsync filters out non-video files.
+    /// </summary>
+    [Fact]
+    public async Task RescanFolder_FiltersOutNonVideoFiles()
+    {
+        var testDir = CreateTempDir();
+        _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>
+        {
+            new(Path.Combine(testDir, "movie.avi"), false),
+            new(Path.Combine(testDir, "data.csv"), false),
+            new(Path.Combine(testDir, "shows"), true)
+        });
+
+        await _sut.OpenFolderAsync(testDir);
+
+        _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>
+        {
+            new(Path.Combine(testDir, "movie.avi"), false),
+            new(Path.Combine(testDir, "data.csv"), false),
+            new(Path.Combine(testDir, "extra.log"), false),
+            new(Path.Combine(testDir, "shows"), true)
+        });
+
+        await _sut.RescanFolderAsync();
+
+        Assert.Equal(2, _sut.RootNodes.Count);
+        Assert.Contains(_sut.RootNodes, n => n.Name == "movie.avi");
+        Assert.Contains(_sut.RootNodes, n => n.Name == "shows");
+        CleanupDir(testDir);
+    }
+
+    /// <summary>
+    /// Verifies that files with AdditionalAcceptedExtensions are retained.
+    /// </summary>
+    [Fact]
+    public async Task OpenFolder_KeepsAdditionalAcceptedExtensions()
+    {
+        var testDir = CreateTempDir();
+        _sut.AdditionalAcceptedExtensions.Add(".funscript");
+
+        _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>
+        {
+            new(Path.Combine(testDir, "video.mp4"), false),
+            new(Path.Combine(testDir, "script.funscript"), false),
+            new(Path.Combine(testDir, "notes.txt"), false)
+        });
+
+        await _sut.OpenFolderAsync(testDir);
+
+        Assert.Equal(2, _sut.RootNodes.Count);
+        Assert.Contains(_sut.RootNodes, n => n.Name == "video.mp4");
+        Assert.Contains(_sut.RootNodes, n => n.Name == "script.funscript");
+        CleanupDir(testDir);
+    }
+
+    /// <summary>
+    /// Verifies that empty directories are retained even when they contain no video files.
+    /// </summary>
+    [Fact]
+    public async Task OpenFolder_RetainsEmptyDirectories()
+    {
+        var testDir = CreateTempDir();
+        _fileSystemService.GetChildrenAsync(testDir).Returns(new List<FileNode>
+        {
+            new(Path.Combine(testDir, "emptyDir"), true),
+            new(Path.Combine(testDir, "readme.txt"), false)
+        });
+
+        await _sut.OpenFolderAsync(testDir);
+
+        Assert.Single(_sut.RootNodes);
+        Assert.Equal("emptyDir", _sut.RootNodes[0].Name);
+        Assert.True(_sut.RootNodes[0].IsDirectory);
         CleanupDir(testDir);
     }
 
