@@ -31,6 +31,12 @@ public static class PatternGenerator
             AxisFillMode.Square          => CalculateSquare(t),
             AxisFillMode.Pulse           => CalculatePulse(t),
             AxisFillMode.EaseInOut       => CalculateEaseInOut(t),
+            AxisFillMode.Grind           => CalculateGrind(t),
+            AxisFillMode.ReverseGrind    => CalculateReverseGrind(t),
+            AxisFillMode.SharpGrind      => CalculateSharpGrind(t),
+            AxisFillMode.SharpReverseGrind => CalculateSharpReverseGrind(t),
+            AxisFillMode.Rocker          => CalculateRocker(t),
+            AxisFillMode.ReverseRocker   => CalculateReverseRocker(t),
             _ => 0.5
         };
     }
@@ -142,4 +148,68 @@ public static class PatternGenerator
             : 1.0 - Math.Pow(-2.0 * phase + 2.0, 3) / 2.0;
         return eased;
     }
+
+    /// <summary>
+    /// Grind: linear ramp 0→1 over first half, hold at 1.0, then smooth cosine drop 1→0.
+    /// </summary>
+    private static double CalculateGrind(double t)
+    {
+        const double rampEnd = 0.5;
+        const double holdEnd = 0.85;
+        if (t < rampEnd)
+            return t / rampEnd;
+        if (t < holdEnd)
+            return 1.0;
+        var dt = (t - holdEnd) / (1.0 - holdEnd);
+        return (Math.Cos(dt * Math.PI) + 1.0) / 2.0;
+    }
+
+    /// <summary>
+    /// Reverse Grind: linear ramp 1→0 over first half, hold at 0.0, then smooth cosine rise 0→1.
+    /// </summary>
+    private static double CalculateReverseGrind(double t)
+    {
+        const double rampEnd = 0.5;
+        const double holdEnd = 0.85;
+        if (t < rampEnd)
+            return 1.0 - t / rampEnd;
+        if (t < holdEnd)
+            return 0.0;
+        var dt = (t - holdEnd) / (1.0 - holdEnd);
+        return (-Math.Cos(dt * Math.PI) + 1.0) / 2.0;
+    }
+
+    /// <summary>
+    /// Sharp Grind: linear ramp 0→1 over first half, then hold at 1.0 for remainder.
+    /// </summary>
+    private static double CalculateSharpGrind(double t)
+    {
+        const double rampEnd = 0.5;
+        if (t < rampEnd)
+            return t / rampEnd;
+        return 1.0;
+    }
+
+    /// <summary>
+    /// Sharp Reverse Grind: linear ramp 1→0 over first half, then hold at 0.0 for remainder.
+    /// </summary>
+    private static double CalculateSharpReverseGrind(double t)
+    {
+        const double rampEnd = 0.5;
+        if (t < rampEnd)
+            return 1.0 - t / rampEnd;
+        return 0.0;
+    }
+
+    /// <summary>
+    /// Rocker: phase-shifted sine producing a forward-rocking motion.
+    /// </summary>
+    private static double CalculateRocker(double t)
+        => 0.5 * (1.0 - Math.Cos(2.0 * Math.PI * t + Math.PI / 4.0));
+
+    /// <summary>
+    /// Reverse Rocker: phase-shifted sine producing a backward-rocking motion.
+    /// </summary>
+    private static double CalculateReverseRocker(double t)
+        => 0.5 * (1.0 - Math.Cos(2.0 * Math.PI * t - Math.PI / 4.0));
 }

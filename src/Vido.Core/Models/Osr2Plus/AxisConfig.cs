@@ -104,6 +104,16 @@ public class AxisConfig : INotifyPropertyChanged
     public AxisFillMode[] AvailableFillModes => Id switch
     {
         "L0" => [AxisFillMode.None],
+        "R2" =>
+        [
+            AxisFillMode.None, AxisFillMode.Random,
+            AxisFillMode.Triangle, AxisFillMode.Sine, AxisFillMode.Saw,
+            AxisFillMode.SawtoothReverse, AxisFillMode.Square, AxisFillMode.Pulse,
+            AxisFillMode.EaseInOut,
+            AxisFillMode.Grind, AxisFillMode.ReverseGrind,
+            AxisFillMode.SharpGrind, AxisFillMode.SharpReverseGrind,
+            AxisFillMode.Rocker, AxisFillMode.ReverseRocker
+        ],
         _ =>
         [
             AxisFillMode.None, AxisFillMode.Random,

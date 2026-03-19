@@ -26,6 +26,10 @@ public sealed class FillModeDisplayConverter : IValueConverter
         {
             AxisFillMode.SawtoothReverse => "Reverse Saw",
             AxisFillMode.EaseInOut => "Ease In/Out",
+            AxisFillMode.ReverseGrind => "Reverse Grind",
+            AxisFillMode.SharpGrind => "Sharp Grind",
+            AxisFillMode.SharpReverseGrind => "Sharp Reverse Grind",
+            AxisFillMode.ReverseRocker => "Reverse Rocker",
             _ => mode.ToString(),
         };
     }
