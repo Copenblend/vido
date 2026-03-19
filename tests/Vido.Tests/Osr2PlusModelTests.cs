@@ -231,16 +231,25 @@ public sealed class Osr2PlusModelTests
     }
 
     /// <summary>
-    /// Verifies that non-L0 axes have all 9 fill modes.
+    /// Verifies that R0/R1 axes have the base 9 fill modes.
     /// </summary>
     [Theory]
     [InlineData("R0")]
     [InlineData("R1")]
-    [InlineData("R2")]
-    public void AxisConfig_AvailableFillModes_NonL0_HasAllModes(string id)
+    public void AxisConfig_AvailableFillModes_NonL0_HasBaseModes(string id)
     {
         var axis = new AxisConfig { Id = id };
         Assert.Equal(9, axis.AvailableFillModes.Length);
+    }
+
+    /// <summary>
+    /// Verifies that R2 (pitch) axis has all 15 fill modes including pitch-only modes.
+    /// </summary>
+    [Fact]
+    public void AxisConfig_AvailableFillModes_R2_HasAllModes()
+    {
+        var axis = new AxisConfig { Id = "R2" };
+        Assert.Equal(15, axis.AvailableFillModes.Length);
     }
 
     /// <summary>
@@ -296,12 +305,12 @@ public sealed class Osr2PlusModelTests
     // ╚══════════════════════════════════════════════════════════════════╝
 
     /// <summary>
-    /// Verifies that AxisFillMode has exactly 9 members.
+    /// Verifies that AxisFillMode has exactly 15 members (9 base + 6 pitch-only).
     /// </summary>
     [Fact]
-    public void AxisFillMode_HasNineMembers()
+    public void AxisFillMode_HasFifteenMembers()
     {
-        Assert.Equal(9, Enum.GetValues<AxisFillMode>().Length);
+        Assert.Equal(15, Enum.GetValues<AxisFillMode>().Length);
     }
 
     /// <summary>
