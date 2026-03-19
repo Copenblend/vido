@@ -587,6 +587,37 @@ public class TCodeEngineTests : IDisposable
         Assert.True(allStopped);
     }
 
+    /// <summary>
+    /// Verifies that SetPlaying(true) resets cumulative tracking state
+    /// (_lastStrokePosition, _cumulativeStrokeDistance, _cumulativeFillByAxis)
+    /// so that fill patterns start fresh on each playback.
+    /// </summary>
+    [Fact]
+    public void SetPlaying_True_ResetsCumulativeState()
+    {
+        _service.SetAxisConfigs(new List<AxisConfig> { MakeL0() });
+        _service.SetScripts(new Dictionary<string, FunscriptData>
+        {
+            ["L0"] = MakeScript((0, 0), (1000, 100))
+        });
+
+        // Dirty the cumulative fields via reflection to simulate prior playback
+        var type = _service.GetType();
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+
+        type.GetField("_lastStrokePosition", flags)!.SetValue(_service, 87.5);
+        type.GetField("_cumulativeStrokeDistance", flags)!.SetValue(_service, 1234.0);
+        var fillArray = (double[])type.GetField("_cumulativeFillByAxis", flags)!.GetValue(_service)!;
+        fillArray[0] = 999.0;
+
+        _service.SetPlaying(true);
+
+        Assert.Equal(50.0, (double)type.GetField("_lastStrokePosition", flags)!.GetValue(_service)!);
+        Assert.Equal(0.0, (double)type.GetField("_cumulativeStrokeDistance", flags)!.GetValue(_service)!);
+        fillArray = (double[])type.GetField("_cumulativeFillByAxis", flags)!.GetValue(_service)!;
+        Assert.Equal(0.0, fillArray[0]);
+    }
+
     // ═══════════════════════════════════════════════
     //  SetAxisConfigs
     // ═══════════════════════════════════════════════

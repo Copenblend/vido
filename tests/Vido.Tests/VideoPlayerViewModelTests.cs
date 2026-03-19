@@ -19,6 +19,7 @@ namespace Vido.Tests;
 public class VideoPlayerViewModelTests : IDisposable
 {
     private readonly IVideoEngine _engine;
+    private readonly IEventBus _eventBus;
     private readonly ILogService _logService;
     private readonly ISettingsService _settingsService;
     private readonly IStateService _stateService;
@@ -31,6 +32,7 @@ public class VideoPlayerViewModelTests : IDisposable
     public VideoPlayerViewModelTests()
     {
         _engine = Substitute.For<IVideoEngine>();
+        _eventBus = Substitute.For<IEventBus>();
         _logService = Substitute.For<ILogService>();
         _settingsService = Substitute.For<ISettingsService>();
         _settingsService.Current.Returns(new AppSettings());
@@ -40,7 +42,7 @@ public class VideoPlayerViewModelTests : IDisposable
         _engine.IsMuted.Returns(false);
         _engine.IsLooping.Returns(false);
         _playlistProvider = Substitute.For<IPlaylistProvider>();
-        _sut = new VideoPlayerViewModel(_engine, Substitute.For<IEventBus>(), _logService, _settingsService, _stateService, _playlistProvider);
+        _sut = new VideoPlayerViewModel(_engine, _eventBus, _logService, _settingsService, _stateService, _playlistProvider);
     }
 
     // ── Initial State ──
@@ -1192,6 +1194,26 @@ public class VideoPlayerViewModelTests : IDisposable
     }
 
     // ── LoadAndPlayAsync ──
+
+    /// <summary>
+    /// Verifies that LoadAndPlayAsync publishes a position-zero event
+    /// immediately after starting playback so TCode sync starts from time zero.
+    /// </summary>
+    [Fact]
+    public async Task LoadAndPlayAsync_PublishesPositionZeroEvent()
+    {
+        var dir = CreateTempVideoDir("video.mp4");
+        try
+        {
+            _engine.Duration.Returns(TimeSpan.FromMinutes(5));
+
+            await _sut.LoadAndPlayAsync(Path.Combine(dir, "video.mp4"));
+
+            _eventBus.Received(1).Publish(Arg.Is<PlaybackPositionChangedEvent>(
+                e => e.Position == TimeSpan.Zero && e.Duration == TimeSpan.FromMinutes(5)));
+        }
+        finally { Directory.Delete(dir, true); }
+    }
 
     /// <summary>
     /// Verifies that Load And Play Async sets media properties.

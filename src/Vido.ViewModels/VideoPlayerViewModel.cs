@@ -465,6 +465,11 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
         }
 
         _engine.Play();
+
+        // Immediately publish position 0 so TCode/funscript sync starts from
+        // the correct time, rather than waiting for the first position timer tick.
+        _eventBus.Publish(new PlaybackPositionChangedEvent { Position = TimeSpan.Zero, Duration = Duration });
+
         _logService.Info($"Playing: {Path.GetFileName(filePath)} ({CurrentMetadata?.Resolution}, {FormatTime(Duration)})", "Player");
 
         // Track last video and recent files
