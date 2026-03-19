@@ -1119,6 +1119,10 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         if (State == PlaybackState.Playing)
             _audioRenderer.ArmDeferredStart();
 
+        // Clear SoundTouch time-stretch buffer to prevent stale stretched
+        // samples from the pre-seek position bleeding through.
+        _timeStretch?.Clear();
+
         // Squelch the first 4 audio frames after seeking — they often contain
         // garbled samples from the codec flush that cause audible pops.
         _audioPrerollFrames = 4;

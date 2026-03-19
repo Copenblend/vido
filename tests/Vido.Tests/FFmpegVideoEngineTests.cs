@@ -382,6 +382,43 @@ public class FFmpegVideoEngineTests : IDisposable
         Assert.Equal(0, value);
     }
 
+    // ── vido-268: SoundTouch time-stretch buffer clear ──
+
+    /// <summary>
+    /// Verifies that TimeStretchProcessor.Clear() discards all buffered samples,
+    /// ensuring no stale time-stretched audio bleeds through after a seek.
+    /// </summary>
+    [Fact]
+    public void TimeStretchProcessor_Clear_DiscardsBufferedSamples()
+    {
+        var processor = new TimeStretchProcessor(44100, 2);
+        processor.Tempo = 2.0;
+
+        // Push some samples into the processor
+        var input = new float[2048];
+        for (int i = 0; i < input.Length; i++)
+            input[i] = (float)Math.Sin(i * 0.1);
+        processor.PutSamples(input, input.Length / 2);
+
+        // Clear should discard all buffered samples
+        processor.Clear();
+
+        Assert.Equal(0, processor.AvailableSamples);
+        processor.Dispose();
+    }
+
+    /// <summary>
+    /// Verifies that the engine's _timeStretch field is initially null (no audio opened),
+    /// so the null-conditional Clear() in SeekInternal is safe.
+    /// </summary>
+    [Fact]
+    public void TimeStretch_InitiallyNull()
+    {
+        var field = typeof(FFmpegVideoEngine).GetField("_timeStretch",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        Assert.Null(field.GetValue(_sut));
+    }
+
     /// <summary>
     /// Cleans up test resources after each test run.
     /// </summary>
