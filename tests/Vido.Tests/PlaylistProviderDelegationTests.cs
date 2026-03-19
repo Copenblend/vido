@@ -296,7 +296,78 @@ public class PlaylistProviderDelegationTests : IDisposable
         _playlistProvider.DidNotReceive().GetNextFile();
     }
 
-    // â”€â”€ Helpers â”€â”€
+    // ── Shuffle delegation ──
+
+    /// <summary>
+    /// Verifies that toggling shuffle ON delegates to <see cref="IPlaylistProvider.EnableShuffle"/>
+    /// when the provider is active, and does not build an explorer-based shuffle playlist.
+    /// </summary>
+    [Fact]
+    public async Task ToggleShuffle_DelegatesToProviderAndSkipsExplorerShuffle_WhenProviderActive()
+    {
+        var dir = CreateTempVideoDir("a.mp4", "b.mp4", "c.mp4");
+        try
+        {
+            var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
+            _engine.Duration.Returns(TimeSpan.FromMinutes(1));
+
+            await _sut.SetExplorerRootAsync(dir);
+            await _sut.LoadAndPlayAsync(files[0]);
+
+            _playlistProvider.IsActive.Returns(true);
+
+            _sut.IsShuffling = true;
+
+            _playlistProvider.Received(1).EnableShuffle();
+            // Internal shuffle playlist must remain empty (explorer shuffle not built)
+            Assert.Null(_sut.GetShuffleFile(1));
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    /// <summary>
+    /// Verifies that toggling shuffle OFF delegates to <see cref="IPlaylistProvider.DisableShuffle"/>
+    /// when the provider is active.
+    /// </summary>
+    [Fact]
+    public void ToggleShuffle_DisablesProviderShuffle_WhenProviderActive()
+    {
+        _playlistProvider.IsActive.Returns(true);
+
+        _sut.IsShuffling = true;
+        _sut.IsShuffling = false;
+
+        _playlistProvider.Received(1).DisableShuffle();
+    }
+
+    /// <summary>
+    /// Verifies that toggling shuffle ON builds the explorer-based shuffle playlist
+    /// when the provider is not active.
+    /// </summary>
+    [Fact]
+    public async Task ToggleShuffle_BuildsExplorerShuffle_WhenProviderNotActive()
+    {
+        var dir = CreateTempVideoDir("a.mp4", "b.mp4", "c.mp4");
+        try
+        {
+            var files = Directory.GetFiles(dir).OrderBy(f => f).ToArray();
+            _engine.Duration.Returns(TimeSpan.FromMinutes(1));
+
+            await _sut.SetExplorerRootAsync(dir);
+            await _sut.LoadAndPlayAsync(files[0]);
+
+            _playlistProvider.IsActive.Returns(false);
+
+            _sut.IsShuffling = true;
+
+            _playlistProvider.DidNotReceive().EnableShuffle();
+            // Internal shuffle playlist should be populated from explorer files
+            Assert.NotNull(_sut.GetShuffleFile(1));
+        }
+        finally { Directory.Delete(dir, true); }
+    }
+
+    // ── Helpers ──
 
     private static string CreateTempVideoDir(params string[] fileNames)
     {

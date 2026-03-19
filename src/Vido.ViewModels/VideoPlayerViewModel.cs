@@ -710,6 +710,8 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
                 _playlistProvider.EnableShuffle();
             else
                 _playlistProvider.DisableShuffle();
+
+            return;
         }
 
         if (value)
