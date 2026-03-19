@@ -1853,6 +1853,8 @@ public partial class MainWindow : Window
             _toastService,
             _playlistProvider);
 
+        _videoPlayerViewModel.PlaylistProvider = _playlistProvider;
+
         // â”€â”€ Wire Status Bar Updates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _playlistVm.PropertyChanged += (_, e) =>
         {

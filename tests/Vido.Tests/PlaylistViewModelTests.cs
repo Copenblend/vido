@@ -768,6 +768,46 @@ public sealed class PlaylistViewModelTests : IDisposable
         Assert.Contains("Playing 1 of 1", _vm.StatusText);
     }
 
+    /// <summary>
+    /// Verifies that VideoLoadedEvent matches playlist item even when file path casing differs,
+    /// keeping the playlist provider active across skip operations.
+    /// </summary>
+    [Fact]
+    public void OnVideoLoaded_MatchesPlaylistItem_WithDifferentCase()
+    {
+        _vm.AddItems([@"C:\Videos\a.mp4", @"C:\Videos\b.mp4"]);
+
+        // Activate provider by simulating play from playlist
+        _playlistProvider.Activate(_vm.CurrentPlaylist.Items, 0);
+
+        // Simulate engine returning the path with different casing
+        _videoLoadedHandler?.Invoke(new VideoLoadedEvent { FilePath = @"c:\videos\B.MP4" });
+
+        Assert.NotNull(_vm.CurrentItem);
+        Assert.Equal("b.mp4", _vm.CurrentItem!.FileName);
+        Assert.True(_playlistProvider.IsActive, "Provider should remain active when file is in playlist");
+    }
+
+    /// <summary>
+    /// Verifies that VideoLoadedEvent deactivates the playlist provider when
+    /// the loaded file is genuinely not in the playlist.
+    /// </summary>
+    [Fact]
+    public void OnVideoLoaded_DeactivatesProvider_WhenFileNotInPlaylist()
+    {
+        _vm.AddItem(@"C:\Videos\a.mp4");
+
+        // Activate provider
+        _playlistProvider.Activate(_vm.CurrentPlaylist.Items, 0);
+        Assert.True(_playlistProvider.IsActive);
+
+        // Load a file that is NOT in the playlist
+        _videoLoadedHandler?.Invoke(new VideoLoadedEvent { FilePath = @"C:\Videos\other.mp4" });
+
+        Assert.Null(_vm.CurrentItem);
+        Assert.False(_playlistProvider.IsActive, "Provider should deactivate for files not in the playlist");
+    }
+
     // ══════════════════════════════════════════════════════════════
     //  HandleFileDrop
     // ══════════════════════════════════════════════════════════════
