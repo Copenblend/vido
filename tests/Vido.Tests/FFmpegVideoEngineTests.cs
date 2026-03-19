@@ -368,6 +368,20 @@ public class FFmpegVideoEngineTests : IDisposable
         _logService.DidNotReceive().Debug(Arg.Any<string>(), Arg.Any<string?>());
     }
 
+    // ── vido-266: Audio preroll configuration ──
+
+    /// <summary>
+    /// Verifies that the audio preroll frame count starts at zero before any seek.
+    /// </summary>
+    [Fact]
+    public void AudioPrerollFrames_InitiallyZero()
+    {
+        var field = typeof(FFmpegVideoEngine).GetField("_audioPrerollFrames",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var value = (int)field.GetValue(_sut)!;
+        Assert.Equal(0, value);
+    }
+
     /// <summary>
     /// Cleans up test resources after each test run.
     /// </summary>
