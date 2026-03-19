@@ -304,7 +304,7 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
         }
 
         _pauseEvent.Set();
-        _audioRenderer.Play();
+        _audioRenderer.ArmDeferredStart();
 
         if (_decodeThread == null || !_decodeThread.IsAlive)
         {

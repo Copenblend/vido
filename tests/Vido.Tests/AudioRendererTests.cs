@@ -231,6 +231,109 @@ public class AudioRendererTests : IDisposable
         Assert.True(secondBuffer.Length > firstBuffer.Length);
     }
 
+    // ── ArmDeferredStart ──
+
+    /// <summary>
+    /// Verifies that ArmDeferredStart sets the deferred start flag.
+    /// </summary>
+    [Fact]
+    public void ArmDeferredStart_SetsDeferredFlag()
+    {
+        _sut.Initialize(48000, 2);
+        _sut.ArmDeferredStart();
+
+        Assert.True(GetDeferredStart());
+    }
+
+    /// <summary>
+    /// Verifies that ArmDeferredStart before initialize does not throw.
+    /// </summary>
+    [Fact]
+    public void ArmDeferredStart_BeforeInitialize_DoesNotThrow()
+    {
+        var ex = Record.Exception(() => _sut.ArmDeferredStart());
+        Assert.Null(ex);
+    }
+
+    /// <summary>
+    /// Verifies that ArmDeferredStart can be called multiple times without error.
+    /// </summary>
+    [Fact]
+    public void ArmDeferredStart_CanBeCalledMultipleTimes()
+    {
+        _sut.Initialize(48000, 2);
+        _sut.ArmDeferredStart();
+        _sut.ArmDeferredStart(); // Re-arm — safe to call again
+        Assert.True(GetDeferredStart());
+    }
+
+    /// <summary>
+    /// Verifies that SubmitSamples (byte[]) clears the deferred start flag on first call.
+    /// </summary>
+    [Fact]
+    public void SubmitSamples_ByteOverload_ClearsDeferredFlag_OnFirstCall()
+    {
+        _sut.Initialize(48000, 2);
+        _sut.ArmDeferredStart();
+
+        var data = new byte[1024];
+        _sut.SubmitSamples(data, 0, data.Length);
+
+        Assert.False(GetDeferredStart());
+    }
+
+    /// <summary>
+    /// Verifies that SubmitSamples (float[]) clears the deferred start flag on first call.
+    /// </summary>
+    [Fact]
+    public void SubmitSamples_FloatOverload_ClearsDeferredFlag_OnFirstCall()
+    {
+        _sut.Initialize(48000, 2);
+        _sut.ArmDeferredStart();
+
+        var floats = new float[256];
+        _sut.SubmitSamples(floats, 0, floats.Length);
+
+        Assert.False(GetDeferredStart());
+    }
+
+    /// <summary>
+    /// Verifies that subsequent SubmitSamples calls do not re-trigger deferred start
+    /// after the flag has already been consumed.
+    /// </summary>
+    [Fact]
+    public void SubmitSamples_SecondCall_DoesNotRetriggerDeferredStart()
+    {
+        _sut.Initialize(48000, 2);
+        _sut.ArmDeferredStart();
+
+        var data = new byte[1024];
+        _sut.SubmitSamples(data, 0, data.Length); // Consumes deferred flag
+        Assert.False(GetDeferredStart());
+
+        _sut.SubmitSamples(data, 0, data.Length); // Second call — flag stays false
+        Assert.False(GetDeferredStart());
+    }
+
+    /// <summary>
+    /// Verifies that ArmDeferredStart after dispose does not throw.
+    /// </summary>
+    [Fact]
+    public void ArmDeferredStart_AfterDispose_DoesNotThrow()
+    {
+        _sut.Initialize(48000, 2);
+        _sut.Dispose();
+
+        var ex = Record.Exception(() => _sut.ArmDeferredStart());
+        Assert.Null(ex);
+    }
+
+    private bool GetDeferredStart()
+    {
+        var field = typeof(AudioRenderer).GetField("_deferredStart", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        return (bool)field.GetValue(_sut)!;
+    }
+
     private byte[] GetFloatSubmitBuffer()
     {
         var field = typeof(AudioRenderer).GetField("_floatSubmitBuffer", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
