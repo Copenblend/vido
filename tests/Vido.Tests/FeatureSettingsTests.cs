@@ -402,7 +402,6 @@ public sealed class FeatureSettingsTests
     {
         var settings = new AppSettings();
 
-        Assert.False(settings.PlaylistAutoSave);
         Assert.Empty(settings.PlaylistRecentPlaylists);
         Assert.Equal("", settings.PlaylistLastPlaylistPath);
     }
@@ -425,7 +424,6 @@ public sealed class FeatureSettingsTests
             Osr2VisualizerWindowDuration = 120,
             Osr2BeatBarMode = "OnPeak",
             Osr2LastRightPanel = "SomePanel",
-            PlaylistAutoSave = true,
             PlaylistRecentPlaylists = ["a.m3u", "b.m3u"],
             PlaylistLastPlaylistPath = "/some/path.m3u"
         };
@@ -443,7 +441,6 @@ public sealed class FeatureSettingsTests
         Assert.Equal("Off", settings.Osr2BeatBarMode);
         Assert.Equal("", settings.Osr2LastRightPanel);
         Assert.Equal(4, settings.Osr2AxisSettings.Count);
-        Assert.False(settings.PlaylistAutoSave);
         Assert.Empty(settings.PlaylistRecentPlaylists);
         Assert.Equal("", settings.PlaylistLastPlaylistPath);
     }

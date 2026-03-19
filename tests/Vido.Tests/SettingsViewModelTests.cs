@@ -36,13 +36,12 @@ public sealed class SettingsViewModelTests
     {
         var vm = CreateViewModel();
 
-        Assert.Equal(7, vm.AllCategories.Count);
+        Assert.Equal(6, vm.AllCategories.Count);
         Assert.Contains(vm.AllCategories, c => c.Name == "General");
         Assert.Contains(vm.AllCategories, c => c.Name == "Playback");
         Assert.Contains(vm.AllCategories, c => c.Name == "File Explorer");
         Assert.Contains(vm.AllCategories, c => c.Name == "Screenshot");
         Assert.Contains(vm.AllCategories, c => c.Name == "OSR2+");
-        Assert.Contains(vm.AllCategories, c => c.Name == "Playlists");
         Assert.Contains(vm.AllCategories, c => c.Name == "Updates");
     }
 
@@ -110,16 +109,13 @@ public sealed class SettingsViewModelTests
     }
 
     /// <summary>
-    /// Verifies that Playlists category has expected settings.
+    /// Verifies that Playlists category no longer exists after auto-save removal.
     /// </summary>
     [Fact]
-    public void Constructor_PlaylistsCategory_HasExpectedSettings()
+    public void Constructor_PlaylistsCategory_DoesNotExist()
     {
         var vm = CreateViewModel();
-        var category = vm.AllCategories.First(c => c.Name == "Playlists");
-
-        Assert.Single(category.Settings);
-        Assert.Equal("playlist.autoSave", category.Settings[0].Id);
+        Assert.DoesNotContain(vm.AllCategories, c => c.Name == "Playlists");
     }
 
     // — Filtering —

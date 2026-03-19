@@ -33,7 +33,6 @@ public sealed class PlaylistViewModel : INotifyPropertyChanged, IDisposable
     private readonly HashSet<string> _pathIndex = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, PlaylistItemViewModel> _vmIndex = new(StringComparer.OrdinalIgnoreCase);
     private int _currentItemIndex = -1;
-    private CancellationTokenSource? _autoSaveCts;
     private bool _recentPlaylistsLoaded;
     private string _playlistName = string.Empty;
     private string _statusText = string.Empty;
@@ -41,7 +40,6 @@ public sealed class PlaylistViewModel : INotifyPropertyChanged, IDisposable
 
     private const string PlaylistFilter = "Vido Playlist (*.vidpl)|*.vidpl";
     private const int MaxRecentPlaylists = 10;
-    private const int AutoSaveDebounceMs = 500;
 
     /// <inheritdoc />
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -313,7 +311,6 @@ public sealed class PlaylistViewModel : INotifyPropertyChanged, IDisposable
         }
 
         ShowToast("Added to ", _playlistName);
-        AutoSaveIfEnabled();
     }
 
     /// <summary>
@@ -329,7 +326,6 @@ public sealed class PlaylistViewModel : INotifyPropertyChanged, IDisposable
 
         _pathIndex.Remove(item.FilePath);
         _currentPlaylist.Items.Remove(item.Model);
-        AutoSaveIfEnabled();
     }
 
     /// <summary>
@@ -344,7 +340,6 @@ public sealed class PlaylistViewModel : INotifyPropertyChanged, IDisposable
         if (fromIndex == toIndex) return;
 
         _currentPlaylist.Items.Move(fromIndex, toIndex);
-        AutoSaveIfEnabled();
     }
 
     /// <summary>
@@ -396,7 +391,6 @@ public sealed class PlaylistViewModel : INotifyPropertyChanged, IDisposable
         if (filePaths.Count > 0)
         {
             AddItems(filePaths);
-            AutoSaveIfEnabled();
         }
 
         if (hasUnsupported && filePaths.Count == 0)
@@ -414,41 +408,8 @@ public sealed class PlaylistViewModel : INotifyPropertyChanged, IDisposable
     /// </summary>
     public void Dispose()
     {
-        _autoSaveCts?.Cancel();
-        _autoSaveCts?.Dispose();
-        _autoSaveCts = null;
-
         _videoLoadedSubscription?.Dispose();
         _videoLoadedSubscription = null;
-    }
-
-    /// <summary>
-    /// If auto-save is enabled, saves the playlist automatically with debouncing.
-    /// Prompts for a save location if the playlist has never been saved.
-    /// </summary>
-    internal void AutoSaveIfEnabled()
-    {
-        if (!_settingsService.Current.PlaylistAutoSave) return;
-
-        _autoSaveCts?.Cancel();
-        _autoSaveCts?.Dispose();
-        _autoSaveCts = new CancellationTokenSource();
-
-        _ = DebounceAutoSaveAsync(_autoSaveCts.Token);
-    }
-
-    private async Task DebounceAutoSaveAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            await Task.Delay(AutoSaveDebounceMs, cancellationToken);
-            if (!cancellationToken.IsCancellationRequested)
-                await SaveCurrentPlaylistAsync(saveAs: false);
-        }
-        catch (OperationCanceledException)
-        {
-            // Expected when debounce is reset or ViewModel is disposed.
-        }
     }
 
     // ── Private Helpers ──

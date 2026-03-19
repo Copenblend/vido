@@ -198,11 +198,6 @@ public sealed class AppSettings
     // --- Playlist Settings ---
 
     /// <summary>
-    /// Whether playlists are automatically saved when modified.
-    /// </summary>
-    public bool PlaylistAutoSave { get; set; } = false;
-
-    /// <summary>
     /// Most recently opened playlist file paths.
     /// </summary>
     public List<string> PlaylistRecentPlaylists { get; set; } = [];
@@ -266,7 +261,6 @@ public sealed class AppSettings
         ResumePlaybackPrompt = true;
 
         // Playlist settings
-        PlaylistAutoSave = false;
         PlaylistRecentPlaylists = [];
         PlaylistLastPlaylistPath = "";
 

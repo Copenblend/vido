@@ -306,21 +306,4 @@ public sealed class AppSettingsStoreTests
         Assert.False(_settings.ResumePlaybackPrompt);
         _settingsService.Received().QueueSave();
     }
-
-    // ── Playlist Auto-Save ──
-
-    [Fact]
-    public void Get_PlaylistAutoSave_ReturnsValue()
-    {
-        _settings.PlaylistAutoSave = true;
-        Assert.True(_store.Get("playlist.autoSave", false));
-    }
-
-    [Fact]
-    public void Set_PlaylistAutoSave_UpdatesAndSaves()
-    {
-        _store.Set("playlist.autoSave", true);
-        Assert.True(_settings.PlaylistAutoSave);
-        _settingsService.Received().QueueSave();
-    }
 }
