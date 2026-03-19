@@ -14,6 +14,7 @@ internal sealed class AudioRenderer : IDisposable
     private float _volume = 1.0f;
     private bool _isMuted;
     private byte[]? _floatSubmitBuffer;
+    private bool _deferredStart;
 
     /// <summary>
     /// Gets or sets the volume level (0.0 to 1.0).
@@ -79,6 +80,18 @@ internal sealed class AudioRenderer : IDisposable
     }
 
     /// <summary>
+    /// Arms the renderer for deferred start: the next call to
+    /// <see cref="SubmitSamples(byte[], int, int)"/> or <see cref="SubmitSamples(float[], int, int)"/>
+    /// will call <c>WasapiOut.Play()</c> automatically after submitting the samples,
+    /// ensuring the buffer is primed before playback begins.
+    /// </summary>
+    public void ArmDeferredStart()
+    {
+        _deferredStart = true;
+        _waveProvider?.ClearBuffer();
+    }
+
+    /// <summary>
     /// Submits decoded audio samples for playback.
     /// Samples must be IEEE float format matching the initialized sample rate and channels.
     /// </summary>
@@ -91,6 +104,13 @@ internal sealed class AudioRenderer : IDisposable
             return;
 
         _waveProvider.AddSamples(data, offset, count);
+
+        if (_deferredStart)
+        {
+            _deferredStart = false;
+            if (_waveOut?.PlaybackState != PlaybackState.Playing)
+                _waveOut?.Play();
+        }
     }
 
     /// <summary>
@@ -112,6 +132,13 @@ internal sealed class AudioRenderer : IDisposable
 
         Buffer.BlockCopy(data, offset * sizeof(float), _floatSubmitBuffer, 0, byteCount);
         _waveProvider.AddSamples(_floatSubmitBuffer, 0, byteCount);
+
+        if (_deferredStart)
+        {
+            _deferredStart = false;
+            if (_waveOut?.PlaybackState != PlaybackState.Playing)
+                _waveOut?.Play();
+        }
     }
 
     /// <summary>
