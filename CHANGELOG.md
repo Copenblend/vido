@@ -4,6 +4,9 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **vido-278**: Pre-fill the save-profile dialog with an auto-generated default name ("Custom", "Custom1", "Custom2", etc.). Added `GenerateDefaultProfileName()` to `AxisControlViewModel` with case-insensitive duplicate detection. Updated `AxisControlView.OnRequestProfileName` to pass the generated name to `InputDialog`. Added 5 tests.
+
 ### Fixed
 - **vido-268**: Cleared SoundTouch time-stretch buffer on seek to prevent stale stretched samples from the pre-seek position bleeding through during non-1x speed playback. Added `_timeStretch?.Clear()` in `FFmpegVideoEngine.SeekInternal()` after flushing the audio renderer and arming deferred start. New video loads are already clean because `TimeStretchProcessor` is reconstructed in `InitializeAudioResampler()`. Added 2 tests.
 - **vido-267**: Reset TCode sync state at playback start. Published a position-zero `PlaybackPositionChangedEvent` immediately after `_engine.Play()` in `LoadAndPlayAsync()` so TCode/funscript sync anchors to time zero instead of waiting for the first timer tick (~16ms). Reset `_lastStrokePosition`, `_cumulativeStrokeDistance`, and `_cumulativeFillByAxis` in `TCodeService.SetPlaying(true)` to prevent fill patterns carrying over stale cumulative state from the previous video. Added 2 tests.
