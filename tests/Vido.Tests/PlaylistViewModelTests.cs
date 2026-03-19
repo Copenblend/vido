@@ -564,26 +564,6 @@ public sealed class PlaylistViewModelTests : IDisposable
     }
 
     // ══════════════════════════════════════════════════════════════
-    //  AutoSaveIfEnabled
-    // ══════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Verifies that AutoSaveIfEnabled does nothing when auto-save is disabled.
-    /// </summary>
-    [Fact]
-    public void AutoSaveIfEnabled_DisabledSetting_NoSave()
-    {
-        _settingsService.Current.PlaylistAutoSave = false;
-
-        _vm.AddItem(@"C:\Videos\a.mp4");
-        _vm.AutoSaveIfEnabled();
-
-        // No save dialog should be shown — the playlist has no file path
-        // so it would prompt if auto-save triggered
-        _dialogService.DidNotReceive().ShowSaveFileDialog(Arg.Any<string>(), Arg.Any<string>());
-    }
-
-    // ══════════════════════════════════════════════════════════════
     //  PromptSaveDirtyPlaylist
     // ══════════════════════════════════════════════════════════════
 

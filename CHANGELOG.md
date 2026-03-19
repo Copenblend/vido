@@ -4,6 +4,9 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### Removed
+- **vido-262**: Removed auto-save playlist feature and `PlaylistAutoSave` setting. Playlists are no longer auto-saved; users must explicitly save via Save or Save As. Removed `AutoSaveIfEnabled()`, `DebounceAutoSaveAsync()`, all 4 call sites in `PlaylistViewModel`, the `playlist.autoSave` store entries, and the "Playlists" settings category.
+
 ### Changed
 - **vido-258**: Replaced the read-only hardcoded install path display in `OptionsPage.xaml` with an editable `TextBox` bound to `Options.InstallPath` and a "Browse..." button using `OpenFolderDialog`. Added `BrowseButton_Click` handler in `OptionsPage.xaml.cs`. Browse button styled with `ButtonDefaultBackgroundBrush`/`ButtonBackgroundBrush` hover matching the Install button pattern.
 - **vido-257**: Added `InstallPath` property to `InstallOptions` (defaults to `InstallEngine.DefaultInstallDir`). Updated `InstallerViewModel.InstallAsync()` and `Finish()` to use `Options.InstallPath` instead of the hardcoded default, wiring the custom path through extraction, shortcuts, file associations, registry entries, and post-install launch. Added 3 new tests.

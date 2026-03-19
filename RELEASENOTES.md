@@ -1,5 +1,16 @@
 # Release Notes
 
+## [0.25.0]
+
+### Bug Fixes
+- Fixed Next and Previous player controls navigating through file explorer items instead of the active playlist
+- Fixed shuffle/random mode choosing videos from the file explorer instead of the active playlist
+- Improved audio and funscript synchronization — audio and haptic scripts now start from position zero in sync with the video, and stay in sync through playback
+- Fixed audio glitch and sync offset after seeking
+
+### Improvements
+- Playlists are no longer auto-saved — all saves are now explicit. Use Save or Save As to keep your changes.
+
 ## [0.24.0]
 
 ### What's New

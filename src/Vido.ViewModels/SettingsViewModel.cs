@@ -227,9 +227,6 @@ public partial class SettingsViewModel : ObservableObject
         // ── OSR2+ ──
         BuildOsr2PlusSettings();
 
-        // ── Playlists ──
-        BuildPlaylistSettings();
-
         // ── Updates ──
         BuildUpdatesSettings();
     }
@@ -312,29 +309,6 @@ public partial class SettingsViewModel : ObservableObject
             .Select(d => new SettingDisplayItem(d, _settingsService, _settingsStore))
             .ToList();
         AllCategories.Add(new SettingsCategoryViewModel("OSR2+", items));
-    }
-
-    /// <summary>
-    /// Builds the Playlists settings category.
-    /// </summary>
-    private void BuildPlaylistSettings()
-    {
-        var definitions = new List<SettingDefinition>
-        {
-            new(
-                Key: "playlist.autoSave",
-                Type: "boolean",
-                DefaultValue: false,
-                Title: "Auto-Save Playlists",
-                Description: "Automatically save playlist changes when items are added, removed, or reordered.",
-                Getter: s => s.PlaylistAutoSave,
-                Setter: (s, v) => s.PlaylistAutoSave = v is true),
-        };
-
-        var items = definitions
-            .Select(d => new SettingDisplayItem(d, _settingsService, _settingsStore))
-            .ToList();
-        AllCategories.Add(new SettingsCategoryViewModel("Playlists", items));
     }
 
     /// <summary>

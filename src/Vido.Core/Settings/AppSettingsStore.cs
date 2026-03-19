@@ -43,7 +43,6 @@ public sealed class AppSettingsStore : ISettingsStore
             ["playback.fullscreenAutoHide"] = () => Settings.FullscreenAutoHideSeconds,
             ["playback.fullscreenShowVideoName"] = () => Settings.FullscreenShowVideoName,
             ["playback.resumePlaybackPrompt"] = () => Settings.ResumePlaybackPrompt,
-            ["playlist.autoSave"] = () => Settings.PlaylistAutoSave,
             ["updates.autocheck"] = () => Settings.AutoCheckUpdates,
         };
 
@@ -129,11 +128,6 @@ public sealed class AppSettingsStore : ISettingsStore
             ["playback.resumePlaybackPrompt"] = v =>
             {
                 Settings.ResumePlaybackPrompt = Convert.ToBoolean(v);
-                _settingsService.QueueSave();
-            },
-            ["playlist.autoSave"] = v =>
-            {
-                Settings.PlaylistAutoSave = Convert.ToBoolean(v);
                 _settingsService.QueueSave();
             },
             ["updates.autocheck"] = v =>
