@@ -432,4 +432,45 @@ public class AxisControlViewModelProfileTests : IDisposable
 
         Assert.False(vm.IsProfileModified);
     }
+
+    // ── GenerateDefaultProfileName ────────────────────────────────────
+
+    [Fact]
+    public void GenerateDefaultProfileName_NoExistingCustom_ReturnsCustom()
+    {
+        Assert.Equal("Custom", _vm.GenerateDefaultProfileName());
+    }
+
+    [Fact]
+    public void GenerateDefaultProfileName_CustomExists_ReturnsCustom1()
+    {
+        _profileService.CreateProfile("Custom", MakeProfile("Custom").Axes);
+
+        Assert.Equal("Custom1", _vm.GenerateDefaultProfileName());
+    }
+
+    [Fact]
+    public void GenerateDefaultProfileName_CustomAndCustom1Exist_ReturnsCustom2()
+    {
+        _profileService.CreateProfile("Custom", MakeProfile("Custom").Axes);
+        _profileService.CreateProfile("Custom1", MakeProfile("Custom1").Axes);
+
+        Assert.Equal("Custom2", _vm.GenerateDefaultProfileName());
+    }
+
+    [Fact]
+    public void GenerateDefaultProfileName_CaseInsensitive_SkipsExisting()
+    {
+        _profileService.CreateProfile("custom", MakeProfile("custom").Axes);
+
+        Assert.Equal("Custom1", _vm.GenerateDefaultProfileName());
+    }
+
+    [Fact]
+    public void GenerateDefaultProfileName_NoProfileService_ReturnsCustom()
+    {
+        var vm = new AxisControlViewModel(_tcode, _settingsService, _parser, _matcher);
+
+        Assert.Equal("Custom", vm.GenerateDefaultProfileName());
+    }
 }

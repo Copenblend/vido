@@ -41,7 +41,8 @@ public partial class AxisControlView : UserControl
         var owner = Window.GetWindow(this);
         if (owner is null) return;
 
-        var name = InputDialog.ShowInputDialog(owner, "Save Profile", "Profile name:");
+        var defaultName = vm.GenerateDefaultProfileName();
+        var name = InputDialog.ShowInputDialog(owner, "Save Profile", "Profile name:", defaultName);
         if (!string.IsNullOrWhiteSpace(name))
             vm.CompleteSaveProfile(name);
     }

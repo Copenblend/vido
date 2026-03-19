@@ -614,6 +614,30 @@ public class AxisControlViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
+    /// Generates the next available default profile name ("Custom", "Custom1", "Custom2", ...).
+    /// Uses case-insensitive comparison against existing profile names.
+    /// </summary>
+    /// <returns>The next available default profile name.</returns>
+    internal string GenerateDefaultProfileName()
+    {
+        if (_profileService is null) return "Custom";
+
+        var profiles = _profileService.Profiles;
+
+        if (!profiles.Any(p => string.Equals(p.Name, "Custom", StringComparison.OrdinalIgnoreCase)))
+            return "Custom";
+
+        for (int i = 1; i <= 999; i++)
+        {
+            var candidate = $"Custom{i}";
+            if (!profiles.Any(p => string.Equals(p.Name, candidate, StringComparison.OrdinalIgnoreCase)))
+                return candidate;
+        }
+
+        return $"Custom{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+    }
+
+    /// <summary>
     /// Called by the view after the user provides a profile name for saving.
     /// Creates a new profile or updates an existing user profile.
     /// </summary>
