@@ -1114,9 +1114,14 @@ public sealed unsafe class FFmpegVideoEngine : IVideoEngine
 
         _audioRenderer.Flush();
 
-        // Squelch the first 2 audio frames after seeking — they often contain
+        // Arm deferred start so audio only resumes once fresh samples arrive.
+        // This prevents the WASAPI gap between seek and first decoded audio.
+        if (State == PlaybackState.Playing)
+            _audioRenderer.ArmDeferredStart();
+
+        // Squelch the first 4 audio frames after seeking — they often contain
         // garbled samples from the codec flush that cause audible pops.
-        _audioPrerollFrames = 2;
+        _audioPrerollFrames = 4;
 
         // Seek to the target position (lands on nearest keyframe BEFORE target)
         var timestamp = (long)(position.TotalSeconds * ffmpeg.AV_TIME_BASE);
