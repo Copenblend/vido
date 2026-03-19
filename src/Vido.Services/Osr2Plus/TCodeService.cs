@@ -325,10 +325,16 @@ public class TCodeService : IDisposable
         }
         _isPlaying = playing;
 
-        // Auto-stop all test axes when funscript playback starts
-        if (playing && HasScriptsLoaded)
+        if (playing)
         {
-            StopAllTestAxes();
+            // Reset cumulative tracking to prevent jumps from previous video state
+            _lastStrokePosition = 50.0;
+            _cumulativeStrokeDistance = 0;
+            Array.Clear(_cumulativeFillByAxis);
+
+            // Auto-stop all test axes when funscript playback starts
+            if (HasScriptsLoaded)
+                StopAllTestAxes();
         }
     }
 
