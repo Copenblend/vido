@@ -280,6 +280,14 @@
                         <Border Style="{StaticResource DividerStyle}" />
                     </StackPanel>
 
+                    <!-- ── 5. Reset Button ──────────────────── -->
+                    <Button Content="Reset"
+                            Style="{StaticResource Osr2SmallButtonStyle}"
+                            Command="{Binding ResetCommand}"
+                            ToolTip="Reset all settings for this axis to defaults"
+                            HorizontalAlignment="Left"
+                            Margin="0,8,0,0" />
+
                 </StackPanel>
             </StackPanel>
         </Grid>

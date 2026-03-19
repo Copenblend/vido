@@ -304,6 +304,9 @@ public class AxisCardViewModel : INotifyPropertyChanged
     /// <summary>Clears the manually loaded funscript from this axis.</summary>
     public ICommand ClearScriptCommand { get; }
 
+    /// <summary>Resets all axis settings to factory defaults.</summary>
+    public ICommand ResetCommand { get; }
+
     // ═══════════════════════════════════════════════════════
     //  Constructor
     // ═══════════════════════════════════════════════════════
@@ -321,6 +324,7 @@ public class AxisCardViewModel : INotifyPropertyChanged
         ToggleExpandCommand = new RelayCommand(() => IsExpanded = !IsExpanded);
         OpenScriptCommand = new RelayCommand(ExecuteOpenScript);
         ClearScriptCommand = new RelayCommand(ExecuteClearScript, () => HasScript);
+        ResetCommand = new RelayCommand(ResetToDefaults);
     }
 
     // ═══════════════════════════════════════════════════════
@@ -382,6 +386,21 @@ public class AxisCardViewModel : INotifyPropertyChanged
 
         // Notify parent to deload the script data and recenter the axis
         ScriptCleared?.Invoke(AxisId);
+    }
+
+    /// <summary>
+    /// Resets all settings for this axis to factory defaults.
+    /// Each property setter raises PropertyChanged and ConfigChanged automatically.
+    /// </summary>
+    private void ResetToDefaults()
+    {
+        Min = 0;
+        Max = 100;
+        Enabled = true;
+        FillMode = AxisFillMode.None;
+        FillSpeedHz = 1.0;
+        SyncWithStroke = AxisId != "R2";
+        PositionOffset = 0;
     }
 
     // ═══════════════════════════════════════════════════════
