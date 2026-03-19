@@ -4,6 +4,9 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **vido-263**: Fixed shuffle to delegate exclusively to the active playlist provider instead of also building an explorer-based shuffle list. Added early `return` in `OnIsShufflingChanged` after delegating `EnableShuffle()`/`DisableShuffle()` to the provider, preventing `BuildShufflePlaylist()` from creating a duplicate shuffle state from sibling files. Added 3 tests in `PlaylistProviderDelegationTests`.
+
 ### Removed
 - **vido-262**: Removed auto-save playlist feature and `PlaylistAutoSave` setting. Playlists are no longer auto-saved; users must explicitly save via Save or Save As. Removed `AutoSaveIfEnabled()`, `DebounceAutoSaveAsync()`, all 4 call sites in `PlaylistViewModel`, the `playlist.autoSave` store entries, and the "Playlists" settings category.
 
