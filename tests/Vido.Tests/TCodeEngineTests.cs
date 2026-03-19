@@ -1027,6 +1027,78 @@ public class TCodeEngineTests : IDisposable
     }
 
     [Fact]
+    public void HomeAxes_SerialTransport_SkipsR0()
+    {
+        var transport = new FakeSerialTransport { IsConnected = true };
+        _service.Transport = transport;
+        _service.SetAxisConfigs(new List<AxisConfig>
+        {
+            MakeL0(),
+            MakeR0()
+        });
+
+        _service.Start();
+        _service.HomeAxes();
+        Thread.Sleep(50);
+        _service.StopTimer();
+
+        Assert.True(transport.SentMessages.Count > 0);
+        var msg = transport.SentMessages[0];
+        Assert.Contains("L0", msg);
+        Assert.DoesNotContain("R0", msg);
+        Assert.Contains("I2000", msg);
+    }
+
+    [Fact]
+    public void HomeAxes_UdpTransport_IncludesR0()
+    {
+        var transport = new FakeTransport { IsConnected = true };
+        _service.Transport = transport;
+        _service.SetAxisConfigs(new List<AxisConfig>
+        {
+            MakeL0(),
+            MakeR0()
+        });
+
+        _service.Start();
+        _service.HomeAxes();
+        Thread.Sleep(50);
+        _service.StopTimer();
+
+        Assert.True(transport.SentMessages.Count > 0);
+        var msg = transport.SentMessages[0];
+        Assert.Contains("L0", msg);
+        Assert.Contains("R0", msg);
+        Assert.Contains("I2000", msg);
+    }
+
+    [Fact]
+    public void HomeAxes_SerialTransport_HomesOtherAxes()
+    {
+        var transport = new FakeSerialTransport { IsConnected = true };
+        _service.Transport = transport;
+        _service.SetAxisConfigs(new List<AxisConfig>
+        {
+            MakeL0(),
+            MakeR0(),
+            MakeR1(),
+            MakeR2()
+        });
+
+        _service.Start();
+        _service.HomeAxes();
+        Thread.Sleep(50);
+        _service.StopTimer();
+
+        Assert.True(transport.SentMessages.Count > 0);
+        var msg = transport.SentMessages[0];
+        Assert.Contains("L0", msg);
+        Assert.DoesNotContain("R0", msg);
+        Assert.Contains("R1", msg);
+        Assert.Contains("R2", msg);
+    }
+
+    [Fact]
     public void SendPositionWithOffset_SendsCommand()
     {
         var transport = new FakeTransport { IsConnected = true };
@@ -1174,5 +1246,26 @@ public class TCodeEngineTests : IDisposable
         }
 
         public void Dispose() { }
+    }
+
+    /// <summary>
+    /// Fake transport that extends <see cref="SerialTransportService"/> so that
+    /// <c>_transport is SerialTransportService</c> returns true in HomeAxes().
+    /// Re-implements <see cref="ITransportService"/> to override base behavior.
+    /// </summary>
+    private class FakeSerialTransport : SerialTransportService, ITransportService
+    {
+        public new bool IsConnected { get; set; }
+        public new string? ConnectionLabel => IsConnected ? "FakeSerial" : null;
+#pragma warning disable CS0067
+        public new event Action<bool>? ConnectionChanged;
+        public new event Action<string>? ErrorOccurred;
+#pragma warning restore CS0067
+        public List<string> SentMessages { get; } = new();
+
+        public new void Send(string data) => SentMessages.Add(data);
+        public new void Send(ReadOnlySpan<byte> data) { }
+        public new void Disconnect() { }
+        public new void Dispose() { }
     }
 }

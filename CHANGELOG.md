@@ -6,6 +6,8 @@ All notable changes to the Vido project will be documented in this file.
 
 ### Added
 
+- **vido-279**: Skip TWIST (R0) homing on serial connections. Modified `TCodeService.HomeAxes()` to detect serial transport via `_transport is SerialTransportService` and skip R0 axis homing, preserving the device's current physical twist position on reconnect. UDP connections still home all axes including R0. Added `parts.Count > 0` guard before sending. Added 3 tests with `FakeSerialTransport` helper class.
+
 - **vido-278**: Pre-fill the save-profile dialog with an auto-generated default name ("Custom", "Custom1", "Custom2", etc.). Added `GenerateDefaultProfileName()` to `AxisControlViewModel` with case-insensitive duplicate detection. Updated `AxisControlView.OnRequestProfileName` to pass the generated name to `InputDialog`. Added 5 tests.
 
 - **vido-277**: Added 6 new Pitch (R2) fill modes: Grind, Reverse Grind, Sharp Grind, Sharp Reverse Grind, Rocker, and Reverse Rocker. Grind/Reverse Grind use linear ramp + hold + cosine reset. Sharp variants hold without cosine smoothing. Rocker/Reverse Rocker use phase-shifted cosine for elliptical motion. New modes appear only in the R2 axis fill mode dropdown (15 total); other axes remain at 9. Added `PatternGeneratorTests.cs` with 44 tests.
