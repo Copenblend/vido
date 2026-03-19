@@ -1167,15 +1167,22 @@ public class TCodeService : IDisposable
     {
         if (_transport?.IsConnected != true || _axisConfigs.Count == 0) return;
 
+        var isSerial = _transport is SerialTransportService;
         var parts = new List<string>();
         foreach (var config in _axisConfigs)
         {
+            // Skip R0 (Twist) homing for serial connections — the device stays at
+            // its current physical position to avoid unexpected movement on reconnect.
+            if (config.Id == "R0" && isSerial)
+                continue;
+
             // Start from the 50% midpoint, then apply the user's position offset
             var homeTcode = ApplyPositionOffset(config, PositionToTCode(config, 50.0));
             parts.Add(FormatTCodeCommand(config, homeTcode, HomingDurationMs));
             _lastSentByAxis[config.Ordinal] = homeTcode;
         }
 
-        Volatile.Write(ref _pendingDirectCommand, string.Join(" ", parts) + "\n");
+        if (parts.Count > 0)
+            Volatile.Write(ref _pendingDirectCommand, string.Join(" ", parts) + "\n");
     }
 }
