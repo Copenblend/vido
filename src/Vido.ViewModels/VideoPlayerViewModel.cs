@@ -24,7 +24,7 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     private readonly ILogService _logService;
     private readonly ISettingsService _settingsService;
     private readonly IStateService _stateService;
-    private readonly IPlaylistProvider? _playlistProvider;
+    private IPlaylistProvider? _playlistProvider;
     private bool _disposed;
     private bool _isSeeking;
     private double _lastSavedPositionSeconds;
@@ -204,6 +204,16 @@ public partial class VideoPlayerViewModel : ObservableObject, IDisposable
     /// Set after construction by the host since the ViewModel is DI-resolved.
     /// </summary>
     public IToastService? ToastService { get; set; }
+
+    /// <summary>
+    /// Optional playlist provider for playlist-aware skip/next/shuffle behaviour.
+    /// Set after construction by the host since the ViewModel is DI-resolved.
+    /// </summary>
+    public IPlaylistProvider? PlaylistProvider
+    {
+        get => _playlistProvider;
+        set => _playlistProvider = value;
+    }
 
     /// <summary>
     /// Creates the video player view model, wiring up engine events, restoring

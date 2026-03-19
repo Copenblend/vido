@@ -5,6 +5,7 @@ All notable changes to the Vido project will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- **vido-264**: Fixed playlist provider not being wired to `VideoPlayerViewModel` at runtime. The `PlaylistProvider` instance was created in `MainWindow.SetupPlaylists()` after DI resolved `VideoPlayerViewModel` as a singleton, leaving its `_playlistProvider` field permanently null. Added a settable `PlaylistProvider` property (matching the existing `ToastService` pattern) and wired it in `SetupPlaylists()`. This was the root cause of skip/shuffle/media-ended never delegating to the active playlist. Also fixed path case mismatch: added `NormalizePath()` helper using `Path.GetFullPath()` and applied it to all `_vmIndex` and `_pathIndex` operations in `PlaylistViewModel`. Added 2 tests.
 - **vido-263**: Fixed shuffle to delegate exclusively to the active playlist provider instead of also building an explorer-based shuffle list. Added early `return` in `OnIsShufflingChanged` after delegating `EnableShuffle()`/`DisableShuffle()` to the provider, preventing `BuildShufflePlaylist()` from creating a duplicate shuffle state from sibling files. Added 3 tests in `PlaylistProviderDelegationTests`.
 
 ### Removed

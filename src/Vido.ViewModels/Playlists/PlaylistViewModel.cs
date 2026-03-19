@@ -264,7 +264,7 @@ public sealed class PlaylistViewModel : INotifyPropertyChanged, IDisposable
         // Only allow video files
         if (!PlaylistProvider.IsVideoFile(filePath)) return;
 
-        if (!_pathIndex.Add(filePath)) return;
+        if (!_pathIndex.Add(NormalizePath(filePath))) return;
 
         _currentPlaylist.Items.Add(new PlaylistItem(filePath));
     }
@@ -279,7 +279,7 @@ public sealed class PlaylistViewModel : INotifyPropertyChanged, IDisposable
         ArgumentNullException.ThrowIfNull(filePaths);
 
         var newItems = filePaths
-            .Where(path => PlaylistProvider.IsVideoFile(path) && _pathIndex.Add(path))
+            .Where(path => PlaylistProvider.IsVideoFile(path) && _pathIndex.Add(NormalizePath(path)))
             .Select(path => new PlaylistItem(path))
             .ToList();
 
@@ -324,7 +324,7 @@ public sealed class PlaylistViewModel : INotifyPropertyChanged, IDisposable
         if (ReferenceEquals(item, _currentItem))
             CurrentItem = null;
 
-        _pathIndex.Remove(item.FilePath);
+        _pathIndex.Remove(NormalizePath(item.FilePath));
         _currentPlaylist.Items.Remove(item.Model);
     }
 
@@ -702,7 +702,7 @@ public sealed class PlaylistViewModel : INotifyPropertyChanged, IDisposable
 
     private void OnVideoLoaded(VideoLoadedEvent e)
     {
-        _vmIndex.TryGetValue(e.FilePath, out var match);
+        _vmIndex.TryGetValue(NormalizePath(e.FilePath), out var match);
 
         CurrentItem = match;
 
@@ -733,8 +733,8 @@ public sealed class PlaylistViewModel : INotifyPropertyChanged, IDisposable
                     {
                         var vm = new PlaylistItemViewModel(item);
                         Items.Insert(index++, vm);
-                        _vmIndex[vm.FilePath] = vm;
-                        _pathIndex.Add(vm.FilePath);
+                        _vmIndex[NormalizePath(vm.FilePath)] = vm;
+                        _pathIndex.Add(NormalizePath(vm.FilePath));
                     }
                 }
                 break;
@@ -744,11 +744,12 @@ public sealed class PlaylistViewModel : INotifyPropertyChanged, IDisposable
                 {
                     foreach (PlaylistItem item in e.OldItems)
                     {
-                        _pathIndex.Remove(item.FilePath);
+                        var normalizedPath = NormalizePath(item.FilePath);
+                        _pathIndex.Remove(normalizedPath);
 
-                        if (_vmIndex.TryGetValue(item.FilePath, out var vm))
+                        if (_vmIndex.TryGetValue(normalizedPath, out var vm))
                         {
-                            _vmIndex.Remove(item.FilePath);
+                            _vmIndex.Remove(normalizedPath);
                             if (ReferenceEquals(vm, _currentItem))
                                 CurrentItem = null;
 
@@ -796,11 +797,11 @@ public sealed class PlaylistViewModel : INotifyPropertyChanged, IDisposable
 
         foreach (var vm in Items)
         {
-            _vmIndex[vm.FilePath] = vm;
-            _pathIndex.Add(vm.FilePath);
+            _vmIndex[NormalizePath(vm.FilePath)] = vm;
+            _pathIndex.Add(NormalizePath(vm.FilePath));
         }
 
-        if (currentFilePath is not null && _vmIndex.TryGetValue(currentFilePath, out var newCurrentItem))
+        if (currentFilePath is not null && _vmIndex.TryGetValue(NormalizePath(currentFilePath), out var newCurrentItem))
         {
             CurrentItem = newCurrentItem;
         }
@@ -859,6 +860,16 @@ public sealed class PlaylistViewModel : INotifyPropertyChanged, IDisposable
         }
 
         return (filePaths, hasUnsupported);
+    }
+
+    /// <summary>
+    /// Normalizes a file path to its canonical form using <see cref="Path.GetFullPath(string)"/>.
+    /// Falls back to the original path if normalization fails (e.g., for network paths).
+    /// </summary>
+    private static string NormalizePath(string path)
+    {
+        try { return Path.GetFullPath(path); }
+        catch { return path; }
     }
 
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
