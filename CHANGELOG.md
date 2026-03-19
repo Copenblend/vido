@@ -4,6 +4,9 @@ All notable changes to the Vido project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **vido-277**: Added 6 new Pitch (R2) fill modes: Grind, Reverse Grind, Sharp Grind, Sharp Reverse Grind, Rocker, and Reverse Rocker. Grind/Reverse Grind use linear ramp + hold + cosine reset. Sharp variants hold without cosine smoothing. Rocker/Reverse Rocker use phase-shifted cosine for elliptical motion. New modes appear only in the R2 axis fill mode dropdown (15 total); other axes remain at 9. Added `PatternGeneratorTests.cs` with 44 tests.
+
 ### Fixed
 - **vido-268**: Cleared SoundTouch time-stretch buffer on seek to prevent stale stretched samples from the pre-seek position bleeding through during non-1x speed playback. Added `_timeStretch?.Clear()` in `FFmpegVideoEngine.SeekInternal()` after flushing the audio renderer and arming deferred start. New video loads are already clean because `TimeStretchProcessor` is reconstructed in `InitializeAudioResampler()`. Added 2 tests.
 - **vido-267**: Reset TCode sync state at playback start. Published a position-zero `PlaybackPositionChangedEvent` immediately after `_engine.Play()` in `LoadAndPlayAsync()` so TCode/funscript sync anchors to time zero instead of waiting for the first timer tick (~16ms). Reset `_lastStrokePosition`, `_cumulativeStrokeDistance`, and `_cumulativeFillByAxis` in `TCodeService.SetPlaying(true)` to prevent fill patterns carrying over stale cumulative state from the previous video. Added 2 tests.

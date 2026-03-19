@@ -31,5 +31,23 @@ public enum AxisFillMode
     Pulse,
 
     /// <summary>Sine-like with sharper acceleration/deceleration at extremes.</summary>
-    EaseInOut
+    EaseInOut,
+
+    /// <summary>Ramp 0→1, hold at top, smooth cosine drop back to 0. Pitch-only.</summary>
+    Grind,
+
+    /// <summary>Ramp 1→0, hold at bottom, smooth cosine rise back to 1. Pitch-only.</summary>
+    ReverseGrind,
+
+    /// <summary>Ramp 0→1 then hold at top for remainder. Pitch-only.</summary>
+    SharpGrind,
+
+    /// <summary>Ramp 1→0 then hold at bottom for remainder. Pitch-only.</summary>
+    SharpReverseGrind,
+
+    /// <summary>Phase-shifted sine producing a rocking motion. Pitch-only.</summary>
+    Rocker,
+
+    /// <summary>Reverse phase-shifted sine producing a rocking motion. Pitch-only.</summary>
+    ReverseRocker
 }
